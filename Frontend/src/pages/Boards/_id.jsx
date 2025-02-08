@@ -5,7 +5,6 @@ import BoardBar from "./BoardBar/BoardBar";
 import BoardContent from "./BoardConten/BoardContent";
 import AppBar from "~/components/AppBar/AppBar";
 import SideBar from "./SideBar/SideBar";
-import { mockData } from "~/Apis/mock-data";
 
 const Board = () => {
   return (
@@ -14,8 +13,8 @@ const Board = () => {
       <Box sx={{ display: "flex" }}>
         <SideBar />
         <Box sx={{ width: "81%" }}>
-          <BoardBar board={mockData?.board} />
-          <BoardContent board={mockData?.board} />
+          <BoardBar />
+          <BoardContent />
         </Box>
       </Box>
     </Container>
