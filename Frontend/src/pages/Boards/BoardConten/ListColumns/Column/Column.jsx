@@ -13,6 +13,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import AddCardIcon from "@mui/icons-material/AddCard";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import ListCards from "./ListCards/ListCards";
+import { mapOrder } from "../../../../../../utils/sort";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -52,7 +53,7 @@ const StyledMenu = styled((props) => (
   },
 }));
 
-const Column = () => {
+const Column = ({ column }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
@@ -61,6 +62,9 @@ const Column = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
+
   return (
     <Box
       sx={{
@@ -89,7 +93,7 @@ const Column = () => {
         <Typography
           sx={{ fontWeight: "bold", cursor: "pointer", fontSize: "0.8rem" }}
         >
-          Column Title
+          {column?.title}
         </Typography>
 
         <Box>
@@ -175,7 +179,7 @@ const Column = () => {
       </Box>
 
       {/* Column List Cart */}
-      <ListCards></ListCards>
+      <ListCards cards={orderedCards} />
 
       {/* Colum Footer */}
       <Box

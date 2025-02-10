@@ -21,7 +21,7 @@ const style = {
   },
 };
 
-const BoardBar = () => {
+const BoardBar = ({ board }) => {
   return (
     <Box
       sx={{
@@ -39,10 +39,10 @@ const BoardBar = () => {
       }}
     >
       <Box px={1} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Chip label="WD-51" sx={style} />
+        <Chip label={board?.title} sx={style} />
         <Chip
           icon={<LockOpenIcon />}
-          label="Khả năng xem"
+          label={board?.type}
           variant="outlined"
           clickable
           sx={style}
