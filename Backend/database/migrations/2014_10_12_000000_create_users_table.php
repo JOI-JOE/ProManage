@@ -13,10 +13,19 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('user_name')->nullable();
+            $table->string('full_name');
+            $table->string('initials')->nullable();
+            $table->string('image')->nullable();
+            
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
+            $table->enum('role',['admin','member'])->default('member');
+            $table->boolean('activity_block')->default(false);
+            $table->string('github_id')->nullable();
+            $table->string('github_avatar')->nullable();    
+            
             $table->rememberToken();
             $table->timestamps();
         });
