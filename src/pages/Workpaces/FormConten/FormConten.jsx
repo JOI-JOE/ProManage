@@ -10,66 +10,102 @@ import {
   Avatar,
   Button,
 } from "@mui/material";
+
 import StarBorderIcon from "@mui/icons-material/StarBorder";
-import LockIcon from "@mui/icons-material/Lock";
-import EditIcon from "@mui/icons-material/Edit";
 import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
-import { IconButton } from "@mui/material";
+import TextField from "@mui/material/TextField";
 import { Link } from "react-router-dom";
 
-const ListWorkspaceConten = () => {
+const FormConten = () => {
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    shortName: "",
+    website: "",
+    description: "",
+  });
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
   return (
     <Box
       sx={{
         width: "60%",
         padding: "20px",
         marginLeft: "auto",
-        marginTop: "50px",
+        marginTop: "25px",
       }}
     >
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
+          width: "40%",
           borderBottom: "1px solid #D3D3D3",
           paddingBottom: "40px",
-          top: "50px",
+          // top: "50px",
+          gap: "10px",
         }}
       >
-        <Avatar sx={{ bgcolor: "#5D87FF", width: "80px", height: "80px" }}>
-          K
-        </Avatar>
-        <Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Typography
-              fontWeight="bold"
-              sx={{ whiteSpace: "nowrap", fontSize: 25 }}
-            >
-              Trello Không gian làm việc
-            </Typography>
-            <IconButton
-              component={Link}
-              to="/formconten"
-              sx={{ color: "gray" }}
-            >
-              <EditIcon sx={{ fontSize: 24 }} />
-            </IconButton>
-            ;
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              color: "gray",
-            }}
+        <TextField
+          label="Tên *"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="Tên ngắn gọn *"
+          name="shortName"
+          value={formData.shortName}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="Trang web (tùy chọn)"
+          name="website"
+          value={formData.website}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Mô tả (tùy chọn)"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          fullWidth
+          multiline
+          rows={3}
+          margin="normal"
+          sx={{
+            "& textarea": {
+              resize: "both", // Cho phép kéo theo cả hai hướng
+              overflow: "auto",
+              minHeight: "60px",
+              maxHeight: "300px",
+              minWidth: "100%", // Đảm bảo không kéo nhỏ hơn chiều rộng ban đầu
+              paddingBottom: "20px", // Tạo không gian cho nút kéo
+            },
+          }}
+        />
+
+        <Box sx={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={!formData.name || !formData.shortName}
           >
-            <LockIcon sx={{ fontSize: 14 }} />
-            <Typography sx={{ fontSize: 14 }}>Riêng tư</Typography>
-          </Box>
+            Lưu
+          </Button>
+          <Button component={Link} to="/listworkspaceconten" variant="outlined">
+            Hủy
+          </Button>
+          ;
         </Box>
       </Box>
 
@@ -154,4 +190,4 @@ const ListWorkspaceConten = () => {
   );
 };
 
-export default ListWorkspaceConten;
+export default FormConten;
