@@ -14,6 +14,8 @@ import AddCardIcon from "@mui/icons-material/AddCard";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import ListCards from "./ListCards/ListCards";
 import { mapOrder } from "../../../../../../utils/sort";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -54,6 +56,16 @@ const StyledMenu = styled((props) => (
 }));
 
 const Column = ({ column }) => {
+  // Kéo thả
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: column._id, data: { ...column } }); //id: là của thư viện, _id:là của DB
+
+  const columnStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  //dropdown trong MUI
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
@@ -63,10 +75,15 @@ const Column = ({ column }) => {
     setAnchorEl(null);
   };
 
+  //Sắp xếp card
   const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
 
   return (
     <Box
+      ref={setNodeRef}
+      style={columnStyle}
+      {...attributes}
+      {...listeners}
       sx={{
         minWidth: "245px",
         maxWidth: "245px",
