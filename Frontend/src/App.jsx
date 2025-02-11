@@ -1,8 +1,12 @@
 import "./App.css";
 import Board from "~/pages/Boards/_id";
 import Register from "./pages/Auth/Register";
-import { Login } from "@mui/icons-material";
+
 import Login from "./pages/Auth/Login";
+import { Route, Routes } from "react-router-dom";
+import GuestRoute from "./pages/Auth/GuestRoute";
+import ProtectedRoute from "./pages/Auth/ProtectedRoute";
+import { Dashboard } from "@mui/icons-material";
 
 // import { Box, Container } from "@mui/material";
 
@@ -11,7 +15,7 @@ function App() {
     <>
     <Routes>
           {/* Mọi user đều vào Home */}
-          <Route path="/" element={<Home />} />
+          {/* <Route path="/" element={<Home />} /> */}
 
           {/* Chặn user đã đăng nhập vào Login & Register */}
           <Route element={<GuestRoute />}>
