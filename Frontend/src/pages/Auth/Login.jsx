@@ -2,9 +2,6 @@ import React, { useState} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Authen from "../../Apis/Authen";
 
-import { IoLogoGithub } from "react-icons/io";
-
-
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
