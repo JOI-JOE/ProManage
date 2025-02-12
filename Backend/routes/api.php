@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\WorkspaceController;
+use App\Http\Controllers\Api\WorkspaceMembersController;
+use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +19,28 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+Route::post('/register', [AuthController::class, 'handleRegister']);
+Route::post('/login', [AuthController::class, 'handleLogin']);
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+
+
+Route::prefix('v1')->group(function () {
+    Route::controller(WorkspaceController::class)->group(function () {
+        // Get all workspace
+        Route::get('/workspaces', 'index');
+        // Get workspace by 
+        Route::get('/workspaces/{id}', 'show');
+        // Create new workspace
+        Route::post('/workspaces', 'store');
+        // Delete workspace
+        Route::delete('/workspaces/{workspace}', 'destroy');
+
+        // Update infor workspace
+        Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
+    });
+
+    Route::controller(WorkspaceMembersController::class)->group(function () {
+        Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
+    });
 });
