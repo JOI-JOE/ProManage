@@ -9,8 +9,26 @@ import {
 import GroupIcon from "@mui/icons-material/Group";
 import CommentIcon from "@mui/icons-material/Comment";
 import AttachmentIcon from "@mui/icons-material/Attachment";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const C_ard = ({ card }) => {
+  // Kéo thả
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card._id, data: { ...card } }); //id: là của thư viện, _id:là của DB
+
+  const cardStyle = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
+
   const showCardActions = () => {
     return (
       !!card?.memberIds?.length ||
@@ -20,6 +38,10 @@ const C_ard = ({ card }) => {
   };
   return (
     <Card
+      ref={setNodeRef}
+      style={cardStyle}
+      {...attributes}
+      {...listeners}
       sx={{
         cursor: "pointer",
         boxShadow: "0 1px 1px rgba(0,0,0,0.2)",

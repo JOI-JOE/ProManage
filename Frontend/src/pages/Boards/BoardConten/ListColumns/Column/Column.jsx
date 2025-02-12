@@ -57,12 +57,20 @@ const StyledMenu = styled((props) => (
 
 const Column = ({ column }) => {
   // Kéo thả
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: column._id, data: { ...column } }); //id: là của thư viện, _id:là của DB
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: column._id, data: { ...column } }); //id: là của thư viện, _id:là của DB
 
   const columnStyle = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
+    height: "100%",
+    opacity: isDragging ? 0.5 : undefined,
   };
 
   //dropdown trong MUI
@@ -79,143 +87,142 @@ const Column = ({ column }) => {
   const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
 
   return (
-    <Box
-      ref={setNodeRef}
-      style={columnStyle}
-      {...attributes}
-      {...listeners}
-      sx={{
-        minWidth: "245px",
-        maxWidth: "245px",
-        backgroundColor: "#dcdde1",
-        ml: 2,
-        borderRadius: "6px",
-        height: "fit-content",
-        maxHeight: (theme) =>
-          `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
-      }}
-    >
-      {/* Colum Header */}
+    <div ref={setNodeRef} style={columnStyle} {...attributes}>
       <Box
+        {...listeners}
         sx={{
-          height: (theme) => theme.trello.columnFooterHeight,
-
-          p: 2,
-
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          minWidth: "245px",
+          maxWidth: "245px",
+          backgroundColor: "#dcdde1",
+          ml: 2,
+          borderRadius: "6px",
+          height: "fit-content",
+          maxHeight: (theme) =>
+            `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
         }}
       >
-        <Typography
-          sx={{ fontWeight: "bold", cursor: "pointer", fontSize: "0.8rem" }}
+        {/* Colum Header */}
+        <Box
+          sx={{
+            height: (theme) => theme.trello.columnFooterHeight,
+
+            p: 2,
+
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
         >
-          {column?.title}
-        </Typography>
-
-        <Box>
-          <Tooltip title="More option">
-            <KeyboardArrowDownIcon
-              sx={{ color: "secondary.main", cursor: "pointer" }}
-              id="basic-column-dropdown"
-              aria-controls={open ? "basic-menu-column-dropdown" : undefined}
-              aria-haspopup="true"
-              aria-expanded={open ? "true" : undefined}
-              // variant="contained"
-              disableElevation
-              onClick={handleClick}
-            />
-          </Tooltip>
-
-          <StyledMenu
-            id="demo-customized-menu-workspace"
-            MenuListProps={{
-              "aria-labelledby": "basic-column-dropdown",
-            }}
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleClose}
+          <Typography
+            sx={{ fontWeight: "bold", cursor: "pointer", fontSize: "0.8rem" }}
           >
-            <MenuItem
-              onClick={handleClose}
-              disableRipple
-              sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-            >
-              <AddCardIcon />
-              Add new cart
-            </MenuItem>
+            {column?.title}
+          </Typography>
 
-            <MenuItem
-              onClick={handleClose}
-              disableRipple
-              sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-            >
-              <ContentCopyIcon />
-              Coppy
-            </MenuItem>
+          <Box>
+            <Tooltip title="More option">
+              <KeyboardArrowDownIcon
+                sx={{ color: "secondary.main", cursor: "pointer" }}
+                id="basic-column-dropdown"
+                aria-controls={open ? "basic-menu-column-dropdown" : undefined}
+                aria-haspopup="true"
+                aria-expanded={open ? "true" : undefined}
+                // variant="contained"
+                disableElevation
+                onClick={handleClick}
+              />
+            </Tooltip>
 
-            <MenuItem
-              onClick={handleClose}
-              disableRipple
-              sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+            <StyledMenu
+              id="demo-customized-menu-workspace"
+              MenuListProps={{
+                "aria-labelledby": "basic-column-dropdown",
+              }}
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
             >
-              <MoveUpIcon />
-              Move
-            </MenuItem>
+              <MenuItem
+                onClick={handleClose}
+                disableRipple
+                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+              >
+                <AddCardIcon />
+                Add new cart
+              </MenuItem>
 
-            <MenuItem
-              onClick={handleClose}
-              disableRipple
-              sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-            >
-              <VisibilityIcon />
-              Theo dõi
-            </MenuItem>
+              <MenuItem
+                onClick={handleClose}
+                disableRipple
+                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+              >
+                <ContentCopyIcon />
+                Coppy
+              </MenuItem>
 
-            <Divider sx={{ my: 0.5 }} />
+              <MenuItem
+                onClick={handleClose}
+                disableRipple
+                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+              >
+                <MoveUpIcon />
+                Move
+              </MenuItem>
 
-            <MenuItem
-              onClick={handleClose}
-              disableRipple
-              sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-            >
-              <ArchiveIcon />
-              Archive this column
-            </MenuItem>
+              <MenuItem
+                onClick={handleClose}
+                disableRipple
+                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+              >
+                <VisibilityIcon />
+                Theo dõi
+              </MenuItem>
 
-            <MenuItem
-              onClick={handleClose}
-              disableRipple
-              sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-            >
-              <DeleteForeverIcon />
-              Remove this column
-            </MenuItem>
-          </StyledMenu>
+              <Divider sx={{ my: 0.5 }} />
+
+              <MenuItem
+                onClick={handleClose}
+                disableRipple
+                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+              >
+                <ArchiveIcon />
+                Archive this column
+              </MenuItem>
+
+              <MenuItem
+                onClick={handleClose}
+                disableRipple
+                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+              >
+                <DeleteForeverIcon />
+                Remove this column
+              </MenuItem>
+            </StyledMenu>
+          </Box>
+        </Box>
+
+        {/* Column List Cart */}
+        <ListCards cards={orderedCards} />
+
+        {/* Colum Footer */}
+        <Box
+          sx={{
+            height: (theme) => theme.trello.columnHeaderHeight,
+            p: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Button startIcon={<AddCardIcon />} sx={{ color: "primary.dark" }}>
+            Add new cart
+          </Button>
+          <Tooltip title="Drag to move">
+            <DragHandleIcon sx={{ cursor: "pointer" }} />
+          </Tooltip>
         </Box>
       </Box>
-
-      {/* Column List Cart */}
-      <ListCards cards={orderedCards} />
-
-      {/* Colum Footer */}
-      <Box
-        sx={{
-          height: (theme) => theme.trello.columnHeaderHeight,
-          p: 2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Button startIcon={<AddCardIcon />} sx={{ color: "primary.dark" }}>
-          Add new cart
-        </Button>
-        <Tooltip title="Drag to move">
-          <DragHandleIcon sx={{ cursor: "pointer" }} />
-        </Tooltip>
-      </Box>
-    </Box>
+    </div>
   );
 };
 
