@@ -2,6 +2,7 @@
 
 // use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ColorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,5 +49,21 @@ Route::prefix('admin')->as('admin.')->group(function(){
 
 
         });
-    
+        Route::prefix('colors')
+        ->as('colors.')
+        ->group(function(){
+            Route::get('/', [ColorController::class, 'index'])->name('index');
+            Route::get('create', [ColorController::class, 'create'])->name('create');
+            Route::post('store', [ColorController::class, 'store'])->name('store');
+
+            Route::get('{color}/edit', [ColorController::class, 'edit'])->name('edit');
+            Route::put('{color}/update', [ColorController::class, 'update'])->name('update');
+            Route::delete('{color}/destroy', [ColorController::class, 'destroy'])->name('destroy');
+
+
+
+
+
+        });
+
 });
