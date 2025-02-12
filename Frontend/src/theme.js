@@ -1,17 +1,18 @@
 import { createTheme } from "@mui/material/styles";
 
 const App_Bar_Height = "48px";
-const Board_Bar_Height = "52px";
-const Board_Content_Height = `calc(100vh - ${App_Bar_Height} - ${Board_Bar_Height})`;
+const Workspace_Bar_Height = "52px";
+const Workspace_Content_Height = `calc(100vh - ${App_Bar_Height} - ${Workspace_Bar_Height})`;
 
 const Column_Header_Height = "50px";
 const Column_Footer_Height = "56px";
+
 // Create a theme instance.
 const theme = createTheme({
   trello: {
     appBarHeight: App_Bar_Height,
-    boardBarHeight: Board_Bar_Height,
-    boardContentHeight: Board_Content_Height,
+    WorkspaceBarHeight: Workspace_Bar_Height,
+    WorkspaceContentHeight: Workspace_Content_Height,
     columnHeaderHeight: Column_Header_Height,
     columnFooterHeight: Column_Footer_Height,
   },
@@ -24,7 +25,7 @@ const theme = createTheme({
     },
     secondary: {
       light: "#ff7961",
-      main: "#000",
+      main: "#000", // Black main color
       dark: "#ab003c",
       contrastText: "#ffffff",
     },
@@ -35,7 +36,7 @@ const theme = createTheme({
       styleOverrides: {
         body: {
           "*::-webkit-scrollbar": {
-            with: "6px",
+            width: "6px",
             height: "6px",
           },
 
@@ -56,6 +57,7 @@ const theme = createTheme({
         root: {
           fontSize: "0.85rem",
           textTransform: "none",
+          color: "black", // Button text color
         },
       },
     },
@@ -74,23 +76,21 @@ const theme = createTheme({
           width: "1rem",
         },
       },
-    }, //Chỉnh kích thước logo của SideBar
+    }, // Adjust logo size
 
     MuiTypography: {
       styleOverrides: {
         root: {
           fontSize: "14px",
-          // "&.MuiTypography-body1": {
-          //   fontSize: "14px",
-          // },
+          color: "black", // Set default text color to black for Typography
         },
       },
-    }, //Chỉnh cỡ chữ của SideBar
+    }, // Adjust font size and color for Typography
 
     MuiInputLabel: {
       styleOverrides: {
         root: ({ theme }) => ({
-          color: theme.palette.secondary.contrastText,
+          color: "black", // Label color set to black
           fontSize: "0.75rem",
         }),
       },
@@ -99,9 +99,9 @@ const theme = createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: ({ theme }) => ({
-          color: theme.palette.secondary.contrastText,
+          color: "black", // Input text color
           ".MuiOutlinedInput-notchedOutline": {
-            borderColor: theme.palette.secondary.contrastText,
+            borderColor: "black", // Outline color when input is active or focused
           },
           "&:hover": {
             ".MuiOutlinedInput-notchedOutline": {
@@ -116,4 +116,5 @@ const theme = createTheme({
     },
   },
 });
+
 export default theme;
