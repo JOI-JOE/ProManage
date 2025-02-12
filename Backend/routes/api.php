@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\ColorController;
+use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Auth\AuthController;
+// use App\Http\Controllers\ColorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -44,3 +47,59 @@ Route::prefix('v1')->group(function () {
         Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
     });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Route::get('/color',[ColorController::class,'index']);
+
+Route::post('/lists', [ListController::class, 'store']);
+
+Route::patch('/lists/{id}/updateName', [ListController::class, 'updateName']);
+
+Route::patch('/lists/{id}/closed', [ListController::class, 'updateClosed']);
+
+
+
+
+Route::get('/lists/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
+
+Route::put('/lists/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
+
+Route::put('/lists/{id}/updateColor', [ListController::class, 'updateColor']); 
+
