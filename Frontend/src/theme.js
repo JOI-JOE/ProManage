@@ -96,24 +96,24 @@ const theme = createTheme({
       },
     },
 
-    MuiOutlinedInput: {
-      styleOverrides: {
-        root: ({ theme }) => ({
-          color: theme.palette.secondary.contrastText,
-          ".MuiOutlinedInput-notchedOutline": {
-            borderColor: theme.palette.secondary.contrastText,
-          },
-          "&:hover": {
-            ".MuiOutlinedInput-notchedOutline": {
-              borderColor: theme.palette.primary.dark,
-            },
-          },
-          "& fieldset": {
-            borderWidth: "1px !important",
-          },
-        }),
-      },
-    },
+    // MuiOutlinedInput: {
+    //   styleOverrides: {
+    //     root: ({ theme }) => ({
+    //       color: theme.palette.secondary.contrastText,
+    //       ".MuiOutlinedInput-notchedOutline": {
+    //         borderColor: theme.palette.secondary.contrastText,
+    //       },
+    //       "&:hover": {
+    //         ".MuiOutlinedInput-notchedOutline": {
+    //           borderColor: theme.palette.primary.dark,
+    //         },
+    //       },
+    //       "& fieldset": {
+    //         borderWidth: "1px !important",
+    //       },
+    //     }),
+    //   },
+    // },
   },
 });
 export default theme;

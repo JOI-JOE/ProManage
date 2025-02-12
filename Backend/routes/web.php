@@ -1,5 +1,7 @@
 <?php
 
+// use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +15,38 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+// Route::get('/', function () {
+//     return view('welcome');
+// });
+
+// Route::resource('users',UserController::class);
+
+Route::prefix('admin')->as('admin.')->group(function(){
+
+    Route::get('/', function () {
+        return view('admin.dashboard');
+    });
+
+    Route::prefix('users')
+        ->as('users.')
+        ->group(function(){
+            Route::get('/', [UserController::class, 'index'])->name('index');
+            Route::get('create', [UserController::class, 'create'])->name('create');
+            Route::post('store', [UserController::class, 'store'])->name('store');
+            Route::get('show/{user}', [UserController::class, 'show'])->name('show');
+            Route::get('{user}/edit', [UserController::class, 'edit'])->name('edit');
+            Route::put('{user}/update', [UserController::class, 'update'])->name('update');
+            Route::delete('{user}/destroy', [UserController::class, 'destroy'])->name('destroy');
+
+
+            Route::get('import',[UserController::class,'import'])->name('import');
+            Route::post('import',[UserController::class,'importExcelData'])->name('importExcelData');
+
+            Route::get('export', [UserController::class, 'export'])->name('export');
+
+            Route::get('search', [UserController::class, 'search'])->name('search');
+
+
+        });
+    
 });

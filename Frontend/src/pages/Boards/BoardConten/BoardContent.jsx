@@ -1,5 +1,7 @@
 import { Box } from "@mui/material";
 import ListColumns from "./ListColumns/ListColumns";
+import Column from "./ListColumns/Column/Column";
+import C_ard from "./ListColumns/Column/ListCards/Card/Card";
 import { mapOrder } from "../../../../utils/sort";
 
 import {
@@ -10,6 +12,7 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
+  defaultDropAnimationSideEffects,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useEffect, useState } from "react";
@@ -84,6 +87,16 @@ const BoardContent = ({ board }) => {
     setActiveDragItemData(null);
   };
 
+  const customDropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+      styles: {
+        active: {
+          opacity: "0.5",
+        },
+      },
+    }),
+  };
+
   return (
     <DndContext
       onDragStart={handleDragStart}
@@ -98,7 +111,15 @@ const BoardContent = ({ board }) => {
         }}
       >
         <ListColumns columns={orderedColumns} />
-        <DragOverlay></DragOverlay>
+        <DragOverlay dropAnimation={customDropAnimation}>
+          {!activeDragItemType && null}
+          {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN && (
+            <Column column={activeDragItemData} />
+          )}
+          {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD && (
+            <C_ard card={activeDragItemData} />
+          )}
+        </DragOverlay>
       </Box>
     </DndContext>
   );
