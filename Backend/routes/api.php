@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\ColorController;
+use App\Http\Controllers\Api\BoardController;
+use App\Http\Controllers\Api\BoardMemberController;
+use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Auth\AuthController;
@@ -45,43 +49,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
     });
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 Route::get('/color',[ColorController::class,'index']);
