@@ -2,18 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\Board;
+use App\Models\WorkspaceMembers;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class BoardSeeder extends Seeder
+class WorkspaceMembersSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        // Tạo ra 10 board với visibility là public
-        Board::factory(4)->create();
+        // Tạo ra 10 workspace member
+        WorkspaceMembers::factory(5)->create();
     }
 }
