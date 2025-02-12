@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\BoardController;
+use App\Http\Controllers\Api\BoardMemberController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Auth\AuthController;
@@ -44,3 +46,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
     });
 });
+
+Route::resource('boards',BoardController::class);
+Route::get('/trashs', [BoardController::class, 'trash']);
+Route::patch('/boards/{id}/thumbnail', [BoardController::class, 'updateThumbnail']);
+Route::patch('/boards/{id}/marked', [BoardController::class, 'UpdateIs_marked']);
+Route::patch('/boards/{id}/archive', [BoardController::class, 'UpdateArchive']);
+Route::patch('/boards/{id}/visibility', [BoardController::class, 'updateVisibility']);
+
+Route::post('/boards/{boardId}/members', [BoardMemberController::class, 'addMember']);
+Route::put('/boards/{boardId}/members/{userId}/role', [BoardMemberController::class, 'updateMemberRole']);

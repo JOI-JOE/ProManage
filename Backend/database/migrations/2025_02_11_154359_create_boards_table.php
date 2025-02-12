@@ -19,7 +19,7 @@ return new class extends Migration
 
             $table->boolean('is_marked'); // Đánh dấu bảng nổi bật
             $table->boolean('archive'); // Lưu trữ bảng: 0 là hiện, 1 là lưu trữ
-            $table->boolean('deleted')->default(false); // Lưu trữ rác: 0 là hiện, 1 là xóa
+            $table->boolean('closed')->default(false); // Lưu trữ rác: 0 là hiện, 1 là xóa
 
             $table->enum('visibility', ['public', 'private', 'member']);
             $table->foreignId('workspace_id')->constrained('workspaces');
