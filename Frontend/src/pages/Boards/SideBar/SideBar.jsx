@@ -1,4 +1,4 @@
-import * as React from "react";
+import React from "react";
 import {
   Box,
   Drawer,
@@ -8,18 +8,23 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-  Avatar,
   Collapse,
+  Avatar,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import SettingsIcon from "@mui/icons-material/Settings";
-import UpgradeIcon from "@mui/icons-material/Upgrade";
 import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import AddIcon from "@mui/icons-material/Add";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
+import HomeIcon from "@mui/icons-material/Home";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ViewStreamIcon from "@mui/icons-material/ViewStream";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const SideBar = () => {
   const [openSettings, setOpenSettings] = React.useState(false);
@@ -28,61 +33,37 @@ const SideBar = () => {
     setOpenSettings(!openSettings);
   };
 
+  const [hoveredItem, setHoveredItem] = useState(null);
+
+  const handleMouseEnter = (item) => {
+    setHoveredItem(item);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredItem(null);
+  };
   return (
     <Drawer
       variant="permanent"
       sx={{
         width: "19%",
-        height: (theme) =>
-          `calc(${theme.trello.boardBarHeight} + ${theme.trello.boardContentHeight})`,
-        borderTop: "1px solid #ffffff",
-
+        position: "absolute",
+        right: "63%",
+        transform: "translateX(-37%)",
+        marginTop: "25px",
         "& .MuiDrawer-paper": {
           boxSizing: "border-box",
-          bgcolor: "#000",
           color: "#ffffff",
           position: "relative",
-          overflowY: "auto", // Cho phép cuộn nếu nội dung quá dài
-
-          "&::-webkit-scrollbar": {
-            width: "6px", // Giảm kích thước scrollbar
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: "#B6BBBF", // Màu của thanh cuộn
-            borderRadius: "6px", // Làm thanh cuộn bo tròn
-          },
-          "&::-webkit-scrollbar-thumb:hover": {
-            backgroundColor: "#ECF0F1", // Màu khi hover
-          },
-          "&::-webkit-scrollbar-track": {
-            m: 2,
-          },
+          overflowY: "auto",
+          borderRight: "none",
         },
       }}
     >
-      {/* Tiêu đề */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          p: 2,
-          bgcolor: "#292929",
-        }}
-      >
-        <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
-        <Box>
-          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-            Không gian làm việc của bạn...
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Danh sách điều hướng */}
-      <List>
+      <List sx={{ borderBottom: "1px solid #D3D3D3" }}>
         <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon sx={{ color: "white", fontSize: "small" }}>
+          <ListItemButton component={Link} to="/">
+            <ListItemIcon sx={{ color: "black" }}>
               <DashboardIcon />
             </ListItemIcon>
             <ListItemText primary="Bảng" />
@@ -91,72 +72,115 @@ const SideBar = () => {
 
         <ListItem disablePadding>
           <ListItemButton>
-            <ListItemIcon sx={{ color: "white" }}>
-              <PeopleIcon />
+            <ListItemIcon sx={{ color: "black" }}>
+              <FolderIcon />
             </ListItemIcon>
-            <ListItemText primary="Thành viên" />
-            <AddIcon sx={{ color: "gray" }} />
+            <ListItemText primary="Mẫu" />
           </ListItemButton>
         </ListItem>
 
-        {/* Cài đặt không gian làm việc */}
-        <ListItemButton onClick={toggleSettings}>
-          <ListItemIcon sx={{ color: "white" }}>
-            <SettingsIcon />
-          </ListItemIcon>
-          <ListItemText primary="Các cài đặt Không gian làm việc" />
-          {openSettings ? <ExpandLess /> : <ExpandMore />}
-        </ListItemButton>
+        <ListItem disablePadding>
+          <ListItemButton>
+            <ListItemIcon sx={{ color: "black" }}>
+              <HomeIcon />
+            </ListItemIcon>
+            <ListItemText primary="Trang chủ" />
+          </ListItemButton>
+        </ListItem>
+      </List>
 
-        {/* Collapse: hiển thị hoặc ẩn danh sách con (animation mở rộng / thu nhỏ). */}
-        <Collapse in={openSettings} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={{ pl: 4 }}>
-              <ListItemIcon sx={{ color: "white" }}>
+      <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
+        Các không gian làm việc
+      </Typography>
+
+      {/* Phần toggle mở rộng danh sách */}
+
+      <ListItemButton
+        onClick={toggleSettings}
+        sx={{ display: "flex", justifyContent: "space-between" }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <ListItemIcon sx={{ color: "black" }}>
+            <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
+          </ListItemIcon>
+          <ListItemText
+            primary={
+              <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
+                Trello Không gian làm việc
+              </Typography>
+            }
+          />
+        </Box>
+
+        {openSettings ? (
+          <ExpandLess sx={{ color: "black" }} />
+        ) : (
+          <ExpandMore sx={{ color: "black" }} />
+        )}
+      </ListItemButton>
+
+      {/* Danh sách con - Hiển thị khi mở */}
+      <Collapse in={openSettings} timeout="auto" unmountOnExit>
+        <Box sx={{ pl: 4 }}>
+          <List>
+            <ListItemButton component={Link} to="/listworkspaceconten">
+              <ListItemIcon sx={{ color: "black" }}>
                 <ViewKanbanIcon />
               </ListItemIcon>
-              <ListItemText primary="Các cài đặt không gian làm việc" />
+              <ListItemText primary="Bảng" />
             </ListItemButton>
-            <ListItemButton sx={{ pl: 4 }}>
-              <ListItemIcon sx={{ color: "white" }}>
-                <UpgradeIcon />
+            <ListItemButton>
+              <ListItemIcon sx={{ color: "black" }}>
+                <FavoriteBorderIcon />
               </ListItemIcon>
-              <ListItemText primary="Nâng cấp không gian làm việc" />
+              <ListItemText primary="Điểm nổi bật" />
+            </ListItemButton>
+
+            <ListItemButton
+              onMouseEnter={() => handleMouseEnter("Hình")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <ListItemIcon sx={{ color: "Black" }}>
+                <ViewStreamIcon />
+              </ListItemIcon>
+              <ListItemText primary="Hình" />
+              {hoveredItem === "Hình" && (
+                <ChevronRightIcon sx={{ color: "gray" }} />
+              )}
+            </ListItemButton>
+
+            <ListItemButton
+              onMouseEnter={() => handleMouseEnter("Thành viên")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <ListItemIcon sx={{ color: "black" }}>
+                <PeopleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Thành viên" />
+              <AddIcon sx={{ color: "gray" }} />
+              {hoveredItem === "Thành viên" && (
+                <ChevronRightIcon sx={{ color: "gray" }} />
+              )}
+            </ListItemButton>
+
+            <ListItemButton
+              // sx={{ pl: 4 }}
+              onMouseEnter={() => handleMouseEnter("Cài đặt")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <ListItemIcon sx={{ color: "Black" }}>
+                <SettingsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Cài đặt" />
+              {hoveredItem === "Cài đặt" && (
+                <ChevronRightIcon sx={{ color: "gray" }} />
+              )}
             </ListItemButton>
           </List>
-        </Collapse>
-      </List>
-
-      {/* Các bảng làm việc */}
-      <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
-        Các bảng của bạn
-      </Typography>
-      <List sx={{}}>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon sx={{ color: "white" }}>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Test 1"
-              sx={{
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon sx={{ color: "white" }}>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText primary="Test" />
-          </ListItemButton>
-        </ListItem>
-      </List>
+        </Box>
+      </Collapse>
     </Drawer>
   );
 };
+
 export default SideBar;
