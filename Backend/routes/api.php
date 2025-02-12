@@ -1,6 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\ColorController;
+use App\Http\Controllers\Admin\ColorController;
+use App\Http\Controllers\Api\BoardController;
+use App\Http\Controllers\Api\BoardMemberController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
@@ -49,43 +51,6 @@ Route::prefix('v1')->group(function () {
 });
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Route::get('/color',[ColorController::class,'index']);
 
 Route::post('/lists', [ListController::class, 'store']);
@@ -103,3 +68,13 @@ Route::put('/lists/reorder', [ListController::class, 'reorder']); // Cập nhậ
 
 Route::put('/lists/{id}/updateColor', [ListController::class, 'updateColor']); 
 
+
+Route::resource('boards',BoardController::class);
+Route::get('/trashs', [BoardController::class, 'trash']);
+Route::patch('/boards/{id}/thumbnail', [BoardController::class, 'updateThumbnail']);
+Route::patch('/boards/{id}/marked', [BoardController::class, 'UpdateIs_marked']);
+Route::patch('/boards/{id}/archive', [BoardController::class, 'UpdateArchive']);
+Route::patch('/boards/{id}/visibility', [BoardController::class, 'updateVisibility']);
+
+Route::post('/boards/{boardId}/members', [BoardMemberController::class, 'addMember']);
+Route::put('/boards/{boardId}/members/{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
