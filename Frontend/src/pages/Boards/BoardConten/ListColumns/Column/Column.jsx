@@ -101,10 +101,12 @@ const Column = ({ column }) => {
             `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
         }}
       >
+
         {/* Colum Header */}
         <Box
           sx={{
             height: (theme) => theme.trello.columnFooterHeight,
+
 
             p: 2,
 

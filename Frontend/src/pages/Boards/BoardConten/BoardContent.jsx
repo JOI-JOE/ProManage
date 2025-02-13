@@ -3,6 +3,7 @@ import ListColumns from "./ListColumns/ListColumns";
 import Column from "./ListColumns/Column/Column";
 import C_ard from "./ListColumns/Column/ListCards/Card/Card";
 import { mapOrder } from "../../../../utils/sort";
+
 import { cloneDeep } from "lodash";
 import {
   DndContext,
@@ -100,6 +101,7 @@ const BoardContent = ({ board }) => {
           (card) => card._id === overCardId
         );
 
+
         // Tính toán vị trí cardIndex mới
         let newCardIndex;
         const isBelowOverItem =
@@ -158,6 +160,7 @@ const BoardContent = ({ board }) => {
 
   // Kết thúc kéo một phần tử
   const handleDragEnd = (event) => {
+
     // console.log("handleDragEnd:", event);
 
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
@@ -198,6 +201,7 @@ const BoardContent = ({ board }) => {
         },
       },
     }),
+
   };
 
   return (
@@ -211,9 +215,10 @@ const BoardContent = ({ board }) => {
         sx={{
           backgroundColor: "primary.main",
           height: (theme) => theme.trello.boardContentHeight,
-          p: "18px 0 7px 0px",
+          padding: "18px 0 7px 0px",
         }}
       >
+
         <ListColumns columns={orderedColumns} />
         <DragOverlay dropAnimation={customDropAnimation}>
           {!activeDragItemType && null}
@@ -224,9 +229,11 @@ const BoardContent = ({ board }) => {
             <C_ard card={activeDragItemData} />
           )}
         </DragOverlay>
+
       </Box>
     </DndContext>
   );
+
 };
 
 export default BoardContent;
