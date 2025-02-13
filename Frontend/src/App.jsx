@@ -6,6 +6,10 @@ import Login from "./pages/Auth/Login";
 import { Route, Routes } from "react-router-dom";
 import GuestRoute from "./pages/Auth/GuestRoute";
 import ProtectedRoute from "./pages/Auth/ProtectedRoute";
+
+import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+
 import { Dashboard } from "@mui/icons-material";
 import Board1 from "./pages/Boards/_id1";
 import Board2 from "./pages/Boards/_id2";
@@ -18,10 +22,15 @@ import Dashboard from "./pages/Dashboard";
 
 function App() {
   return (
-    <>
+   
+
+      <Routes>
+        {/* Mọi user đều vào Home */}
+
     <Routes>
           {/* Mọi user đều vào Home */}
           <Route path="/" element={<Home />} />
+
 
         {/* Chặn user đã đăng nhập vào Login & Register */}
         <Route element={<GuestRoute />}>

@@ -22,6 +22,9 @@ Route::get('/', function () {
 
 // Route::resource('users',UserController::class);
 
+<<<<<<<<< Temporary merge branch 1
+Route::prefix('admin')->as('admin.')->group(function () {
+=========
 Route::middleware('admin')->prefix('admin')->as('admin.')->group(function(){
 
     Route::get('/', function () {
