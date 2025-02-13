@@ -21,13 +21,9 @@ class ListController extends Controller
     }
 
 
-
-
     public function store(ListRequest $request)
     {
-
         try {
-
             $validated = $request->validated();
 
             $maxPosition = ListBoard::where('board_id', $validated['board_id'])->max('position');
@@ -47,7 +43,7 @@ class ListController extends Controller
         } catch (\Exception $e) {
             Log::error('Lỗi khi thêm mới danh sách: ' . $e->getMessage());
             return response()->json(['error' => 'Đã xảy ra lỗi khi thêm mới danh sách.'], 500);
-        }   
+        }
     }
 
     private function normalizePositions($boardId)
