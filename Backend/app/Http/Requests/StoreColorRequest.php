@@ -25,9 +25,6 @@ class StoreColorRequest extends FormRequest
             'hex_code' => [
                 'required',
                 'regex:/^#([a-fA-F0-9]{6})$/',
-
-
-
                 // Nếu đang tạo mới màu (create), kiểm tra tính duy nhất của hex_code
                 'unique:colors,hex_code'
             ],
@@ -36,13 +33,9 @@ class StoreColorRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'hex_code.required'=>'Mã màu không đc để trống',
-            'hex_code.regex'=>'Mã màu phải đúng định dạng',
-
-
-
+            'hex_code.required' => 'Mã màu không đc để trống',
+            'hex_code.regex' => 'Mã màu phải đúng định dạng',
             'hex_code.unique' => 'Mã màu đã tồn tại',
-
         ];
     }
 }

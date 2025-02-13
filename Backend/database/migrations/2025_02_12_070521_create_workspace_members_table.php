@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('member_type', ['admin', 'normal'])->default('admin');
 
             $table->boolean('is_unconfirmed')->default(false);
+            $table->boolean('joined')->default(false);
             $table->boolean('is_deactivated')->default(false);
 
             $table->boolean('activity_blocked')->default(false);

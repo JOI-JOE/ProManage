@@ -24,13 +24,11 @@ class UpdateColorRequest extends FormRequest
     {
         return [
 
-                'hex_code' => [
-                    'required',
-                    'regex:/^#([a-fA-F0-9]{6})$/', // Chỉ chấp nhận mã màu HEX hợp lệ
-                    Rule::unique('colors', 'hex_code')->ignore($this->route('color')), // Bỏ qua ID đang cập nhật
-                ],
-
-            //
+            'hex_code' => [
+                'required',
+                'regex:/^#([a-fA-F0-9]{6})$/', // Chỉ chấp nhận mã màu HEX hợp lệ
+                Rule::unique('colors', 'hex_code')->ignore($this->route('color')), // Bỏ qua ID đang cập nhật
+            ],
         ];
     }
     public function messages(): array
