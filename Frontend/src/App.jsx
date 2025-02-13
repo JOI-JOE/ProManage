@@ -25,10 +25,6 @@ function App() {
         <Route path="/" element={<Home />} />
 
         {/* Chặn user đã đăng nhập vào Login & Register */}
-        <Route element={<GuestRoute />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Route>
 
         {/* Chỉ cho phép Admin vào Dashboard */}
         {/* <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
