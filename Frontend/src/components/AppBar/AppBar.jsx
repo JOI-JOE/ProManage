@@ -161,7 +161,6 @@ const AppBar = () => {
             }}
           />
         </Tooltip>
-
         <Profile />
       </Box>
     </Box>

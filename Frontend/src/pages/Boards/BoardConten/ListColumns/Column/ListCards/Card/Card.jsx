@@ -27,6 +27,7 @@ const C_ard = ({ card }) => {
     transform: CSS.Translate.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : undefined,
+    border: isDragging ? "1px solid #2ecc71" : undefined,
   };
 
   const showCardActions = () => {
@@ -51,7 +52,7 @@ const C_ard = ({ card }) => {
       {card?.cover && <CardMedia sx={{ height: 140 }} image={card?.cover} />}
 
       <CardContent sx={{ p: 1.5, "&:last-child": { p: 1.5 } }}>
-        <Typography sx={{ fontSize: "0.78rem" }}>{card?.title}</Typography>
+        <Typography sx={{ fontSize: "0.7rem" }}>{card?.title}</Typography>
       </CardContent>
 
       {showCardActions() && (
@@ -60,7 +61,7 @@ const C_ard = ({ card }) => {
             <Button
               size="small"
               startIcon={<GroupIcon />}
-              sx={{ fontSize: "0.7rem", color: "primary.dark" }}
+              sx={{ fontSize: "0.65rem", color: "primary.dark" }}
             >
               {card?.memberIds?.length}
             </Button>
@@ -70,7 +71,7 @@ const C_ard = ({ card }) => {
             <Button
               size="small"
               startIcon={<CommentIcon />}
-              sx={{ fontSize: "0.7rem", color: "primary.dark" }}
+              sx={{ fontSize: "0.65rem", color: "primary.dark" }}
             >
               {card?.comments?.length}
             </Button>
@@ -80,7 +81,7 @@ const C_ard = ({ card }) => {
             <Button
               size="small"
               startIcon={<AttachmentIcon />}
-              sx={{ fontSize: "0.7rem", color: "primary.dark" }}
+              sx={{ fontSize: "0.65rem", color: "primary.dark" }}
             >
               {card?.attachments?.length}
             </Button>
