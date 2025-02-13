@@ -58,20 +58,14 @@ Route::prefix('v1')->group(function () {
 
 Route::get('/color', [ColorController::class, 'index']);
 
-Route::post('/lists', [ListController::class, 'store']);
-
-Route::patch('/lists/{id}/updateName', [ListController::class, 'updateName']);
-
-Route::patch('/lists/{id}/closed', [ListController::class, 'updateClosed']);
-
-
-
-
-Route::get('/lists/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
-
-Route::put('/lists/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
-
-Route::put('/lists/{id}/updateColor', [ListController::class, 'updateColor']);
+Route::prefix('lists')->group(function () {
+    Route::post('/', [ListController::class, 'store']);
+    Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
+    Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
+    Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
+    Route::put('/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
+    Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
+});
 
 
 
