@@ -6,7 +6,9 @@ import Login from "./pages/Auth/Login";
 import { Route, Routes } from "react-router-dom";
 import GuestRoute from "./pages/Auth/GuestRoute";
 import ProtectedRoute from "./pages/Auth/ProtectedRoute";
-import { Dashboard } from "@mui/icons-material";
+
+import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 
 // import { Box, Container } from "@mui/material";
 
@@ -15,7 +17,7 @@ function App() {
     <>
     <Routes>
           {/* Mọi user đều vào Home */}
-          {/* <Route path="/" element={<Home />} /> */}
+          <Route path="/" element={<Home />} />
 
           {/* Chặn user đã đăng nhập vào Login & Register */}
           <Route element={<GuestRoute />}>
@@ -24,15 +26,15 @@ function App() {
           </Route>
 
           {/* Chỉ cho phép Admin vào Dashboard */}
-          <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-          </Route>
+          {/* <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+            <Route path="http://127.0.0.1:8000/admin" element={<Dashboard />} />
+          </Route> */}
 
           {/* Callback GitHub */}
           {/* <Route path="/auth/callback" element={<GitHubCallback />} /> */}
         </Routes>
 
-      <Board></Board>
+      {/* <Board></Board> */}
     </>
   );
 }
