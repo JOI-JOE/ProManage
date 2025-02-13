@@ -20,26 +20,27 @@ return new class extends Migration
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
 
+            // Người gửi lời mời (tùy chọn)
+            $table->foreignId('invited_by')
+                ->nullable()
+                ->constrained('users')
+                ->onUpdate('cascade')
+                ->onDelete('set null');
+
             // Khóa ngoại đến bảng users (người được mời)
             $table->foreignId('invited_user_id')
                 ->constrained('users')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
 
-            // Mã băm (dsc) để xác định lời mời
-            $table->string('invitation_token')->unique(); // Thay thế dsc bằng invitation_token
-
             // Tin nhắn mời
             $table->text('invitation_message')->nullable();
 
-            // Loại lời mời (normal, special, ...)
-            $table->string('invitation_type')->default('normal');
+            // Mã hash để xác thực lời mời
+            $table->string('dsc_hash', 255)->unique();
 
-            // Trạng thái chấp nhận (pending, accepted, rejected)
-            $table->enum('invitation_status', ['pending', 'accepted', 'rejected'])->default('pending');
-
-            // Thời gian hết hạn của lời mời (tùy chọn)
-            $table->timestamp('expires_at')->nullable();
+            // Nếu TRUE, thành viên được thêm ngay lập tức
+            $table->boolean('accept_unconfirmed')->default(false);
 
             // Người gửi lời mời (tùy chọn)
             $table->foreignId('invited_by_user_id')
