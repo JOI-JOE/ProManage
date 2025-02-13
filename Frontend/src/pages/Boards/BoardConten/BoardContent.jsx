@@ -14,6 +14,7 @@ import {
   useSensors,
   DragOverlay,
   defaultDropAnimationSideEffects,
+  closestCorners,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useEffect, useState } from "react";
@@ -101,7 +102,6 @@ const BoardContent = ({ board }) => {
           (card) => card._id === overCardId
         );
 
-
         // Tính toán vị trí cardIndex mới
         let newCardIndex;
         const isBelowOverItem =
@@ -160,7 +160,6 @@ const BoardContent = ({ board }) => {
 
   // Kết thúc kéo một phần tử
   const handleDragEnd = (event) => {
-
     // console.log("handleDragEnd:", event);
 
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
@@ -201,7 +200,6 @@ const BoardContent = ({ board }) => {
         },
       },
     }),
-
   };
 
   return (
@@ -210,6 +208,8 @@ const BoardContent = ({ board }) => {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       sensors={sensors}
+      //Dùng để kéo thả card lớn có ảnh
+      collisionDetection={closestCorners}
     >
       <Box
         sx={{
@@ -218,7 +218,6 @@ const BoardContent = ({ board }) => {
           padding: "18px 0 7px 0px",
         }}
       >
-
         <ListColumns columns={orderedColumns} />
         <DragOverlay dropAnimation={customDropAnimation}>
           {!activeDragItemType && null}
@@ -229,11 +228,9 @@ const BoardContent = ({ board }) => {
             <C_ard card={activeDragItemData} />
           )}
         </DragOverlay>
-
       </Box>
     </DndContext>
   );
-
 };
 
 export default BoardContent;
