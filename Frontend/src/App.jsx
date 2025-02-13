@@ -7,9 +7,9 @@ import { Route, Routes } from "react-router-dom";
 import GuestRoute from "./pages/Auth/GuestRoute";
 import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 import { Dashboard } from "@mui/icons-material";
-import Board1 from "./pages/Boards/_id1";
-import Board2 from "./pages/Boards/_id2";
-import Board3 from "./pages/Boards/_id3";
+import Board1 from "./pages/Workpaces/_id1";
+import Board2 from "./pages/Workpaces/_id2";
+import Board3 from "./pages/Workpaces/_id3";
 
 // import { Box, Container } from "@mui/material";
 
