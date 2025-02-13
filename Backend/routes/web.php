@@ -2,6 +2,7 @@
 
 // use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ColorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,9 +16,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+Route::get('/', function () {
+    return view('welcome');
+});
 
 // Route::resource('users',UserController::class);
 
@@ -29,7 +30,7 @@ Route::middleware('admin')->prefix('admin')->as('admin.')->group(function(){
 
     Route::prefix('users')
         ->as('users.')
-        ->group(function(){
+        ->group(function () {
             Route::get('/', [UserController::class, 'index'])->name('index');
             Route::get('create', [UserController::class, 'create'])->name('create');
             Route::post('store', [UserController::class, 'store'])->name('store');
@@ -39,14 +40,22 @@ Route::middleware('admin')->prefix('admin')->as('admin.')->group(function(){
             Route::delete('{user}/destroy', [UserController::class, 'destroy'])->name('destroy');
 
 
-            Route::get('import',[UserController::class,'import'])->name('import');
-            Route::post('import',[UserController::class,'importExcelData'])->name('importExcelData');
+            Route::get('import', [UserController::class, 'import'])->name('import');
+            Route::post('import', [UserController::class, 'importExcelData'])->name('importExcelData');
 
             Route::get('export', [UserController::class, 'export'])->name('export');
 
             Route::get('search', [UserController::class, 'search'])->name('search');
-
-
         });
-    
+    Route::prefix('colors')
+        ->as('colors.')
+        ->group(function () {
+            Route::get('/', [ColorController::class, 'index'])->name('index');
+            Route::get('create', [ColorController::class, 'create'])->name('create');
+            Route::post('store', [ColorController::class, 'store'])->name('store');
+
+            Route::get('{color}/edit', [ColorController::class, 'edit'])->name('edit');
+            Route::put('{color}/update', [ColorController::class, 'update'])->name('update');
+            Route::delete('{color}/destroy', [ColorController::class, 'destroy'])->name('destroy');
+        });
 });

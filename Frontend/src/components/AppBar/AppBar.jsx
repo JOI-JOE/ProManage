@@ -20,6 +20,7 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import Profile from "./Menus/Profiles";
+import { Link } from "react-router-dom";
 const AppBar = () => {
   return (
     <Box
@@ -42,7 +43,11 @@ const AppBar = () => {
         }}
       >
         <AppsIcon sx={{ color: "secondary.contrastText", fontSize: "24px" }} />
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Box
+          component={Link}
+          to="/"
+          sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+        >
           <SvgIcon
             component={trelloLogo}
             inheritViewBox

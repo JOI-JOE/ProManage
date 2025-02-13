@@ -24,7 +24,7 @@ class BoardFactory extends Factory
 
             'archive' => $this->faker->boolean,
 
-            'deleted' => false,
+            'closed' => false,
 
             'visibility' => $this->faker->randomElement(['public', 'private', 'member']),
             'workspace_id' => \App\Models\Workspace::factory(),

@@ -8,6 +8,7 @@ use App\Http\Resources\BoardResource;
 use App\Http\Resources\WorkspaceResource;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 
@@ -41,7 +42,7 @@ class WorkspaceController extends Controller
         // Dữ liệu đã được validate trong WorkspaceRequest
         $validatedData = $request->validated();
 
-        $validatedData['board_delete_restrict'] = json_encode($validatedData['board_delete_restrict'] ?? [
+        $validatedData['board_delete_restrict'] = json_encode([
             'private' => 'org',
             'org' => 'org',
             'enterprise' => 'org',
@@ -75,6 +76,15 @@ class WorkspaceController extends Controller
         }
     }
 
+    /**
+     * Summary of updateWorkspaceInfo
+     * @param \App\Http\Requests\WorkspaceRequest $request
+     * @param \App\Models\Workspace $workspace
+     * @return mixed|\Illuminate\Http\JsonResponse
+     * 
+     * cập nhật các trường như name, display_name, desc
+     * nó có sử dụng realtime event để cập nhật thông tin cho các thành viên trong workspace
+     */
     public function updateWorkspaceInfo(WorkspaceRequest $request, Workspace $workspace)
     {
         if ($workspace) {
@@ -94,4 +104,24 @@ class WorkspaceController extends Controller
             return response()->json(['error' => 'Workspace not found'], 404);
         }
     }
+
+
+    public function permissionLevel(Request $request)
+    {
+        $validatedData = $request->validate([
+            'private' => 'required|string',
+            'public' => 'required|string',
+        ]);
+
+        $permissionLevels = [
+            'private' => $validatedData['private'],
+            'public' => $validatedData['public'],
+        ];
+
+        return response()->json([
+            'data' => $permissionLevels,
+        ]);
+    }
+
+    
 }
