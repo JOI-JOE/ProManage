@@ -99,9 +99,9 @@ const theme = createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: ({ theme }) => ({
-          color: theme.palette.secondary.contrastText,
+          color: "black",
           ".MuiOutlinedInput-notchedOutline": {
-            borderColor: theme.palette.secondary.contrastText,
+            borderColor: "black",
           },
           "&:hover": {
             ".MuiOutlinedInput-notchedOutline": {
