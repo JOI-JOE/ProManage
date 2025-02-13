@@ -50,15 +50,22 @@ const ListWorkspaceConten = () => {
             >
               Trello Không gian làm việc
             </Typography>
+
+            {/* IconButton không bị ảnh hưởng hover của Box cha */}
             <IconButton
               component={Link}
               to="/formconten"
-              sx={{ color: "gray" }}
+              sx={{
+                color: "gray",
+                "&:hover": {
+                  backgroundColor: "transparent", // Không đổi màu nền khi hover
+                },
+              }}
             >
               <EditIcon sx={{ fontSize: 24 }} />
             </IconButton>
-            ;
           </Box>
+
           <Box
             sx={{
               display: "flex",
@@ -98,6 +105,8 @@ const ListWorkspaceConten = () => {
       <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
         <ListItem sx={{ width: "auto", padding: 0 }}>
           <Box
+            component={Link}
+            to="/boardconten"
             sx={{
               width: "180px",
               height: "100px",
@@ -107,7 +116,9 @@ const ListWorkspaceConten = () => {
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
+              textDecoration: "none",
               "&:hover": { backgroundColor: "#9A436D" },
+              position: "relative", // Để icon đúng vị trí
             }}
             onMouseEnter={() => setHoveredItem(2)}
             onMouseLeave={() => setHoveredItem(null)}
@@ -121,7 +132,7 @@ const ListWorkspaceConten = () => {
                   color: "white",
                   position: "absolute",
                   right: "10px",
-                  top: "70px",
+                  top: "10px", // Điều chỉnh vị trí icon hợp lý
                 }}
               />
             )}

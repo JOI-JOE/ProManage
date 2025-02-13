@@ -55,7 +55,16 @@ const FormConten = () => {
           fullWidth
           margin="normal"
           required
+          InputLabelProps={{
+            sx: { color: "black" }, // Màu label
+          }}
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "black", // Màu chữ trong ô nhập
+            },
+          }}
         />
+
         <TextField
           label="Tên ngắn gọn *"
           name="shortName"
@@ -64,15 +73,16 @@ const FormConten = () => {
           fullWidth
           margin="normal"
           required
+          InputLabelProps={{
+            sx: { color: "black" }, // Màu label
+          }}
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "black", // Màu chữ trong ô nhập
+            },
+          }}
         />
-        <TextField
-          label="Trang web (tùy chọn)"
-          name="website"
-          value={formData.website}
-          onChange={handleChange}
-          fullWidth
-          margin="normal"
-        />
+
         <TextField
           label="Mô tả (tùy chọn)"
           name="description"
@@ -82,14 +92,18 @@ const FormConten = () => {
           multiline
           rows={3}
           margin="normal"
+          InputLabelProps={{
+            sx: { color: "black" }, // Đổi màu chữ của label
+          }}
           sx={{
             "& textarea": {
-              resize: "both", // Cho phép kéo theo cả hai hướng
+              color: "black",
+              resize: "both",
               overflow: "auto",
-              minHeight: "60px",
+              minHeight: "30px",
               maxHeight: "300px",
-              minWidth: "100%", // Đảm bảo không kéo nhỏ hơn chiều rộng ban đầu
-              paddingBottom: "20px", // Tạo không gian cho nút kéo
+              minWidth: "100%",
+              paddingBottom: "20px",
             },
           }}
         />
@@ -105,7 +119,6 @@ const FormConten = () => {
           <Button component={Link} to="/listworkspaceconten" variant="outlined">
             Hủy
           </Button>
-          ;
         </Box>
       </Box>
 

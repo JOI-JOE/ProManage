@@ -17,6 +17,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import ViewStreamIcon from "@mui/icons-material/ViewStream";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAltOutlined";
+import { Link } from "react-router-dom";
 
 const WorkspaceConten = () => {
   const [hoveredItem, setHoveredItem] = useState(null);
@@ -39,6 +40,8 @@ const WorkspaceConten = () => {
       <List sx={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
         <ListItem sx={{ width: "auto", padding: 0 }}>
           <Box
+            component={Link}
+            to="/boardconten"
             sx={{
               width: "180px",
               height: "100px",
@@ -46,9 +49,11 @@ const WorkspaceConten = () => {
               borderRadius: "8px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
-              padding: "10px",
-              position: "relative",
+              // justifyContent: "space-between",
+              // padding: "10px",
+              // position: "relative",
+              alignItems: "center",
+              justifyContent: "center",
               cursor: "pointer",
               "&:hover": { backgroundColor: "#9A436D" },
             }}
@@ -66,8 +71,10 @@ const WorkspaceConten = () => {
               sx={{
                 color: "white",
                 fontWeight: "bold",
-                marginBottom: "5px",
-                marginRight: "20px",
+                // marginBottom: "2px",
+                // marginRight: "10px",
+                // marginLeft: "10px",
+                textAlign: "center",
               }}
             >
               Bảng Trello của tôi
@@ -219,6 +226,8 @@ const WorkspaceConten = () => {
       <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
         <ListItem sx={{ width: "auto", padding: 0 }}>
           <Box
+            component={Link}
+            to="/boardconten"
             sx={{
               width: "180px",
               height: "100px",
