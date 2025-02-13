@@ -172,6 +172,22 @@ class BoardController extends Controller
         }
     }
 
+    /**
+     * Update cho riêng trường archive 
+     */
+    public function showCreated($id)
+{
+    $board = Board::findOrFail($id); // Lấy bảng theo ID
+
+    // Lấy thông tin người tạo bảng
+    $creator = $board->creator; // Đây sẽ là một instance của model User
+
+    return response()->json([
+        'board' => $board,
+        'creator' => $creator,
+    ]);
+}
+
 
     /**
      * Xóa mềm -> lưu trữ
