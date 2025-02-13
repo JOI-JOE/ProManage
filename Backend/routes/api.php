@@ -74,12 +74,22 @@ Route::put('/lists/reorder', [ListController::class, 'reorder']); // Cập nhậ
 Route::put('/lists/{id}/updateColor', [ListController::class, 'updateColor']);
 
 
-Route::resource('boards', BoardController::class);
-Route::get('/trashs', [BoardController::class, 'trash']);
-Route::patch('/boards/{id}/thumbnail', [BoardController::class, 'updateThumbnail']);
-Route::patch('/boards/{id}/marked', [BoardController::class, 'UpdateIs_marked']);
-Route::patch('/boards/{id}/archive', [BoardController::class, 'UpdateArchive']);
-Route::patch('/boards/{id}/visibility', [BoardController::class, 'updateVisibility']);
 
-Route::post('/boards/{boardId}/members', [BoardMemberController::class, 'addMember']);
-Route::put('/boards/{boardId}/members/{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
+Route::resource('boards', BoardController::class);
+
+// Routes quản lý bảng
+Route::prefix('boards/{id}')->group(function () {
+    Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
+    Route::patch('marked', [BoardController::class, 'updateIsMarked']);
+    Route::patch('archive', [BoardController::class, 'updateArchive']);
+    Route::patch('visibility', [BoardController::class, 'updateVisibility']);
+});
+
+// Routes cho thành viên bảng
+Route::prefix('boards/{boardId}/members')->group(function () {
+    Route::post('', [BoardMemberController::class, 'addMember']);
+    Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
+});
+
+// Route cho bảng đã xóa
+Route::get('/trashes', [BoardController::class, 'trash']);

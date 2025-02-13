@@ -16,6 +16,7 @@ class Board extends Model
         'is_marked',      // Trạng thái đánh dấu (boolean)
         'archive',        // Trạng thái lưu trữ (boolean)
         'closed',         // Trạng thái xóa lưu trữ (boolean)
+        'created_by',         // Lưu người tạo bảngbảng
         'visibility',     // Tính công khai (public hoặc private)
         'workspace_id',   // ID của workspace liên quan
     ];
