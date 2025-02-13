@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\UpdateInfoWorkspace;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -34,4 +35,8 @@ class Workspace extends Model
     {
         return $this->hasMany(Board::class);
     }
+
+    protected $dispatchesEvents = [
+        'updated' => UpdateInfoWorkspace::class,
+    ];
 }

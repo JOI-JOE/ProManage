@@ -16,13 +16,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+Route::get('/', function () {
+    return view('welcome');
+});
 
 // Route::resource('users',UserController::class);
 
-Route::prefix('admin')->as('admin.')->group(function(){
+Route::prefix('admin')->as('admin.')->group(function () {
 
     Route::get('/', function () {
         return view('admin.dashboard');
@@ -30,7 +30,7 @@ Route::prefix('admin')->as('admin.')->group(function(){
 
     Route::prefix('users')
         ->as('users.')
-        ->group(function(){
+        ->group(function () {
             Route::get('/', [UserController::class, 'index'])->name('index');
             Route::get('create', [UserController::class, 'create'])->name('create');
             Route::post('store', [UserController::class, 'store'])->name('store');
@@ -40,18 +40,16 @@ Route::prefix('admin')->as('admin.')->group(function(){
             Route::delete('{user}/destroy', [UserController::class, 'destroy'])->name('destroy');
 
 
-            Route::get('import',[UserController::class,'import'])->name('import');
-            Route::post('import',[UserController::class,'importExcelData'])->name('importExcelData');
+            Route::get('import', [UserController::class, 'import'])->name('import');
+            Route::post('import', [UserController::class, 'importExcelData'])->name('importExcelData');
 
             Route::get('export', [UserController::class, 'export'])->name('export');
 
             Route::get('search', [UserController::class, 'search'])->name('search');
-
-
         });
-        Route::prefix('colors')
+    Route::prefix('colors')
         ->as('colors.')
-        ->group(function(){
+        ->group(function () {
             Route::get('/', [ColorController::class, 'index'])->name('index');
             Route::get('create', [ColorController::class, 'create'])->name('create');
             Route::post('store', [ColorController::class, 'store'])->name('store');
@@ -59,11 +57,5 @@ Route::prefix('admin')->as('admin.')->group(function(){
             Route::get('{color}/edit', [ColorController::class, 'edit'])->name('edit');
             Route::put('{color}/update', [ColorController::class, 'update'])->name('update');
             Route::delete('{color}/destroy', [ColorController::class, 'destroy'])->name('destroy');
-
-
-
-
-
         });
-
 });
