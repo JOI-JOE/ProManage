@@ -12,9 +12,7 @@ use Illuminate\Support\Str;
 
 class WorkspaceMembersController extends Controller
 {
-    // 2/9/2025 xử lý function của member trong organization
     // https://trello.com/1/search/members?idOrganization=678b57031faba8dd978f0dee&query=H%E1%BA%ADu
-    // https://trello.com/w/lam949/members
 
     //  PAGE : https://trello.com/w/lam9492/members
     public function getAllWorkspaceMembersById($idWorkspace)
@@ -43,6 +41,8 @@ class WorkspaceMembersController extends Controller
             ]
         ]);
     }
+
+    
 
     // // https: //trello.com/1/organizations/678b57031faba8dd978f0dee/members/677ea51482b962a06bc469ac
     //1 public function changeMemberType(Request $request, $idOrganization, $idMember)
