@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+
 class ListController extends Controller
 {
 
@@ -26,7 +27,7 @@ class ListController extends Controller
     {
 
         try {
-            
+
             $validated = $request->validated();
 
             $maxPosition = ListBoard::where('board_id', $validated['board_id'])->max('position');
@@ -42,15 +43,11 @@ class ListController extends Controller
 
             // Đảm bảo tất cả danh sách trong board có vị trí đúng
             $this->normalizePositions($validated['board_id']);
-
-           
-
-
             return response()->json($list, 201);
         } catch (\Exception $e) {
-            \Log::error('Lỗi khi thêm mới danh sách: ' . $e->getMessage());
+            Log::error('Lỗi khi thêm mới danh sách: ' . $e->getMessage());
             return response()->json(['error' => 'Đã xảy ra lỗi khi thêm mới danh sách.'], 500);
-        }
+        }   
     }
 
     private function normalizePositions($boardId)
@@ -81,8 +78,6 @@ class ListController extends Controller
         $list->save();
 
         return response()->json($list);
-
-
     }
 
 
@@ -132,11 +127,11 @@ class ListController extends Controller
 
         $list = ListBoard::findOrFail($id);
 
-        if(!$list){
+        if (!$list) {
             return response()->json([
                 'message' => 'khong thay id',
             ]);
-        }else{
+        } else {
             $list->color_id = $request->color_id;
             $list->save();
 
@@ -146,5 +141,4 @@ class ListController extends Controller
             ]);
         }
     }
-
 }

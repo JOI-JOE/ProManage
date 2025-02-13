@@ -41,7 +41,7 @@ class WorkspaceController extends Controller
         // Dữ liệu đã được validate trong WorkspaceRequest
         $validatedData = $request->validated();
 
-        $validatedData['board_delete_restrict'] = json_encode($validatedData['board_delete_restrict'] ?? [
+        $validatedData['board_delete_restrict'] = json_encode([
             'private' => 'org',
             'org' => 'org',
             'enterprise' => 'org',
