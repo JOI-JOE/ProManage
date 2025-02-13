@@ -110,7 +110,7 @@ const Column = ({ column }) => {
         <Typography
           sx={{ fontWeight: "bold", cursor: "pointer", fontSize: "0.8rem" }}
         >
-          {column?.title}
+          {column.name}
         </Typography>
 
         <Box>

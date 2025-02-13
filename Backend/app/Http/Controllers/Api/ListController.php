@@ -101,6 +101,7 @@ class ListController extends Controller
 
     public function reorder(Request $request)
     {
+        
         $request->validate([
             'positions' => 'required|array',
             'positions.*.id' => 'required|exists:list_boards,id',
