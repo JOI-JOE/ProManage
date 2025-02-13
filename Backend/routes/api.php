@@ -78,11 +78,12 @@ Route::put('/lists/{id}/updateColor', [ListController::class, 'updateColor']);
 Route::resource('boards', BoardController::class);
 
 // Routes quản lý bảng
-Route::prefix('boards/{id}')->group(function () {
+Route::prefix('boards/{id}/')->group(function () {
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
     Route::patch('marked', [BoardController::class, 'updateIsMarked']);
     Route::patch('archive', [BoardController::class, 'updateArchive']);
     Route::patch('visibility', [BoardController::class, 'updateVisibility']);
+    Route::get('creater',[BoardController::class,'showCreated']);  // Route cho người tạo bảng 
 });
 
 // Routes cho thành viên bảng
@@ -93,3 +94,4 @@ Route::prefix('boards/{boardId}/members')->group(function () {
 
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
+

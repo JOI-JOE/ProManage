@@ -28,4 +28,9 @@ class Board extends Model
     {
         return $this->belongsTo(Workspace::class);  // Liên kết với model Workspace
     }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by'); // 'created_by' là trường ngoại trong bảng 'boards'
+    }
 }
