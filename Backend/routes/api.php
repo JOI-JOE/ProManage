@@ -1,8 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\ColorController;
+use App\Http\Controllers\Api\BoardController;
+use App\Http\Controllers\Api\BoardMemberController;
+use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
+use App\Http\Controllers\Api\WorkspaceInvitationsController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Auth\AuthController;
+// use App\Http\Controllers\ColorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -42,5 +48,50 @@ Route::prefix('v1')->group(function () {
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
         Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
+        // https://trello.com/1/organization/678b57031faba8dd978f0dee/paidAccount/addMembersPriceQuotes
+        Route::post('/workspaces/{idWorkspace}/addMembers', 'addMembers');
     });
+
+    Route::controller(WorkspaceInvitationsController::class)->group(function () {});
 });
+
+
+Route::get('/color', [ColorController::class, 'index']);
+
+Route::post('/lists', [ListController::class, 'store']);
+
+Route::patch('/lists/{id}/updateName', [ListController::class, 'updateName']);
+
+Route::patch('/lists/{id}/closed', [ListController::class, 'updateClosed']);
+
+
+
+
+Route::get('/lists/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
+
+Route::put('/lists/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
+
+Route::put('/lists/{id}/updateColor', [ListController::class, 'updateColor']);
+
+
+
+Route::resource('boards', BoardController::class);
+
+// Routes quản lý bảng
+Route::prefix('boards/{id}/')->group(function () {
+    Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
+    Route::patch('marked', [BoardController::class, 'updateIsMarked']);
+    Route::patch('archive', [BoardController::class, 'updateArchive']);
+    Route::patch('visibility', [BoardController::class, 'updateVisibility']);
+    Route::get('creater',[BoardController::class,'showCreated']);  // Route cho người tạo bảng 
+});
+
+// Routes cho thành viên bảng
+Route::prefix('boards/{boardId}/members')->group(function () {
+    Route::post('', [BoardMemberController::class, 'addMember']);
+    Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
+});
+
+// Route cho bảng đã xóa
+Route::get('/trashes', [BoardController::class, 'trash']);
+

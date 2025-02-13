@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+
+
+    ///// Login
     public function handleLogin(Request $request)
     {
 
@@ -30,9 +33,13 @@ class AuthController extends Controller
             return response()->json(['message' => 'Mật khẩu không đúng'], 401);
         }
 
+        // $user = Auth::user();
+
         // Tạo token sau khi xác thực thành công
         $token = $user->createToken('auth_token')->plainTextToken;
-
+        
+        $user = Auth::user();
+        // Auth::login($user);
         return response()->json([
             'message' => 'Đăng nhập thành công',
             'token' => $token,
@@ -41,6 +48,9 @@ class AuthController extends Controller
         ]);
     }
 
+
+
+    // Register
     public function handleRegister(Request $request)
     {
         // Validate dữ liệu đầu vào
@@ -70,5 +80,20 @@ class AuthController extends Controller
             'token' => $token,
             'user' => $user,
         ]);
+    }
+
+    ////// Logout
+    public function logout(Request $request)
+    {
+
+        //   Auth::logout();
+
+        //   request()->session()->invalidate();
+
+        //   request()->session()->regenerateToken();
+
+        //   return redirect()->route('home');
+        $request->user()->tokens()->delete(); // Xóa tất cả token của user
+        return response()->json(['message' => 'Logged out successfully']);
     }
 }

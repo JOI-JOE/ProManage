@@ -7,12 +7,9 @@ import {
   TextField,
   Tooltip,
   Typography,
-  InputAdornment,
-  IconButton,
 } from "@mui/material";
 import AppsIcon from "@mui/icons-material/Apps";
 import trelloLogo from "~/assets/trello.svg?react";
-import CloseIcon from "@mui/icons-material/Close";
 
 import SvgIcon from "@mui/material/SvgIcon";
 import Workspace from "./Menus/Workspace";
@@ -23,6 +20,7 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import Profile from "./Menus/Profiles";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 
 const AppBar = () => {
@@ -49,7 +47,11 @@ const AppBar = () => {
         }}
       >
         <AppsIcon sx={{ color: "secondary.contrastText", fontSize: "24px" }} />
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Box
+          component={Link}
+          to="/"
+          sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+        >
           <SvgIcon
             component={trelloLogo}
             inheritViewBox
