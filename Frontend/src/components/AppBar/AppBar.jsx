@@ -21,7 +21,11 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import Profile from "./Menus/Profiles";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+
 const AppBar = () => {
+  const [searchText, setSearchText] = useState("");
+
   return (
     <Box
       px={2}
@@ -31,7 +35,7 @@ const AppBar = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: "black",
+        backgroundColor: "secondary.main",
         overflowX: "auto",
       }}
     >
@@ -98,12 +102,47 @@ const AppBar = () => {
         }}
       >
         <TextField
+          autoComplete="off"
           id="outlined-search"
           label="Search..."
           type="search"
           size="small"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          InputLabelProps={{
+            sx: { fontSize: "14px", color: "white" }, // Giảm kích thước chữ label
+          }}
           InputProps={{
-            sx: { height: 35, width: 210 },
+            sx: {
+              height: 35,
+              width: 210,
+              backgroundColor: "black",
+              borderRadius: "8px",
+              color: "white",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "white",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "primary.main",
+              },
+
+              "& .MuiInputBase-input": {
+                // color: "white",
+                fontSize: "13px",
+                // padding: "4px 8px",
+              },
+            },
+            // endAdornment: searchText && (
+            //   <InputAdornment position="end">
+            //     <IconButton
+            //       size="small"
+            //       onClick={() => setSearchText("")}
+            //       sx={{ color: "white" }}
+            //     >
+            //       <CloseIcon />
+            //     </IconButton>
+            //   </InputAdornment>
+            // ),
           }}
         />
 
@@ -118,13 +157,12 @@ const AppBar = () => {
         <Tooltip title="Help">
           <HelpOutlineIcon
             sx={{
-              fontSize: "mediun",
+              fontSize: "medium",
               cursor: "pointer",
               color: "secondary.contrastText",
             }}
           />
         </Tooltip>
-
         <Profile />
       </Box>
     </Box>

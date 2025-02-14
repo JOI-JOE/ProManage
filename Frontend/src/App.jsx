@@ -10,7 +10,7 @@ import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 
-import { Dashboard } from "@mui/icons-material";
+// import { Dashboard } from "@mui/icons-material";
 import Board1 from "./pages/Boards/_id1";
 import Board2 from "./pages/Boards/_id2";
 import Board3 from "./pages/Boards/_id3";
@@ -41,7 +41,7 @@ function App() {
 
         {/* Callback GitHub */}
         {/* <Route path="/auth/callback" element={<GitHubCallback />} /> */}
-        <Route path="/boardconten" element={<Board />} />
+        <Route path="/boardconten/:boardId" element={<Board />} />
         <Route path="/" element={<Board1 />} />
         <Route path="/listworkspaceconten" element={<Board2 />} />
         <Route path="/formconten" element={<Board3 />} />

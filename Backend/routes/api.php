@@ -58,31 +58,26 @@ Route::prefix('v1')->group(function () {
 
 Route::get('/color', [ColorController::class, 'index']);
 
-Route::post('/lists', [ListController::class, 'store']);
-
-Route::patch('/lists/{id}/updateName', [ListController::class, 'updateName']);
-
-Route::patch('/lists/{id}/closed', [ListController::class, 'updateClosed']);
-
-
-
-
-Route::get('/lists/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
-
-Route::put('/lists/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
-
-Route::put('/lists/{id}/updateColor', [ListController::class, 'updateColor']);
+Route::prefix('lists')->group(function () {
+    Route::post('/', [ListController::class, 'store']);
+    Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
+    Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
+    Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
+    Route::put('/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
+    Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
+});
 
 
 
 Route::resource('boards', BoardController::class);
 
 // Routes quản lý bảng
-Route::prefix('boards/{id}')->group(function () {
+Route::prefix('boards/{id}/')->group(function () {
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
     Route::patch('marked', [BoardController::class, 'updateIsMarked']);
     Route::patch('archive', [BoardController::class, 'updateArchive']);
     Route::patch('visibility', [BoardController::class, 'updateVisibility']);
+    Route::get('creater',[BoardController::class,'showCreated']);  // Route cho người tạo bảng 
 });
 
 // Routes cho thành viên bảng
@@ -93,3 +88,4 @@ Route::prefix('boards/{boardId}/members')->group(function () {
 
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
+

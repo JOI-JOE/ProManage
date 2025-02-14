@@ -13,25 +13,19 @@ class WorkspaceInvitationsController extends Controller
     // có gửi thông báo
     public function addMemberDirect(Request $request, $idMember, $idWorkspace)
     {
-        // Thêm một thành viên vào tổ chức
-        // thêm một thành viên vào workspace
-        // tìm kiếm người dùng vào trong workspace
-        // tìm kiếm xong thì post nó vào một trang chờ để được xác nhận
-        // tiếp theo đó là bấm vào gửi lời mời
-        // không cần người nhận chập nhận
-        // ta có thêm thành viên mới
+        $user = User::find($idMember);
+        $workspace = Workspace::find($idWorkspace);
 
+        if (!$user || !$workspace) {
+            return response()->json([
+                'message' => 'User or Workspace not found',
+            ], 404);
+        }
 
+        $workspace->members()->attach($user);
 
+        // Optionally, send an email or notification to the user
 
-        // $validated['id_workspace'] = $idWorkspace;
-        // $validated['id_member'] = $idMember;
-        // $validated['is_unconfirmed'] = false;
-        // $validated['joined'] = true;
-        // $validated['is_deactivated'] = false;
-        // $validated['activity_blocked'] = false;
-
-        // $wks_membership = WorkspaceMembers::create($validated);
 
         return response()->json([
             'message' => 'Member added successfully',
