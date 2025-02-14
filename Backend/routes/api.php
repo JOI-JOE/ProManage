@@ -26,8 +26,14 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+
 Route::post('/register', [AuthController::class, 'handleRegister']);
 Route::post('/login', [AuthController::class, 'handleLogin']);
+
+Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
+Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
+
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
 
@@ -49,10 +55,13 @@ Route::prefix('v1')->group(function () {
     Route::controller(WorkspaceMembersController::class)->group(function () {
         Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
         // https://trello.com/1/organization/678b57031faba8dd978f0dee/paidAccount/addMembersPriceQuotes
-        Route::post('/workspaces/{idWorkspace}/addMembers', 'addMembers');
+        Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
     });
 
-    Route::controller(WorkspaceInvitationsController::class)->group(function () {});
+    Route::controller(WorkspaceInvitationsController::class)->group(function () {
+        Route::get("/search/members", 'searchNewMembersToWorkspace');
+        Route::post('/workspace/{idWorkspace}/addMember',  'inviteMemberToWorkspace');
+    });
 });
 
 
@@ -77,7 +86,7 @@ Route::prefix('boards/{id}/')->group(function () {
     Route::patch('marked', [BoardController::class, 'updateIsMarked']);
     Route::patch('archive', [BoardController::class, 'updateArchive']);
     Route::patch('visibility', [BoardController::class, 'updateVisibility']);
-    Route::get('creater',[BoardController::class,'showCreated']);  // Route cho người tạo bảng 
+    Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng 
 });
 
 // Routes cho thành viên bảng
@@ -88,4 +97,3 @@ Route::prefix('boards/{boardId}/members')->group(function () {
 
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
-

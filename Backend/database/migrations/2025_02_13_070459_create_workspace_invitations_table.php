@@ -20,18 +20,14 @@ return new class extends Migration
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
 
-            // Người gửi lời mời (tùy chọn)
-            $table->foreignId('invited_by')
-                ->nullable()
-                ->constrained('users')
-                ->onUpdate('cascade')
-                ->onDelete('set null');
-
-            // Khóa ngoại đến bảng users (người được mời)
-            $table->foreignId('invited_user_id')
+            // Còn đây là khi có tài khoản thì sẽ lấy id: 
+            $table->foreignId('invited_member_id')
                 ->constrained('users')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
+
+            // Khi mà chưa có tài khoản thì sẽ lấy @email vì
+            $table->string('email')->nullable();
 
             // Tin nhắn mời
             $table->text('invitation_message')->nullable();
@@ -43,7 +39,7 @@ return new class extends Migration
             $table->boolean('accept_unconfirmed')->default(false);
 
             // Người gửi lời mời (tùy chọn)
-            $table->foreignId('invited_by_user_id')
+            $table->foreignId('invited_by_member_id')
                 ->nullable()
                 ->constrained('users')
                 ->onUpdate('cascade')

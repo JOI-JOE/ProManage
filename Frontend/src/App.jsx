@@ -7,59 +7,42 @@ import { Route, Routes } from "react-router-dom";
 import GuestRoute from "./pages/Auth/GuestRoute";
 import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 
-import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
-
 // import { Dashboard } from "@mui/icons-material";
 import Board1 from "./pages/Workspaces/_id1";
 import Board2 from "./pages/Workspaces/_id2";
 import Board3 from "./pages/Workspaces/_id3";
 
+import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+import GitHubCallback from "./pages/Auth/GithubCallback";
+
 // import { Box, Container } from "@mui/material";
 
 function App() {
   return (
-    <>
-      <Routes>
-        {/* Mọi user đều vào Home */}
-        <Route path="/" element={<Home />} />
+    <Routes>
+      {/* Mọi user đều vào Home */}
+      <Route path="/" element={<Home />} />
 
-        {/* Chặn user đã đăng nhập vào Login & Register */}
+      {/* Chặn user đã đăng nhập vào Login & Register */}
+      <Route element={<GuestRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
 
-        {/* Chỉ cho phép Admin vào Dashboard */}
-        {/* <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-            <Route path="http://127.0.0.1:8000/admin" element={<Dashboard />} />
-          </Route> */}
+      {/* Chỉ cho phép Admin vào Dashboard */}
+      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Route>
 
-        {/* Callback GitHub */}
-        {/* <Route path="/auth/callback" element={<GitHubCallback />} /> */}
-      </Routes>
+      {/* Callback GitHub */}
 
-      {/* <Board></Board> */}
-
-      <Routes>
-        {/* Mọi user đều vào Home */}
-        {/* <Route path="/" element={<Home />} /> */}
-
-        {/* Chặn user đã đăng nhập vào Login & Register */}
-        <Route element={<GuestRoute />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Route>
-
-        {/* Chỉ cho phép Admin vào Dashboard */}
-        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Route>
-
-        {/* Callback GitHub */}
-        {/* <Route path="/auth/callback" element={<GitHubCallback />} /> */}
-        <Route path="/boardconten" element={<Board />} />
-        <Route path="/" element={<Board1 />} />
-        <Route path="/listworkspaceconten" element={<Board2 />} />
-        <Route path="/formconten" element={<Board3 />} />
-      </Routes>
-    </>
+      <Route path="/auth/callback" element={<GitHubCallback />} />
+      <Route path="/boardconten" element={<Board />} />
+      <Route path="/workspaceconten" element={<Board1 />} />
+      <Route path="/listworkspaceconten" element={<Board2 />} />
+      <Route path="/formconten" element={<Board3 />} />
+    </Routes>
   );
 }
 
