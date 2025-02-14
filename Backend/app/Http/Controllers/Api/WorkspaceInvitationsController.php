@@ -56,21 +56,20 @@ class WorkspaceInvitationsController extends Controller
 
         // 
         $members = [];
-
         foreach ($memberInputs as $member) {
 
             if (filter_var($member, FILTER_VALIDATE_EMAIL)) {
                 // case 1: email 
                 $result_member = User::where('email', $member)->first();
                 if ($result_member) {
-                    // casse 1.1 : email khi mà có trong database thì nó sẽ chuyển sang được lấy usernama
+                    // case 1.1 : email exists in database, use user ID
                     $query = $result_member->id;
                 } else {
-                    // case 1.2: email không tồn tại trong database
+                    // case 1.2: email does not exist in database
                     $query = $member;
                 }
             } else {
-                // case 2: @user_name // full_name
+                // case 2: @user_name or full_name
                 $query = User::where('user_name', $member)
                     ->orWhere('full_name', $member)->pluck('id')
                     ->first();
@@ -87,5 +86,5 @@ class WorkspaceInvitationsController extends Controller
         ]);
     }
 
-    // public function addMemberDirect(Request $request, $idMember, $idWorkspace) {}
+    // public function  addMemberDirect(Request $request, $idMember, $idWorkspace) {}
 }
