@@ -11,9 +11,9 @@ import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 
 // import { Dashboard } from "@mui/icons-material";
-import Board1 from "./pages/Boards/_id1";
-import Board2 from "./pages/Boards/_id2";
-import Board3 from "./pages/Boards/_id3";
+import Board1 from "./pages/Workspaces/_id1";
+import Board2 from "./pages/Workspaces/_id2";
+import Board3 from "./pages/Workspaces/_id3";
 
 // import { Box, Container } from "@mui/material";
 
