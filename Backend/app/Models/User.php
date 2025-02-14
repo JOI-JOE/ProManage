@@ -18,7 +18,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-       'user_name',
+        'user_name',
         'full_name',
         'initials',
         'image',
@@ -49,4 +49,21 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * Get the workspaces associated with the user.
+     */
+    public function workspaces()
+    {
+        return $this->hasMany(Workspace::class);
+    }
+
+    /**
+     * Get the workspace members associated with the user.
+     */
+
+    public function workspaceMembers()
+    {
+        return $this->hasMany(WorkspaceMembers::class, 'id_member'); // 🔹 Đặt đúng tên khóa ngoại
+    }
 }
