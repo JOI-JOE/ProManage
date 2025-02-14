@@ -22,11 +22,7 @@ import Dashboard from "./pages/Dashboard";
 
 function App() {
   return (
-   
-
-      <Routes>
-        {/* Mọi user đều vào Home */}
-
+      
     <Routes>
           {/* Mọi user đều vào Home */}
           <Route path="/" element={<Home />} />
@@ -49,8 +45,9 @@ function App() {
         <Route path="/" element={<Board1 />} />
         <Route path="/listworkspaceconten" element={<Board2 />} />
         <Route path="/formconten" element={<Board3 />} />
-      </Routes>
-    </>
+
+    </Routes>
+   
   );
 }
 
