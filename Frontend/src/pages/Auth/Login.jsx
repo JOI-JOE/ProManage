@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Authen from "../../Apis/Authen";
 
+import { IoLogoGithub } from "react-icons/io";
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
@@ -82,6 +84,11 @@ const Login = () => {
     }
   };
 
+  const handleGitHubLogin = (e) => {
+    e.preventDefault();
+     window.location.href = "http://localhost:8000/auth/redirect";
+   };
+
   return (
     <section className="bg-[#1693E1] min-h-screen flex items-center justify-center">
       <div className="container mx-auto">
@@ -137,6 +144,11 @@ const Login = () => {
                 </button>
               </div>
             </form>
+
+            <button onClick={handleGitHubLogin} className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300">
+          <IoLogoGithub size={20} className="mr-2" />
+          Login with GitHub
+        </button>
 
             <Link
               to="/forgot-password"

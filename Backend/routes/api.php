@@ -26,8 +26,14 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+
 Route::post('/register', [AuthController::class, 'handleRegister']);
 Route::post('/login', [AuthController::class, 'handleLogin']);
+
+Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
+Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
+
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
 
