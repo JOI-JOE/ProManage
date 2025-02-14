@@ -52,21 +52,33 @@ class WorkspaceInvitationsController extends Controller
         // ⚠️ => sẽ có 3 trường hợp input nhận vào 
         // Ngo Dang Hau    -> full_name
         // @haungodang2003 -> user_name
-        // haungoadang2003@gmail.com -> email
+        // haungoadang2003@gmail.com ->email
+
+        // 
         $members = [];
 
         foreach ($memberInputs as $member) {
+
             if (filter_var($member, FILTER_VALIDATE_EMAIL)) {
-                // case 1: email
-                $memberId = User::where('email', $member)->first();
+                // case 1: email 
+                $result_member = User::where('email', $member)->first();
+                if ($result_member) {
+                    // casse 1.1 : email khi mà có trong database thì nó sẽ chuyển sang được lấy usernama
+                    $query = $result_member->id;
+                } else {
+                    // case 1.2: email không tồn tại trong database
+                    $query = $member;
+                }
             } else {
                 // case 2: @user_name // full_name
-                $memberId = User::where('user_name', $member)
-                    ->orWhere('full_name', $member)
+                $query = User::where('user_name', $member)
+                    ->orWhere('full_name', $member)->pluck('id')
                     ->first();
             }
-            
-            $members[] = $memberId->full_name;
+
+            if (!in_array($query, $members)) {
+                $members[] = $query;
+            }
         }
 
 
