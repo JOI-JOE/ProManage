@@ -11,7 +11,7 @@ class WorkspaceInvitations extends Model
 
     protected $fillable = [
         'workspace_id',
-        'invited_user_id',
+        'invited_member_id',
         'invitation_token',
         'invitation_message',
         'invitation_type',
@@ -28,7 +28,6 @@ class WorkspaceInvitations extends Model
 
     public function invitedUser()
     {
-        return $this->belongsTo(User::class, 'invited_user_id');
+        return $this->belongsTo(User::class, 'invited_member_id');
     }
-
 }

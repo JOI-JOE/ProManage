@@ -38,6 +38,7 @@ function App() {
         </Route>
 
         {/* Callback GitHub */}
+
         <Route path="/auth/callback" element={<GitHubCallback />} />
         <Route path="/boardconten/:boardId" element={<Board />} />
         <Route path="/" element={<Board1 />} />
