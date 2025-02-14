@@ -7,9 +7,6 @@ import { Route, Routes } from "react-router-dom";
 import GuestRoute from "./pages/Auth/GuestRoute";
 import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 
-import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
-
 // import { Dashboard } from "@mui/icons-material";
 import Board1 from "./pages/Boards/_id1";
 import Board2 from "./pages/Boards/_id2";
@@ -17,6 +14,7 @@ import Board3 from "./pages/Boards/_id3";
 
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
+import GitHubCallback from "./pages/Auth/GithubCallback";
 
 // import { Box, Container } from "@mui/material";
 
@@ -40,7 +38,7 @@ function App() {
         </Route>
 
         {/* Callback GitHub */}
-        {/* <Route path="/auth/callback" element={<GitHubCallback />} /> */}
+        <Route path="/auth/callback" element={<GitHubCallback />} />
         <Route path="/boardconten/:boardId" element={<Board />} />
         <Route path="/" element={<Board1 />} />
         <Route path="/listworkspaceconten" element={<Board2 />} />

@@ -3,6 +3,7 @@
 // use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ColorController;
+use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +25,9 @@ Route::get('/', function () {
 
 
 
+
+Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
+Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
 
 Route::middleware('admin')->prefix('admin')->as('admin.')->group(function(){
 
