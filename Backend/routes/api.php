@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
+use App\Http\Controllers\api\CardController;
+use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceInvitationsController;
@@ -84,6 +86,7 @@ Route::prefix('/v1')->group(function () {
 
 Route::get('/color', [ColorController::class, 'index']);
 Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
+
 Route::prefix('lists')->group(function () {
     Route::post('/', [ListController::class, 'store']);
     Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
@@ -115,3 +118,26 @@ Route::prefix('boards/{boardId}/members')->group(function () {
 
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
+
+/// Route card
+
+Route::prefix('cards')->group(function () {
+    Route::post('/', [CardController::class, 'store']);
+    // Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
+    // Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
+    // Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
+    // Route::put('/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
+    // Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
+    // Route::post('/dragging', [ListController::class, 'dragging']);
+});
+
+
+
+/// Route cho card
+
+///Comment 
+
+Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']); // Lấy danh sách bình luận
+Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']); // Thêm bình luận
+Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']); // Xóa bình luận
+
