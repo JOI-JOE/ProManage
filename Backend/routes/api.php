@@ -7,8 +7,8 @@ use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceInvitationsController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
+use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Auth\AuthController;
-// use App\Http\Controllers\ColorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -37,7 +37,7 @@ Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
 
-Route::prefix('v1')->group(function () {
+Route::prefix('/v1')->group(function () {
     Route::controller(WorkspaceController::class)->group(function () {
         // Get all workspace
         Route::get('/workspaces', 'index');
@@ -72,7 +72,14 @@ Route::prefix('v1')->group(function () {
         // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members
         Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
     });
+
+    Route::controller(EmailController::class)->group(function () {
+        Route::get('/send-email', 'sendEmailToMultipleRecipients');
+        Route::get('/callback', 'handleCallback');
+    });
 });
+
+
 
 
 Route::get('/color', [ColorController::class, 'index']);
