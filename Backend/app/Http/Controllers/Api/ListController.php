@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+
+use App\Events\ListDragging;
 use App\Events\ListReordered;
 use App\Http\Requests\ListRequest;
 use App\Http\Requests\ListUpdateNameRequest;
@@ -16,7 +18,9 @@ class ListController extends Controller
 
     public function index($boardId)
     {
-        $lists = ListBoard::where('board_id', $boardId)->orderBy('position')->get();
+        $lists = ListBoard::where('board_id', $boardId)
+        ->where('closed', false)
+        ->orderBy('position')->get();
         return response()->json($lists);
     }
 
@@ -95,14 +99,23 @@ class ListController extends Controller
         ]);
     }
 
+    public function dragging(Request $request)
+    {
+        broadcast(new ListDragging($request->board_id, $request->dragging_list_id, $request->position));
+        return response()->json(['message' => 'Dragging event sent']);
+    }
+
     public function reorder(Request $request)
     {
-        
-        $request->validate([
+
+        $validatedData = $request->validate([
+            'board_id' => 'required|exists:boards,id', // Đảm bảo board_id tồn tại
             'positions' => 'required|array',
             'positions.*.id' => 'required|exists:list_boards,id',
             'positions.*.position' => 'required|integer',
         ]);
+
+        $boardId = $validatedData['board_id'];
 
         DB::transaction(function () use ($request) {
             foreach ($request->positions as $positionData) {
@@ -110,7 +123,14 @@ class ListController extends Controller
             }
         });
 
-        broadcast(new ListReordered($request->board_id, $request->positions));
+        $updatedLists = ListBoard::select('id', 'name', 'position')
+            ->where('board_id', $boardId)
+            ->where('closed', false)
+            ->orderBy('position')
+            ->get();
+
+
+        broadcast(new ListReordered($request->board_id, $updatedLists));
 
         return response()->json(['message' => 'List positions updated successfully']);
     }

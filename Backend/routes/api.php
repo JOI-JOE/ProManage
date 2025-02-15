@@ -84,6 +84,7 @@ Route::prefix('lists')->group(function () {
     Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
     Route::put('/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
     Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
+    Route::post('/dragging', [ListController::class, 'dragging']);
 });
 
 

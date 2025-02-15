@@ -6,10 +6,12 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
-const ListColumns = ({ columns }) => {
+const ListColumns = ({ lists }) => {
+
+
   return (
-    <SortableContext
-      items={columns?.map((c) => c._id)}
+    <SortableContext 
+      items={lists.map(list => String(list.id))} 
       strategy={horizontalListSortingStrategy}
     >
       <Box
@@ -26,8 +28,8 @@ const ListColumns = ({ columns }) => {
           },
         }}
       >
-        {columns?.map((column) => (
-          <Column key={column.id} column={column} />
+        {lists.map((list) => (
+          <Column key={list.id} list={list} />
         ))}
 
         {/* Box Add Column */}
