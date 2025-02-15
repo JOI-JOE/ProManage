@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
+use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceInvitationsController;
@@ -97,3 +98,13 @@ Route::prefix('boards/{boardId}/members')->group(function () {
 
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
+
+
+/// Route cho card
+
+///Comment 
+
+Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']); // Lấy danh sách bình luận
+Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']); // Thêm bình luận
+Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']); // Xóa bình luận
+
