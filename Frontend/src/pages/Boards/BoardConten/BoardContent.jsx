@@ -4,7 +4,7 @@ import Column from "./ListColumns/Column/Column";
 import C_ard from "./ListColumns/Column/ListCards/Card/Card";
 import { mapOrder } from "../../../../utils/sort";
 
-import { cloneDeep } from "lodash";
+import { cloneDeep, isEmpty } from "lodash";
 import {
   DndContext,
   MouseSensor,
@@ -22,6 +22,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { generatePlaceholderCard } from "../../../../utils/formatters";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -100,6 +101,10 @@ const BoardContent = ({ board }) => {
           (card) => card._id !== activeCardId
         );
 
+        if (isEmpty(nextActiveColumn.cards)) {
+          nextActiveColumn.cards = [generatePlaceholderCard(nextActiveColumn)];
+        }
+
         // Cập nhật lại mảng cardOrderIds mới
         nextActiveColumn.cardOrderIds = nextActiveColumn.cards.map(
           (card) => card._id
@@ -124,6 +129,11 @@ const BoardContent = ({ board }) => {
           0,
           rebuild_activeCardData
         );
+
+        nextOverColumn.cards = nextOverColumn.cards.filter(
+          (card) => !card.FE_PlaceholderCard
+        );
+
         // Cập nhật lại mảng
         nextOverColumn.cardOrderIds = nextOverColumn.cards.map(
           (card) => card._id
