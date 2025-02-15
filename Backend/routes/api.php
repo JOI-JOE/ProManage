@@ -62,12 +62,22 @@ Route::prefix('v1')->group(function () {
     Route::controller(WorkspaceInvitationsController::class)->group(function () {
         Route::get("/search/members", 'searchNewMembersToWorkspace');
         Route::post('/workspace/{idWorkspace}/addMember',  'inviteMemberToWorkspace');
+
+        // ở đây sẽ có hai trường hợp hợp
+        // 1. nếu là id -> sẽ được add thẳng vào workspace + email
+        // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/678d05e057279698f99306bf
+        Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
+
+        // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
+        // 
+        // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members
+        Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
     });
 });
 
 
 Route::get('/color', [ColorController::class, 'index']);
-
+Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
 Route::prefix('lists')->group(function () {
     Route::post('/', [ListController::class, 'store']);
     Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
@@ -75,6 +85,7 @@ Route::prefix('lists')->group(function () {
     Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
     Route::put('/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
     Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
+    Route::post('/dragging', [ListController::class, 'dragging']);
 });
 
 

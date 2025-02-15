@@ -14,6 +14,8 @@ class WorkspaceInvitations extends Model
         'invited_member_id',
         'invitation_token',
         'invitation_message',
+        'accept_unconfirmed',
+        'email',
         'invitation_type',
         'invitation_status',
         'expires_at',
