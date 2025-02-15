@@ -36,10 +36,7 @@ class WorkspaceInvitationsController extends Controller
 
     public function inviteMemberToWorkspace(Request $request, $idWorkspace)
     {
-        $workspace = Workspace::find($idWorkspace);
-        if (!$workspace) {
-            return response()->json(['message' => 'Workspace not found'], 404);
-        }
+
 
         // 📌 nếu trường hợp truyền bằng email thì sau khi bấm entern sẽ được vào thẳng input luôn
         // 📌 nếu trường hợp display_name, user_name thì sẽ hiện ra một danh sách các người có thể mời và bạn phải bấm chọn
@@ -54,37 +51,94 @@ class WorkspaceInvitationsController extends Controller
         // @haungodang2003 -> user_name
         // haungoadang2003@gmail.com ->email
 
-        // 
-        $members = [];
-        foreach ($memberInputs as $member) {
+        $total_member = []; // Mảng lưu danh sách thành viên hợp lệ
 
-            if (filter_var($member, FILTER_VALIDATE_EMAIL)) {
-                // case 1: email 
-                $result_member = User::where('email', $member)->first();
-                if ($result_member) {
-                    // case 1.1 : email exists in database, use user ID
-                    $query = $result_member->id;
-                } else {
-                    // case 1.2: email does not exist in database
-                    $query = $member;
+
+        foreach ($memberInputs as $member) {
+            $isEmail = filter_var($member, FILTER_VALIDATE_EMAIL); // Kiểm tra có phải email không
+
+            if ($isEmail) {
+
+                if (!isset($total_members[$member])) { // Tránh trùng lặp email
+                    $total_members[$member] = [
+                        'workspace_id'      => $idWorkspace,
+                        'invited_member_id' => null,
+                        'email'             => $member,
+                    ];
                 }
             } else {
-                // case 2: @user_name or full_name
-                $query = User::where('user_name', $member)
-                    ->orWhere('full_name', $member)->pluck('id')
-                    ->first();
-            }
+                // 📌 Tìm ID của người dùng dựa vào username hoặc full_name
+                $userId = User::where('user_name', $member)
+                    ->orWhere('full_name', $member)
+                    ->value('id');
 
-            if (!in_array($query, $members)) {
-                $members[] = $query;
+                $idToStore = $userId ?: $member;
+
+                if (!isset($total_members[$idToStore])) { // Tránh trùng lặp ID
+                    $total_members[$idToStore] = [
+                        'workspace_id'      => $idWorkspace,
+                        'invited_member_id' => $idToStore,
+                        'email'             => null,
+                    ];
+                }
             }
         }
 
+        // 📌 Lưu tất cả lời mời vào database một lần
+        foreach ($total_members as $invitationData) {
+            WorkspaceInvitations::firstOrCreate($invitationData);
+        }
 
+        // 📌 Trả về danh sách ID hoặc email
         return response()->json([
-            'members' => $members
+            'members' => array_keys($total_members), // Chỉ trả về danh sách ID hoặc email
         ]);
     }
 
-    // public function  addMemberDirect(Request $request, $idMember, $idWorkspace) {}
+    public function sendInvitationById(Request $request, $idWorkspace, $idMember)
+    {
+        $member_invitation = WorkspaceInvitations::where('workspace_id', $idWorkspace)
+            ->where('invited_member_id', $idMember)->first();
+
+
+        if ($member_invitation) {
+            $member_invitation->update([
+                'accept_unconfirmed' => true,
+                'invitation_message' => $request->input('invitationMessage'),
+                'type' => 'normal'
+            ]);
+
+            return response()->json([
+                'invitation' => $member_invitation
+            ], 200);
+        }
+        return response()->json([
+            'message' => 'Invitation not found'
+        ], 404);
+    }
+    public function sendInvitationByEmail(Request $request, $idWorkspace)
+    {
+        $member_invitations = WorkspaceInvitations::where('workspace_id', $idWorkspace)
+            ->whereNotNull('email') // Chỉ lấy các lời mời có email
+            ->get();
+
+        if ($member_invitations->isNotEmpty()) {
+            foreach ($member_invitations as $invitation) {
+                $invitation->update([
+                    'accept_unconfirmed' => false,
+                    'invitation_message' => $request->input('invitationMessage'),
+                    'type' => 'normal'
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'Invitations sent successfully',
+                // 'member'  => ''
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Invitation not found'
+        ], 404);
+    }
 }
