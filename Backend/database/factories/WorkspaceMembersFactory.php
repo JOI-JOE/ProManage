@@ -20,10 +20,10 @@ class WorkspaceMembersFactory extends Factory
             'id_workspace' => \App\Models\Workspace::factory(),
             'id_member' => \App\Models\User::factory(),
             'member_type' => $this->faker->randomElement(['admin', 'normal']),
-            // 'is_unconfirmed' => $this->faker->boolean,
-            // 'is_deactivated' => $this->faker->boolean,
-            // 'activity_blocked' => $this->faker->boolean,
-            'id_member_referrer' => rand(1, 10),
+            'is_unconfirmed' => $this->faker->boolean,
+            'joined' => $this->faker->boolean,
+            'is_deactivated' => $this->faker->boolean,
+            'id_member_referrer' => null,
             'last_active' => $this->faker->dateTime,
         ];
     }
