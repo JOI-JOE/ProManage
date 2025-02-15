@@ -76,7 +76,7 @@ Route::prefix('v1')->group(function () {
 
 
 Route::get('/color', [ColorController::class, 'index']);
-
+Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
 Route::prefix('lists')->group(function () {
     Route::post('/', [ListController::class, 'store']);
     Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
