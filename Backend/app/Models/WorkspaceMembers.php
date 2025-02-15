@@ -14,8 +14,8 @@ class WorkspaceMembers extends Model
         'id_member',
         'member_type',
         'is_unconfirmed',
+        'joined',
         'is_deactivated',
-        'activity_blocked',
         'id_member_referrer',
         'last_active',
     ];

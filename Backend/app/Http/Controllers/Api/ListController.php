@@ -25,13 +25,9 @@ class ListController extends Controller
     }
 
 
-
-
     public function store(ListRequest $request)
     {
-
         try {
-
             $validated = $request->validated();
 
             $maxPosition = ListBoard::where('board_id', $validated['board_id'])->max('position');

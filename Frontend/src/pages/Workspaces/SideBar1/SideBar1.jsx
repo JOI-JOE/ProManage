@@ -62,7 +62,7 @@ const SideBar1 = () => {
     >
       <List sx={{ borderBottom: "1px solid #D3D3D3" }}>
         <ListItem disablePadding>
-          <ListItemButton component={Link} to="/">
+          <ListItemButton component={Link} to="/workspaceconten">
             <ListItemIcon sx={{ color: "black" }}>
               <DashboardIcon />
             </ListItemIcon>

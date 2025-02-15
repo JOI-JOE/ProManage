@@ -4,6 +4,7 @@ import Pusher from "pusher-js";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import ListColumns from "./ListColumns/ListColumns";
+
 import { Box } from "@mui/material";
 import { DndContext, useSensor, useSensors, MouseSensor, TouchSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -123,6 +124,7 @@ const BoardContent = () => {
       onDragEnd={handleDragEnd} 
       sensors={useSensors(useSensor(MouseSensor), 
       useSensor(TouchSensor))}>
+
       <Box
         sx={{
           backgroundColor: "primary.main",
@@ -130,12 +132,17 @@ const BoardContent = () => {
           padding: "18px 0 7px 0px",
         }}
       >
+
           <ListColumns lists={lists} draggingListId={draggingListId} draggingPosition={draggingPosition} />
        
+
       </Box>
     </DndContext>
   );
 };
 
 export default BoardContent;
+
+
+
 
