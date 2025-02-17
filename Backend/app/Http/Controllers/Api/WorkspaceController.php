@@ -16,11 +16,23 @@ class WorkspaceController extends Controller
 {
     public function index()
     {
-        $workspaces = Workspace::all();
+        try {
+            // Kiểm tra xem người dùng đã đăng nhập hay chưa
+            if (!auth()->check()) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
 
-        return response()->json([
-            'data' => WorkspaceResource::collection($workspaces)
-        ]);
+            $user = auth()->user();
+
+            // Lấy tất cả workspace của người dùng
+            $workspaces = $user->workspaces; // Giả sử bạn đã thiết lập quan hệ giữa User và Workspace
+
+            return response()->json([
+                'data' => WorkspaceResource::collection($workspaces)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function show($id)
