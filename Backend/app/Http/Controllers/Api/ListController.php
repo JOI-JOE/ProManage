@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 
+use App\Events\ListClosed;
 use App\Events\ListDragging;
 use App\Events\ListReordered;
 use App\Http\Requests\ListRequest;
@@ -94,6 +95,8 @@ class ListController extends Controller
 
         $list->closed = !$list->closed;
         $list->save();
+
+        event(new ListClosed($list));
 
         return response()->json([
             'message' => 'List archived successfully',
