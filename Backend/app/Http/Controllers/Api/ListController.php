@@ -7,7 +7,9 @@ use App\Events\ListDragging;
 use App\Events\ListReordered;
 use App\Http\Requests\ListRequest;
 use App\Http\Requests\ListUpdateNameRequest;
+use App\Models\Board;
 use App\Models\ListBoard;
+use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -157,5 +159,26 @@ class ListController extends Controller
                 'listBoard' => $list
             ]);
         }
+    }
+
+    public function getBoardsByWorkspace($id)
+    {
+        // Kiểm tra xem workspace có tồn tại không
+        $workspace = Workspace::find($id);
+        if (!$workspace) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Workspace không tồn tại'
+            ], 404);
+        }
+
+        // Lấy danh sách boards của workspace
+        $boards = Board::where('workspace_id', $id)->get();
+
+        return response()->json([
+            'success' => true,
+            'workspace_id' => $id,
+            'boards' => $boards
+        ], 200);
     }
 }
