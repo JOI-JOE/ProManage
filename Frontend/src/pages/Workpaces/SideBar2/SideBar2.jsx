@@ -35,11 +35,11 @@ const SideBar2 = () => {
         width: "19%",
         height: (theme) =>
           `calc(${theme.trello.boardBarHeight} + ${theme.trello.boardContentHeight})`,
-        borderTop: "1px solid #ffffff",
+        borderTop: "1px solid #D3D3D3",
 
         "& .MuiDrawer-paper": {
           boxSizing: "border-box",
-          bgcolor: "#000",
+          bgcolor: "white",
           color: "#ffffff",
           position: "relative",
           overflowY: "auto", // Cho phép cuộn nếu nội dung quá dài
@@ -67,12 +67,16 @@ const SideBar2 = () => {
           alignItems: "center",
           gap: 2,
           p: 2,
-          bgcolor: "#292929",
+          bgcolor: "white",
+          borderBottom: "1px solid #D3D3D3",
         }}
       >
         <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
         <Box>
-          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+          <Typography
+            variant="body1"
+            sx={{ fontWeight: "bold", color: "black" }}
+          >
             Không gian làm việc của bạn...
           </Typography>
         </Box>
@@ -82,46 +86,59 @@ const SideBar2 = () => {
       <List>
         <ListItem disablePadding>
           <ListItemButton>
-            <ListItemIcon sx={{ color: "white", fontSize: "small" }}>
+            <ListItemIcon sx={{ color: "black", fontSize: "small" }}>
               <DashboardIcon />
             </ListItemIcon>
-            <ListItemText primary="Bảng" />
+            <ListItemText primary="Bảng" sx={{ color: "black" }} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding>
           <ListItemButton>
-            <ListItemIcon sx={{ color: "white" }}>
+            <ListItemIcon sx={{ color: "black" }}>
               <PeopleIcon />
             </ListItemIcon>
-            <ListItemText primary="Thành viên" />
+            <ListItemText primary="Thành viên" sx={{ color: "black" }} />
             <AddIcon sx={{ color: "gray" }} />
           </ListItemButton>
         </ListItem>
 
         {/* Cài đặt không gian làm việc */}
         <ListItemButton onClick={toggleSettings}>
-          <ListItemIcon sx={{ color: "white" }}>
+          <ListItemIcon sx={{ color: "black" }}>
             <SettingsIcon />
           </ListItemIcon>
-          <ListItemText primary="Các cài đặt Không gian làm việc" />
-          {openSettings ? <ExpandLess /> : <ExpandMore />}
+          <ListItemText
+            primary="Các cài đặt Không gian làm việc"
+            sx={{ color: "black" }}
+          />
+          {openSettings ? (
+            <ExpandLess sx={{ color: "black" }} />
+          ) : (
+            <ExpandMore sx={{ color: "black" }} />
+          )}
         </ListItemButton>
 
         {/* Collapse: hiển thị hoặc ẩn danh sách con (animation mở rộng / thu nhỏ). */}
         <Collapse in={openSettings} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
             <ListItemButton sx={{ pl: 4 }}>
-              <ListItemIcon sx={{ color: "white" }}>
+              <ListItemIcon sx={{ color: "black" }}>
                 <ViewKanbanIcon />
               </ListItemIcon>
-              <ListItemText primary="Các cài đặt không gian làm việc" />
+              <ListItemText
+                primary="Các cài đặt không gian làm việc"
+                sx={{ color: "black" }}
+              />
             </ListItemButton>
             <ListItemButton sx={{ pl: 4 }}>
-              <ListItemIcon sx={{ color: "white" }}>
+              <ListItemIcon sx={{ color: "black" }}>
                 <UpgradeIcon />
               </ListItemIcon>
-              <ListItemText primary="Nâng cấp không gian làm việc" />
+              <ListItemText
+                primary="Nâng cấp không gian làm việc"
+                sx={{ color: "black" }}
+              />
             </ListItemButton>
           </List>
         </Collapse>
@@ -134,12 +151,13 @@ const SideBar2 = () => {
       <List sx={{}}>
         <ListItem disablePadding>
           <ListItemButton>
-            <ListItemIcon sx={{ color: "white" }}>
+            <ListItemIcon sx={{ color: "black" }}>
               <FolderIcon />
             </ListItemIcon>
             <ListItemText
-              primary="Test 1"
+              primary="Test 1 "
               sx={{
+                color: "black",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -149,10 +167,10 @@ const SideBar2 = () => {
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton>
-            <ListItemIcon sx={{ color: "white" }}>
+            <ListItemIcon sx={{ color: "Black" }}>
               <FolderIcon />
             </ListItemIcon>
-            <ListItemText primary="Test" />
+            <ListItemText primary="Test" sx={{ color: "black" }} />
           </ListItemButton>
         </ListItem>
       </List>

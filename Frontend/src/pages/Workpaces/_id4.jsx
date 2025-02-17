@@ -1,24 +1,23 @@
 // import React from "react";
 
 import { Box, Container } from "@mui/material";
-
-import ListWorkspaceConten from "./ListWorkspaceConten/ListWorkspaceConten";
 import AppBar from "~/components/AppBar/AppBar";
 import SideBar1 from "./SideBar1/SideBar1";
-import FormConten from "./FormConten/FormConten";
+import MemberConten from "./MemberConten/MemberConten";
+import SideBar2 from "./SideBar2/SideBar2";
 
-const Board3 = () => {
+const Board4 = () => {
   return (
     <Container disableGutters maxWidth={false} sx={{ height: "100vh" }}>
       <AppBar />
       <Box sx={{ display: "flex" }}>
-        <SideBar1 />
+        <SideBar2 />
         <Box sx={{ width: "81%" }}>
-          <FormConten />
+          <MemberConten />
         </Box>
       </Box>
     </Container>
   );
 };
 
-export default Board3;
+export default Board4;

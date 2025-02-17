@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Events\CreateNewWorkspace;
 use App\Events\UpdateInfoWorkspace;
+use App\Events\WorkspaceUpdate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -37,6 +39,7 @@ class Workspace extends Model
     }
 
     protected $dispatchesEvents = [
-        'updated' => UpdateInfoWorkspace::class,
+        'created' => WorkspaceUpdate::class,
+        'updated' => WorkspaceUpdate::class
     ];
 }

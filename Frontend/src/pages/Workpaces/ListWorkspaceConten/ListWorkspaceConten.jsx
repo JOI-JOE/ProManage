@@ -1,24 +1,27 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Typography,
   List,
   ListItem,
-  ListItemButton,
   ListItemIcon,
-  ListItemText,
   Avatar,
-  Button,
+  IconButton,
 } from "@mui/material";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
-import { IconButton } from "@mui/material";
 import { Link } from "react-router-dom";
+import FormConten from "../FormConten/FormConten";
 
 const ListWorkspaceConten = () => {
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [isFormVisible, setFormVisible] = useState(false); // Quản lý hiển thị form
+
+  const toggleFormVisibility = () => {
+    setFormVisible(!isFormVisible);
+  };
 
   return (
     <Box
@@ -29,71 +32,70 @@ const ListWorkspaceConten = () => {
         marginTop: "50px",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          borderBottom: "1px solid #D3D3D3",
-          paddingBottom: "40px",
-          top: "50px",
-        }}
-      >
-        <Avatar sx={{ bgcolor: "#5D87FF", width: "80px", height: "80px" }}>
-          K
-        </Avatar>
-        <Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Typography
-              fontWeight="bold"
-              sx={{ whiteSpace: "nowrap", fontSize: 25 }}
-            >
-              Trello Không gian làm việc
-            </Typography>
-
-            {/* IconButton không bị ảnh hưởng hover của Box cha */}
-            <IconButton
-              component={Link}
-              to="/formconten"
+      {!isFormVisible && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            borderBottom: "1px solid #D3D3D3",
+            paddingBottom: "40px",
+          }}
+        >
+          <Avatar sx={{ bgcolor: "#5D87FF", width: "80px", height: "80px" }}>
+            K
+          </Avatar>
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <Typography
+                fontWeight="bold"
+                sx={{ whiteSpace: "nowrap", fontSize: 25 }}
+              >
+                Trello Không gian làm việc
+              </Typography>
+              <IconButton
+                onClick={toggleFormVisibility}
+                sx={{
+                  color: "gray",
+                  "&:hover": {
+                    backgroundColor: "transparent",
+                  },
+                }}
+              >
+                <EditIcon sx={{ fontSize: 24 }} />
+              </IconButton>
+            </Box>
+            <Box
               sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
                 color: "gray",
-                "&:hover": {
-                  backgroundColor: "transparent", // Không đổi màu nền khi hover
-                },
               }}
             >
-              <EditIcon sx={{ fontSize: 24 }} />
-            </IconButton>
-          </Box>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              color: "gray",
-            }}
-          >
-            <LockIcon sx={{ fontSize: 14 }} />
-            <Typography sx={{ fontSize: 14 }}>Riêng tư</Typography>
+              <LockIcon sx={{ fontSize: 14 }} />
+              <Typography sx={{ fontSize: 14 }}>Riêng tư</Typography>
+            </Box>
           </Box>
         </Box>
-      </Box>
+      )}
 
+      {/* Form hiển thị khi bấm Edit */}
+      {isFormVisible && <FormConten />}
+
+      {/* Danh sách bảng Trello */}
       <ListItem
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "10px 0",
-          gap: " 20px",
-          paddingBottom: "20px",
+          padding: "10px 0 20px",
+          gap: "20px",
         }}
       >
-        {/* Avatar & Tiêu đề */}
         <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <ListItemIcon sx={{ color: "black", fontSize: 40 }}>
-            <PermIdentityOutlinedIcon />
+          <ListItemIcon>
+            <PermIdentityOutlinedIcon sx={{ fontSize: 40, color: "black" }} />
           </ListItemIcon>
           <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
             Các bảng của bạn
@@ -101,8 +103,8 @@ const ListWorkspaceConten = () => {
         </Box>
       </ListItem>
 
-      {/* Danh sách bảng Trello */}
       <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+        {/* Bảng Trello của tôi */}
         <ListItem sx={{ width: "auto", padding: 0 }}>
           <Box
             component={Link}
@@ -117,28 +119,29 @@ const ListWorkspaceConten = () => {
               justifyContent: "center",
               cursor: "pointer",
               textDecoration: "none",
+              position: "relative",
               "&:hover": { backgroundColor: "#9A436D" },
-              position: "relative", // Để icon đúng vị trí
             }}
-            onMouseEnter={() => setHoveredItem(2)}
+            onMouseEnter={() => setHoveredItem(1)}
             onMouseLeave={() => setHoveredItem(null)}
           >
             <Typography sx={{ color: "white", fontWeight: "bold" }}>
               Bảng Trello của tôi
             </Typography>
-            {hoveredItem === 2 && (
+            {hoveredItem === 1 && (
               <StarBorderIcon
                 sx={{
                   color: "white",
                   position: "absolute",
                   right: "10px",
-                  top: "10px", // Điều chỉnh vị trí icon hợp lý
+                  top: "10px",
                 }}
               />
             )}
           </Box>
         </ListItem>
 
+        {/* Tạo bảng mới */}
         <ListItem sx={{ width: "auto", padding: 0 }}>
           <Box
             sx={{
@@ -159,8 +162,6 @@ const ListWorkspaceConten = () => {
           </Box>
         </ListItem>
       </List>
-
-      {/* Nút xem tất cả các bảng đã đóng */}
     </Box>
   );
 };

@@ -16,6 +16,7 @@ class Board extends Model
         'is_marked',      // Trạng thái đánh dấu (boolean)
         'archive',        // Trạng thái lưu trữ (boolean)
         'closed',         // Trạng thái xóa lưu trữ (boolean)
+        'created_by',         // Lưu người tạo bảngbảng
         'visibility',     // Tính công khai (public hoặc private)
         'workspace_id',   // ID của workspace liên quan
     ];
@@ -26,5 +27,10 @@ class Board extends Model
     public function workspace()
     {
         return $this->belongsTo(Workspace::class);  // Liên kết với model Workspace
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by'); // 'created_by' là trường ngoại trong bảng 'boards'
     }
 }

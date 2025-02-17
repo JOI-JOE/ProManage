@@ -20,9 +20,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Route::resource('users',UserController::class);
-
-Route::prefix('admin')->as('admin.')->group(function () {
+// Route::resource('users',UserController::class
+Route::middleware('admin')->prefix('admin')->as('admin.')->group(function(){
 
     Route::get('/', function () {
         return view('admin.dashboard');

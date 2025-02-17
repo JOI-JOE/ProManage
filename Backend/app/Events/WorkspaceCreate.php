@@ -13,14 +13,12 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class UpdateInfoWorkspace implements ShouldBroadcast
+class WorkspaceCreate implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $workspace;
-    /**
-     * Create a new event instance.
-     */
+
     public function __construct(Workspace $workspace)
     {
         $this->workspace = $workspace;
@@ -36,7 +34,7 @@ class UpdateInfoWorkspace implements ShouldBroadcast
         $workspaceResource = new WorkspaceResource($this->workspace);
         $workspaceArray = $workspaceResource->toArray(request()); // Important: Pass the request!
 
-        Log::info("Updated Workspace: " . print_r($workspaceArray, true));
+        Log::info("Create Workspace: " . print_r($workspaceArray, true));
         return [
             new Channel('workspace'),
         ];
