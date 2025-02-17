@@ -35,7 +35,7 @@ class WorkspaceFactory extends Factory
 
 
         return [
-            'id_member_creator' => User::factory(), // Creates a related User model
+            'id_member_creator' => 1, // Creates a related User model
             'name' => $name,
             'display_name' => $displayName . fake()->unique()->numberBetween(1, 1000), // Ensure uniqueness
             'desc' => fake()->paragraph(),
