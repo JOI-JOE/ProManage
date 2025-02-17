@@ -20,29 +20,28 @@ return new class extends Migration
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
 
-            // Khóa ngoại đến bảng users (người được mời)
-            $table->foreignId('invited_user_id')
+            // Còn đây là khi có tài khoản thì sẽ lấy id: 
+            $table->foreignId('invited_member_id')
+                ->nullable()
                 ->constrained('users')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
 
-            // Mã băm (dsc) để xác định lời mời
-            $table->string('invitation_token')->unique(); // Thay thế dsc bằng invitation_token
+            // Khi mà chưa có tài khoản thì sẽ lấy @email vì
+            $table->string('email')->nullable();
 
             // Tin nhắn mời
             $table->text('invitation_message')->nullable();
 
-            // Loại lời mời (normal, special, ...)
-            $table->string('invitation_type')->default('normal');
+            // Mã hash để xác thực lời mời
+            // https: //id.atlassian.com/login?application=trello&continue=https%3A%2F%2Ftrello.com%2Fauth%2Fatlassian%2Fcallback%3FreturnUrl%3D%252Forg%252F678b57031faba8dd978f0dee%26display%3D%26aaOnboarding%3D%26updateEmail%3D%26traceId%3D%26ssoVerified%3D%26createMember%3D%26jiraInviteLink%3D&email=haungodang2003%40gmail.com&restrict=true
+            // $table->string('dsc_hash', 255)->unique();
 
-            // Trạng thái chấp nhận (pending, accepted, rejected)
-            $table->enum('invitation_status', ['pending', 'accepted', 'rejected'])->default('pending');
-
-            // Thời gian hết hạn của lời mời (tùy chọn)
-            $table->timestamp('expires_at')->nullable();
+            // Nếu TRUE, thành viên được thêm ngay lập tức
+            $table->boolean('accept_unconfirmed')->default(false);
 
             // Người gửi lời mời (tùy chọn)
-            $table->foreignId('invited_by_user_id')
+            $table->foreignId('invited_by_member_id')
                 ->nullable()
                 ->constrained('users')
                 ->onUpdate('cascade')

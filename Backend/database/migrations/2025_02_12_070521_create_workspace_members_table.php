@@ -32,17 +32,13 @@ return new class extends Migration
                 ->default('normal'); // Mặc định là 'normal'
 
             // Trạng thái xác nhận (confirmed/unconfirmed)
-            $table->boolean('is_unconfirmed')->default(true); // Mặc định là true (chưa xác nhận)
+            $table->boolean('is_unconfirmed')->default(false); // Mặc định là true (chưa xác nhận)
 
             // Trạng thái tham gia (joined/not joined)
             $table->boolean('joined')->default(false); // Mặc định là false (chưa tham gia)
 
             // Trạng thái vô hiệu hóa (deactivated)
-            $table->boolean('is_deactivated')->default(false); // Mặc định là false (không bị vô hiệu hóa)
-
-
-            // Trạng thái chặn hoạt động (activity blocked)
-            $table->boolean('activity_blocked')->default(false); // Mặc định là false (không bị chặn)            $table->foreignId('id_member_referrer')->nullable()->constrained('users')->onUpdate('cascade')->onDelete('set null');
+            $table->boolean('is_deactivated')->default(value: false); // Mặc định là false (không bị vô hiệu hóa)
 
             // Khóa ngoại đến người giới thiệu (nếu có)
             $table->foreignId('id_member_referrer')

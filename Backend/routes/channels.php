@@ -16,3 +16,14 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
+
+Broadcast::channel('board.{boardId}', function ($user, $boardId) {
+    return true; // Cho phép tất cả người dùng truy cập
+});
+
+Broadcast::channel('cards-channel', function () {
+    return true; // Cho phép tất cả user có thể nghe sự kiện này
+});
+
+
+

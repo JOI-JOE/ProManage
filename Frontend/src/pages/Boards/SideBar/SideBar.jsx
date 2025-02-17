@@ -20,9 +20,40 @@ import AddIcon from "@mui/icons-material/Add";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
+import { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+
+
 
 const SideBar = () => {
   const [openSettings, setOpenSettings] = React.useState(false);
+
+  const [boards, setBoards] = useState([]);
+  // const { workspaceId } = useParams(); // Lấy workspaceId từ URL
+  const { workspaceId, boardId } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (workspaceId) {
+      fetch(`http://127.0.0.1:8000/api/workspaces/${workspaceId}/boards`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            setBoards(data.boards);
+
+            // Nếu boardId không hợp lệ hoặc không tồn tại trong workspace, điều hướng
+            const isBoardValid = data.boards.some((board) => board.id === Number(boardId));
+
+            if (!isBoardValid && data.boards.length > 0) {
+              navigate(`/workspaces/${workspaceId}/boards/${data.boards[0].id}`);
+            } else if (data.boards.length === 0) {
+              navigate(`/workspaces/${workspaceId}`);
+            }
+          }
+        })
+        .catch((error) => console.error("Lỗi khi lấy boards:", error));
+    }
+  }, [workspaceId, boardId, navigate]);
 
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
@@ -81,12 +112,14 @@ const SideBar = () => {
       {/* Danh sách điều hướng */}
       <List>
         <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon sx={{ color: "white", fontSize: "small" }}>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Bảng" />
-          </ListItemButton>
+          <Link to="/w/test" style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
+            <ListItemButton>
+              <ListItemIcon sx={{ color: "white", fontSize: "small" }}>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText primary="Bảng" />
+            </ListItemButton>
+          </Link>
         </ListItem>
 
         <ListItem disablePadding>
@@ -131,31 +164,34 @@ const SideBar = () => {
       <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
         Các bảng của bạn
       </Typography>
-      <List sx={{}}>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon sx={{ color: "white" }}>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Test 1"
+      <List>
+        {boards.map((board) => (
+          <ListItem key={board.id} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={`/workspaces/${workspaceId}/boards/${board.id}`}
               sx={{
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                backgroundColor: board.id === Number(boardId) ? "#ffffff33" : "transparent",
+                "&:hover": { backgroundColor: "#ffffff22" },
+                borderRadius: "6px",
               }}
-            />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon sx={{ color: "white" }}>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText primary="Test" />
-          </ListItemButton>
-        </ListItem>
+            >
+              <ListItemIcon sx={{ color: "white" }}>
+                <FolderIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary={board.name}
+                sx={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
       </List>
+
     </Drawer>
   );
 };
