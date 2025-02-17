@@ -26,14 +26,25 @@ class WorkspaceController extends Controller
     public function show($id)
     {
         try {
-            $workspace = Workspace::findOrFail($id);
+            // Kiểm tra xem người dùng đã đăng nhập hay chưa
+            if (!auth()->check()) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            $user = auth()->user();
+
+            // Lấy workspace của người dùng theo ID
+            $workspace = $user->workspaces->findOrFail($id);
 
             return response()->json([
                 'data' => new WorkspaceResource($workspace),
                 'boards' => BoardResource::collection($workspace->boards),
+                'workspaces' => WorkspaceResource::collection($workspace),
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Workspace not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -122,6 +133,4 @@ class WorkspaceController extends Controller
             'data' => $permissionLevels,
         ]);
     }
-
-    
 }

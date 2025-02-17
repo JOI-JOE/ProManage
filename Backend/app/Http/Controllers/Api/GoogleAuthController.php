@@ -4,17 +4,58 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
 use Laravel\Socialite\Facades\Socialite;
+
+/**
+ * @OA\Info(
+ *     title="My API",
+ *     version="1.0.0",
+ *     description="API documentation for My Laravel App"
+ * )
+ */
 
 class GoogleAuthController extends Controller
 {
+    /**
+     * @OA\Info(
+     *     title="My API",
+     *     version="1.0.0",
+     *     description="API documentation for My Laravel App"
+     * )
+     */
 
     /**
-     * Function dưới đấy sẽ chuyển hướng người dùng đến màn hình xác thực của Google(OAuth consent screen)
-     * createAuthUrl - tạo một url xác thực và chuyền người dùng đén google
-     * 
+     * @OA\Get(
+     *     path="/auth/redirect/{provider}",
+     *     summary="Redirect to authentication provider",
+     *     description="Redirects the user to the Google OAuth consent screen for authentication and authorization.",
+     *     operationId="redirectToAuthProvider",
+     *     tags={"Authentication"},
+     *     @OA\Parameter(
+     *         name="provider",
+     *         in="path",
+     *         description="The authentication provider (currently only Google is supported)",
+     *         required=true,
+     *         @OA\Schema(type="string", enum={"google"})
+     *     ),
+     *     @OA\Response(
+     *         response=302,
+     *         description="Redirects user to the Google OAuth page for authentication",
+     *         @OA\Header(
+     *             header="Location",
+     *             description="URL for redirection to Google OAuth consent screen",
+     *             @OA\Schema(type="string", example="https://accounts.google.com/o/oauth2/v2/auth?scope=...&response_type=code&redirect_uri=...")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Unsupported provider",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Unsupported provider"),
+     *             @OA\Property(property="message", type="string", example="Provider not supported. Only Google is allowed.")
+     *         )
+     *     )
+     * )
      */
     public function redirectToAuthProvider($provider)
     {
@@ -30,16 +71,66 @@ class GoogleAuthController extends Controller
                     'prompt' => 'consent', // Yêu cầu cấp lại quyền
                 ])
                 ->redirect();
-        } elseif ($provider === 'github') {
-            return Socialite::driver('github')->redirect();
         }
+
+        return response()->json([
+            'error' => 'Unsupported provider',
+            'message' => 'Provider not supported. Only Google is allowed.',
+        ], 400);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/auth/callback/{provider}",
+     *     summary="Handle authentication provider callback",
+     *     description="Handles the callback from the authentication provider and returns user information along with tokens.",
+     *     operationId="handleProviderCallback",
+     *     tags={"Authentication"},
+     *     @OA\Parameter(
+     *         name="provider",
+     *         in="path",
+     *         description="The authentication provider (currently only Google is supported)",
+     *         required=true,
+     *         @OA\Schema(type="string", enum={"google"})
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successfully authenticated and retrieved user data",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", example="john.doe@example.com"),
+     *             @OA\Property(property="avatar", type="string", example="https://example.com/avatar.jpg"),
+     *             @OA\Property(property="provider", type="string", example="google"),
+     *             @OA\Property(property="google_access_token", type="string", example="ya29.a0AfH6S..."),
+     *             @OA\Property(property="google_refresh_token", type="string", example="1//0gDhA..."),
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Unsupported provider",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Unsupported provider"),
+     *             @OA\Property(property="message", type="string", example="Provider not supported. Only Google is allowed.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to authenticate",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Failed to authenticate"),
+     *             @OA\Property(property="message", type="string", example="Error message from the exception.")
+     *         )
+     *     )
+     * )
+     */
 
     public function handleProviderCallback($provider)
     {
         try {
             // Kiểm tra xem provider có hợp lệ không
-            if (!in_array($provider, ['google', 'github'])) {
+            // if (!in_array($provider, ['google', 'github'])) {
+            if (!in_array($provider, ['google'])) {
                 return response()->json(['error' => 'Unsupported provider'], 400);
             }
 
