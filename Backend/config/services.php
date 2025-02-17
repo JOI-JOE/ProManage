@@ -36,9 +36,12 @@ return [
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
         'redirect' => env('GITHUB_REDIRECT_URI'),
         'guzzle' => [
-            'verify' => false,
+            'verify' => false, // tắt kiểm tra chứng chỉ SSL của máy chủ đích trong khi gửi yêu cầu HTTPS
         ],
     ],
-    
-
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
 ];

@@ -9,14 +9,14 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('card_label', function (Blueprint $table) {
-            $table->foreignId('card_id')->constrained('cards');
-            $table->foreignId('label_id')->constrained('labels');
-            $table->primary(['card_id','label_id']);
-        });
-    }
+    // public function up(): void
+    // {
+    //     Schema::create('card_label', function (Blueprint $table) {
+    //         $table->foreignId('card_id')->constrained('cards');
+    //         $table->foreignId('label_id')->constrained('labels');
+    //         $table->primary(['card_id','label_id']);
+    //     });
+    // }
 
     /**
      * Reverse the migrations.

@@ -3,11 +3,12 @@
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
+use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceInvitationsController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
-use App\Http\Controllers\Api\EmailController;
+use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -37,48 +38,49 @@ Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
 
-Route::prefix('/v1')->group(function () {
-    Route::controller(WorkspaceController::class)->group(function () {
-        // Get all workspace
-        Route::get('/workspaces', 'index');
-        // Get workspace by 
-        Route::get('/workspaces/{id}', 'show');
-        // Create new workspace
-        Route::post('/workspaces', 'store');
-        // Delete workspace
-        Route::delete('/workspaces/{workspace}', 'destroy');
+Route::controller(WorkspaceController::class)->group(function () {
+    // Get all workspace
+    Route::get('/workspaces', 'index');
+    // Get workspace by 
+    Route::get('/workspaces/{id}', 'show');
+    // Create new workspace
+    Route::post('/workspaces', 'store');
+    // Delete workspace
+    Route::delete('/workspaces/{workspace}', 'destroy');
 
-        // Update infor workspace
-        Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
-    });
+    // Update infor workspace
+    Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
+});
 
-    Route::controller(WorkspaceMembersController::class)->group(function () {
-        Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
-        // https://trello.com/1/organization/678b57031faba8dd978f0dee/paidAccount/addMembersPriceQuotes
-        Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
-    });
+Route::controller(WorkspaceMembersController::class)->group(function () {
+    Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
+    // https://trello.com/1/organization/678b57031faba8dd978f0dee/paidAccount/addMembersPriceQuotes
+    Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
+});
 
-    Route::controller(WorkspaceInvitationsController::class)->group(function () {
-        Route::get("/search/members", 'searchNewMembersToWorkspace');
-        Route::post('/workspace/{idWorkspace}/addMember',  'inviteMemberToWorkspace');
+Route::controller(WorkspaceInvitationsController::class)->group(function () {
+    Route::get("/search/members", 'searchNewMembersToWorkspace');
+    Route::post('/workspace/{idWorkspace}/addMember',  'inviteMemberToWorkspace');
 
-        // ở đây sẽ có hai trường hợp hợp
-        // 1. nếu là id -> sẽ được add thẳng vào workspace + email
-        // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/678d05e057279698f99306bf
-        Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
+    // ở đây sẽ có hai trường hợp hợp
+    // 1. nếu là id -> sẽ được add thẳng vào workspace + email
+    // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/678d05e057279698f99306bf
+    Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
 
-        // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
-        // 
-        // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members
-        Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
-    });
+    // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
+    // 
+    // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members
+    Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
+});
 
-    Route::controller(EmailController::class)->group(function () {
-        Route::get('/send-email', 'sendEmailToMultipleRecipients');
-        Route::get('/callback', 'handleCallback');
+Route::middleware(['web'])->group(function () {
+    Route::controller(GoogleAuthController::class)->group(function () {
+        Route::get('/auth/redirect/{provider}',  action: 'redirectToAuthProvider');
+        Route::get('/auth/callback/{provider}', 'handleProviderCallback');
     });
 });
 
+Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 
 
 
@@ -93,7 +95,6 @@ Route::prefix('lists')->group(function () {
     Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
     Route::post('/dragging', [ListController::class, 'dragging']);
 });
-
 
 
 Route::resource('boards', BoardController::class);
