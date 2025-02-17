@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use Google\Client;
 use Google\Service\Gmail;
-use Laravel\Socialite\Facades\Socialite;
 
 class GoogleService
 {
+    /**
+     * @var \Google\Client
+     */
     protected $client;
 
     public function __construct()
@@ -16,54 +19,88 @@ class GoogleService
         $this->client->setClientId(env('GOOGLE_CLIENT_ID'));
         $this->client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
         $this->client->setRedirectUri(env('GOOGLE_REDIRECT_URI'));
-        $this->client->addScope(Gmail::GMAIL_SEND);
-        $this->client->setAccessType('offline');
-        $this->client->setPrompt('consent');
+
+        // Thêm quyền gửi email
+        // $this->client->addScope([
+        //     'https://www.googleapis.com/auth/userinfo.email',
+        //     'https://www.googleapis.com/auth/userinfo.profile',
+        //     'https://www.googleapis.com/auth/gmail.send',
+        // ]);
+
+        // $this->client->setAccessType('offline'); // Cần thiết để lấy refresh token
+        // $this->client->setPrompt('consent'); // Yêu cầu lại quyền nếu user đã cấp trước đó
+    }
+    public function setAccessToken($accessToken)
+    {
+        $this->client->setAccessToken($accessToken);
     }
 
-    public function getAuthUrl()
+    /**
+     * Làm mới access token bằng refresh token
+     */
+    public function refreshAccessToken($refreshToken, User $user)
     {
-        return Socialite::driver('google')->redirect()->getTargetUrl();
+        try {
+            $newToken = $this->client->fetchAccessTokenWithRefreshToken($refreshToken);
+
+            if (isset($newToken['access_token'])) {
+                $user->google_access_token = $newToken['access_token'];
+
+                // Kiểm tra xem có refresh token mới không
+                if (isset($newToken['refresh_token'])) {
+                    $user->google_refresh_token = $newToken['refresh_token'];
+                }
+
+                $user->save(); // Lưu vào database
+
+                return $newToken;
+            } else {
+                throw new \Exception('Could not refresh access token');
+            }
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to refresh access token: ' . $e->getMessage());
+        }
     }
 
-    // Lấy token từ Socialite thay vì Google API Client
-    public function getAccessToken($provider)
+    /**
+     * Kiểm tra xem access token có hết hạn không
+     */
+    public function isAccessTokenExpired($accessToken)
     {
-        // Lấy thông tin người dùng từ Google hoặc GitHub thông qua Socialite
-        $user = Socialite::driver($provider)->user();
-
-        // Trả về access token từ Socialite
-        return $user->token;
+        $this->setAccessToken($accessToken);
+        return $this->client->isAccessTokenExpired();
     }
 
     public function sendEmail($accessToken, $to, $subject, $body)
     {
-        $this->client->setAccessToken($accessToken);
-
-        if ($this->client->isAccessTokenExpired()) {
-            throw new \Exception('Access token expired.');
-        }
-
+        $this->setAccessToken($accessToken);
         $service = new Gmail($this->client);
-        $message = new Gmail\Message();
 
-        // Tạo nội dung email
-        $rawMessage = $this->createMessage($to, $subject, $body);
-        $encodedMessage = base64_encode($rawMessage);
-        $encodedMessage = str_replace(['+', '/', '='], ['-', '_', ''], $encodedMessage);
-        $message->setRaw($encodedMessage);
+        $rawMessage = $this->encodeMessage($to, $subject, $body);
+        $message = new \Google\Service\Gmail\Message();
+        $message->setRaw($rawMessage);
 
-        return $service->users_messages->send('me', $message);
+        $service->users_messages->send('me', $message);
     }
 
-    private function createMessage($to, $subject, $body)
+    public function encodeMessage($to, $subject, $body)
     {
-        $headers = "From: your-email@gmail.com\r\n";
-        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $headers .= "Subject: $subject\r\n";
+        $boundary = uniqid(rand(), true);
+        $headers  = "From: me\r\n";
         $headers .= "To: $to\r\n";
-        $headers .= "\r\n";
+        $headers .= "Subject: $subject\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "Content-Transfer-Encoding: base64\r\n\r\n";
 
-        return $headers . $body;
+        $bodyEncoded = chunk_split(base64_encode($body));
+
+        // Kết hợp headers và nội dung email
+        $message = $headers . $bodyEncoded;
+
+        // Base64url encode
+        $encodedMessage = rtrim(strtr(base64_encode($message), '+/', '-_'), '=');
+
+        return $encodedMessage;
     }
 }

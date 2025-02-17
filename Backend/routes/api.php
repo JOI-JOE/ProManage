@@ -76,6 +76,7 @@ Route::controller(WorkspaceInvitationsController::class)->group(function () {
 Route::middleware(['web'])->group(function () {
     Route::controller(GoogleAuthController::class)->group(function () {
         Route::get('/auth/redirect/{provider}',  action: 'redirectToAuthProvider');
+        // Route::get('/auth/callback/{provider}', 'handleProviderCallback');
         Route::get('/auth/callback/{provider}', 'handleProviderCallback');
     });
 });

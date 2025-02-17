@@ -18,7 +18,7 @@ class WorkspaceMembersFactory extends Factory
     {
         return [
             'id_workspace' => \App\Models\Workspace::factory(),
-            'id_member' => \App\Models\User::factory(),
+            'id_member' => 1,
             'member_type' => $this->faker->randomElement(['admin', 'normal']),
             'is_unconfirmed' => $this->faker->boolean,
             'joined' => $this->faker->boolean,
