@@ -5,17 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleAuthController extends Controller
 {
 
-    /**
-     * Function dưới đấy sẽ chuyển hướng người dùng đến màn hình xác thực của Google(OAuth consent screen)
-     * createAuthUrl - tạo một url xác thực và chuyền người dùng đén google
-     * 
-     */
     public function redirectToAuthProvider($provider)
     {
         if ($provider === 'google') {
@@ -30,61 +24,73 @@ class GoogleAuthController extends Controller
                     'prompt' => 'consent', // Yêu cầu cấp lại quyền
                 ])
                 ->redirect();
-        } elseif ($provider === 'github') {
-            return Socialite::driver('github')->redirect();
         }
+
+        return response()->json([
+            'error' => 'Unsupported provider',
+            'message' => 'Provider not supported. Only Google is allowed.',
+        ], 400);
     }
 
     public function handleProviderCallback($provider)
     {
         try {
-            // Kiểm tra xem provider có hợp lệ không
-            if (!in_array($provider, ['google', 'github'])) {
+            // Kiểm tra provider hợp lệ
+            if (!in_array($provider, ['google'])) {
                 return response()->json(['error' => 'Unsupported provider'], 400);
             }
 
-            // Lấy thông tin người dùng từ provider qua Socialite
+            // Lấy thông tin người dùng từ provider
             $socialUser = Socialite::driver($provider)->user();
 
-            $googleAccessToken  = $socialUser->token; // Token từ Socialite
-            $googleRefreshToken = $socialUser->refreshToken; // Refresh token nếu có
+            // Xử lý hoặc tạo người dùng
+            $user = $this->findOrCreateUser($socialUser, $provider);
 
-            // Tìm user trong database dựa trên email, hoặc tạo mới nếu chưa có
-            $user = User::where('email', $socialUser->getEmail())->first();
+            // Đăng nhập người dùng
+            Auth::login($user);
 
-            // Nếu người dùng đã tồn tại
-            if ($user) {
-                // Cập nhật token mới
-                $user->google_access_token = $googleAccessToken;
+            // Tạo token xác thực
+            $token = $user->createToken('auth-token')->plainTextToken;
 
-                // Chỉ cập nhật refresh token nếu nó tồn tại
-                if ($googleRefreshToken) {
-                    $user->google_refresh_token = $googleRefreshToken;
-                }
-
-                $user->save();
-            } else {
-                // Nếu người dùng chưa có, tạo mới
-                $user = User::create([
-                    'full_name'             => $socialUser->getName(),
-                    'email'                 => $socialUser->getEmail(),
-                    'google_access_token'   => $googleAccessToken,
-                    'google_refresh_token'  => $googleRefreshToken, // Lưu refresh token nếu có
-                    'password'              => bcrypt(str()->random(16)),
-                ]);
-            }
-
+            // Trả về thông tin người dùng và token
             return response()->json([
                 'id'                   => $user->id,
                 'name'                 => $user->full_name,
                 'email'                => $user->email,
                 'avatar'               => $socialUser->getAvatar(),
                 'provider'             => $provider,
-                'google_access_token'  => $user->google_access_token, // Lấy từ database
-                'google_refresh_token' => $user->google_refresh_token, // Lấy từ database
+                'google_access_token'  => $user->google_access_token,
+                'google_refresh_token' => $user->google_refresh_token,
+                'token'                => $token,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to authenticate', 'message' => $e->getMessage()], 500);
         }
+    }
+
+    protected function findOrCreateUser($socialUser, $provider)
+    {
+        // Tìm người dùng trong database
+        $user = User::where('email', $socialUser->getEmail())->first();
+
+        // Nếu người dùng đã tồn tại, cập nhật token
+        if ($user) {
+            $user->google_access_token = $socialUser->token;
+            if ($socialUser->refreshToken) {
+                $user->google_refresh_token = $socialUser->refreshToken;
+            }
+            $user->save();
+        } else {
+            // Tạo người dùng mới
+            $user = User::create([
+                'full_name'             => $socialUser->getName(),
+                'email'                 => $socialUser->getEmail(),
+                'google_access_token'   => $socialUser->token,
+                'google_refresh_token'  => $socialUser->refreshToken,
+                'password'              => bcrypt(str()->random(16)),
+            ]);
+        }
+
+        return $user;
     }
 }

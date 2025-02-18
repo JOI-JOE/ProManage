@@ -112,12 +112,14 @@ const SideBar = () => {
       {/* Danh sách điều hướng */}
       <List>
         <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon sx={{ color: "white", fontSize: "small" }}>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Bảng" />
-          </ListItemButton>
+          <Link to="/w/test" style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
+            <ListItemButton>
+              <ListItemIcon sx={{ color: "white", fontSize: "small" }}>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText primary="Bảng" />
+            </ListItemButton>
+          </Link>
         </ListItem>
 
         <ListItem disablePadding>
@@ -163,32 +165,32 @@ const SideBar = () => {
         Các bảng của bạn
       </Typography>
       <List>
-      {boards.map((board) => (
-        <ListItem key={board.id} disablePadding>
-          <ListItemButton
-            component={Link}
-            to={`/workspaces/${workspaceId}/boards/${board.id}`}
-            sx={{
-              backgroundColor: board.id === Number(boardId) ? "#ffffff33" : "transparent",
-              "&:hover": { backgroundColor: "#ffffff22" },
-              borderRadius: "6px",
-            }}
-          >
-            <ListItemIcon sx={{ color: "white" }}>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary={board.name}
+        {boards.map((board) => (
+          <ListItem key={board.id} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={`/workspaces/${workspaceId}/boards/${board.id}`}
               sx={{
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                backgroundColor: board.id === Number(boardId) ? "#ffffff33" : "transparent",
+                "&:hover": { backgroundColor: "#ffffff22" },
+                borderRadius: "6px",
               }}
-            />
-          </ListItemButton>
-        </ListItem>
-      ))}
-    </List>
+            >
+              <ListItemIcon sx={{ color: "white" }}>
+                <FolderIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary={board.name}
+                sx={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
 
     </Drawer>
   );
