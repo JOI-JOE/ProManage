@@ -27,4 +27,19 @@ class Handler extends ExceptionHandler
             //
         });
     }
+    function shouldReturnJson($request, Throwable $e)
+    {
+        // Kiểm tra nếu request là AJAX hoặc yêu cầu JSON
+        if ($request->expectsJson()) {
+            return true;
+        }
+
+        // Kiểm tra nếu lỗi có liên quan đến API (có thể dựa trên URL hoặc route name)
+        if ($request->is('api/*')) {
+            return true;
+        }
+
+        // Bạn có thể thêm các điều kiện kiểm tra khác nếu cần thiết
+        return false;
+    }
 }

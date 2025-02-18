@@ -71,7 +71,6 @@ const SideBar1 = () => {
 
       <div>
         <WorkspaceMenu />
-        <WorkspaceMenu />
       </div>
 
     </Drawer>

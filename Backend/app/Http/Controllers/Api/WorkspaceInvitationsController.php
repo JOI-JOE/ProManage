@@ -10,6 +10,12 @@ use Illuminate\Http\Request;
 
 class WorkspaceInvitationsController extends Controller
 {
+    protected $emailController;
+
+    public function __construct(EmailController $emailController)
+    {
+        $this->emailController = $emailController;
+    }
     // có gửi email
     // có gửi thông báo
     public function searchNewMembersToWorkspace(Request $request)
