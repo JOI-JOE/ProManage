@@ -186,7 +186,7 @@ const BoardContent = () => {
   const [lists, setLists] = useState([]);
   // const [draggingListId, setDraggingListId] = useState(null);
   // const [draggingPosition, setDraggingPosition] = useState(null);
-
+  const [lastUpdate, setLastUpdate] = useState(0); 
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: { distance: 10 },
@@ -221,12 +221,13 @@ const BoardContent = () => {
 
 
 
-    const channel = window.Echo.channel(`board.${boardId}`).listen(".list.reordered", (event) => {
-      console.log("📢 Realtime update received:", event);
-      setLists(event.positions.sort((a, b) => a.position - b.position));
-      // setDraggingListId(null);
-      // setDraggingPosition(null);
-    });
+      const channel = window.Echo.channel(`board.${boardId}`).listen(".list.reordered", (event) => {
+        const { lists: updatedLists, timestamp } = event;
+        if (timestamp > lastUpdate) {
+          setLists(updatedLists.sort((a, b) => a.position - b.position));
+          setLastUpdate(timestamp);
+        }
+      });
 
     return () => {
       channel.stopListening(".list.reordered");
@@ -234,7 +235,7 @@ const BoardContent = () => {
     };
 
 
-  }, [boardId]);
+  }, [boardId, lastUpdate]);
 
   //Tìm column theo cardId
   const findColumnByCardId = (cardId) => {
@@ -398,6 +399,7 @@ const BoardContent = () => {
 
     const updatedLists = arrayMove(lists, oldIndex, newIndex);
     setLists(updatedLists);
+    const timestamp = Date.now(); 
     // setDraggingListId(null);
     // setDraggingPosition(null);
 
@@ -409,8 +411,11 @@ const BoardContent = () => {
 
     axios.put(`http://127.0.0.1:8000/api/lists/reorder`, {
       board_id: boardId,
-      positions: updatedPositions
+      positions: updatedPositions,
+      timestamp
     }).catch(error => console.error("❌ Lỗi cập nhật vị trí:", error));
+
+    setLastUpdate(timestamp); 
   };
 
 
