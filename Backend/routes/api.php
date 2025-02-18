@@ -52,7 +52,7 @@ Route::controller(WorkspaceController::class)->group(function () {
 
     // Update infor workspace
     Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
-});
+})->middleware('auth:sanctum');
 
 Route::controller(WorkspaceMembersController::class)->group(function () {
     Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
