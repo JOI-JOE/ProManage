@@ -94,8 +94,6 @@
 //     }
 //   }
 
-
-
 //   return (
 //     <div ref={setNodeRef} style={columnStyle} {...attributes} {...listeners}>
 //       <Box
@@ -172,7 +170,6 @@
 
 // export default Column;
 
-
 import { useState } from "react";
 import { Box, Button, Tooltip, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -233,13 +230,13 @@ const StyledMenu = styled((props) => (
 const Column = ({ list }) => {
   // Kéo thả
 
-
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: String(list.id),
-    filter: (event) => {
-      return event.target.closest("[data-no-dnd]") !== null;
-    },
-  });
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: String(list.id),
+      filter: (event) => {
+        return event.target.closest("[data-no-dnd]") !== null;
+      },
+    });
   const columnStyle = {
     transform: CSS.Translate.toString(transform),
     transition,
@@ -275,12 +272,10 @@ const Column = ({ list }) => {
             `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
         }}
       >
-
         {/* Colum Header */}
         <Box
           sx={{
             height: (theme) => theme.trello.columnFooterHeight,
-
 
             p: 2,
 

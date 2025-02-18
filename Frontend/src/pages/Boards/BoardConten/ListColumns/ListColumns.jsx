@@ -8,10 +8,9 @@
 
 // const ListColumns = ({ lists }) => {
 
-
 //   return (
-//     <SortableContext 
-//       items={lists.map(list => String(list.id))} 
+//     <SortableContext
+//       items={lists.map(list => String(list.id))}
 //       strategy={horizontalListSortingStrategy}
 //     >
 //       <Box
@@ -63,8 +62,6 @@
 
 // export default ListColumns;
 
-
-
 import { Box, Button, InputAdornment, TextField } from "@mui/material";
 import Column from "./Column/Column";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
@@ -76,7 +73,6 @@ import {
 import { useState } from "react";
 
 const ListColumns = ({ lists }) => {
-
   const [openColumn, setOpenColumn] = useState(false); // State để kiểm soát hiển thị input
   const toggleOpenColumn = () => setOpenColumn(!openColumn);
   const [columnName, setColumnName] = useState("");
@@ -84,9 +80,8 @@ const ListColumns = ({ lists }) => {
     console.log("columnName");
   };
   return (
-
     <SortableContext
-      items={lists.map(list => String(list.id))}
+      items={lists.map((list) => String(list.id))}
       strategy={horizontalListSortingStrategy}
     >
       <Box
@@ -103,7 +98,6 @@ const ListColumns = ({ lists }) => {
           },
         }}
       >
-
         {lists.map((list) => (
           <Column key={list.id} list={list} />
         ))}
@@ -191,11 +185,9 @@ const ListColumns = ({ lists }) => {
             Add new column
           </Button>
         </Box>
-
       </Box>
     </SortableContext>
   );
 };
 
 export default ListColumns;
-
