@@ -83,6 +83,8 @@ class GoogleService
         $service->users_messages->send('me', $message);
     }
 
+    
+
     public function encodeMessage($to, $subject, $body)
     {
         $boundary = uniqid(rand(), true);
