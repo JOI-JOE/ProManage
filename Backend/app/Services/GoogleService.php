@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Google\Client;
 use Google\Service\Gmail;
+use League\OAuth1\Client\Server\Trello;
 
 class GoogleService
 {
@@ -71,24 +72,22 @@ class GoogleService
         return $this->client->isAccessTokenExpired();
     }
 
-    public function sendEmail($accessToken, $to, $subject, $body)
+    public function sendEmail($accessToken, $senderName, $to, $subject, $body)
     {
         $this->setAccessToken($accessToken);
         $service = new Gmail($this->client);
 
-        $rawMessage = $this->encodeMessage($to, $subject, $body);
+        $rawMessage = $this->encodeMessage($to, $senderName, $subject, $body);
         $message = new \Google\Service\Gmail\Message();
         $message->setRaw($rawMessage);
 
         $service->users_messages->send('me', $message);
     }
 
-    
-
-    public function encodeMessage($to, $subject, $body)
+    public function encodeMessage($to, $senderName, $subject, $body)
     {
         $boundary = uniqid(rand(), true);
-        $headers  = "From: me\r\n";
+        $headers = "From: " . $senderName . "\r\n"; // Bỏ địa chỉ email
         $headers .= "To: $to\r\n";
         $headers .= "Subject: $subject\r\n";
         $headers .= "MIME-Version: 1.0\r\n";

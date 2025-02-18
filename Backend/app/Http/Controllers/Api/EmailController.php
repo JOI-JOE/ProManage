@@ -17,67 +17,6 @@ class EmailController extends Controller
         $this->googleService = $googleService;
     }
 
-    // public function sendEmail(Request $request)
-    // {
-    //     // Lấy user từ database (có thể thay bằng Auth::user() nếu cần)
-    //     $user = Auth::user();
-    //     $user = User::where('email', $user->email)->first();
-
-    //     if (!$user) {
-    //         return response()->json(['error' => 'User not authenticated'], 401);
-    //     }
-
-    //     if (!$user->google_access_token) {
-    //         return response()->json(['error' => 'Google Access Token not found'], 400);
-    //     }
-
-    //     // Lấy access token và refresh token từ database
-    //     $accessToken = $user->google_access_token;
-    //     $refreshToken = $user->google_refresh_token;
-
-    //     try {
-    //         // Kiểm tra nếu access token đã hết hạn và làm mới nếu cần
-    //         if ($this->googleService->isAccessTokenExpired($accessToken)) {
-    //             if (!$refreshToken) {
-    //                 return response()->json(['error' => 'Access token expired and no refresh token available. Please re-authenticate.'], 401);
-    //             }
-
-    //             // Làm mới access token
-    //             $newToken = $this->googleService->refreshAccessToken($refreshToken, $user);
-
-    //             // Cập nhật token mới
-    //             $user->google_access_token = $newToken['access_token'];
-
-    //             // Nếu có refresh token mới, cập nhật vào database
-    //             if (isset($newToken['refresh_token'])) {
-    //                 $user->google_refresh_token = $newToken['refresh_token'];
-    //             }
-
-    //             $user->save(); // Lưu thay đổi
-
-    //             $accessToken = $newToken['access_token'];
-    //         }
-
-    //         $toEmails = $request->input('to'); // Đây là một mảng các địa chỉ email
-    //         $subject = $request->input('subject');
-    //         $body = $request->input('body');
-
-    //         // Gửi email đến từng địa chỉ trong mảng 
-    //         // sử lý trường hợp email đã có trên trello
-    //         // sử lsy trường hợp email chưa đăng ký trên trello
-
-    //         foreach ($toEmails as $to) {
-    //             $this->googleService->sendEmail($accessToken, $to, $subject, $body);
-    //         }
-
-    //         return response()->json(['message' => 'Email sent successfully!']);
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'error' => 'Failed to send email',
-    //             'message' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
     public function sendEmail(Request $request)
     {
         try {
@@ -108,7 +47,7 @@ class EmailController extends Controller
             }
 
             // Xử lý gửi email
-            $this->processEmails($accessToken, $toEmails, $subject, $body);
+            $this->processEmails($accessToken, $toEmails, $subject, $body, $user->full_name);
 
             return response()->json(['message' => 'Emails processed successfully!']);
         } catch (\Exception $e) {
@@ -144,35 +83,51 @@ class EmailController extends Controller
     }
 
     /**
-     * Xử lý gửi email
+     * Xử lý gửi email 
+     * việc gửi email sẽ có 2 trường hợp
+     * 1. là email đã tồn tại trên database
+     * 2. là email chưa tồn tại trên database
      */
-    private function processEmails($accessToken, $toEmails, $subject, $body)
+    private function processEmails($accessToken, $toEmails, $subject, $body, $senderName)
     {
+        $sentEmails = [];
+        $failedEmails = [];
+
         foreach ($toEmails as $to) {
-            // Kiểm tra email đã đăng ký trên Trello chưa
-            $this->googleService->sendEmail($accessToken, $to, $subject, $body);
-            // if ($this->checkEmailExistsOnTrello($to)) {
-            //     // Gửi email cho user đã có tài khoản
-            //     $this->googleService->sendEmail($accessToken, $to, $subject, $body);
-            // } else {
-            //     // Gửi email mời tham gia
-            //     $this->sendInvitationEmail($to);
-            // }
+            if ($this->checkEmailExists($to)) {
+                // Gửi email cho user đã có tài khoản
+                if ($this->googleService->sendEmail($accessToken, $senderName, $to, $subject, $body)) {
+                    $sentEmails[] = $to;
+                } else {
+                    $failedEmails[] = $to;
+                }
+            } else {
+                $failedEmails[] = $to;
+            }
         }
+
+        // Trả về response tổng hợp
+        $response = [];
+
+        if (!empty($sentEmails)) {
+            $response['message'] = 'Emails processed successfully!';
+            $response['sent'] = $sentEmails;
+        }
+
+        if (!empty($failedEmails)) {
+            $response['error'] = 'Some emails could not be sent.';
+            $response['failed'] = $failedEmails;
+        }
+
+        // Chọn HTTP status code phù hợp
+        $statusCode = empty($failedEmails) ? 200 : 400;
+
+        return response()->json($response, $statusCode);
     }
 
-
-    private function checkEmailExistsOnTrello($email)
+    private function checkEmailExists($email)
     {
-        // Giả lập kiểm tra email trên Trello, bạn cần thay bằng API thực tế
-        return in_array($email, ['user1@trello.com', 'user2@trello.com']);
-    }
-
-    /**
-     * Gửi email mời tham gia nếu email chưa đăng ký Trello
-     */
-    private function sendInvitationEmail($email)
-    {
-        // Logic gửi email mời tham gia, có thể gửi email với nội dung đặc biệt
+        $user = User::where('email', $email)->first();
+        return $user !== null;
     }
 }
