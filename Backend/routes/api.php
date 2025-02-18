@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\WorkspaceInvitationsController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Api\LabelController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -204,9 +205,15 @@ Route::middleware(['web'])->group(function () {
         ->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
         Route::put('/{cardId}/dates', [CardController::class, 'updateDates']); // cập nhật ngày của thẻ
         Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']); // xóa ngày
-    });
+        Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']); // danh sách nhãn trong thẻ
+        Route::post('/{cardId}/labels', [LabelController::class, 'addLabelToCard']); // thêm nhãn vào thẻ
 
-    
+        Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']);// xóa nhãn khỏi thẻ
+    });
+    // cập nhật nhãn ,Vì trello sẽ không cập nhật nhãn theo thẻ
+    Route::put('/labels/{labelId}', [LabelController::class, 'updateLabel']);
+
+
     ///Comment
     Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']); // Lấy danh sách bình luận
     Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']); // Thêm bình luận
