@@ -10,28 +10,28 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ListReordered implements ShouldBroadcast
+class CardCreate
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $boardId;
-    public $positions;
-    
-    public function __construct($boardId, $positions)
+    public $card;
+
+    public function __construct($card)
     {
-        $this->boardId = $boardId;
-        $this->positions = $positions;
+        $this->card = $card;
     }
 
-    
     public function broadcastOn()
     {
-        return new Channel('board.' . $this->boardId);
+        return ['cards-channel'];
     }
-
 
     public function broadcastAs()
     {
-        return 'list.reordered';
+        return 'card-created';
+    }
+    public function broadcastWith()
+    {
+        return ['card' => $this->card];
     }
 }

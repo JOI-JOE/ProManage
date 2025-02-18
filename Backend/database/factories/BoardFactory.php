@@ -25,31 +25,31 @@ class BoardFactory extends Factory
             'archive' => $this->faker->boolean,
 
             'closed' => false,
-            'created_by' => \App\Models\User::factory(),
+            'created_by' => 1,
 
             'visibility' => $this->faker->randomElement(['public', 'private', 'member']),
             'workspace_id' => \App\Models\Workspace::factory(),
         ];
     }
 
-        public function public(): static
-        {
-            return $this->state(fn(array $attributes) => [
-                'visibility' => 'public',
-            ]);
-        }
+    public function public(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'visibility' => 'public',
+        ]);
+    }
 
-        public function private(): static
-        {
-            return $this->state(fn(array $attributes) => [
-                'visibility' => 'private',
-            ]);
-        }
+    public function private(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'visibility' => 'private',
+        ]);
+    }
 
-        public function member(): static
-        {
-            return $this->state(fn(array $attributes) => [
-                'visibility' => 'member',
-            ]);
-        }
+    public function member(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'visibility' => 'member',
+        ]);
+    }
 }

@@ -5,7 +5,8 @@ import App from "~/App.jsx";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "~/theme";
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { BrowserRouter } from "react-router-dom";
 
 createRoot(document.getElementById("root")).render(
@@ -16,6 +17,7 @@ createRoot(document.getElementById("root")).render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <App />
+        <ToastContainer theme="light" position="bottom-right" />
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>

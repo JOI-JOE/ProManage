@@ -9,29 +9,26 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use App\Models\ListBoard;
 
-class ListReordered implements ShouldBroadcast
+class ListClosed implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $boardId;
-    public $positions;
-    
-    public function __construct($boardId, $positions)
+    public $list;
+
+    public function __construct(ListBoard $list)
     {
-        $this->boardId = $boardId;
-        $this->positions = $positions;
+        $this->list = $list;
     }
 
-    
     public function broadcastOn()
     {
-        return new Channel('board.' . $this->boardId);
+        return new Channel('lists');
     }
 
-
-    public function broadcastAs()
+    public function broadcastWith()
     {
-        return 'list.reordered';
+        return ['list' => $this->list];
     }
 }

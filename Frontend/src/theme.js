@@ -5,7 +5,7 @@ const Board_Bar_Height = "52px";
 const Board_Content_Height = `calc(100vh - ${App_Bar_Height} - ${Board_Bar_Height})`;
 
 const Column_Header_Height = "50px";
-const Column_Footer_Height = "56px";
+const Column_Footer_Height = "45px";
 // Create a theme instance.
 const theme = createTheme({
   trello: {
@@ -20,7 +20,7 @@ const theme = createTheme({
       light: "#d1d8e0",
       main: "#34495e",
       dark: "teal",
-      contrastText: "#03a9f4",
+      // contrastText: "#03a9f4",
     },
     secondary: {
       light: "#ff7961",
