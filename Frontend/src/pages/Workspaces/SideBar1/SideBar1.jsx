@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Box,
   Drawer,
   List,
   ListItem,
@@ -8,43 +7,14 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-  Collapse,
-  Avatar,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
-import PeopleIcon from "@mui/icons-material/People";
-import SettingsIcon from "@mui/icons-material/Settings";
-import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
-import AddIcon from "@mui/icons-material/Add";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
 import HomeIcon from "@mui/icons-material/Home";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import ViewStreamIcon from "@mui/icons-material/ViewStream";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { useState } from "react";
 import { Link } from "react-router-dom";
-
-// import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import WorkspaceMenu from "./WorkspaceMenu/index";
 
 const SideBar1 = () => {
-  const [openSettings, setOpenSettings] = React.useState(false);
-
-  const toggleSettings = () => {
-    setOpenSettings(!openSettings);
-  };
-
-  const [hoveredItem, setHoveredItem] = useState(null);
-
-  const handleMouseEnter = (item) => {
-    setHoveredItem(item);
-  };
-
-  const handleMouseLeave = () => {
-    setHoveredItem(null);
-  };
 
   return (
     <Drawer
@@ -98,94 +68,12 @@ const SideBar1 = () => {
       </Typography>
 
       {/* Phần toggle mở rộng danh sách */}
-        
-      <ListItemButton
-        onClick={toggleSettings}
-        sx={{ display: "flex", justifyContent: "space-between" }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <ListItemIcon sx={{ color: "black" }}>
-            <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
-          </ListItemIcon>
-          <ListItemText
-            primary={
-              <Typography
-                fontWeight="bold"
-                sx={{ whiteSpace: "nowrap", color: "black" }}
-              >
-                Trello Không gian làm việc
-              </Typography>
-            }
-          />
-        </Box>
 
-        {openSettings ? (
-          <ExpandLess sx={{ color: "black" }} />
-        ) : (
-          <ExpandMore sx={{ color: "black" }} />
-        )}
-      </ListItemButton>
+      <div>
+        <WorkspaceMenu />
+        <WorkspaceMenu />
+      </div>
 
-      {/* Danh sách con - Hiển thị khi mở */}
-      <Collapse in={openSettings} timeout="auto" unmountOnExit>
-        <Box sx={{ pl: 4 }}>
-          <List>
-            <ListItemButton component={Link} to="/listworkspaceconten">
-              <ListItemIcon sx={{ color: "black" }}>
-                <ViewKanbanIcon />
-              </ListItemIcon>
-              <ListItemText primary="Bảng" sx={{ color: "black" }} />
-            </ListItemButton>
-            <ListItemButton>
-              <ListItemIcon sx={{ color: "black" }}>
-                <FavoriteBorderIcon />
-              </ListItemIcon>
-              <ListItemText primary="Điểm nổi bật" sx={{ color: "black" }} />
-            </ListItemButton>
-
-            <ListItemButton
-              onMouseEnter={() => handleMouseEnter("Hình")}
-              onMouseLeave={handleMouseLeave}
-            >
-              <ListItemIcon sx={{ color: "Black" }}>
-                <ViewStreamIcon />
-              </ListItemIcon>
-              <ListItemText primary="Hình" sx={{ color: "black" }} />
-              {hoveredItem === "Hình" && (
-                <ChevronRightIcon sx={{ color: "gray" }} />
-              )}
-            </ListItemButton>
-
-            <ListItemButton
-              onMouseEnter={() => handleMouseEnter("Thành viên")}
-              onMouseLeave={handleMouseLeave}
-            >
-              <ListItemIcon sx={{ color: "black" }}>
-                <PeopleIcon />
-              </ListItemIcon>
-              <ListItemText primary="Thành viên" sx={{ color: "black" }} />
-              <AddIcon sx={{ color: "gray" }} />
-              {hoveredItem === "Thành viên" && (
-                <ChevronRightIcon sx={{ color: "gray" }} />
-              )}
-            </ListItemButton>
-
-            <ListItemButton
-              // sx={{ pl: 4 }}
-              onMouseEnter={() => handleMouseEnter("Cài đặt")}
-              onMouseLeave={handleMouseLeave}
-            >
-              <ListItemIcon sx={{ color: "Black" }}>
-                <SettingsIcon />
-              </ListItemIcon>
-              <ListItemText primary="Cài đặt" sx={{ color: "black" }} />
-              {hoveredItem === "Cài đặt" && (
-                <ChevronRightIcon sx={{ color: "gray" }} />
-              )}
-            </ListItemButton>
-          </List>
-        </Box>
-      </Collapse>
     </Drawer>
   );
 };
