@@ -10,6 +10,7 @@ import Tooltip from "@mui/material/Tooltip";
 import PersonAdd from "@mui/icons-material/PersonAdd";
 import Settings from "@mui/icons-material/Settings";
 import Logout from "@mui/icons-material/Logout";
+import axios from "axios";
 
 export default function Profile() {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -20,6 +21,29 @@ export default function Profile() {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const token = localStorage.getItem("token");
+
+    const handleLogout = async () => {
+      try {
+        await axios.post(
+          "http://localhost:8000/api/logout",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+  
+        localStorage.removeItem("token"); // Xóa token trên client
+        localStorage.removeItem("role");
+        window.location.reload(); // Reload trang hoặc chuyển hướng
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
+    };
+  
   return (
     <React.Fragment>
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
@@ -100,7 +124,7 @@ export default function Profile() {
           </ListItemIcon>
           Settings
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <Logout fontSize="small" />
           </ListItemIcon>

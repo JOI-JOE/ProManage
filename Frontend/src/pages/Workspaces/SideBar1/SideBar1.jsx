@@ -26,6 +26,9 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
+// import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
 const SideBar1 = () => {
   const [openSettings, setOpenSettings] = React.useState(false);
 
@@ -42,6 +45,7 @@ const SideBar1 = () => {
   const handleMouseLeave = () => {
     setHoveredItem(null);
   };
+
   return (
     <Drawer
       variant="permanent"
@@ -94,7 +98,7 @@ const SideBar1 = () => {
       </Typography>
 
       {/* Phần toggle mở rộng danh sách */}
-
+        
       <ListItemButton
         onClick={toggleSettings}
         sx={{ display: "flex", justifyContent: "space-between" }}
