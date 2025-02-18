@@ -68,4 +68,37 @@ class CardController extends Controller
 
         return response()->json(['message' => 'Đã xóa thành viên khỏi thẻ thành công']);
     }
+    public function updateDates(Request $request, $cardId)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date'   => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
+            'end_time'   => 'nullable|date_format:H:i',
+
+        ]);
+
+        $card = Card::findOrFail($cardId);
+        $card->start_date = $request->start_date;
+        $card->end_date = $request->end_date;
+        $card->end_time = $request->end_time;
+        $card->save();
+
+        return response()->json([
+            'message' => 'Cập nhật ngày và giờ thành công!',
+            'data' => $card,
+        ]);
+    }
+    public function removeDates($cardId)
+    {
+        $card = Card::findOrFail($cardId);
+        $card->start_date = null;
+        $card->end_date = null;
+        $card->end_time = null;
+        $card->save();
+
+        return response()->json([
+            'message' => 'Đã xóa ngày bắt đầu & ngày kết thúc khỏi thẻ!',
+            'data' => $card,
+        ]);
+    }
 }

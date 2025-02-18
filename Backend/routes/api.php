@@ -135,7 +135,9 @@ Route::prefix('cards')->group(function () {
      // thêm thành viên vào thẻ
      Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail']);
     Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])
-        ->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
+    ->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
+    Route::put('/{cardId}/dates', [CardController::class, 'updateDates']);// cập nhật ngày của thẻ
+    Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']);
 });
 
 
