@@ -105,6 +105,7 @@ Route::resource('boards', BoardController::class);
 
 // Routes quản lý bảng
 Route::prefix('boards/{id}/')->group(function () {
+    Route::patch('name', [BoardController::class, 'updateName']);
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
     Route::patch('marked', [BoardController::class, 'updateIsMarked']);
     Route::patch('archive', [BoardController::class, 'updateArchive']);
@@ -113,7 +114,10 @@ Route::prefix('boards/{id}/')->group(function () {
 });
 
 // Routes cho thành viên bảng
-Route::prefix('boards/{boardId}/members')->group(function () {
+
+
+Route::prefix('boards/{boardId}/members/')->group(function () {
+    Route::get('', [BoardMemberController::class, 'getAllMembers']);
     Route::post('', [BoardMemberController::class, 'addMember']);
     Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
 });
