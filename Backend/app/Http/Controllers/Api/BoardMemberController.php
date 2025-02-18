@@ -4,36 +4,40 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Board;
+use App\Models\BoardMember;
 use App\Models\BoardUserPermission;
 use Illuminate\Http\Request;
 
 class BoardMemberController extends Controller
 {
-
-    public function getAllMembers($boardId)
-    {
-        try {
-            // Kiểm tra board có tồn tại không
-            $board = Board::findOrFail($boardId);
-
-            // Lấy tất cả các thành viên của board
-            $members = BoardUserPermission::where('board_id', $boardId)
-                ->with('user') // Giả định rằng bạn có quan hệ 'user' trong BoardUserPermission
-                ->get();
-
-            return response()->json([
-                'result' => true,
-                'message' => 'Members retrieved successfully.',
-                'data' => $members
-            ]);
-        } catch (\Exception $e) {
-            // Nếu có lỗi bất ngờ, bắt lỗi và trả về thông báo lỗi chi tiết
-            return response()->json([
-                'result' => false,
-                'message' => 'An error occurred: ' . $e->getMessage()
-            ], 500);
-        }
+    public function index(){
+        $boardMember = BoardMember::all();
+        return response()->json($boardMember);
     }
+    // public function getAllMembers($boardId)
+    // {
+    //     try {
+    //         // Kiểm tra board có tồn tại không
+    //         $board = Board::findOrFail($boardId);
+
+    //         // Lấy tất cả các thành viên của board
+    //         $members = BoardUserPermission::where('board_id', $boardId)
+    //             ->with('user') // Giả định rằng bạn có quan hệ 'user' trong BoardUserPermission
+    //             ->get();
+
+    //         return response()->json([
+    //             'result' => true,
+    //             'message' => 'Members retrieved successfully.',
+    //             'data' => $members
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         // Nếu có lỗi bất ngờ, bắt lỗi và trả về thông báo lỗi chi tiết
+    //         return response()->json([
+    //             'result' => false,
+    //             'message' => 'An error occurred: ' . $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
     public function addMember(Request $request, $boardId)
     {
         // Xác nhận dữ liệu nhập vào
