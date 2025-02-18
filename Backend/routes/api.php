@@ -78,9 +78,26 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
     });
 
+// Routes quản lý bảng
+Route::prefix('boards/{id}/')->group(function () {
+    Route::patch('name', [BoardController::class, 'updateName']);
+    Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
+    Route::patch('marked', [BoardController::class, 'updateIsMarked']);
+    Route::patch('archive', [BoardController::class, 'updateArchive']);
+    Route::patch('visibility', [BoardController::class, 'updateVisibility']);
+    Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng 
+});
+
+// Routes cho thành viên bảng
+
+
+Route::prefix('boards/{boardId}/members/')->group(function () {
+    Route::get('', [BoardMemberController::class, 'getAllMembers']);
+    Route::post('', [BoardMemberController::class, 'addMember']);
+    Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
+});
     // Send Email
     Route::post('/send-mail', [EmailController::class, 'sendEmail']);
-
 
 
     Route::get('/color', [ColorController::class, 'index']);
