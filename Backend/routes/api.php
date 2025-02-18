@@ -78,7 +78,7 @@ Route::middleware(['web'])->group(function () {
     });
 });
 
-Route::middleware(['auth:sanctum'])->group(function () {
+// Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceController::class)->group(function () {
         // Get all workspace
@@ -209,4 +209,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']); // Lấy danh sách bình luận
     Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']); // Thêm bình luận
     Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']); // Xóa bình luận
-});
+// });
