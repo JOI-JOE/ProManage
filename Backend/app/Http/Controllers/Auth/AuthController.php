@@ -42,7 +42,7 @@ class AuthController extends Controller
 
         // Tạo token sau khi xác thực thành công
         $token = $user->createToken('auth_token')->plainTextToken;
-        
+
         $user = Auth::user();
         // Auth::login($user);
         return response()->json([
@@ -91,7 +91,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
 
-      
+
         $request->user()->tokens()->delete(); // Xóa tất cả token của user
         return response()->json(['message' => 'Logged out successfully']);
     }
@@ -99,19 +99,19 @@ class AuthController extends Controller
     public function loginGitHub()
     {
         return Socialite::driver('github')->redirect();
-       
+
     }
 
     public function handleLoginGitHub()
     {
         try {
             $githubUser = Socialite::driver('github')->stateless()->user();
-           
+
             if (!$githubUser->getEmail()) {
                 throw new \Exception("GitHub account missing email");
             }
 
-            // dd($githubUser);    
+            // dd($githubUser);
             $avatarUrl = $githubUser->getAvatar();
 
             // Kiểm tra và tải ảnh về storage
@@ -137,7 +137,7 @@ class AuthController extends Controller
                     'github_avatar' => $avatarName ?? $avatarUrl,
                 ]
             );
-          
+
 
             $token = $user->createToken('token')->plainTextToken;
 
