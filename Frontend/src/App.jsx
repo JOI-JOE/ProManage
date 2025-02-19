@@ -14,7 +14,7 @@ import Board3 from "./pages/Workspaces/_id3";
 
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
-import GitHubCallback from "./pages/Auth/GithubCallback";
+import GitHubCallback from "./pages/Auth/GitHubCallback";
 
 // import { Box, Container } from "@mui/material";
 
