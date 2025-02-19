@@ -77,11 +77,11 @@
 //     try {
 //       // Gửi yêu cầu PATCH sử dụng Axios mà không cần header
 //       const response = await axios.patch(`http://127.0.0.1:8000/api/lists/${list.id}/closed`);
-  
+
 //       // Kiểm tra nếu yêu cầu thành công
 //       if (response.status === 200) {
 //         // alert("Cột đã được lưu trữ!");
-  
+
 //         // Cập nhật lại trạng thái của cột sau khi lưu trữ
 //         list.closed = response.data.data.closed;
 //         handleClose(); // Đóng menu sau khi lưu trữ
@@ -93,8 +93,6 @@
 //       alert("Không thể lưu trữ cột.");
 //     }
 //   }
-
-
 
 //   return (
 //     <div ref={setNodeRef} style={columnStyle} {...attributes} {...listeners}>
@@ -172,7 +170,6 @@
 
 // export default Column;
 
-
 import { useState } from "react";
 import { Box, Button, Tooltip, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -230,22 +227,21 @@ const StyledMenu = styled((props) => (
   },
 }));
 
-const Column = ({ column }) => {
+const Column = ({ list }) => {
   // Kéo thả
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: column._id, data: { ...column } }); //id: là của thư viện, _id:là của DB
 
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: String(list.id),
+      filter: (event) => {
+        return event.target.closest("[data-no-dnd]") !== null;
+      },
+    });
   const columnStyle = {
     transform: CSS.Translate.toString(transform),
     transition,
     height: "100%",
-    opacity: isDragging ? 0.5 : undefined,
+    // opacity: isDragging ? 0.5 : undefined,
   };
 
   //dropdown trong MUI
@@ -259,7 +255,7 @@ const Column = ({ column }) => {
   };
 
   //Sắp xếp card
-  const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
+  // const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
 
   return (
     <div ref={setNodeRef} style={columnStyle} {...attributes}>
@@ -276,12 +272,10 @@ const Column = ({ column }) => {
             `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
         }}
       >
-
         {/* Colum Header */}
         <Box
           sx={{
             height: (theme) => theme.trello.columnFooterHeight,
-
 
             p: 2,
 
@@ -293,7 +287,7 @@ const Column = ({ column }) => {
           <Typography
             sx={{ fontWeight: "bold", cursor: "pointer", fontSize: "0.8rem" }}
           >
-            {column?.title}
+            {list.name}
           </Typography>
 
           <Box>
@@ -306,7 +300,7 @@ const Column = ({ column }) => {
                 aria-expanded={open ? "true" : undefined}
                 // variant="contained"
                 disableElevation
-                onClick={handleClick}
+                onMouseDown={handleClick}
               />
             </Tooltip>
 
@@ -317,7 +311,7 @@ const Column = ({ column }) => {
               }}
               anchorEl={anchorEl}
               open={open}
-              onClose={handleClose}
+              onMouseDown={handleClose}
             >
               <MenuItem
                 onClick={handleClose}
@@ -379,7 +373,7 @@ const Column = ({ column }) => {
         </Box>
 
         {/* Column List Cart */}
-        <ListCards cards={orderedCards} />
+        {/* <ListCards cards={orderedCards} /> */}
 
         {/* Colum Footer */}
         <Box

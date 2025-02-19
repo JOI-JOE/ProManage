@@ -9,4 +9,8 @@ class Color extends Model
 {
     use HasFactory;
     protected $fillable=['hex_code'];
+    public function labels()
+    {
+        return $this->hasMany(Label::class);
+    }
 }

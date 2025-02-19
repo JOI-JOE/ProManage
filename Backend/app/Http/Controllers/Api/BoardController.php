@@ -19,7 +19,7 @@ class BoardController extends Controller
         $board = Board::where('deleted', 1)->get();
         return response()->json($board);
     }
-
+    
     public function store(Request $request)
     {
         $data = $request->all();
@@ -54,6 +54,35 @@ class BoardController extends Controller
                 'data' => $board
             ]);
         } catch (\Throwable $th) {
+            DB::rollBack();
+            throw $th;
+        }
+    }
+
+    /**
+     * Update tên board
+     */
+    public function updateName(Request $request, string $id)
+    {
+        try {
+            DB::beginTransaction();
+            $board = Board::findOrFail($id);
+
+            // Kiểm tra nếu có trường 'name' trong yêu cầu
+            if ($request->has('name')) {
+                // Cập nhật trường 'name'
+                $board->name = $request->input('name');
+                $board->save();
+            }
+
+            DB::commit();
+            return response()->json([
+                'result' => true,
+                'message' => 'Board name updated successfully.',
+                'data' => $board
+            ]);
+        } catch (\Throwable $th) {
+            // Rollback nếu có lỗi xảy ra
             DB::rollBack();
             throw $th;
         }
@@ -176,17 +205,17 @@ class BoardController extends Controller
      * Update cho riêng trường archive 
      */
     public function showCreated($id)
-{
-    $board = Board::findOrFail($id); // Lấy bảng theo ID
+    {
+        $board = Board::findOrFail($id); // Lấy bảng theo ID
 
-    // Lấy thông tin người tạo bảng
-    $creator = $board->creator; // Đây sẽ là một instance của model User
+        // Lấy thông tin người tạo bảng
+        $creator = $board->creator; // Đây sẽ là một instance của model User
 
-    return response()->json([
-        'board' => $board,
-        'creator' => $creator,
-    ]);
-}
+        return response()->json([
+            'board' => $board,
+            'creator' => $creator,
+        ]);
+    }
 
 
     /**

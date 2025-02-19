@@ -10,65 +10,48 @@ use Laravel\Socialite\Facades\Socialite;
 class GoogleAuthController extends Controller
 {
 
-    public function redirectToAuthProvider($provider)
+    public function redirectToAuthProvider()
     {
-        if ($provider === 'google') {
-            return Socialite::driver('google')
-                ->scopes([
-                    'https://www.googleapis.com/auth/userinfo.email',
-                    'https://www.googleapis.com/auth/userinfo.profile',
-                    'https://www.googleapis.com/auth/gmail.send',
-                ])
-                ->with([
-                    'access_type' => 'offline', // Lấy refresh token
-                    'prompt' => 'consent', // Yêu cầu cấp lại quyền
-                ])
-                ->redirect();
-        }
-
-        return response()->json([
-            'error' => 'Unsupported provider',
-            'message' => 'Provider not supported. Only Google is allowed.',
-        ], 400);
+        return Socialite::driver('google')
+            ->with(['access_type' => 'offline', 'prompt' => 'consent']) // Cấu hình Google OAuth
+            ->scopes([
+                'openid',
+                'profile',
+                'email',
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile',
+                'https://www.googleapis.com/auth/gmail.send' // Yêu cầu quyền gửi email
+            ])
+            ->redirect();
     }
 
-    public function handleProviderCallback($provider)
+    public function handleProviderCallback()
     {
         try {
-            // Kiểm tra provider hợp lệ
-            if (!in_array($provider, ['google'])) {
-                return response()->json(['error' => 'Unsupported provider'], 400);
-            }
-
-            // Lấy thông tin người dùng từ provider
-            $socialUser = Socialite::driver($provider)->user();
+            // Lấy thông tin người dùng từ provider (sử dụng stateless vì đây là API)
+            $socialUser = Socialite::driver('google')->stateless()->user();
 
             // Xử lý hoặc tạo người dùng
-            $user = $this->findOrCreateUser($socialUser, $provider);
+            $user = $this->findOrCreateUser(socialUser: $socialUser);
 
             // Đăng nhập người dùng
             Auth::login($user);
 
             // Tạo token xác thực
-            $token = $user->createToken('auth-token')->plainTextToken;
+            $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Trả về thông tin người dùng và token
-            return response()->json([
-                'id'                   => $user->id,
-                'name'                 => $user->full_name,
-                'email'                => $user->email,
-                'avatar'               => $socialUser->getAvatar(),
-                'provider'             => $provider,
-                'google_access_token'  => $user->google_access_token,
-                'google_refresh_token' => $user->google_refresh_token,
-                'token'                => $token,
-            ]);
+            // Trả về token qua response JSON hoặc redirect với token trong query (tùy chọn)
+            return redirect("http://localhost:5173/login/google?token={$token}");
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to authenticate', 'message' => $e->getMessage()], 500);
+            // Ghi log lỗi để debug
+            \Log::error('Google OAuth Error: ' . $e->getMessage());
+
+            // Trả về thông báo lỗi chi tiết hơn
+            return redirect('http://localhost:5173?error=login_failed&message=' . urlencode($e->getMessage()));
         }
     }
 
-    protected function findOrCreateUser($socialUser, $provider)
+    protected function findOrCreateUser($socialUser)
     {
         // Tìm người dùng trong database
         $user = User::where('email', $socialUser->getEmail())->first();
@@ -85,6 +68,7 @@ class GoogleAuthController extends Controller
             $user = User::create([
                 'full_name'             => $socialUser->getName(),
                 'email'                 => $socialUser->getEmail(),
+                'google_id'             => $socialUser->getId(), // Thêm dòng này     
                 'google_access_token'   => $socialUser->token,
                 'google_refresh_token'  => $socialUser->refreshToken,
                 'password'              => bcrypt(str()->random(16)),

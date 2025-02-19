@@ -134,8 +134,9 @@ class ListController extends Controller
             ->orderBy('position')
             ->get();
 
+        $timestamp = now()->timestamp;
 
-        broadcast(new ListReordered($request->board_id, $updatedLists));
+        broadcast(new ListReordered($request->board_id, $updatedLists, $timestamp));
 
         return response()->json(['message' => 'List positions updated successfully']);
     }
