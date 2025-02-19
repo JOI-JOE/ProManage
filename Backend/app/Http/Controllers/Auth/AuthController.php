@@ -118,7 +118,7 @@ class AuthController extends Controller
                 throw new \Exception("GitHub account missing email");
             }
 
-            // dd($githubUser);    
+            // dd($githubUser);
             $avatarUrl = $githubUser->getAvatar();
 
             // Kiểm tra và tải ảnh về storage

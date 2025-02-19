@@ -132,17 +132,6 @@ const AppBar = () => {
                 // padding: "4px 8px",
               },
             },
-            // endAdornment: searchText && (
-            //   <InputAdornment position="end">
-            //     <IconButton
-            //       size="small"
-            //       onClick={() => setSearchText("")}
-            //       sx={{ color: "white" }}
-            //     >
-            //       <CloseIcon />
-            //     </IconButton>
-            //   </InputAdornment>
-            // ),
           }}
         />
 

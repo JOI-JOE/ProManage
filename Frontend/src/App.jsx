@@ -29,6 +29,7 @@ function App() {
 
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/boardconten" element={<Board />} />
+      <Route path="/workspaces/:workspaceId/boards/:boardId" element={<Board />} />
       <Route path="/workspaceconten" element={<Board1 />} />
       <Route path="/listworkspaceconten" element={<Board2 />} />
       <Route path="/formconten" element={<Board3 />} />

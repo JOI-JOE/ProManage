@@ -5,10 +5,9 @@ import "./index.css";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 
+import theme from "~/theme";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-// import { RouterProvider } from "react-router-dom";
 import { BrowserRouter } from "react-router-dom";
 
 import { ContextProvider } from "./contexts/ContextProvider";

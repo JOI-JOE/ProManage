@@ -19,7 +19,7 @@ class BoardController extends Controller
         $board = Board::where('deleted', 1)->get();
         return response()->json($board);
     }
-
+    
     public function store(Request $request)
     {
         $data = $request->all();
