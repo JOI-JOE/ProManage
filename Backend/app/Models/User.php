@@ -27,7 +27,11 @@ class User extends Authenticatable
         'role',
         'activity_block',
         'github_id',
+        'google_id',
+        'google_access_token',
+        'google_refresh_token',
         'github_avatar',
+        'google'
     ];
 
     /**
@@ -55,7 +59,7 @@ class User extends Authenticatable
      */
     public function workspaces()
     {
-        return $this->hasMany(Workspace::class);
+        return $this->hasMany(Workspace::class, 'id_member_creator'); // Nếu 'id_member_creator' là khóa ngoại
     }
 
     /**

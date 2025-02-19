@@ -6,6 +6,8 @@ import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
+import Logout from "@mui/icons-material/Logout";
+import axios from "axios";
 import Typography from "@mui/material/Typography";
 import PeopleIcon from "@mui/icons-material/People";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -19,6 +21,7 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
+import { ListItemIcon } from "@mui/material";
 
 export default function ProfileMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -38,6 +41,28 @@ export default function ProfileMenu() {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const token = localStorage.getItem("token");
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:8000/api/logout",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      localStorage.removeItem("token"); // Xóa token trên client
+      localStorage.removeItem("role");
+      window.location.reload(); // Reload trang hoặc chuyển hướng
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const handleThemeClick = (event) => {
@@ -149,12 +174,18 @@ export default function ProfileMenu() {
         <MenuItem onClick={handleOpenWorkspaceModal}>
           <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
         </MenuItem>
+
+        <MenuItem onClick={handleLogout}>
+          <ListItemIcon>
+            <Logout fontSize="small" />
+          </ListItemIcon>
+          Logout
+        </MenuItem>
         <Divider />
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>
-        <MenuItem sx={{ borderTop: "1px solid #ddd", marginY: "10px" }}>
-          Đăng xuất
-        </MenuItem>
+        <Divider sx={{ marginY: "10px" }} />
+        <MenuItem>Đăng xuất</MenuItem>
       </Menu>
 
       {/* Modal Tạo Không gian làm việc */}

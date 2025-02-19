@@ -17,11 +17,19 @@ use Laravel\Socialite\Facades\Socialite;
 class AuthController extends Controller
 {
 
+    public function getUser()
+    {
+        $user = Auth::user(); // Lấy thông tin người dùng hiện tại
 
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        return response()->json(['user' => $user]);
+    }
     ///// Login
     public function handleLogin(Request $request)
     {
-
         $request->validate([
             'email' => 'required|email',
             'password' => 'required'
@@ -41,8 +49,8 @@ class AuthController extends Controller
         // $user = Auth::user();
 
         // Tạo token sau khi xác thực thành công
-        $token = $user->createToken('auth_token')->plainTextToken;
-
+        $token = $user->createToken('token')->plainTextToken;
+        
         $user = Auth::user();
         // Auth::login($user);
         return response()->json([
@@ -52,6 +60,38 @@ class AuthController extends Controller
 
         ]);
     }
+
+// public function handleLogin(Request $request)
+// {
+//     $request->validate([
+//         'email' => 'required|email',
+//         'password' => 'required'
+//     ]);
+
+//     // Tìm user theo email
+//     $user = User::where('email', $request->email)->first();
+//     if (!$user) {
+//         return response()->json(['message' => 'Email không tồn tại'], 404);
+//     }
+
+//     // Kiểm tra mật khẩu
+//     if (!Auth::attempt($request->only('email', 'password'))) {
+//         return response()->json(['message' => 'Mật khẩu không đúng'], 401);
+//     }
+
+//     // Xác thực thành công, lấy user từ Auth::user()
+//     $user = Auth::user();
+
+//     // Tạo token
+//     $token = $user->createToken('token')->plainTextToken;
+
+//     return response()->json([
+//         'message' => 'Đăng nhập thành công',
+//         'token' => $token,
+//         'user' => $user
+//     ]);
+// }
+
 
 
 
@@ -99,7 +139,6 @@ class AuthController extends Controller
     public function loginGitHub()
     {
         return Socialite::driver('github')->redirect();
-
     }
 
     public function handleLoginGitHub()
@@ -146,7 +185,8 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             Log::error($e); // Log toàn bộ lỗi
             return response()->json(
-                ['error' => $e->getMessage()],500
+                ['error' => $e->getMessage()],
+                500
             );
         }
     }
