@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Drawer,
   List,
@@ -12,7 +12,9 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import FolderIcon from "@mui/icons-material/Folder";
 import HomeIcon from "@mui/icons-material/Home";
 import { Link } from "react-router-dom";
-import WorkspaceMenu from "./WorkspaceMenu/index";
+import WorkspaceMenu from "./WorkspaceMenu";
+
+
 
 const SideBar1 = () => {
 
@@ -67,11 +69,10 @@ const SideBar1 = () => {
         Các không gian làm việc
       </Typography>
 
-      {/* Phần toggle mở rộng danh sách */}
-
-      <div>
-        <WorkspaceMenu />
-      </div>
+      {/* Truyền workspace vào WorkspaceMenu */}
+    
+      <WorkspaceMenu />
+      {/* <WorkspaceMenu /> */}
 
     </Drawer>
   );
