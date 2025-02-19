@@ -6,8 +6,6 @@ import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import PersonAdd from "@mui/icons-material/PersonAdd";
-import Settings from "@mui/icons-material/Settings";
 import Logout from "@mui/icons-material/Logout";
 import axios from "axios";
 import Typography from "@mui/material/Typography";
@@ -23,6 +21,7 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
+import { ListItemIcon } from "@mui/material";
 
 export default function ProfileMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
