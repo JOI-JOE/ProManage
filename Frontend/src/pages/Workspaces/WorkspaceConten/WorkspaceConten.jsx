@@ -9,6 +9,10 @@ import {
   ListItemText,
   Avatar,
   Button,
+  Popover,
+  TextField,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
@@ -17,10 +21,43 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import ViewStreamIcon from "@mui/icons-material/ViewStream";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAltOutlined";
+import LockIcon from "@mui/icons-material/Lock";
+import GroupsIcon from "@mui/icons-material/Groups";
+import PublicIcon from "@mui/icons-material/Public";
 import { Link } from "react-router-dom";
+import CloseIcon from "@mui/icons-material/Close";
+import { IconButton } from "@mui/material";
+import { Grid } from "@mui/material"; // Nếu bạn dùng Material-UI
+
+const colors = ["#E3F2FD", "#64B5F6", "#1565C0", "#283593", "#8E24AA"];
 
 const WorkspaceConten = () => {
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [openPopover, setOpenPopover] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [boardTitle, setBoardTitle] = useState("");
+  const [selectedBg, setSelectedBg] = useState(null);
+  const [workspace, setWorkspace] = useState("default");
+
+  const handleOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+    setOpenPopover(true);
+  };
+
+  const handleChange = (e) => {
+    setBoardTitle(e.target.value);
+  };
+
+  const handleClose = () => {
+    setOpenPopover(false);
+    setAnchorEl(null);
+  };
+
+  const handleCreateBoard = () => {
+    alert(`🎉 Bảng "${boardTitle}" đã được tạo thành công!`);
+    handleClose();
+  };
 
   return (
     <Box
@@ -31,7 +68,7 @@ const WorkspaceConten = () => {
         marginTop: "25px",
       }}
     >
-      {/* Đã xem gần đây */}
+      {/* Danh sách bảng Trello */}
       <Box sx={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
         <AccessTimeIcon sx={{ marginRight: "8px" }} />
         <Typography variant="h6">Đã xem gần đây</Typography>
@@ -271,6 +308,7 @@ const WorkspaceConten = () => {
               cursor: "pointer",
               "&:hover": { backgroundColor: "#DCDFE4" },
             }}
+            onClick={handleOpen}
           >
             <Typography sx={{ color: "Black", fontWeight: "bold" }}>
               Tạo bảng mới
@@ -291,6 +329,141 @@ const WorkspaceConten = () => {
       >
         Xem tất cả các bảng đã đóng
       </Button>
+
+      {/* Popover (hiện cạnh nút nhấn) */}
+      <Popover
+        open={openPopover}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Box
+          sx={{
+            width: 350,
+            p: 2,
+            borderRadius: "8px",
+            bgcolor: "white",
+            boxShadow: 3,
+          }}
+        >
+          <Typography variant="h6" fontWeight="bold" textAlign="center">
+            Tạo bảng
+          </Typography>
+
+          {/* Chọn hình nền */}
+          <Box
+            sx={{
+              width: "100%",
+              height: "100px",
+              background: selectedBg,
+              borderRadius: "8px",
+            }}
+          />
+
+          <Typography variant="subtitle1" mt={2} fontWeight="bold">
+            Phông nền
+          </Typography>
+
+          <Grid container spacing={1} mt={1}>
+            {colors.map((color, index) => (
+              <Grid item key={index}>
+                <Box
+                  sx={{
+                    width: "50px",
+                    height: "35px",
+                    backgroundColor: color,
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    border: selectedBg === color ? "2px solid #007BFF" : "none",
+                  }}
+                  onClick={() => setSelectedBg(color)}
+                />
+              </Grid>
+            ))}
+          </Grid>
+
+          <IconButton
+            onClick={handleClose}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          <Typography variant="h6" mt={2} fontWeight="bold">
+            Tiêu đề bảng <span style={{ color: "red" }}>*</span>
+          </Typography>
+
+          {/* Ô nhập tiêu đề */}
+          <TextField
+            fullWidth
+            label="Tiêu đề bảng"
+            variant="outlined"
+            value={boardTitle}
+            onChange={(e) => setBoardTitle(e.target.value)}
+            error={boardTitle.trim() === ""}
+            helperText={
+              boardTitle.trim() === "" ? "👋 Tiêu đề bảng là bắt buộc" : ""
+            }
+            sx={{ marginBottom: 2 }}
+          />
+
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
+            Không gian làm việc
+          </Typography>
+          <Select
+            fullWidth
+            value={workspace}
+            onChange={(e) => setWorkspace(e.target.value)}
+            sx={{ marginBottom: 2 }}
+          >
+            <MenuItem value="workspace1">Workspace 1</MenuItem>
+            <MenuItem value="workspace2">Workspace 2</MenuItem>
+          </Select>
+
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
+            Quyền xem
+          </Typography>
+          <Select
+            fullWidth
+            value={workspace}
+            onChange={(e) => setWorkspace(e.target.value)}
+            sx={{ marginBottom: 2 }}
+          >
+            <MenuItem value="default">Không gian làm việc</MenuItem>
+            <MenuItem value="private">
+              <LockIcon fontSize="small" />
+              Riêng tư
+            </MenuItem>
+            <MenuItem value="workspace">
+              <GroupsIcon fontSize="small" />
+              Không gian làm việc
+            </MenuItem>
+            <MenuItem value="public">
+              <PublicIcon fontSize="small" />
+              Công khai
+            </MenuItem>
+          </Select>
+
+          {/* Nút tạo bảng */}
+          <Box sx={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreateBoard}
+              disabled={boardTitle.trim() === ""}
+            >
+              Tạo bảng
+            </Button>
+          </Box>
+        </Box>
+      </Popover>
     </Box>
   );
 };

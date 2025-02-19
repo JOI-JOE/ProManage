@@ -11,7 +11,7 @@ import Board3 from "./pages/Workspaces/_id3";
 
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
-import GitHubCallback from "./pages/Auth/GithubCallback";
+import GitHubCallback from "./pages/Auth/GitHubCallback";
 
 // import { Box, Container } from "@mui/material";
 
@@ -30,7 +30,10 @@ function App() {
 
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/boardconten" element={<Board />} />
-      <Route path="/workspaces/:workspaceId/boards/:boardId" element={<Board />} />
+      <Route
+        path="/workspaces/:workspaceId/boards/:boardId"
+        element={<Board />}
+      />
       <Route path="/workspaceconten" element={<Board1 />} />
       <Route path="/listworkspaceconten" element={<Board2 />} />
       <Route path="/formconten" element={<Board3 />} />
