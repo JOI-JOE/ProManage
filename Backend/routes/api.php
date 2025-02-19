@@ -72,17 +72,17 @@ Route::controller(WorkspaceInvitationsController::class)->group(function () {
 // Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
 // Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
-Route::middleware(['web'])->group(function () {
+Route::middleware(['api', 'web'])->group(function () {
     Route::controller(GoogleAuthController::class)->group(function () {
-        Route::get('/auth/redirect/{provider}',  action: 'redirectToAuthProvider');
-        // Route::get('/auth/callback/{provider}', 'handleProviderCallback');
-        Route::get('/auth/callback/{provider}', 'handleProviderCallback');
+        Route::get('/auth/redirect',  action: 'redirectToAuthProvider');
+        Route::get('/auth/callback/google', 'handleProviderCallback');
     });
 });
 
-// Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/user', [AuthController::class, 'getUser']);
 
-    Route::controller(WorkspaceController::class)->group(function () {
+    Route::controller(controller: WorkspaceController::class)->group(function () {
         // Get all workspace
         Route::get('/workspaces', 'index');
         // Get workspace by

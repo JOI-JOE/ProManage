@@ -27,7 +27,11 @@ class User extends Authenticatable
         'role',
         'activity_block',
         'github_id',
+        'google_id',
+        'google_access_token',
+        'google_refresh_token',
         'github_avatar',
+        'google'
     ];
 
     /**
