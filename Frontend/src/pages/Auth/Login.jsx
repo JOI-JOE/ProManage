@@ -42,7 +42,7 @@ const Login = () => {
       if (token && role) {
         localStorage.setItem("token", token);
         localStorage.setItem("role", role);
-  
+
         alert("Đăng nhập thành công");
         if (role === "admin") {
           window.location.href = "http://localhost:8000/admin";
@@ -50,6 +50,7 @@ const Login = () => {
           navigate("/");
         }
         return;
+
       } else {
         setErrors((prevErrors) => ({
           ...prevErrors,
@@ -103,8 +104,9 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Email"
-                  className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${errors.email ? "border-red-500" : "border-gray-300"
-                    }`}
+                  className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
+                    errors.email ? "border-red-500" : "border-gray-300"
+                  }`}
                 />
                 {errors.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -119,8 +121,9 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Password"
-                  className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${errors.password ? "border-red-500" : "border-gray-300"
-                    }`}
+                  className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
+                    errors.password ? "border-red-500" : "border-gray-300"
+                  }`}
                 />
                 {errors.password && (
                   <p className="text-red-500 text-sm mt-1">{errors.password}</p>
@@ -142,7 +145,10 @@ const Login = () => {
               </div>
             </form>
 
-            <button onClick={handleGitHubLogin} className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300">
+            <button
+              onClick={handleGitHubLogin}
+              className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300"
+            >
               <IoLogoGithub size={20} className="mr-2" />
               Login with GitHub
             </button>
@@ -156,7 +162,10 @@ const Login = () => {
 
             <p className="text-base text-[#adadad] mt-2">
               Don't have an account?
-              <Link to="/register" className="text-primary hover:underline ml-1">
+              <Link
+                to="/register"
+                className="text-primary hover:underline ml-1"
+              >
                 Sign Up
               </Link>
             </p>

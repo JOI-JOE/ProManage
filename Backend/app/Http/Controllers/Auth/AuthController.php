@@ -17,11 +17,19 @@ use Laravel\Socialite\Facades\Socialite;
 class AuthController extends Controller
 {
 
+    public function getUser()
+    {
+        $user = Auth::user(); // Lấy thông tin người dùng hiện tại
 
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        return response()->json(['user' => $user]);
+    }
     ///// Login
     public function handleLogin(Request $request)
     {
-
         $request->validate([
             'email' => 'required|email',
             'password' => 'required'
@@ -131,7 +139,6 @@ class AuthController extends Controller
     public function loginGitHub()
     {
         return Socialite::driver('github')->redirect();
-
     }
 
     public function handleLoginGitHub()
@@ -178,7 +185,8 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             Log::error($e); // Log toàn bộ lỗi
             return response()->json(
-                ['error' => $e->getMessage()],500
+                ['error' => $e->getMessage()],
+                500
             );
         }
     }

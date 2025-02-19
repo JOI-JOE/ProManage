@@ -1,11 +1,8 @@
-import "./App.css";
 import Board from "~/pages/Boards/_id";
 import Register from "./pages/Auth/Register";
 
 import Login from "./pages/Auth/Login";
 import { Route, Routes } from "react-router-dom";
-import GuestRoute from "./pages/Auth/GuestRoute";
-import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 
 // import { Dashboard } from "@mui/icons-material";
 import Board1 from "./pages/Workspaces/_id1";

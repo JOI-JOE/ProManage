@@ -25,6 +25,7 @@ const Board1 = () => {
   //   }
   // }, []);
 
+
   return (
     <Container disableGutters maxWidth={false} sx={{ height: "100vh" }}>
       <AppBar />

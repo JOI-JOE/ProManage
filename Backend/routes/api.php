@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ColorController;
+use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
 use App\Http\Controllers\Api\EmailController;
@@ -73,11 +74,10 @@ Route::controller(WorkspaceInvitationsController::class)->group(function () {
 // Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
-Route::middleware(['web'])->group(function () {
+Route::middleware(['api', 'web'])->group(function () {
     Route::controller(GoogleAuthController::class)->group(function () {
-        Route::get('/auth/redirect/{provider}',  action: 'redirectToAuthProvider');
-        // Route::get('/auth/callback/{provider}', 'handleProviderCallback');
-        Route::get('/auth/callback/{provider}', 'handleProviderCallback');
+        Route::get('/auth/redirect',  action: 'redirectToAuthProvider');
+        Route::get('/auth/callback/google', 'handleProviderCallback');
     });
 });
 
@@ -184,4 +184,13 @@ Route::middleware(['web'])->group(function () {
     Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']); // Lấy danh sách bình luận
     Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']); // Thêm bình luận
     Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']); // Xóa bình luận
+
+    // 📂 File đính kèm (Attachments)
+ Route::prefix('/{cardId}/attachments')->group(function () {
+    Route::get('/', [AttachmentController::class, 'getAttachments']); // Lấy danh sách tệp đính kèm
+    Route::post('/upload', [AttachmentController::class, 'uploadAttachment']); // Upload tệp đính kèm
+    Route::post('/uploadcover', [AttachmentController::class, 'uploadCover']); // tải ảnh bìa lên
+    Route::delete('/{attachmentId}', [AttachmentController::class, 'deleteAttachment']); // Xóa tệp đính kèm
+    Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']); // Đặt tệp làm ảnh bìa
+});
 // });

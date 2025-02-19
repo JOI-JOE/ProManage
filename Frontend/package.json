@@ -17,6 +17,7 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.4.1",
     "@mui/material": "^6.4.1",
+    "@react-oauth/google": "^0.12.1",
     "@tailwindcss/vite": "^4.0.3",
     "@tanstack/react-query": "^5.66.7",
     "@toolpad/core": "^0.12.0",
