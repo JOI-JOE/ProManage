@@ -5,10 +5,10 @@ import { Box, Container } from "@mui/material";
 import WorkspaceConten from "./WorkspaceConten/WorkspaceConten";
 import AppBar from "~/components/AppBar/AppBar";
 import SideBar1 from "./SideBar1/SideBar1";
-import { jwtDecode } from "jwt-decode"; // Dùng destructuring import
+import { jwtDecode } from "jwt-decode";
 import { useEffect } from "react";
 
- 
+
 
 const Board1 = () => {
 

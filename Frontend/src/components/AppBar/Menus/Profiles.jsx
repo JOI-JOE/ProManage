@@ -6,8 +6,6 @@ import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import PersonAdd from "@mui/icons-material/PersonAdd";
-import Settings from "@mui/icons-material/Settings";
 import Logout from "@mui/icons-material/Logout";
 import axios from "axios";
 import Typography from "@mui/material/Typography";
@@ -23,12 +21,15 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
+import { ListItemIcon } from "@mui/material";
 
 export default function ProfileMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
   const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
+  const [openInviteModal, setOpenInviteModal] = React.useState(false);
   const [selectedTheme, setSelectedTheme] = React.useState("system");
+  const [workspaceName, setWorkspaceName] = React.useState("");
   const [workspaceType, setWorkspaceType] = React.useState("");
 
   const open = Boolean(anchorEl);
@@ -44,26 +45,26 @@ export default function ProfileMenu() {
 
   const token = localStorage.getItem("token");
 
-    const handleLogout = async () => {
-      try {
-        await axios.post(
-          "http://localhost:8000/api/logout",
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-  
-        localStorage.removeItem("token"); // Xóa token trên client
-        localStorage.removeItem("role");
-        window.location.reload(); // Reload trang hoặc chuyển hướng
-      } catch (error) {
-        console.error("Logout failed:", error);
-      }
-    };
-  
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:8000/api/logout",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      localStorage.removeItem("token"); // Xóa token trên client
+      localStorage.removeItem("role");
+      window.location.reload(); // Reload trang hoặc chuyển hướng
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   const handleThemeClick = (event) => {
     setThemeAnchorEl(event.currentTarget);
   };
@@ -77,12 +78,23 @@ export default function ProfileMenu() {
   };
 
   const handleOpenWorkspaceModal = () => {
-    handleClose(); // Đóng menu tài khoản trước
     setOpenWorkspaceModal(true);
+    handleClose();
   };
 
   const handleCloseWorkspaceModal = () => {
     setOpenWorkspaceModal(false);
+    setWorkspaceName(""); // Reset tên không gian làm việc
+    setWorkspaceType(""); // Reset loại không gian làm việc
+  };
+
+  const handleContinue = () => {
+    if (workspaceName && workspaceType) {
+      setOpenWorkspaceModal(false);
+      setOpenInviteModal(true);
+      setWorkspaceName("");
+      setWorkspaceType("");
+    }
   };
 
   return (
@@ -162,20 +174,21 @@ export default function ProfileMenu() {
         <MenuItem onClick={handleOpenWorkspaceModal}>
           <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
         </MenuItem>
+
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <Logout fontSize="small" />
           </ListItemIcon>
           Logout
+        </MenuItem>
         <Divider />
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>
-        <MenuItem sx={{ borderTop: "1px solid #ddd", marginY: "10px" }}>
-          Đăng xuất
-        </MenuItem>
+        <Divider sx={{ marginY: "10px" }} />
+        <MenuItem>Đăng xuất</MenuItem>
       </Menu>
 
-      {/* Modal for Creating Workspace */}
+      {/* Modal Tạo Không gian làm việc */}
       <Modal open={openWorkspaceModal} onClose={handleCloseWorkspaceModal}>
         <Box
           sx={{
@@ -223,7 +236,10 @@ export default function ProfileMenu() {
             placeholder="Công ty của bạn"
             variant="outlined"
             sx={{ mb: 1, color: "black" }}
+            value={workspaceName}
+            onChange={(e) => setWorkspaceName(e.target.value)} // Cập nhật giá trị
           />
+
           <Typography variant="body2" sx={{ mb: 4, color: "black" }}>
             Đây là tên của công ty, nhóm hoặc tổ chức của bạn.
           </Typography>
@@ -233,24 +249,25 @@ export default function ProfileMenu() {
           >
             Loại Không gian làm việc
           </Typography>
+
           <Select
             fullWidth
             value={workspaceType}
             onChange={(e) => setWorkspaceType(e.target.value)}
             displayEmpty
-            sx={{ mb: 4 }}
+            sx={{ mb: 2 }}
           >
             <MenuItem value="" disabled>
               Chọn...
             </MenuItem>
-            <MenuItemSelect value="crm">Kinh doanh CRM</MenuItemSelect>
-            <MenuItemSelect value="smallbiz">Doanh nghiệp nhỏ</MenuItemSelect>
-            <MenuItemSelect value="hr">Nhân sự</MenuItemSelect>
-            <MenuItemSelect value="it">Kỹ thuật-CNTT</MenuItemSelect>
-            <MenuItemSelect value="it">Giáo dục</MenuItemSelect>
-            <MenuItemSelect value="it">Marketing</MenuItemSelect>
-            <MenuItemSelect value="it">Điều hành</MenuItemSelect>
-            <MenuItemSelect value="it">Khác</MenuItemSelect>
+            <MenuItem value="crm">Kinh doanh CRM</MenuItem>
+            <MenuItem value="smallbiz">Doanh nghiệp nhỏ</MenuItem>
+            <MenuItem value="hr">Nhân sự</MenuItem>
+            <MenuItem value="it">Kỹ thuật-CNTT</MenuItem>
+            <MenuItem value="education">Giáo dục</MenuItem>
+            <MenuItem value="marketing">Marketing</MenuItem>
+            <MenuItem value="management">Điều hành</MenuItem>
+            <MenuItem value="other">Khác</MenuItem>
           </Select>
           <Typography
             variant="h6"
@@ -269,9 +286,86 @@ export default function ProfileMenu() {
             việc của bạn.
           </Typography>
 
-          <Button fullWidth variant="contained" disabled>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleContinue}
+            disabled={!workspaceName || !workspaceType}
+          >
             Tiếp tục
           </Button>
+        </Box>
+      </Modal>
+
+      {/* Modal Mời Thành Viên */}
+      <Modal open={openInviteModal} onClose={() => setOpenInviteModal(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 500,
+            bgcolor: "white",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+          }}
+        >
+          {/* Nút đóng */}
+          <IconButton
+            onClick={() => setOpenInviteModal(false)}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          {/* Tiêu đề */}
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: "bold", mb: 1, fontSize: "27px" }}
+          >
+            Mời nhóm của bạn
+          </Typography>
+
+          {/* Phần mô tả */}
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Mời tối đa 9 người khác bằng liên kết hoặc nhập tên hoặc email của
+            họ.
+          </Typography>
+
+          {/* 🔹 Thêm dòng "Các thành viên Không gian làm việc" ở góc trái */}
+          <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
+            Các thành viên Không gian làm việc
+          </Typography>
+
+          {/* Ô nhập email */}
+          <TextField
+            fullWidth
+            placeholder="ví dụ: calrissian@cloud.ci"
+            variant="outlined"
+            sx={{ mb: 2 }}
+          />
+
+          {/* Nút Mời */}
+          <Button fullWidth variant="contained" disabled>
+            Mời vào Không gian làm việc
+          </Button>
+
+          {/* 🔹 Chuyển "Tôi sẽ thực hiện sau" thành link */}
+          <Typography
+            variant="body2"
+            sx={{
+              textAlign: "center",
+              mt: 2,
+              color: "blue",
+              cursor: "pointer",
+              textDecoration: "underline", // Làm cho nó trông giống link
+            }}
+            onClick={() => setOpenInviteModal(false)} // Đóng modal khi nhấn vào
+          >
+            Tôi sẽ thực hiện sau
+          </Typography>
         </Box>
       </Modal>
     </React.Fragment>
