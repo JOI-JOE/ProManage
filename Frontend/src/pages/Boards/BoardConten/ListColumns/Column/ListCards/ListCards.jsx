@@ -41,7 +41,7 @@ const ListCards = ({ cards }) => {
         }}
       >
         {cards?.map((card) => (
-          <C_ard key={card.id} card={card} />
+          <C_ard key={card._id} card={card} />
         ))}
       </Box>
     </SortableContext>

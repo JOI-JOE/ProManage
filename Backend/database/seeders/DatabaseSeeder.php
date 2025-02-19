@@ -17,7 +17,8 @@ class DatabaseSeeder extends Seeder
             WorkspaceSeeder::class,
             BoardSeeder::class,
             WorkspaceMembersSeeder::class,
-            BoardUserPermissions::class
+            BoardUserPermissions::class,
+            BoardMemberSeeder::class
         ]);
     }
 }

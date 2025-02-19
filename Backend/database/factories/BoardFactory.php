@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -25,7 +26,7 @@ class BoardFactory extends Factory
             'archive' => $this->faker->boolean,
 
             'closed' => false,
-            'created_by' => 1,
+            'created_by' => User::factory(),
 
             'visibility' => $this->faker->randomElement(['public', 'private', 'member']),
             'workspace_id' => \App\Models\Workspace::factory(),
