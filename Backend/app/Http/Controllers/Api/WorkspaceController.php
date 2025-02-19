@@ -6,29 +6,32 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\WorkspaceRequest;
 use App\Http\Resources\BoardResource;
 use App\Http\Resources\WorkspaceResource;
+use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 
 class WorkspaceController extends Controller
 {
-    public function index()
+
+    public function index(Request $request)
     {
         try {
-            // Kiểm tra xem người dùng đã đăng nhập hay chưa
-            if (!auth()->check()) {
+            $user = Auth::user(); // Lấy user hiện tại
+    
+            if (!$user) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
-
-            $user = auth()->user();
-
-            // Lấy tất cả workspace của người dùng
-            $workspaces = $user->workspaces; // Giả sử bạn đã thiết lập quan hệ giữa User và Workspace
-
+    
+            // Lấy tất cả workspace mà user này đã tạo
+            $workspaces = $user->workspaces;
+    
             return response()->json([
-                'data' => WorkspaceResource::collection($workspaces)
+                'success' => true,
+                'data' => $workspaces,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);

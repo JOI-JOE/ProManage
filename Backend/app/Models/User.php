@@ -55,7 +55,7 @@ class User extends Authenticatable
      */
     public function workspaces()
     {
-        return $this->hasMany(Workspace::class);
+        return $this->hasMany(Workspace::class, 'id_member_creator'); // Nếu 'id_member_creator' là khóa ngoại
     }
 
     /**

@@ -1,119 +1,152 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Avatar,
-  Typography,
-  Collapse,
-} from '@mui/material';
-import {
-  ExpandLess,
-  ExpandMore,
-  ViewKanban as ViewKanbanIcon,
-  FavoriteBorder as FavoriteBorderIcon,
-  ViewStream as ViewStreamIcon,
-  People as PeopleIcon,
-  Settings as SettingsIcon,
-  Add as AddIcon,
-  ChevronRight as ChevronRightIcon,
-} from '@mui/icons-material';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react'
+import { Box, List, ListItemButton, ListItemIcon, ListItemText, Avatar, Typography, Collapse } from '@mui/material'
+import { ExpandLess, ExpandMore } from '@mui/icons-material'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+
+import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
+import ViewStreamIcon from '@mui/icons-material/ViewStream'
+import PeopleIcon from '@mui/icons-material/People'
+import SettingsIcon from '@mui/icons-material/Settings'
+import AddIcon from '@mui/icons-material/Add'
+import { Link } from 'react-router-dom'
+import axios from 'axios';  // Thêm import axios
+import Authen from '../../../../Apis/Authen';
+ 
+
 
 function WorkspaceMenu() {
-  const [openSettings, setOpenSettings] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState(null);
-  const [workspaces, setWorkspaces] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+    const [openSettings, setOpenSettings] = useState(false)
+    const [hoveredItem, setHoveredItem] = useState(null)
+    const [workspaces, setWorkspaces] = useState([]); // State để lưu workspace
+    const [loading, setLoading] = useState(true); // State để kiểm tra trạng thái loading
+    const [error, setError] = useState(null); // State để lưu lỗi (nếu có)
+    
 
-  const toggleSettings = () => {
-    setOpenSettings(!openSettings);
-  };
+    const toggleSettings = () => {
+        setOpenSettings(!openSettings)
+    }
 
-  const handleMouseEnter = (item) => {
-    setHoveredItem(item);
-  };
+    const handleMouseEnter = (item) => {
+        setHoveredItem(item)
+    }
 
-  const handleMouseLeave = () => {
-    setHoveredItem(null);
-  };
+    const handleMouseLeave = () => {
+        setHoveredItem(null)
+    }
 
-  useEffect(() => {
-    const fetchWorkspaces = async () => {
-      const token = localStorage.getItem("token");
-      console.log(token);
-     
-      if (token) {
+    
+    useEffect(() => {
+      // Gọi API để lấy danh sách workspace
+      const fetchWorkspaces = async () => {
         try {
-          const response = await axios.get("http://127.0.0.1:8000/api/workspaces", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            withCredentials: true, // Đảm bảo cookie được gửi cùng yêu cầu
-          });
-          setWorkspaces(response.data.data); // Lưu danh sách workspace vào state
+          const token = localStorage.getItem("token"); // Lấy token từ localStorage
+          console.log(token)
+          const response = await Authen.get("/workspaces"); 
+          console.log(response.data);
+          setWorkspaces(response.data.data); // Lưu dữ liệu workspace vào state
           setLoading(false);
         } catch (err) {
           setError("Có lỗi khi lấy dữ liệu.");
           setLoading(false);
         }
-      } else {
-        setError("Chưa có token. Vui lòng đăng nhập.");
-        setLoading(false);
-      }
-    };
+      };
+  
+      fetchWorkspaces();
+    }, []);
 
-    fetchWorkspaces();
-  }, []);
+    return (
+        <div id="workspace_1">
+   {loading && <p>Loading...</p>}
+   {error && <p>{error}</p>}
+          {workspaces.map((workspace) => (
 
-  return (
-    <div id="workspace_1">
-      <ListItemButton onClick={toggleSettings} sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <ListItemIcon sx={{ color: "black" }}>
-            <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
-          </ListItemIcon>
-          <ListItemText
-            primary={
-              <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap", color: "black" }}>
-                Trello Không gian làm việc
-              </Typography>
-            }
-          />
-        </Box>
+  <ListItemButton key={workspace.id} onClick={toggleSettings} sx={{ display: "flex", justifyContent: "space-between" }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <ListItemIcon sx={{ color: "black" }}>
+        <Avatar sx={{ bgcolor: "#5D87FF" }}>
+          {workspace.name} {/* Hiển thị chữ cái đầu của tên workspace */}
+        </Avatar>
+      </ListItemIcon>
+      <ListItemText
+        primary={
+          <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap", color: "black" }}>
+            {workspace.name} {/* Hiển thị tên workspace */}
+          </Typography>
+        }
+      />
+    </Box>
 
-        {openSettings ? <ExpandLess sx={{ color: "black" }} /> : <ExpandMore sx={{ color: "black" }} />}
-      </ListItemButton>
+    {openSettings ? (
+      <ExpandLess sx={{ color: "black" }} />
+    ) : (
+      <ExpandMore sx={{ color: "black" }} />
+    )}
+  </ListItemButton>
+  
+))}
 
-      {/* Danh sách workspace - Hiển thị khi mở */}
-      <Collapse in={openSettings} timeout="auto" unmountOnExit>
-        <Box sx={{ pl: 4 }}>
-          {loading ? (
-            <Typography sx={{ color: "gray" }}>Đang tải...</Typography>
-          ) : error ? (
-            <Typography sx={{ color: "red" }}>{error}</Typography>
-          ) : workspaces.length === 0 ? (
-            <Typography sx={{ color: "gray" }}>Không có workspace nào</Typography>
-          ) : (
-            <List>
-              {workspaces.map((workspace) => (
-                <ListItemButton key={workspace.id} component={Link} to={`/workspaces/${workspace.id}`}>
-                  <ListItemIcon sx={{ color: "black" }}>
-                    <ViewKanbanIcon />
-                  </ListItemIcon>
-                  <ListItemText primary={workspace.name} sx={{ color: "black" }} />
-                </ListItemButton>
-              ))}
-            </List>
-          )}
-        </Box>
-      </Collapse>
-    </div>
-  );
+            {/* Danh sách con - Hiển thị khi mở */}
+            <Collapse in={openSettings} timeout="auto" unmountOnExit>
+                <Box sx={{ pl: 4 }}>
+                    <List>
+                        <ListItemButton component={Link} to="/listworkspaceconten">
+                            <ListItemIcon sx={{ color: "black" }}>
+                                <ViewKanbanIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Bảng" sx={{ color: "black" }} />
+                        </ListItemButton>
+                        <ListItemButton>
+                            <ListItemIcon sx={{ color: "black" }}>
+                                <FavoriteBorderIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Điểm nổi bật" sx={{ color: "black" }} />
+                        </ListItemButton>
+
+                        <ListItemButton
+                            onMouseEnter={() => handleMouseEnter("Hình")}
+                            onMouseLeave={handleMouseLeave}
+                        >
+                            <ListItemIcon sx={{ color: "black" }}>
+                                <ViewStreamIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Hình" sx={{ color: "black" }} />
+                            {hoveredItem === "Hình" && (
+                                <ChevronRightIcon sx={{ color: "gray" }} />
+                            )}
+                        </ListItemButton>
+
+                        <ListItemButton
+                            onMouseEnter={() => handleMouseEnter("Thành viên")}
+                            onMouseLeave={handleMouseLeave}
+                        >
+                            <ListItemIcon sx={{ color: "black" }}>
+                                <PeopleIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Thành viên" sx={{ color: "black" }} />
+                            <AddIcon sx={{ color: "gray" }} />
+                            {hoveredItem === "Thành viên" && (
+                                <ChevronRightIcon sx={{ color: "gray" }} />
+                            )}
+                        </ListItemButton>
+
+                        <ListItemButton
+                            onMouseEnter={() => handleMouseEnter("Cài đặt")}
+                            onMouseLeave={handleMouseLeave}
+                        >
+                            <ListItemIcon sx={{ color: "black" }}>
+                                <SettingsIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Cài đặt" sx={{ color: "black" }} />
+                            {hoveredItem === "Cài đặt" && (
+                                <ChevronRightIcon sx={{ color: "gray" }} />
+                            )}
+                        </ListItemButton>
+                    </List>
+                </Box>
+            </Collapse>
+        </div>
+    )
 }
 
-export default WorkspaceMenu;
+export default WorkspaceMenu
