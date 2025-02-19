@@ -284,6 +284,34 @@ const Column = ({ list }) => {
             justifyContent: "space-between",
           }}
         >
+          {isEditing ? (
+            <TextField
+              value={title}
+              onChange={handleTitleChange}
+              onBlur={handleTitleBlur}
+              variant="outlined"
+              size="small"
+              // autoFocus
+              sx={{
+                height: "20px",
+                width: "80%",
+                "& .MuiOutlinedInput-root": {
+                  height: "32px",
+                  "& fieldset": {
+                    borderColor: "teal !important",
+                    borderWidth: "0.5px !important",
+                  },
+                  "&:hover fieldset": { borderColor: "teal" },
+                  "&.Mui-focused fieldset": { borderColor: "teal" },
+                },
+                "& .MuiInputBase-input": {
+                  padding: "4px",
+                  fontSize: "14px",
+                },
+              }}
+
+            />
+          ) : (
           <Typography
             sx={{ fontWeight: "bold", cursor: "pointer", fontSize: "0.8rem" }}
           >
