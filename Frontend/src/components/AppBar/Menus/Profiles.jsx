@@ -44,26 +44,26 @@ export default function ProfileMenu() {
 
   const token = localStorage.getItem("token");
 
-    const handleLogout = async () => {
-      try {
-        await axios.post(
-          "http://localhost:8000/api/logout",
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-  
-        localStorage.removeItem("token"); // Xóa token trên client
-        localStorage.removeItem("role");
-        window.location.reload(); // Reload trang hoặc chuyển hướng
-      } catch (error) {
-        console.error("Logout failed:", error);
-      }
-    };
-  
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:8000/api/logout",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      localStorage.removeItem("token"); // Xóa token trên client
+      localStorage.removeItem("role");
+      window.location.reload(); // Reload trang hoặc chuyển hướng
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   const handleThemeClick = (event) => {
     setThemeAnchorEl(event.currentTarget);
   };
@@ -162,17 +162,18 @@ export default function ProfileMenu() {
         <MenuItem onClick={handleOpenWorkspaceModal}>
           <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
         </MenuItem>
+
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <Logout fontSize="small" />
           </ListItemIcon>
           Logout
+        </MenuItem>
         <Divider />
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>
-        <MenuItem sx={{ borderTop: "1px solid #ddd", marginY: "10px" }}>
-          Đăng xuất
-        </MenuItem>
+        <Divider sx={{ marginY: "10px" }} />
+        <MenuItem>Đăng xuất</MenuItem>
       </Menu>
 
       {/* Modal for Creating Workspace */}
