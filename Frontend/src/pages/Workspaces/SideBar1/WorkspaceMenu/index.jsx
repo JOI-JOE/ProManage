@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Box, List, ListItemButton, ListItemIcon, ListItemText, Avatar, Typography, Collapse } from '@mui/material'
 import { ExpandLess, ExpandMore } from '@mui/icons-material'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -10,10 +10,18 @@ import PeopleIcon from '@mui/icons-material/People'
 import SettingsIcon from '@mui/icons-material/Settings'
 import AddIcon from '@mui/icons-material/Add'
 import { Link } from 'react-router-dom'
+import axios from 'axios';  // Thêm import axios
+import Authen from '../../../../Apis/Authen';
+ 
+
 
 function WorkspaceMenu() {
     const [openSettings, setOpenSettings] = useState(false)
     const [hoveredItem, setHoveredItem] = useState(null)
+    const [workspaces, setWorkspaces] = useState([]); // State để lưu workspace
+    const [loading, setLoading] = useState(true); // State để kiểm tra trạng thái loading
+    const [error, setError] = useState(null); // State để lưu lỗi (nếu có)
+    
 
     const toggleSettings = () => {
         setOpenSettings(!openSettings)
@@ -27,28 +35,56 @@ function WorkspaceMenu() {
         setHoveredItem(null)
     }
 
+    
+    useEffect(() => {
+      // Gọi API để lấy danh sách workspace
+      const fetchWorkspaces = async () => {
+        try {
+          const token = localStorage.getItem("token"); // Lấy token từ localStorage
+          console.log(token)
+          const response = await Authen.get("/workspaces"); 
+          console.log(response.data);
+          setWorkspaces(response.data.data); // Lưu dữ liệu workspace vào state
+          setLoading(false);
+        } catch (err) {
+          setError("Có lỗi khi lấy dữ liệu.");
+          setLoading(false);
+        }
+      };
+  
+      fetchWorkspaces();
+    }, []);
+
     return (
         <div id="workspace_1">
-            <ListItemButton onClick={toggleSettings} sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <ListItemIcon sx={{ color: "black" }}>
-                        <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
-                    </ListItemIcon>
-                    <ListItemText
-                        primary={
-                            <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap", color: "black" }}>
-                                Trello Không gian làm việc
-                            </Typography>
-                        }
-                    />
-                </Box>
+   {loading && <p>Loading...</p>}
+   {error && <p>{error}</p>}
+          {workspaces.map((workspace) => (
 
-                {openSettings ? (
-                    <ExpandLess sx={{ color: "black" }} />
-                ) : (
-                    <ExpandMore sx={{ color: "black" }} />
-                )}
-            </ListItemButton>
+  <ListItemButton key={workspace.id} onClick={toggleSettings} sx={{ display: "flex", justifyContent: "space-between" }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <ListItemIcon sx={{ color: "black" }}>
+        <Avatar sx={{ bgcolor: "#5D87FF" }}>
+          {workspace.name} {/* Hiển thị chữ cái đầu của tên workspace */}
+        </Avatar>
+      </ListItemIcon>
+      <ListItemText
+        primary={
+          <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap", color: "black" }}>
+            {workspace.name} {/* Hiển thị tên workspace */}
+          </Typography>
+        }
+      />
+    </Box>
+
+    {openSettings ? (
+      <ExpandLess sx={{ color: "black" }} />
+    ) : (
+      <ExpandMore sx={{ color: "black" }} />
+    )}
+  </ListItemButton>
+  
+))}
 
             {/* Danh sách con - Hiển thị khi mở */}
             <Collapse in={openSettings} timeout="auto" unmountOnExit>

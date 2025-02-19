@@ -4,8 +4,6 @@ import Authen from "../../Apis/Authen";
 
 import { IoLogoGithub } from "react-icons/io";
 
-///// thư viện đây nhé
-
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
@@ -29,14 +27,18 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     try {
+      // Gửi request lấy CSRF token (chỉ cần với Sanctum)
+      await Authen.get("/sanctum/csrf-cookie");
+  
+      // Gửi request đăng nhập
       const response = await Authen.post("/login", formData);
       console.log(response.data);
-
+  
       const token = response?.data?.token;
       const role = response?.data?.user?.role;
-
+  
       if (token && role) {
         localStorage.setItem("token", token);
         localStorage.setItem("role", role);
@@ -47,16 +49,14 @@ const Login = () => {
         } else {
           navigate("/");
         }
-        return; // Ngăn chặn thực thi tiếp tục
+        return;
+
       } else {
         setErrors((prevErrors) => ({
           ...prevErrors,
           general: "Có lỗi xảy ra trong quá trình đăng nhập",
         }));
       }
-
-      alert("Đăng nhập thành công");
-      navigate("/");
     } catch (error) {
       if (error.response) {
         if (error.response.status === 404) {

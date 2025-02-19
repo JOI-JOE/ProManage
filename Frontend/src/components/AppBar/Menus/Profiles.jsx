@@ -6,6 +6,10 @@ import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
+import PersonAdd from "@mui/icons-material/PersonAdd";
+import Settings from "@mui/icons-material/Settings";
+import Logout from "@mui/icons-material/Logout";
+import axios from "axios";
 import Typography from "@mui/material/Typography";
 import PeopleIcon from "@mui/icons-material/People";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -38,6 +42,28 @@ export default function ProfileMenu() {
     setAnchorEl(null);
   };
 
+  const token = localStorage.getItem("token");
+
+    const handleLogout = async () => {
+      try {
+        await axios.post(
+          "http://localhost:8000/api/logout",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+  
+        localStorage.removeItem("token"); // Xóa token trên client
+        localStorage.removeItem("role");
+        window.location.reload(); // Reload trang hoặc chuyển hướng
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
+    };
+  
   const handleThemeClick = (event) => {
     setThemeAnchorEl(event.currentTarget);
   };
@@ -136,6 +162,11 @@ export default function ProfileMenu() {
         <MenuItem onClick={handleOpenWorkspaceModal}>
           <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
         </MenuItem>
+        <MenuItem onClick={handleLogout}>
+          <ListItemIcon>
+            <Logout fontSize="small" />
+          </ListItemIcon>
+          Logout
         <Divider />
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>

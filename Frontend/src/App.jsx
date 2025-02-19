@@ -19,7 +19,8 @@ function App() {
   return (
     <Routes>
 
-      {/* <Route path="/auth/callback" element={<GitHubCallback />} /> */}
+
+      <Route path="/auth/callback" element={<GitHubCallback />} />
 
       {/* Mọi user đều vào Home */}
       <Route path="/" element={<Home />} />
