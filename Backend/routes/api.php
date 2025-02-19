@@ -33,17 +33,18 @@ use Illuminate\Support\Facades\Route;
 // Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
 // Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
-Route::middleware(['web'])->group(function () {
+Route::middleware(['api', 'web'])->group(function () {
     Route::controller(GoogleAuthController::class)->group(function () {
-        Route::get('/auth/redirect/{provider}',  action: 'redirectToAuthProvider');
-        // Route::get('/auth/callback/{provider}', 'handleProviderCallback');
-        Route::get('/auth/callback/{provider}', 'handleProviderCallback');
+        Route::get('/auth/redirect',  action: 'redirectToAuthProvider');
+        Route::get('/auth/callback/google', 'handleProviderCallback');
     });
 });
 
-Route::middleware(['auth:sanctum'])->group(function () {
 
-    Route::controller(WorkspaceController::class)->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/user', [AuthController::class, 'getUser']);
+
+    Route::controller(controller: WorkspaceController::class)->group(function () {
         // Get all workspace
         Route::get('/workspaces', 'index');
         // Get workspace by 
@@ -78,24 +79,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
     });
 
-// Routes quản lý bảng
-Route::prefix('boards/{id}/')->group(function () {
-    Route::patch('name', [BoardController::class, 'updateName']);
-    Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
-    Route::patch('marked', [BoardController::class, 'updateIsMarked']);
-    Route::patch('archive', [BoardController::class, 'updateArchive']);
-    Route::patch('visibility', [BoardController::class, 'updateVisibility']);
-    Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng 
-});
+    // Routes quản lý bảng
+    Route::prefix('boards/{id}/')->group(function () {
+        Route::patch('name', [BoardController::class, 'updateName']);
+        Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
+        Route::patch('marked', [BoardController::class, 'updateIsMarked']);
+        Route::patch('archive', [BoardController::class, 'updateArchive']);
+        Route::patch('visibility', [BoardController::class, 'updateVisibility']);
+        Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng 
+    });
 
-// Routes cho thành viên bảng
+    // Routes cho thành viên bảng
 
 
-Route::prefix('boards/{boardId}/members/')->group(function () {
-    Route::get('', [BoardMemberController::class, 'getAllMembers']);
-    Route::post('', [BoardMemberController::class, 'addMember']);
-    Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
-});
+    Route::prefix('boards/{boardId}/members/')->group(function () {
+        Route::get('', [BoardMemberController::class, 'getAllMembers']);
+        Route::post('', [BoardMemberController::class, 'addMember']);
+        Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
+    });
     // Send Email
     Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 

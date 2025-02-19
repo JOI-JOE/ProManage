@@ -17,11 +17,19 @@ use Laravel\Socialite\Facades\Socialite;
 class AuthController extends Controller
 {
 
+    public function getUser()
+    {
+        $user = Auth::user(); // Lấy thông tin người dùng hiện tại
 
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        return response()->json(['user' => $user]);
+    }
     ///// Login
     public function handleLogin(Request $request)
     {
-
         $request->validate([
             'email' => 'required|email',
             'password' => 'required'
@@ -42,7 +50,7 @@ class AuthController extends Controller
 
         // Tạo token sau khi xác thực thành công
         $token = $user->createToken('auth_token')->plainTextToken;
-        
+
         $user = Auth::user();
         // Auth::login($user);
         return response()->json([
@@ -91,7 +99,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
 
-      
+
         $request->user()->tokens()->delete(); // Xóa tất cả token của user
         return response()->json(['message' => 'Logged out successfully']);
     }
@@ -99,14 +107,13 @@ class AuthController extends Controller
     public function loginGitHub()
     {
         return Socialite::driver('github')->redirect();
-       
     }
 
     public function handleLoginGitHub()
     {
         try {
             $githubUser = Socialite::driver('github')->stateless()->user();
-           
+
             if (!$githubUser->getEmail()) {
                 throw new \Exception("GitHub account missing email");
             }
@@ -137,7 +144,7 @@ class AuthController extends Controller
                     'github_avatar' => $avatarName ?? $avatarUrl,
                 ]
             );
-          
+
 
             $token = $user->createToken('token')->plainTextToken;
 
@@ -146,7 +153,8 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             Log::error($e); // Log toàn bộ lỗi
             return response()->json(
-                ['error' => $e->getMessage()],500
+                ['error' => $e->getMessage()],
+                500
             );
         }
     }
