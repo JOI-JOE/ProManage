@@ -31,17 +31,19 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'handleRegister']);
 Route::post('/login', [AuthController::class, 'handleLogin']);
 
-Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+// Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
 // Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
 // Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
 
-Route::middleware(['api', 'web'])->group(function () {
+Route::middleware(['web'])->group(function () {
     Route::controller(GoogleAuthController::class)->group(function () {
-        Route::get('/auth/redirect',  action: 'redirectToAuthProvider');
+        Route::get('/auth/redirect/google', 'redirectToAuthProvider');
         Route::get('/auth/callback/google', 'handleProviderCallback');
     });
 });
+
+
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', [AuthController::class, 'getUser']);
