@@ -17,9 +17,12 @@ import Dashboard from "./pages/Dashboard";
 import GitHubCallback from "./pages/Auth/GithubCallback";
 
 // import { Box, Container } from "@mui/material";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+const queryClient = new QueryClient();
 
 function App() {
   return (
+    <QueryClientProvider client={queryClient}>
     <Routes>
      {/* Chỉ cho phép user chưa đăng nhập vào Login & Register */}
      <Route element={<GuestRoute />}>
@@ -32,13 +35,15 @@ function App() {
         <Route path="/" element={<Board1 />} />
         <Route path="/dashboard" element={<Dashboard />} />
       
-        <Route path="/boardcontent" element={<Board />} />
-        {/* <Route path="/workspacecontent" element={<Board1 />} /> */}
-        <Route path="/listworkspacecontent" element={<Board2 />} />
+        {/* <Route path="/boards" element={<Board />} /> */}
+        {/* <Route path="/boards" element={<Board />} /> */}
+        {/* <Route path="workspace/:workspaceId/boards" element={<Board1 />} /> */}
+        <Route path="/workspace/:workspaceId/boards" element={<Board2 />} />
       </Route>
 
       <Route path="/auth/callback" element={<GitHubCallback />} />
     </Routes>
+    </QueryClientProvider>
   );
 }
 

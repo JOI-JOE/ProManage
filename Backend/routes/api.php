@@ -37,7 +37,9 @@ Route::controller(WorkspaceController::class)->group(function () {
     // Get all workspace
     Route::get('/workspaces', 'index');
     // Get workspace by
-    Route::get('/workspaces/{id}', 'show');
+    Route::get('/workspaces/{id}/boards', 'show');
+
+    Route::get('/workspaces/{id}', 'show_deltail_workspace');
     // Create new workspace
     Route::post('/workspaces', 'store');
     // Delete workspace
@@ -45,11 +47,11 @@ Route::controller(WorkspaceController::class)->group(function () {
 
     // Update infor workspace
     Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
-});
+})->middleware('auth:sanctum');
 
 Route::controller(WorkspaceMembersController::class)->group(function () {
     Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
-    // https://trello.com/1/organization/678b57031faba8dd978f0dee/paidAccount/addMembersPriceQuotes
+   
     Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
 });
 
@@ -59,12 +61,12 @@ Route::controller(WorkspaceInvitationsController::class)->group(function () {
 
     // ở đây sẽ có hai trường hợp hợp
     // 1. nếu là id -> sẽ được add thẳng vào workspace + email
-    // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/678d05e057279698f99306bf
+   
     Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
 
     // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
     //
-    // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members
+    
     Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
 });
 // Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
@@ -79,42 +81,6 @@ Route::middleware(['web'])->group(function () {
     });
 });
 
-// Route::middleware(['auth:sanctum'])->group(function () {
-
-    Route::controller(WorkspaceController::class)->group(function () {
-        // Get all workspace
-        Route::get('/workspaces', 'index');
-        // Get workspace by
-        Route::get('/workspaces/{id}', 'show');
-        // Create new workspace
-        Route::post('/workspaces', 'store');
-        // Delete workspace
-        Route::delete('/workspaces/{workspace}', 'destroy');
-
-        // Update infor workspace
-        Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
-    })->middleware('auth:sanctum');
-
-    Route::controller(WorkspaceMembersController::class)->group(function () {
-        Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
-        // https://trello.com/1/organization/678b57031faba8dd978f0dee/paidAccount/addMembersPriceQuotes
-        Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
-    });
-
-    Route::controller(WorkspaceInvitationsController::class)->group(function () {
-        Route::get("/search/members", 'searchNewMembersToWorkspace');
-        Route::post('/workspace/{idWorkspace}/addMember',  'inviteMemberToWorkspace');
-
-        // ở đây sẽ có hai trường hợp hợp
-        // 1. nếu là id -> sẽ được add thẳng vào workspace + email
-        // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/678d05e057279698f99306bf
-        Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
-
-        // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
-        //
-        // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members
-        Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
-    });
 
     // Routes quản lý bảng
     Route::prefix('boards/{id}/')->group(function () {
