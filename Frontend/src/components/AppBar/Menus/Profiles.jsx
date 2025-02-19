@@ -23,6 +23,7 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
+import { ListItemIcon } from "@mui/material";
 
 export default function ProfileMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -168,6 +169,7 @@ export default function ProfileMenu() {
           </ListItemIcon>
           Logout
         <Divider />
+        </MenuItem>
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>
         <MenuItem sx={{ borderTop: "1px solid #ddd", marginY: "10px" }}>

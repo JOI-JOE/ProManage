@@ -10,6 +10,14 @@ const Authen = axios.create({
   },
 });
 
+Authen.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Thêm token vào headers (nếu có)
 Authen.interceptors.request.use((config) => {
   const token = localStorage.getItem("ACCESS_TOKEN");
@@ -19,13 +27,14 @@ Authen.interceptors.request.use((config) => {
   return config;
 });
 
-// Xử lý lỗi response
-Authen.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error("API Error:", error);
-    return Promise.reject(error);
-  }
-);
+
+// // Xử lý lỗi response
+// Authen.interceptors.response.use(
+//   (response) => response,
+//   (error) => {
+//     console.error("API Error:", error);
+//     return Promise.reject(error);
+//   }
+// );
 
 export default Authen;

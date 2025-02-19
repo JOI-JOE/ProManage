@@ -15,6 +15,8 @@ import GitHubCallback from "./pages/Auth/GithubCallback";
 
 // import { Box, Container } from "@mui/material";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import GuestRoute from "./pages/Auth/GuestRoute";
+import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 const queryClient = new QueryClient();
 
 function App() {
