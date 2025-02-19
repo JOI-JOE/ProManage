@@ -151,6 +151,7 @@ Route::prefix('boards/{boardId}/members')->group(function () {
     // Route::get('', [BoardMemberController::class, 'getAllMembers']);
     Route::post('', [BoardMemberController::class, 'addMember']);
     Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
+    Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
 });
 
 // Route cho bảng đã xóa

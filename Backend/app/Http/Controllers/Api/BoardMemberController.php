@@ -138,4 +138,45 @@ class BoardMemberController extends Controller
             ], 500);
         }
     }
+
+    public function leaveBoard($boardId, $userId)
+{
+    try {
+        // Kiểm tra board có tồn tại không
+        $board = Board::find($boardId);
+        if (!$board) {
+            return response()->json([
+                'result' => false,
+                'message' => 'Board not found'
+            ], 404);
+        }
+
+        // Kiểm tra nếu user có tham gia board không
+        $boardUser = BoardMember::where('board_id', $boardId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$boardUser) {
+            return response()->json([
+                'result' => false,
+                'message' => 'Member not found in this board'
+            ], 404);
+        }
+
+        // Xóa thành viên khỏi board
+        $boardUser->delete();
+
+        return response()->json([
+            'result' => true,
+            'message' => 'Member left the board successfully'
+        ]);
+    } catch (\Exception $e) {
+        // Nếu có lỗi bất ngờ, bắt lỗi và trả về thông báo lỗi chi tiết
+        return response()->json([
+            'result' => false,
+            'message' => 'An error occurred: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
 }
