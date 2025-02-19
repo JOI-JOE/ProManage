@@ -31,7 +31,7 @@ const Home = () => {
       {token ? (
         <button onClick={handleLogout}>Logout</button>
       ) : (
-        <a href="/login/google">Login</a>
+        <a href="/login">Login</a>
       )}
     </div>
   );

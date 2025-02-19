@@ -11,7 +11,6 @@ import "react-toastify/dist/ReactToastify.css";
 import { BrowserRouter } from "react-router-dom";
 
 import { ContextProvider } from "./contexts/ContextProvider";
-import theme from "~/theme";
 import App from "~/App.jsx";
 // import router from "./router";
 
