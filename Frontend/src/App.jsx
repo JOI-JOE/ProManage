@@ -3,9 +3,6 @@ import Register from "./pages/Auth/Register";
 
 import Login from "./pages/Auth/Login";
 import { Route, Routes } from "react-router-dom";
-import GuestRoute from "./pages/Auth/GuestRoute";
-import ProtectedRoute from "./pages/Auth/ProtectedRoute";
-import GoogleAuth from "./pages/Auth/GoogleAuth";
 
 // import { Dashboard } from "@mui/icons-material";
 import Board1 from "./pages/Workspaces/_id1";
@@ -26,22 +23,15 @@ function App() {
 
       {/* Mọi user đều vào Home */}
       <Route path="/" element={<Home />} />
-      {/* <Route path="/login/google" element={<GoogleAuth />} /> */}
-
-      {/* Chặn user đã đăng nhập vào Login & Register */}
-      {/* <Route element={<GuestRoute />}> */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       {/* </Route> */}
 
-      {/* Chỉ cho phép người đã login vào các trang này */}
-      {/* <Route element={<ProtectedRoute />}> */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/boardconten" element={<Board />} />
       <Route path="/workspaceconten" element={<Board1 />} />
       <Route path="/listworkspaceconten" element={<Board2 />} />
       <Route path="/formconten" element={<Board3 />} />
-      {/* </Route> */}
     </Routes>
   );
 }
