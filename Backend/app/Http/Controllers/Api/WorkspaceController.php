@@ -16,6 +16,23 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class WorkspaceController extends Controller
 {
+<<<<<<< HEAD
+    public function index()
+    {
+        try {
+            // Kiểm tra xem người dùng đã đăng nhập hay chưa
+            if (!auth()->check()) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            $user = auth()->user();
+
+            // Lấy tất cả workspace của người dùng
+            $workspaces = $user->workspaces; // Giả sử bạn đã thiết lập quan hệ giữa User và Workspace
+
+            return response()->json([
+                'data' => WorkspaceResource::collection($workspaces)
+=======
 
     public function index(Request $request)
     {
@@ -38,10 +55,13 @@ class WorkspaceController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $workspaces,
+>>>>>>> d580ef7cd5022addf6dfc03089e75e225905beda
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
         }
+<<<<<<< HEAD
+=======
     }
 
     public function show_deltail_workspace($id){
@@ -61,6 +81,7 @@ class WorkspaceController extends Controller
             ]);
                 
         }
+>>>>>>> d580ef7cd5022addf6dfc03089e75e225905beda
     }
 
     public function show($id)
@@ -79,7 +100,11 @@ class WorkspaceController extends Controller
             return response()->json([
                 'workspaces' => new WorkspaceResource($workspace),
                 'boards' => BoardResource::collection($workspace->boards),
+<<<<<<< HEAD
+                'workspaces' => WorkspaceResource::collection($workspace),
+=======
                 // 'workspaces' => WorkspaceResource::collection($workspace),
+>>>>>>> d580ef7cd5022addf6dfc03089e75e225905beda
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Workspace not found'], 404);
