@@ -135,7 +135,6 @@ class GoogleAuthController extends Controller
                 'password'              => bcrypt(str()->random(16)),
             ]);
         }
-
         return $user;
     }
 }
