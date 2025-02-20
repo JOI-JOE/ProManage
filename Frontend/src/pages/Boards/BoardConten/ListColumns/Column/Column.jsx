@@ -149,6 +149,7 @@ const Column = ({ column, onUpdateColumnTitle }) => {
               value={title}
               onChange={handleTitleChange}
               onBlur={handleTitleBlur}
+
               onKeyDown={handleTitleKeyDown}
               autoFocus
               variant="outlined"
