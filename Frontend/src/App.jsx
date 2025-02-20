@@ -1,8 +1,11 @@
+import "./App.css";
 import Board from "~/pages/Boards/_id";
 import Register from "./pages/Auth/Register";
 
 import Login from "./pages/Auth/Login";
 import { Route, Routes } from "react-router-dom";
+import GuestRoute from "./pages/Auth/GuestRoute";
+import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 
 // import { Dashboard } from "@mui/icons-material";
 import Board1 from "./pages/Workspaces/_id1";
@@ -18,17 +21,23 @@ import GitHubCallback from "./pages/Auth/GitHubCallback";
 function App() {
   return (
     <Routes>
-
-
-      <Route path="/auth/callback" element={<GitHubCallback />} />
-
       {/* Mọi user đều vào Home */}
       <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      {/* </Route> */}
 
-      <Route path="/dashboard" element={<Dashboard />} />
+      {/* Chặn user đã đăng nhập vào Login & Register */}
+      <Route element={<GuestRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
+
+      {/* Chỉ cho phép Admin vào Dashboard */}
+      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Route>
+
+      {/* Callback GitHub */}
+
+      <Route path="/auth/callback" element={<GitHubCallback />} />
       <Route path="/boardconten" element={<Board />} />
       <Route
         path="/workspaces/:workspaceId/boards/:boardId"
