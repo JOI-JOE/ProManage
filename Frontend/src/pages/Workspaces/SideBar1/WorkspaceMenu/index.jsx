@@ -39,7 +39,16 @@ function WorkspaceMenu() {
   useEffect(() => {
     const fetchWorkspaces = async () => {
       try {
+        const token = localStorage.getItem('token');
+       if(!token){
+        console.log('token khong co');
+        
+       }else{
+        console.log(token);
+       }  
         const response = await Authen.get("/workspaces");
+        console.log(response.data);
+        
         setWorkspaces(response.data.data);
         setLoading(false);
       } catch (err) {

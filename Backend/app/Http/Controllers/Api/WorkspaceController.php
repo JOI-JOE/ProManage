@@ -25,6 +25,12 @@ class WorkspaceController extends Controller
             if (!$user) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
+
+            // if (!auth()->check()) {
+            //     return response()->json(['error' => 'Unauthorized'], 401);
+            // }
+
+            // $user = auth()->user();
     
             // Lấy tất cả workspace mà user này đã tạo
             $workspaces = $user->workspaces;
