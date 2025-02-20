@@ -109,8 +109,8 @@ const ListColumns = ({ lists }) => {
           },
         }}
       >
-        {columns?.map((column) => (
-          <Column key={column._id} column={column} />
+        {lists.map((list) => (
+          <Column key={list.id} list={list} />
         ))}
 
         {/* Box Add Column */}

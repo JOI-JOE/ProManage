@@ -12,8 +12,8 @@ import Board3 from "./pages/Workspaces/_id3";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import GitHubCallback from "./pages/Auth/GitHubCallback";
-import GuestRoute from "./routes/GuestRoute";
-
+import GuestRoute from "./pages/Auth/GuestRoute";
+import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 // import { Box, Container } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const queryClient = new QueryClient();
