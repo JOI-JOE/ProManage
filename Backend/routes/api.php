@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('/register', [AuthController::class, 'handleRegister']);
+
 Route::post('/login', [AuthController::class, 'handleLogin']);
 
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
