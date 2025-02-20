@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Avatar, AvatarGroup, Box, Button, Chip, Tooltip } from "@mui/material";
+import {
+  Avatar,
+  AvatarGroup,
+  Box,
+  Button,
+  Chip,
+  Tooltip,
+  TextField,
+} from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import BoltIcon from "@mui/icons-material/Bolt";
@@ -9,6 +17,7 @@ import FilterDialog from "./childComponent/Filter/Filter";
 import ViewPermissionsDialog from "./childComponent/View/View";
 import ShareBoardDialog from "./childComponent/Share/Share";
 import Right from "../Right";
+
 const style = {
   border: "none",
   fontWeight: "bold",
@@ -39,6 +48,20 @@ const BoardBar = ({ board }) => {
     setOpenViewPermissionsDialog(false);
 
   const [openShareDialog, setOpenShareDialog] = useState(false);
+  const [editTitle, setEditTitle] = useState(false);
+  const [teamName, setTeamName] = useState(board?.title || "Team WD-51");
+
+  const handleTitleClick = () => setEditTitle(true);
+
+  const handleTitleChange = (e) => setTeamName(e.target.value);
+
+  const handleTitleBlur = () => setEditTitle(false);
+
+  const handleTitleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      setEditTitle(false);
+    }
+  };
 
   return (
     <Box
@@ -54,7 +77,34 @@ const BoardBar = ({ board }) => {
       }}
     >
       <Box px={1} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Chip label={board?.title} sx={style} />
+        {/*Chỉnh sửa tiêu đề  */}
+        {editTitle ? (
+          <TextField
+            value={teamName}
+            onChange={handleTitleChange}
+            onBlur={handleTitleBlur}
+            onKeyPress={handleTitleKeyPress} //sự kiện onKeyPress
+            variant="outlined"
+            size="small"
+            sx={{
+              width: "80px",
+              height: "30px",
+              "& .MuiInputBase-root": {
+                fontSize: "0.7rem", // Kích thước chữ khi nhập
+                backgroundColor: "#2E4053",
+              },
+              "& .MuiInputBase-input": {
+                textAlign: "center",
+              },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+                backgroundColor: "#ffffff",
+              },
+            }}
+          />
+        ) : (
+          <Chip label={teamName} sx={style} onClick={handleTitleClick} />
+        )}
         <Chip
           icon={<LockOpenIcon />}
           label="Khả năng xem"
@@ -92,41 +142,8 @@ const BoardBar = ({ board }) => {
             },
           }}
         >
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://preview.redd.it/ovfk3xy2o4q51.jpg?width=640&crop=smart&auto=webp&s=37b436dadb6283e9fafc0053bbaf44f737fe7b82"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJNffhE-2IRnlQ5P-43AtsQEy8yiJnnglJBw&s"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmyPS0TN6aIto3w_ndOpmfpjz8qbftut6bjWlE5-1s2IrrqK7OL2zqSiS3U84QH8KhW3E&usqp=CAU"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://upanh123.com/wp-content/uploads/2021/05/hinh-nen-doremon2-683x1024.jpg"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://ichef.bbci.co.uk/images/ic/480xn/p09f3ldp.jpg.webp"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://genk.mediacdn.vn/2016/6-1476522724062.jpg"
-            />
+          <Tooltip title="Người dùng">
+            <Avatar src="https://via.placeholder.com/40" />
           </Tooltip>
         </AvatarGroup>
         <Button

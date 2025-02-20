@@ -20,7 +20,6 @@ const ShareBoardDialog = ({ open, onClose }) => {
   const [roleAnchorEl, setRoleAnchorEl] = useState(null);
   const [selectedRole, setSelectedRole] = useState("Quản trị viên");
   const [link, setLink] = useState("");
-  const [memberCount, setMemberCount] = useState(5); // Giả lập số lượng thành viên
 
   const handleOpenRoleMenu = (event) => {
     setRoleAnchorEl(event.currentTarget);
@@ -77,7 +76,7 @@ const ShareBoardDialog = ({ open, onClose }) => {
           <Typography
             variant="body2"
             color="primary"
-            sx={{ cursor: "pointer", ml: 1, color: "teal" }} // Đổi màu chữ thành màu teal
+            sx={{ cursor: "pointer", ml: 1 }}
             onClick={handleCreateLink}
           >
             Tạo liên kết
@@ -91,14 +90,12 @@ const ShareBoardDialog = ({ open, onClose }) => {
         )}
 
         {/* Thành viên của bảng */}
-        <Box display="flex" alignItems="center" sx={{ marginTop: 2 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-            Thành viên của bảng thông tin
-          </Typography>
-          <Typography variant="body2" color="textSecondary" sx={{ ml: 1 }}>
-            ({memberCount} thành viên)
-          </Typography>
-        </Box>
+        <Typography
+          variant="subtitle1"
+          sx={{ marginTop: 2, fontWeight: "bold" }}
+        >
+          Thành viên của bảng thông tin
+        </Typography>
 
         <Box
           display="flex"
@@ -149,9 +146,13 @@ const ShareBoardDialog = ({ open, onClose }) => {
             <MenuItem onClick={() => handleCloseRoleMenu("Quản trị viên")}>
               Quản trị viên
             </MenuItem>
-            <MenuItem disabled>Thành viên</MenuItem>
+            <MenuItem onClick={() => handleCloseRoleMenu("Thành viên")}>
+              Thành viên
+            </MenuItem>
 
-            <MenuItem disabled>Rời khỏi bảng</MenuItem>
+            <MenuItem onClick={() => handleCloseRoleMenu("Rời bảng")}>
+              Rời bảng
+            </MenuItem>
           </Menu>
         </Box>
       </DialogContent>
