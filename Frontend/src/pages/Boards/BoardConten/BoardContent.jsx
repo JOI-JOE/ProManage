@@ -186,7 +186,7 @@ const BoardContent = () => {
   const [lists, setLists] = useState([]);
   // const [draggingListId, setDraggingListId] = useState(null);
   // const [draggingPosition, setDraggingPosition] = useState(null);
-  const [lastUpdate, setLastUpdate] = useState(0); 
+
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: { distance: 10 },
@@ -208,34 +208,39 @@ const BoardContent = () => {
   const lastOverId = useRef(null);
 
   useEffect(() => {
-    axios.get(`http://127.0.0.1:8000/api/lists/${boardId}`)
-      .then(response => {
+    // Định nghĩa hàm async để gọi API
+    const fetchLists = async () => {
+      try {
+        const response = await axios.get(`http://127.0.0.1:8000/api/lists/${boardId}`);
 
         if (Array.isArray(response.data)) {
           setLists(response.data.sort((a, b) => a.position - b.position));
         } else {
           console.error("Lỗi: API không trả về danh sách đúng", response.data);
         }
-      })
-      .catch(error => console.error("Lỗi khi lấy danh sách:", error));
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách:", error);
+      }
+    };
 
+    // Gọi hàm fetchLists để lấy dữ liệu
+    fetchLists();
 
+    // Thiết lập kênh lắng nghe sự kiện realtime
+    const channel = window.Echo.channel(`board.${boardId}`).listen(".list.reordered", (event) => {
+      console.log("📢 Realtime update received:", event);
+      setLists(event.positions.sort((a, b) => a.position - b.position));
+      // setDraggingListId(null);
+      // setDraggingPosition(null);
+    });
 
-      const channel = window.Echo.channel(`board.${boardId}`).listen(".list.reordered", (event) => {
-        const { lists: updatedLists, timestamp } = event;
-        if (timestamp > lastUpdate) {
-          setLists(updatedLists.sort((a, b) => a.position - b.position));
-          setLastUpdate(timestamp);
-        }
-      });
-
+    // Hủy kênh lắng nghe khi component unmount
     return () => {
       channel.stopListening(".list.reordered");
       window.Echo.leaveChannel(`board.${boardId}`);
     };
 
-
-  }, [boardId, lastUpdate]);
+  }, [boardId]);
 
   //Tìm column theo cardId
   const findColumnByCardId = (cardId) => {
@@ -389,7 +394,8 @@ const BoardContent = () => {
   // Kết thúc kéo một phần tử
 
 
-  const handleDragEnd = (event) => {
+
+  const handleDragEnd = async (event) => {
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
 
@@ -399,7 +405,6 @@ const BoardContent = () => {
 
     const updatedLists = arrayMove(lists, oldIndex, newIndex);
     setLists(updatedLists);
-    const timestamp = Date.now(); 
     // setDraggingListId(null);
     // setDraggingPosition(null);
 
@@ -409,14 +414,17 @@ const BoardContent = () => {
       // name: list.name,
     }));
 
-    axios.put(`http://127.0.0.1:8000/api/lists/reorder`, {
-      board_id: boardId,
-      positions: updatedPositions,
-      timestamp
-    }).catch(error => console.error("❌ Lỗi cập nhật vị trí:", error));
-
-    setLastUpdate(timestamp); 
+    try {
+      await axios.put(`http://127.0.0.1:8000/api/lists/reorder`, {
+        board_id: boardId,
+        positions: updatedPositions
+      });
+      console.log("✅ Cập nhật vị trí thành công");
+    } catch (error) {
+      console.error("❌ Lỗi cập nhật vị trí:", error);
+    }
   };
+
 
 
   const customDropAnimation = {
@@ -474,12 +482,12 @@ const BoardContent = () => {
   );
 
   return (
-      <DndContext 
+    <DndContext
       // onDragStart={handleDragStart} 
       // onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd} 
-      sensors={useSensors(useSensor(MouseSensor), 
-      useSensor(TouchSensor))}>
+      onDragEnd={handleDragEnd}
+      sensors={useSensors(useSensor(MouseSensor),
+        useSensor(TouchSensor))}>
       <Box
         sx={{
           backgroundColor: "primary.main",
