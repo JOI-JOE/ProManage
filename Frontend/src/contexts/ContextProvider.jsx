@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import Authen from "../Apis/Authen";
+import { createContext, useContext, useState } from "react";
 
 const StateContext = createContext({
     user: null,
@@ -10,30 +9,16 @@ const StateContext = createContext({
 
 export const ContextProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, _setToken] = useState(localStorage.getItem("ACCESS_TOKEN"));
+    const [token, _setToken] = useState(localStorage.getItem("token"));
 
     const setToken = (token) => {
         _setToken(token);
         if (token) {
-            localStorage.setItem("ACCESS_TOKEN", token);
+            localStorage.setItem("token", token);
         } else {
-            localStorage.removeItem("ACCESS_TOKEN");
+            localStorage.removeItem("token");
         }
     };
-
-    // 🛠 Gọi API để lấy thông tin user nếu có token
-    useEffect(() => {
-        if (token) {
-            console.log("🔄 Gọi API lấy user...");
-            Authen
-                .get("/user")
-                .then((response) => {
-                    console.log("✅ Dữ liệu user nhận được:", response.data);
-                    setUser(response.data.user);
-                })
-                .catch((error) => console.error("❌ Lỗi khi lấy user:", error));
-        }
-    }, [token]);
 
     return (
         <StateContext.Provider value={{ user, token, setUser, setToken }}>
