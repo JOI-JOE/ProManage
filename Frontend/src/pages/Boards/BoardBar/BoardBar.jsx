@@ -1,16 +1,13 @@
-// BoardBar.js
-
+import React, { useState } from "react";
 import { Avatar, AvatarGroup, Box, Button, Chip, Tooltip } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
-import StarBorderIcon from "@mui/icons-material/StarBorder";
 import BoltIcon from "@mui/icons-material/Bolt";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
-import React, { useState } from "react";
 import AutomationDialog from "./childComponent/Auto/Auto";
 import FilterDialog from "./childComponent/Filter/Filter";
 import ViewPermissionsDialog from "./childComponent/View/View";
-import StarButton from "./childComponent/Star/Star";
+import ShareBoardDialog from "./childComponent/Share/Share";
 import Right from "../Right";
 const style = {
   border: "none",
@@ -41,6 +38,8 @@ const BoardBar = ({ board }) => {
   const handleViewPermissionsDialogClose = () =>
     setOpenViewPermissionsDialog(false);
 
+  const [openShareDialog, setOpenShareDialog] = useState(false);
+
   return (
     <Box
       sx={{
@@ -52,9 +51,6 @@ const BoardBar = ({ board }) => {
         justifyContent: "space-between",
         gap: 2,
         overflowX: "auto",
-        "&::-webkit-scrollbar-track": {
-          m: 2,
-        },
       }}
     >
       <Box px={1} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -65,16 +61,15 @@ const BoardBar = ({ board }) => {
           variant="outlined"
           clickable
           sx={style}
-          onClick={handleViewPermissionsDialogOpen} // Mở ViewPermissionsDialog khi click "Khả năng xem"
+          onClick={handleViewPermissionsDialogOpen}
         />
-        <StarButton /> {/* Sử dụng StarButton ở đây */}
         <Chip
           icon={<BoltIcon />}
           label="Tự động hóa"
           variant="outlined"
           clickable
           sx={style}
-          onClick={handleAutomationDialogOpen} // Mở AutomationDialog khi click "Tự động hóa"
+          onClick={handleAutomationDialogOpen}
         />
         <Chip
           icon={<FilterListIcon />}
@@ -82,7 +77,7 @@ const BoardBar = ({ board }) => {
           variant="outlined"
           clickable
           sx={style}
-          onClick={handleFilterDialogOpen} // Mở FilterDialog khi click "Lọc bảng"
+          onClick={handleFilterDialogOpen}
         />
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", paddingX: 2 }}>
@@ -143,22 +138,29 @@ const BoardBar = ({ board }) => {
             fontSize: "0.75rem",
             textTransform: "none",
           }}
+          onClick={() => setOpenShareDialog(true)}
         >
           Chia sẻ
         </Button>
         <Right />
       </Box>
 
-      {/* Call FilterDialog here */}
+      {/* Hộp thoại chia sẻ */}
+      <ShareBoardDialog
+        open={openShareDialog}
+        onClose={() => setOpenShareDialog(false)}
+      />
+
+      {/* Hộp thoại lọc */}
       <FilterDialog open={openFilterDialog} onClose={handleFilterDialogClose} />
 
-      {/* Call AutomationDialog here */}
+      {/* Hộp thoại tự động hóa */}
       <AutomationDialog
         open={openAutomationDialog}
         onClose={handleAutomationDialogClose}
       />
 
-      {/* Call ViewPermissionsDialog here */}
+      {/* Hộp thoại quyền xem */}
       <ViewPermissionsDialog
         open={openViewPermissionsDialog}
         onClose={handleViewPermissionsDialogClose}
