@@ -11,27 +11,44 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import AddIcon from '@mui/icons-material/Add'
 import { Link } from 'react-router-dom'
 
+import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ViewStreamIcon from "@mui/icons-material/ViewStream";
+import PeopleIcon from "@mui/icons-material/People";
+import SettingsIcon from "@mui/icons-material/Settings";
+import AddIcon from "@mui/icons-material/Add";
+import { Link } from "react-router-dom";
+import Authen from "../../../../Apis/Authen";
 
+function WorkspaceMenu() {
+  const [openSettings, setOpenSettings] = useState({}); // Lưu trạng thái mở của từng workspace
+  const [hoveredItem, setHoveredItem] = useState(null);
+  const [workspaces, setWorkspaces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-const WorkspaceMenu = ({ workspace }) => {
-    const [openSettings, setOpenSettings] = useState(false)
-    const [hoveredItem, setHoveredItem] = useState(null)
-    const [workspaces, setWorkspaces] = useState([]); // State để lưu workspace
-    const [loading, setLoading] = useState(true); // State để kiểm tra trạng thái loading
-    const [error, setError] = useState(null); // State để lưu lỗi (nếu có)
+  // Toggle trạng thái mở của workspace
+  const toggleSettings = (workspaceId) => {
+    setOpenSettings((prev) => ({
+      ...prev,
+      [workspaceId]: !prev[workspaceId],
+    }));
+  };
 
+  useEffect(() => {
+    const fetchWorkspaces = async () => {
+      try {
+        const response = await Authen.get("/workspaces");
+        setWorkspaces(response.data.data);
+        setLoading(false);
+      } catch (err) {
+        setError("Có lỗi khi lấy dữ liệu.");
+        setLoading(false);
+      }
+    };
 
-    const toggleSettings = ({ workspace }) => {
-        setOpenSettings(!openSettings)
-    }
-
-    const handleMouseEnter = (item) => {
-        setHoveredItem(item)
-    }
-
-    const handleMouseLeave = () => {
-        setHoveredItem(null)
-    }
+    fetchWorkspaces();
+  }, []);
 
 
     return (
@@ -75,50 +92,23 @@ const WorkspaceMenu = ({ workspace }) => {
                             <ListItemText primary="Điểm nổi bật" sx={{ color: "black" }} />
                         </ListItemButton>
 
-                        <ListItemButton
-                            onMouseEnter={() => handleMouseEnter("Hình")}
-                            onMouseLeave={handleMouseLeave}
-                        >
-                            <ListItemIcon sx={{ color: "black" }}>
-                                <ViewStreamIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Hình" sx={{ color: "black" }} />
-                            {hoveredItem === "Hình" && (
-                                <ChevronRightIcon sx={{ color: "gray" }} />
-                            )}
-                        </ListItemButton>
-
-                        <ListItemButton
-                            onMouseEnter={() => handleMouseEnter("Thành viên")}
-                            onMouseLeave={handleMouseLeave}
-                        >
-                            <ListItemIcon sx={{ color: "black" }}>
-                                <PeopleIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Thành viên" sx={{ color: "black" }} />
-                            <AddIcon sx={{ color: "gray" }} />
-                            {hoveredItem === "Thành viên" && (
-                                <ChevronRightIcon sx={{ color: "gray" }} />
-                            )}
-                        </ListItemButton>
-
-                        <ListItemButton
-                            onMouseEnter={() => handleMouseEnter("Cài đặt")}
-                            onMouseLeave={handleMouseLeave}
-                        >
-                            <ListItemIcon sx={{ color: "black" }}>
-                                <SettingsIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Cài đặt" sx={{ color: "black" }} />
-                            {hoveredItem === "Cài đặt" && (
-                                <ChevronRightIcon sx={{ color: "gray" }} />
-                            )}
-                        </ListItemButton>
-                    </List>
-                </Box>
-            </Collapse>
+                <ListItemButton
+                  onMouseEnter={() => setHoveredItem("Cài đặt")}
+                  onMouseLeave={() => setHoveredItem(null)}
+                >
+                  <ListItemIcon sx={{ color: "black" }}>
+                    <SettingsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Cài đặt" sx={{ color: "black" }} />
+                  {hoveredItem === "Cài đặt" && <ChevronRightIcon sx={{ color: "gray" }} />}
+                </ListItemButton>
+              </List>
+            </Box>
+          </Collapse>
         </div>
-    )
+      ))}
+    </div>
+  );
 }
 
-export default WorkspaceMenu
+export default WorkspaceMenu;
