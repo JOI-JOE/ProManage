@@ -9,6 +9,7 @@ import BoardContent from "../pages/boards/detail/BoardContent";
 import GoogleAuth from "../pages/auth/GoogleAuth";
 import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
+import LoginForm from "../pages/auth/LoginForm";
 
 const router = createBrowserRouter([
     {
@@ -17,11 +18,7 @@ const router = createBrowserRouter([
         children: [
             {
                 path: "login",
-                element: <Login />,
-            },
-            {
-                path: "home",
-                element: <Home />,
+                element: <LoginForm />,
             },
             {
                 path: "login/google", // Add this route!

@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { Navigate, Outlet } from "react-router-dom";
-import { getUser } from "../../api/models/user";
-import { use } from "react";
+// import { getUser } from "../../api/models/user";
+import { getUser } from "../../api/models/userApi";
 
 const DefaultLayout = () => {
     const { token, setUser } = useStateContext(); // Lấy token và setUser từ context
     const [isLoading, setIsLoading] = useState(true); // Trạng thái loading
     const [error, setError] = useState(null); // Trạng thái lỗi
-
 
     useEffect(() => {
         const fetchUser = async () => {

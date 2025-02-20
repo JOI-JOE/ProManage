@@ -22,9 +22,8 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
 import { ListItemIcon } from "@mui/material";
-
-// import { useStateContext } from "../contexts/ContextProvider";
-
+import { useLogout, useUser } from "../../../hooks/useUser";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -44,28 +43,6 @@ export default function ProfileMenu() {
     setAnchorEl(null);
   };
 
-
-  const token = localStorage.getItem("token");
-
-  const handleLogout = async () => {
-    try {
-      await axios.post(
-        "http://localhost:8000/api/logout",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      localStorage.removeItem("token"); // Xóa token trên client
-      localStorage.removeItem("role");
-      window.location.reload(); // Reload trang hoặc chuyển hướng
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
 
   const handleThemeClick = (event) => {
     setThemeAnchorEl(event.currentTarget);
@@ -88,7 +65,59 @@ export default function ProfileMenu() {
     setOpenWorkspaceModal(false);
   };
 
+  // const [user, setUser] = React.useState(null);
+  // const [isLoading, setIsLoading] = React.useState(true);
+  // const [error, setError] = React.useState(null);
+
+  // React.useEffect(() => {
+  //   const fetchUser = async () => {
+  //     try {
+  //       const response = await getUser(); // Gọi API không cần token
+  //       setUser(response); // Lưu user vào state
+  //     } catch (err) {
+  //       console.error("Lỗi lấy thông tin người dùng:", err);
+  //       setError(err);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+
+  //   fetchUser();
+  // }, []);
+  // console.log(user);
+  const navigate = useNavigate();
+
+  // Lấy thông tin user từ hook
+  const { data: user, isLoading: userLoading, error: userError } = useUser();
+
+  // Hook logout
+  const { mutate: logout, isLoading: logoutLoading } = useLogout();
+
+  // Nếu đang tải dữ liệu user
+  if (userLoading) return <p>Đang tải thông tin người dùng...</p>;
+
+  // Nếu có lỗi khi lấy user
+  if (userError) return <p>Lỗi: {userError.message}</p>;
+
+  // Nếu không có user (có thể chưa đăng nhập)
+  if (!user) return <p>Không có thông tin người dùng.</p>;
+
+  // Xử lý logout
+  const handleLogout = () => {
+    logout(null, {
+      onSuccess: () => {
+        console.log("Đăng xuất thành công!");
+        navigate("/login"); // Điều hướng về trang login
+      },
+      onError: (error) => {
+        console.error("Lỗi khi đăng xuất:", error);
+        alert("Đã có lỗi xảy ra khi đăng xuất. Vui lòng thử lại sau.");
+      },
+    });
+  }
+
   return (
+
     <React.Fragment>
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
         <Tooltip title="Tài khoản">
@@ -110,10 +139,9 @@ export default function ProfileMenu() {
             variant="subtitle1"
             sx={{ fontWeight: "bold", mt: 1, color: "black" }}
           >
-            Nguyễn Thu Trang
           </Typography>
           <Typography variant="body2" sx={{ color: "black" }}>
-            nttrang303204@gmail.com
+            {user.email}
           </Typography>
         </Box>
         <Divider />
@@ -166,7 +194,7 @@ export default function ProfileMenu() {
           <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
         </MenuItem>
 
-        <MenuItem onClick={handleLogout}>
+        <MenuItem >
           <ListItemIcon>
             <Logout fontSize="small" />
           </ListItemIcon>
@@ -176,7 +204,9 @@ export default function ProfileMenu() {
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>
         <Divider sx={{ marginY: "10px" }} />
-        <MenuItem>Đăng xuất</MenuItem>
+        <MenuItem onClick={handleLogout}>
+          Đăng xuất
+        </MenuItem>
       </Menu>
 
       {/* Modal for Creating Workspace */}

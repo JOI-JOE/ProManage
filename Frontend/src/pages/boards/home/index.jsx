@@ -14,33 +14,22 @@ import MyWorkspace from "../../../components/MyWorkspace";
 
 const recentBoard = [
     { id: 1, name: "Bảng thiết kế dự án", displayName: "xObU9h1u" },
-    { id: 2, name: "Bảng quản lý khách hàng", displayName: "xObU9h1u" },
-    { id: 3, name: "Bảng công việc nhóm", displayName: "xObU9h1u" },
+    { id: 2, name: "Bảng quản lý khách hàng", displayName: "ssfsf" },
+    { id: 3, name: "Bảng công việc nhóm", displayName: "sfkj" },
 ]
 
 const MyBoardInWorkspace = [
     {
         workspace: {
             name: "Dự án thiết kế thái",
-            link: "/workspaces/1",
+            // ...
             boards: [
-                { name: "Bảng thiết kế trang chủ", displayName: "" },
-                { name: "Bảng thiết kế trang sản phẩm", displayName: "b/xObU9h1u/hau" },
-                { name: "Bảng thiết kế trang liên hệ", displayName: "/boards/3" }
+                { name: "Bảng thiết kế trang chủ", displayName: "Dự án thiết kế thái - Bảng thiết kế trang chủ" },
+                { name: "Bảng thiết kế trang sản phẩm", displayName: "Dự án thiết kế thái - Bảng thiết kế trang sản phẩm" },
+                { name: "Bảng thiết kế trang liên hệ", displayName: "Dự án thiết kế thái - Bảng thiết kế trang liên hệ" }
             ]
-        },
-    },
-    {
-        workspace: {
-            name: "Dự án thiết kế hậus",
-            link: "/workspaces/2",
-            boards: [
-                { name: "Bảng thiết kế trang chủ", displayName: "/boards/4" },
-                { name: "Bảng thiết kế trang sản phẩm", displayName: "/boards/5" },
-                { name: "Bảng thiết kế trang liên hệ", displayName: "/boards/6" }
-            ]
-        },
-    },
+        }
+    }
 ];
 
 const HomeBoard = () => {
@@ -63,8 +52,8 @@ const HomeBoard = () => {
             <List sx={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
 
                 {recentBoard.map((board) => (
-                    <ListItem key={board.link} sx={{ width: "auto", padding: 0 }}>
-                        <MyBoard key={board.link} board={board} id={`recent-board-${board.id}`} />
+                    <ListItem key={board.displayName} sx={{ width: "auto", padding: 0 }}>
+                        <MyBoard key={board.displayName} board={board} id={`recent-board-${board.id}`} />
                     </ListItem>
                 ))}
             </List>
@@ -83,9 +72,9 @@ const HomeBoard = () => {
                 CÁC KHÔNG GIAN LÀM VIỆC CỦA BẠN
             </Typography>
             <div id="myBoardInWorkspace">
-                {MyBoardInWorkspace.map((item) => (
-                    <MyWorkspace key={item.workspace.link} workspace={item.workspace} boards={item.workspace.boards} />
-                ))}
+                {/* {MyBoardInWorkspace.map((item) => (
+                    <MyWorkspace key={item.workspace.displayName} workspace={item.workspace} boards={item.workspace.boards} />
+                ))} */}
             </div>
             {/* ENDư Các không gian làm việc của bạn */}
 
