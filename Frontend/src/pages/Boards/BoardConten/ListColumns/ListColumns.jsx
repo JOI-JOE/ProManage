@@ -71,13 +71,24 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 const ListColumns = ({ lists }) => {
   const [openColumn, setOpenColumn] = useState(false); // State để kiểm soát hiển thị input
   const toggleOpenColumn = () => setOpenColumn(!openColumn);
+
   const [columnName, setColumnName] = useState("");
+
   const addColumn = () => {
-    console.log("columnName");
+    if (!columnName) {
+      toast.error("Nhập tên cột");
+
+      return;
+    }
+    console.log(columnName);
+
+    toggleOpenColumn();
+    setColumnName("");
   };
   return (
     <SortableContext

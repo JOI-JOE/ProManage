@@ -4,6 +4,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { Link } from "react-router-dom"; // Import Link từ react-router-dom
 
 const ListCards = ({ cards }) => {
   return (
@@ -22,12 +23,11 @@ const ListCards = ({ cards }) => {
           overflowY: "auto",
           maxHeight: (theme) =>
             `calc(
-    ${theme.trello.boardContentHeight} -
-    ${theme.spacing(5)} -
-    ${theme.trello.columnHeaderHeight} -
+    ${theme.trello.boardContentHeight} - 
+    ${theme.spacing(5)} - 
+    ${theme.trello.columnHeaderHeight} - 
     ${theme.trello.columnFooterHeight}
     )`,
-
           "&::-webkit-scrollbar": {
             width: "6px", // Giảm kích thước scrollbar
           },

@@ -4,7 +4,6 @@ import "./index.css";
 
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
-
 import theme from "~/theme";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -34,5 +33,4 @@ createRoot(document.getElementById("root")).render(
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>
-
 );

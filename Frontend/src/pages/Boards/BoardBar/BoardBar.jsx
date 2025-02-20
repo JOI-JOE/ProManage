@@ -1,18 +1,22 @@
+// BoardBar.js
+
 import { Avatar, AvatarGroup, Box, Button, Chip, Tooltip } from "@mui/material";
-// import React from 'react'
+import FilterListIcon from "@mui/icons-material/FilterList";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import BoltIcon from "@mui/icons-material/Bolt";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import React, { useState } from "react";
+import AutomationDialog from "./childComponent/Auto/Auto";
+import FilterDialog from "./childComponent/Filter/Filter";
+import ViewPermissionsDialog from "./childComponent/View/View";
+import StarButton from "./childComponent/Star/Star";
 import Right from "../Right";
-
 const style = {
   border: "none",
   fontWeight: "bold",
   borderRadius: "8px",
   fontSize: "14px",
-
   color: "#ffffff",
   ":hover": { backgroundColor: "" },
   "& .MuiSvgIcon-root": {
@@ -22,6 +26,21 @@ const style = {
 };
 
 const BoardBar = ({ board }) => {
+  const [openFilterDialog, setOpenFilterDialog] = useState(false);
+  const handleFilterDialogOpen = () => setOpenFilterDialog(true);
+  const handleFilterDialogClose = () => setOpenFilterDialog(false);
+
+  const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
+  const handleAutomationDialogOpen = () => setOpenAutomationDialog(true);
+  const handleAutomationDialogClose = () => setOpenAutomationDialog(false);
+
+  const [openViewPermissionsDialog, setOpenViewPermissionsDialog] =
+    useState(false);
+  const handleViewPermissionsDialogOpen = () =>
+    setOpenViewPermissionsDialog(true);
+  const handleViewPermissionsDialogClose = () =>
+    setOpenViewPermissionsDialog(false);
+
   return (
     <Box
       sx={{
@@ -42,24 +61,20 @@ const BoardBar = ({ board }) => {
         <Chip label={board?.title} sx={style} />
         <Chip
           icon={<LockOpenIcon />}
-          label={board?.type}
+          label="Khả năng xem"
           variant="outlined"
           clickable
           sx={style}
+          onClick={handleViewPermissionsDialogOpen} // Mở ViewPermissionsDialog khi click "Khả năng xem"
         />
-        <Chip
-          icon={<StarBorderIcon />}
-          label="Đánh dấu sao"
-          variant="outlined"
-          clickable
-          sx={style}
-        />
+        <StarButton /> {/* Sử dụng StarButton ở đây */}
         <Chip
           icon={<BoltIcon />}
           label="Tự động hóa"
           variant="outlined"
           clickable
           sx={style}
+          onClick={handleAutomationDialogOpen} // Mở AutomationDialog khi click "Tự động hóa"
         />
         <Chip
           icon={<FilterListIcon />}
@@ -67,6 +82,7 @@ const BoardBar = ({ board }) => {
           variant="outlined"
           clickable
           sx={style}
+          onClick={handleFilterDialogOpen} // Mở FilterDialog khi click "Lọc bảng"
         />
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", paddingX: 2 }}>
@@ -132,6 +148,21 @@ const BoardBar = ({ board }) => {
         </Button>
         <Right />
       </Box>
+
+      {/* Call FilterDialog here */}
+      <FilterDialog open={openFilterDialog} onClose={handleFilterDialogClose} />
+
+      {/* Call AutomationDialog here */}
+      <AutomationDialog
+        open={openAutomationDialog}
+        onClose={handleAutomationDialogClose}
+      />
+
+      {/* Call ViewPermissionsDialog here */}
+      <ViewPermissionsDialog
+        open={openViewPermissionsDialog}
+        onClose={handleViewPermissionsDialogClose}
+      />
     </Box>
   );
 };
