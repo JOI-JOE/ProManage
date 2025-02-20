@@ -1,67 +1,3 @@
-// import { Box, Button } from "@mui/material";
-// import Column from "./Column/Column";
-// import NoteAddIcon from "@mui/icons-material/NoteAdd";
-// import {
-//   SortableContext,
-//   horizontalListSortingStrategy,
-// } from "@dnd-kit/sortable";
-
-// const ListColumns = ({ lists }) => {
-
-//   return (
-//     <SortableContext
-//       items={lists.map(list => String(list.id))}
-//       strategy={horizontalListSortingStrategy}
-//     >
-//       <Box
-//         sx={{
-//           bgcolor: "inherit",
-//           width: "100%",
-//           height: "100%",
-//           display: "flex",
-//           overflowX: "auto",
-//           overflowY: "hidden",
-
-//           "&::-webkit-scrollbar-track": {
-//             m: 2,
-//           },
-//         }}
-//       >
-//         {lists.map((list) => (
-//           <Column key={list.id} list={list} />
-//         ))}
-
-//         {/* Box Add Column */}
-//         <Box
-//           sx={{
-//             minWidth: "200px",
-//             maxWidth: "200px",
-//             mx: 2,
-//             borderRadius: "6px",
-//             height: "fit-content",
-//             bgcolor: "#ffffff3d",
-//           }}
-//         >
-//           <Button
-//             startIcon={<NoteAddIcon />}
-//             sx={{
-//               color: "#ffffff",
-//               width: "100%",
-//               justifyContent: "flex-start",
-//               pl: 2.5,
-//               py: 1,
-//             }}
-//           >
-//             Add new column
-//           </Button>
-//         </Box>
-//       </Box>
-//     </SortableContext>
-//   );
-// };
-
-// export default ListColumns;
-
 import { Box, Button, InputAdornment, TextField } from "@mui/material";
 import Column from "./Column/Column";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
@@ -82,7 +18,6 @@ const ListColumns = ({ lists }) => {
   const addColumn = () => {
     if (!columnName) {
       toast.error("Nhập tên cột");
-
       return;
     }
     console.log(columnName);
@@ -90,6 +25,7 @@ const ListColumns = ({ lists }) => {
     toggleOpenColumn();
     setColumnName("");
   };
+
   return (
     <SortableContext
       items={lists.map((list) => String(list.id))}
@@ -110,12 +46,12 @@ const ListColumns = ({ lists }) => {
         }}
       >
         {lists.map((list) => (
-          <Column key={list.id} list={list} />
+          <Column key={list.id} column={list} />
         ))}
 
         {/* Box Add Column */}
-
-        {/* <Box
+        {openColumn ? (
+          <Box
             sx={{
               minWidth: "250px",
               maxWidth: "250px",
@@ -143,7 +79,7 @@ const ListColumns = ({ lists }) => {
                 "& label.Mui-focused": { color: "white" },
                 "& .MuiOutlinedInput-root": {
                   "& fieldset": { borderColor: "white" },
-                  "&:hover fiedldset": { borderColor: "white" },
+                  "&:hover fieldset": { borderColor: "white" },
                   "&.Mui-focused fieldset": { borderColor: "white" },
                 },
               }}
@@ -171,31 +107,33 @@ const ListColumns = ({ lists }) => {
                 onClick={toggleOpenColumn}
               />
             </Box>
-          </Box> */}
-
-        <Box
-          sx={{
-            minWidth: "200px",
-            maxWidth: "200px",
-            mx: 2,
-            borderRadius: "6px",
-            height: "fit-content",
-            bgcolor: "#ffffff3d",
-          }}
-        >
-          <Button
-            startIcon={<NoteAddIcon />}
+          </Box>
+        ) : (
+          <Box
             sx={{
-              color: "#ffffff",
-              width: "100%",
-              justifyContent: "flex-start",
-              pl: 2.5,
-              py: 1,
+              minWidth: "200px",
+              maxWidth: "200px",
+              mx: 2,
+              borderRadius: "6px",
+              height: "fit-content",
+              bgcolor: "#ffffff3d",
             }}
           >
-            Add new column
-          </Button>
-        </Box>
+            <Button
+              startIcon={<NoteAddIcon />}
+              sx={{
+                color: "#ffffff",
+                width: "100%",
+                justifyContent: "flex-start",
+                pl: 2.5,
+                py: 1,
+              }}
+              onClick={toggleOpenColumn}
+            >
+              Add new column
+            </Button>
+          </Box>
+        )}
       </Box>
     </SortableContext>
   );
