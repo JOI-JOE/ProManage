@@ -15,9 +15,6 @@ import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAlt
 import MyBoard from "./MyBoard";
 
 const MyWorkspace = ({ workspace, boards }) => {
-    console.log(workspace);
-    console.log(boards);
-
     return (
         <div>
             <ListItem

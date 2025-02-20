@@ -85,7 +85,7 @@ const WorkspaceDetailForm = () => {
                 >
                     Lưu
                 </Button>
-                <Button variant="outlined" onClick={() => window.location.reload()}>
+                <Button variant="outlined" >
                     Hủy
                 </Button>
             </Box>
