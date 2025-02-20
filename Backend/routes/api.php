@@ -46,7 +46,7 @@ Route::middleware(['web'])->group(function () {
 
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/user', [AuthController::class, 'getUser']);
+    Route::get("user/me", [AuthController::class, 'getUser']);
 });
 
 Route::controller(controller: WorkspaceController::class)->group(function () {
