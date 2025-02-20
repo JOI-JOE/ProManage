@@ -27,36 +27,36 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     try {
+      // Gửi request lấy CSRF token (chỉ cần với Sanctum)
+      await Authen.get("/sanctum/csrf-cookie");
+  
+      // Gửi request đăng nhập
       const response = await Authen.post("/login", formData);
       console.log(response.data);
-      
+  
       const token = response?.data?.token;
       const role = response?.data?.user?.role;
-
+  
       if (token && role) {
         localStorage.setItem("token", token);
         localStorage.setItem("role", role);
-  
-        alert('Đăng nhập thành công');
+
+        alert("Đăng nhập thành công");
         if (role === "admin") {
           window.location.href = "http://localhost:8000/admin";
         } else {
           navigate("/");
         }
-        return; // Ngăn chặn thực thi tiếp tục
-      }
-      
-      else {
+        return;
+
+      } else {
         setErrors((prevErrors) => ({
           ...prevErrors,
           general: "Có lỗi xảy ra trong quá trình đăng nhập",
         }));
       }
-
-      alert('Đăng nhập thành công');
-      navigate("/");
     } catch (error) {
       if (error.response) {
         if (error.response.status === 404) {
@@ -86,8 +86,8 @@ const Login = () => {
 
   const handleGitHubLogin = (e) => {
     e.preventDefault();
-     window.location.href = "http://localhost:8000/auth/redirect";
-   };
+    window.location.href = "http://localhost:8000/auth/redirect";
+  };
 
   return (
     <section className="bg-[#1693E1] min-h-screen flex items-center justify-center">
@@ -145,10 +145,13 @@ const Login = () => {
               </div>
             </form>
 
-            <button onClick={handleGitHubLogin} className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300">
-          <IoLogoGithub size={20} className="mr-2" />
-          Login with GitHub
-        </button>
+            <button
+              onClick={handleGitHubLogin}
+              className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300"
+            >
+              <IoLogoGithub size={20} className="mr-2" />
+              Login with GitHub
+            </button>
 
             <Link
               to="/forgot-password"
@@ -159,7 +162,10 @@ const Login = () => {
 
             <p className="text-base text-[#adadad] mt-2">
               Don't have an account?
-              <Link to="/register" className="text-primary hover:underline ml-1">
+              <Link
+                to="/register"
+                className="text-primary hover:underline ml-1"
+              >
                 Sign Up
               </Link>
             </p>

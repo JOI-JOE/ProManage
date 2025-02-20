@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+
+use App\Events\ListClosed;
+use App\Events\ListDragging;
 use App\Events\ListReordered;
 use App\Http\Requests\ListRequest;
 use App\Http\Requests\ListUpdateNameRequest;
+use App\Models\Board;
 use App\Models\ListBoard;
+use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +21,9 @@ class ListController extends Controller
 
     public function index($boardId)
     {
-        $lists = ListBoard::where('board_id', $boardId)->orderBy('position')->get();
+        $lists = ListBoard::where('board_id', $boardId)
+        ->where('closed', false)
+        ->orderBy('position')->get();
         return response()->json($lists);
     }
 
@@ -89,20 +96,31 @@ class ListController extends Controller
         $list->closed = !$list->closed;
         $list->save();
 
+        event(new ListClosed($list));
+
         return response()->json([
             'message' => 'List archived successfully',
             'data' => $list
         ]);
     }
 
+    public function dragging(Request $request)
+    {
+        broadcast(new ListDragging($request->board_id, $request->dragging_list_id, $request->position));
+        return response()->json(['message' => 'Dragging event sent']);
+    }
+
     public function reorder(Request $request)
     {
-        
-        $request->validate([
+
+        $validatedData = $request->validate([
+            'board_id' => 'required|exists:boards,id', // Đảm bảo board_id tồn tại
             'positions' => 'required|array',
             'positions.*.id' => 'required|exists:list_boards,id',
             'positions.*.position' => 'required|integer',
         ]);
+
+        $boardId = $validatedData['board_id'];
 
         DB::transaction(function () use ($request) {
             foreach ($request->positions as $positionData) {
@@ -110,7 +128,15 @@ class ListController extends Controller
             }
         });
 
-        broadcast(new ListReordered($request->board_id, $request->positions));
+        $updatedLists = ListBoard::select('id', 'name', 'position')
+            ->where('board_id', $boardId)
+            ->where('closed', false)
+            ->orderBy('position')
+            ->get();
+
+        $timestamp = now()->timestamp;
+
+        broadcast(new ListReordered($request->board_id, $updatedLists, $timestamp));
 
         return response()->json(['message' => 'List positions updated successfully']);
     }
@@ -137,5 +163,26 @@ class ListController extends Controller
                 'listBoard' => $list
             ]);
         }
+    }
+
+    public function getBoardsByWorkspace($id)
+    {
+        // Kiểm tra xem workspace có tồn tại không
+        $workspace = Workspace::find($id);
+        if (!$workspace) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Workspace không tồn tại'
+            ], 404);
+        }
+
+        // Lấy danh sách boards của workspace
+        $boards = Board::where('workspace_id', $id)->get();
+
+        return response()->json([
+            'success' => true,
+            'workspace_id' => $id,
+            'boards' => $boards
+        ], 200);
     }
 }

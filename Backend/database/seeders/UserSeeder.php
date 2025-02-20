@@ -14,6 +14,6 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Tạo ra 10 user với role là member
-        User::factory(10)->member()->create();
+        User::factory(1)->member()->create();
     }
 }

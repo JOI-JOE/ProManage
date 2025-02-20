@@ -22,6 +22,7 @@ return new class extends Migration
 
             // Còn đây là khi có tài khoản thì sẽ lấy id: 
             $table->foreignId('invited_member_id')
+                ->nullable()
                 ->constrained('users')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
@@ -33,7 +34,8 @@ return new class extends Migration
             $table->text('invitation_message')->nullable();
 
             // Mã hash để xác thực lời mời
-            $table->string('dsc_hash', 255)->unique();
+            // https: //id.atlassian.com/login?application=trello&continue=https%3A%2F%2Ftrello.com%2Fauth%2Fatlassian%2Fcallback%3FreturnUrl%3D%252Forg%252F678b57031faba8dd978f0dee%26display%3D%26aaOnboarding%3D%26updateEmail%3D%26traceId%3D%26ssoVerified%3D%26createMember%3D%26jiraInviteLink%3D&email=haungodang2003%40gmail.com&restrict=true
+            // $table->string('dsc_hash', 255)->unique();
 
             // Nếu TRUE, thành viên được thêm ngay lập tức
             $table->boolean('accept_unconfirmed')->default(false);

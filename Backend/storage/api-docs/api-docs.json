@@ -1,0 +1,180 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "My API",
+        "description": "API documentation for My Laravel App",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/auth/redirect/{provider}": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Redirect to authentication provider",
+                "description": "Redirects the user to the Google OAuth consent screen for authentication and authorization.",
+                "operationId": "redirectToAuthProvider",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "The authentication provider (currently only Google is supported)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "google"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirects user to the Google OAuth page for authentication",
+                        "headers": {
+                            "Location": {
+                                "description": "URL for redirection to Google OAuth consent screen",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "https://accounts.google.com/o/oauth2/v2/auth?scope=...&response_type=code&redirect_uri=..."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Unsupported provider",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unsupported provider"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Provider not supported. Only Google is allowed."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/callback/{provider}": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Handle authentication provider callback",
+                "description": "Handles the callback from the authentication provider and returns user information along with tokens.",
+                "operationId": "handleProviderCallback",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "The authentication provider (currently only Google is supported)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "google"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully authenticated and retrieved user data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "John Doe"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "john.doe@example.com"
+                                        },
+                                        "avatar": {
+                                            "type": "string",
+                                            "example": "https://example.com/avatar.jpg"
+                                        },
+                                        "provider": {
+                                            "type": "string",
+                                            "example": "google"
+                                        },
+                                        "google_access_token": {
+                                            "type": "string",
+                                            "example": "ya29.a0AfH6S..."
+                                        },
+                                        "google_refresh_token": {
+                                            "type": "string",
+                                            "example": "1//0gDhA..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Unsupported provider",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unsupported provider"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Provider not supported. Only Google is allowed."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to authenticate",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Failed to authenticate"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Error message from the exception."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        }
+    ]
+}
