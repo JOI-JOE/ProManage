@@ -77,7 +77,7 @@ const ShareBoardDialog = ({ open, onClose }) => {
           <Typography
             variant="body2"
             color="primary"
-            sx={{ cursor: "pointer", ml: 1 }}
+            sx={{ cursor: "pointer", ml: 1, color: "teal" }} // Đổi màu chữ thành màu teal
             onClick={handleCreateLink}
           >
             Tạo liên kết
@@ -149,13 +149,9 @@ const ShareBoardDialog = ({ open, onClose }) => {
             <MenuItem onClick={() => handleCloseRoleMenu("Quản trị viên")}>
               Quản trị viên
             </MenuItem>
-            <MenuItem onClick={() => handleCloseRoleMenu("Thành viên")}>
-              Thành viên
-            </MenuItem>
+            <MenuItem disabled>Thành viên</MenuItem>
 
-            <MenuItem onClick={() => handleCloseRoleMenu("Rời bảng")}>
-              Rời bảng
-            </MenuItem>
+            <MenuItem disabled>Rời khỏi bảng</MenuItem>
           </Menu>
         </Box>
       </DialogContent>
