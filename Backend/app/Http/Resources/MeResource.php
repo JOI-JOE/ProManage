@@ -18,7 +18,8 @@ class MeResource extends JsonResource
             'id' => $this->id,
             'full_name' => $this->full_name,
             'user_name' => $this->user_name,
-            'email' => $this->email,
+            'email'     => $this->email,
+            'workspaces' => $this->workspaces,
             'role' => $this->role,
             'image' => $this->image,
         ];
