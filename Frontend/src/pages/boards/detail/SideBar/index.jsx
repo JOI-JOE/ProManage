@@ -123,7 +123,7 @@ const SideBar = () => {
                 </ListItem>
 
                 <ListItem disablePadding>
-                    <ListItemButton>
+                    <ListItemButton component={Link} to={`w/thuong/members`}> {/* Use template literal */}
                         <ListItemIcon sx={{ color: "white" }}>
                             <PeopleIcon />
                         </ListItemIcon>
