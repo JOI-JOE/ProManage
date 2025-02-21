@@ -66,7 +66,7 @@ Route::controller(controller: WorkspaceController::class)->group(function () {
 
 Route::controller(WorkspaceMembersController::class)->group(function () {
     Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
-   
+
     Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
 });
 
@@ -76,12 +76,12 @@ Route::controller(WorkspaceInvitationsController::class)->group(function () {
 
     // ở đây sẽ có hai trường hợp hợp
     // 1. nếu là id -> sẽ được add thẳng vào workspace + email
-   
+
     Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
 
     // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
     //
-    
+
     Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
 });
 
@@ -160,15 +160,13 @@ Route::get('/trashes', [BoardController::class, 'trash']);
 /// Route card
 
 Route::prefix('cards')->group(function () {
+    Route::get('/{listId}/get-cards', [CardController::class, 'getCardsByList']);
     Route::post('/', [CardController::class, 'store']);
-    // Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
-    // Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
-    // Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
-    // Route::put('/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
-    // Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
-    // Route::post('/dragging', [ListController::class, 'dragging']);
+    Route::put('/{cardId}/update-name', [CardController::class, 'updateName']);
+    Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);
+
     Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail']); // thêm thành viên vào thẻ
-    Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])
+    Route::get('/{cardID}/members/{userId}', [CardController::class, 'removeMember'])
         ->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
     Route::put('/{cardId}/dates', [CardController::class, 'updateDates']); // cập nhật ngày của thẻ
     Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']); // xóa ngày
