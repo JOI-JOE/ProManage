@@ -1,11 +1,13 @@
 import HomeBoard from "./home";
 
 const Boards = () => {
-  return (
-    <>
-      <HomeBoard />
-    </>
-  );
-};
+
+    return (
+        <>
+            <HomeBoard />
+        </>
+    )
+}
+
 
 export default Boards;
