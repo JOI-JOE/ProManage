@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class ListBoard extends Model
 {
     use HasFactory;
-    protected $table = 'list_boards'; 
-    
+    protected $table = 'list_boards';
+
 
     protected $fillable = [
         'name',
@@ -27,5 +27,9 @@ class ListBoard extends Model
     public function color()
     {
         return $this->belongsTo(Color::class);
+    }
+    public function cards()
+    {
+        return $this->hasMany(Card::class, 'list_id');
     }
 }
