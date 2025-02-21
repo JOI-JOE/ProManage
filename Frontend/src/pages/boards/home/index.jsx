@@ -7,19 +7,9 @@ import {
     Button,
 } from "@mui/material";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-// import MyBoard from "./MyBoard";
-// import MyWorkspace from "./MyWorkspace";
 import MyBoard from "../../../components/MyBoard";
 import MyWorkspace from "../../../components/MyWorkspace";
 import { useWorkspaces } from "../../../hooks/useWorkspace";
-
-const recentBoard = [
-    { id: 1, name: "Bảng thiết kế dự án", displayName: "xObU9h1u" },
-    { id: 2, name: "Bảng quản lý khách hàng", displayName: "ssfsf" },
-    { id: 3, name: "Bảng công việc nhóm", displayName: "sfkj" },
-]
-
-
 
 const HomeBoard = () => {
 
@@ -44,11 +34,11 @@ const HomeBoard = () => {
 
             <List sx={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
 
-                {recentBoard.map((board) => (
+                {/* {recentBoard.map((board) => (
                     <ListItem key={board.displayName} sx={{ width: "auto", padding: 0 }}>
                         <MyBoard key={board.displayName} board={board} id={`recent-board-${board.id}`} />
                     </ListItem>
-                ))}
+                ))} */}
             </List>
 
 

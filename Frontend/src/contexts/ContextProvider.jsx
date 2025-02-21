@@ -1,12 +1,10 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { useUser } from "../hooks/useUser";
+import { createContext, useContext, useState } from "react";
 
 const StateContext = createContext({
     user: null,
     token: null,
     setUser: () => { },
     setToken: () => { },
-    isLoading: true,
     error: null,
 });
 
@@ -23,30 +21,11 @@ export const ContextProvider = ({ children }) => {
         }
     };
 
-    const { data: fetchedUser, isLoading, error, refetch } = useUser();
-
-    useEffect(() => {
-        if (token) {
-            refetch();
-        } else {
-            setUser(null); // Không cần callback form ở đây vì không phụ thuộc vào state trước đó
-        }
-    }, [token, refetch]);
-
-
-    useEffect(() => {
-        if (!isLoading && fetchedUser) {
-            setUser(fetchedUser)
-        }
-    }, [isLoading, fetchedUser])
-
     const value = {
         user,
         token,
         setUser,
         setToken,
-        isLoading,
-        error,
     };
 
     return (
