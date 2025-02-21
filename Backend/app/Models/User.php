@@ -57,6 +57,12 @@ class User extends Authenticatable
     /**
      * Get the workspaces associated with the user.
      */
+
+    public function boards()
+    {
+        return $this->hasMany(Board::class, 'created_by');
+    }
+
     public function workspaces()
     {
         return $this->hasMany(Workspace::class, 'id_member_creator'); // Nếu 'id_member_creator' là khóa ngoại
