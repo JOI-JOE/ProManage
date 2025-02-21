@@ -11,12 +11,12 @@ class BoardController extends Controller
 {
     public function index()
     {
-        $board = Board::where('deleted', 0)->get();
+        $board = Board::where('closed', 0)->get();
         return response()->json($board);
     }
     public function trash()
     {
-        $board = Board::where('deleted', 1)->get();
+        $board = Board::where('closed', 1)->get();
         return response()->json($board);
     }
     
