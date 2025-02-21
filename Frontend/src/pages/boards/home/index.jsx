@@ -22,7 +22,6 @@ const recentBoard = [
 
 
 const HomeBoard = () => {
-    const [hoveredItem, setHoveredItem] = useState(null);
 
     const { data: workspaces, isLoading, isError } = useWorkspaces();
     if (isLoading) return <p>Đang tải workspaces...</p>;

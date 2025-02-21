@@ -11,15 +11,9 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import AddIcon from '@mui/icons-material/Add'
 import { Link } from 'react-router-dom'
 
-
-
 const WorkspaceMenu = ({ workspace }) => {
     const [openSettings, setOpenSettings] = useState(false)
     const [hoveredItem, setHoveredItem] = useState(null)
-    const [workspaces, setWorkspaces] = useState([]); // State để lưu workspace
-    const [loading, setLoading] = useState(true); // State để kiểm tra trạng thái loading
-    const [error, setError] = useState(null); // State để lưu lỗi (nếu có)
-
 
     const toggleSettings = ({ workspace }) => {
         setOpenSettings(!openSettings)

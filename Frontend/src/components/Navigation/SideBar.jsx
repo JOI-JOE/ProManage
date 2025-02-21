@@ -14,23 +14,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import { Link } from "react-router-dom";
 import WorkspaceMenu from "./WorkspaceMenu";
 
-
-const workspaceData = [
-    {
-        id: 1,
-        name: 'Vito',
-        display_name: "vu109",
-    },
-    {
-        id: 2,
-        name: 'Vu',
-        display_name: "vito109",
-    }
-]
-
-const SideBar = () => {
-    const [username, setUsername] = useState('vito109'); // Ví dụ: username được lấy từ state 
-
+const SideBar = ({ workspaces, username }) => {
     return (
         <Drawer
             variant="permanent"
@@ -83,7 +67,7 @@ const SideBar = () => {
             </Typography>
 
             {/* Truyền workspace vào WorkspaceMenu */}
-            {workspaceData.map((item) => (
+            {workspaces.map((item) => (
                 <div key={item.id}>
                     <WorkspaceMenu workspace={item} />
                 </div>
