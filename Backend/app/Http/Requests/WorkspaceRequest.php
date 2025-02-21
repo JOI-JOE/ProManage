@@ -26,7 +26,6 @@ class WorkspaceRequest extends FormRequest
         $workspaceId = $request->route('workspace');
 
         $rules = [
-            'name' => 'required|string|max:100',
             'id_member_creator' => [
                 Rule::exists('users', 'id'),
             ],
