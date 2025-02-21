@@ -10,6 +10,7 @@ import GoogleAuth from "../pages/auth/GoogleAuth";
 import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
 import LoginForm from "../pages/auth/LoginForm";
+import Member from "../pages/boards/detail/Member";
 
 const router = createBrowserRouter([
     {
@@ -42,12 +43,20 @@ const router = createBrowserRouter([
                 ]
             },
             {
-                path: "b/:id/:displayName",
+                path: "",
                 element: <BoardDetail />,
                 children: [
                     {
-                        path: "",
+                        path: "b/:id/:displayName",
                         element: <BoardContent />
+                    },
+                    {
+                        path: "w/:displayName",
+                        element: <Member />
+                    },
+                    {
+                        path: "w/:displayName/members",
+                        element: <Member />
                     }
                 ]
             }

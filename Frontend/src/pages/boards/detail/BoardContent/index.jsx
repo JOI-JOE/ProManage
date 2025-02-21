@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Column from "./Column";
+// import Column from "./Column";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
     COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -49,35 +49,7 @@ const BoardContent = () => {
 
     const lastOverId = useRef(null);
 
-    useEffect(() => {
-        axios.get(`http://127.0.0.1:8000/api/lists/${boardId}`)
-            .then(response => {
 
-                if (Array.isArray(response.data)) {
-                    setLists(response.data.sort((a, b) => a.position - b.position));
-                } else {
-                    console.error("Lỗi: API không trả về danh sách đúng", response.data);
-                }
-            })
-            .catch(error => console.error("Lỗi khi lấy danh sách:", error));
-
-
-
-        const channel = window.Echo.channel(`board.${boardId}`).listen(".list.reordered", (event) => {
-            const { lists: updatedLists, timestamp } = event;
-            if (timestamp > lastUpdate) {
-                setLists(updatedLists.sort((a, b) => a.position - b.position));
-                setLastUpdate(timestamp);
-            }
-        });
-
-        return () => {
-            channel.stopListening(".list.reordered");
-            window.Echo.leaveChannel(`board.${boardId}`);
-        };
-
-
-    }, [boardId, lastUpdate]);
 
     //Tìm column theo cardId
     const findColumnByCardId = (cardId) => {
@@ -269,7 +241,7 @@ const BoardContent = () => {
                     padding: "18px 0 7px 0px",
                 }}
             >
-                <Column lists={lists} />
+                {/* <Column lists={lists} /> */}
             </Box>
         </DndContext>
     );
