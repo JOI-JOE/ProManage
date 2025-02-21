@@ -75,6 +75,7 @@ const HomeBoard = () => {
                 {/* {MyBoardInWorkspace.map((item) => (
                     <MyWorkspace key={item.workspace.displayName} workspace={item.workspace} boards={item.workspace.boards} />
                 ))} */}
+                <MyWorkspace />
             </div>
             {/* ENDư Các không gian làm việc của bạn */}
 
@@ -91,6 +92,7 @@ const HomeBoard = () => {
             >
                 Xem tất cả các bảng đã đóng
             </Button>
+            
         </Box>
     );
 }

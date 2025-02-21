@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 
 // Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
 // Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
+
 Route::middleware(['web'])->group(function () {
     Route::controller(GoogleAuthController::class)->group(function () {
         Route::get('/auth/redirect/google', 'redirectToAuthProvider');
@@ -46,27 +47,30 @@ Route::middleware(['web'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
+
+    // Router cho workspace
+    Route::controller(controller: WorkspaceController::class)->group(function () {
+        // Get all workspace
+        Route::get('/workspaces', 'index');
+        // Get workspace by
+        Route::get('/workspaces/{id}/boards', 'show');
+
+        Route::get('/workspaces/{id}', 'show_deltail_workspace');
+        // Create new workspace
+        Route::post('/workspaces', 'store');
+        // Delete workspace
+        Route::delete('/workspaces/{workspace}', 'destroy');
+
+        // Update infor workspace
+        Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
+    });
 });
 
-Route::controller(controller: WorkspaceController::class)->group(function () {
-    // Get all workspace
-    Route::get('/workspaces', 'index');
-    // Get workspace by
-    Route::get('/workspaces/{id}/boards', 'show');
 
-    Route::get('/workspaces/{id}', 'show_deltail_workspace');
-    // Create new workspace
-    Route::post('/workspaces', 'store');
-    // Delete workspace
-    Route::delete('/workspaces/{workspace}', 'destroy');
-
-    // Update infor workspace
-    Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
-})->middleware('auth:sanctum');
 
 Route::controller(WorkspaceMembersController::class)->group(function () {
     Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
-   
+
     Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
 });
 
@@ -76,12 +80,12 @@ Route::controller(WorkspaceInvitationsController::class)->group(function () {
 
     // ở đây sẽ có hai trường hợp hợp
     // 1. nếu là id -> sẽ được add thẳng vào workspace + email
-   
+
     Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
 
     // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
     //
-    
+
     Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
 });
 
