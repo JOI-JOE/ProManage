@@ -6,10 +6,13 @@ import Dashboard from "../pages/Dashboard";
 import Workspaces from "../pages/workspace";
 import BoardDetail from "../pages/boards/detail";
 import BoardContent from "../pages/boards/detail/BoardContent";
-import GoogleAuth from "../pages/auth/GoogleAuth";
+// import GoogleAuth from "../pages/auth/GoogleAuth";
 import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
-import LoginForm from "../pages/auth/LoginForm";
+import LoginForm from "../pages/Auth/LoginForm";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
+import GitHubAuth from "../pages/Auth/GitHubAuth";
+// import LoginForm from "../pages/auth/LoginForm";
 
 const router = createBrowserRouter([
     {
@@ -23,6 +26,10 @@ const router = createBrowserRouter([
             {
                 path: "login/google", // Add this route!
                 element: <GoogleAuth />, // Use your GoogleAuth component here
+            },
+            {
+                path: "auth/callback", // Add this route!
+                element: <GitHubAuth />, // Use your GoogleAuth component here
             },
         ],
     },

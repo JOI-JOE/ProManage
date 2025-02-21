@@ -39,10 +39,9 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email không tồn tại'], 404);
         }
 
-        // không cần kiểm tra mật khẩu
-        // if (!Auth::attempt($request->only('email', 'password'))) {
-        //     return response()->json(['message' => 'Mật khẩu không đúng'], 401);
-        // }
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return response()->json(['message' => 'Mật khẩu không đúng'], 401);
+        }
 
         // Tạo token sau khi xác thực thành công
         $token = $user->createToken('token')->plainTextToken;
@@ -149,7 +148,7 @@ class AuthController extends Controller
             return response()->json(
                 ['error' => $e->getMessage()],
                 500
-            );
+            );  
         }
     }
 }

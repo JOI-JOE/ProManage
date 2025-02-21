@@ -14,6 +14,8 @@ import { ContextProvider } from "./contexts/ContextProvider";
 import theme from "~/theme";
 import router from "./router/index";
 
+import "../index.css"; // ✅ Import để đảm bảo CSS/Tailwind hoạt động
+
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")).render(
