@@ -60,6 +60,40 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 
+//     // Update infor workspace
+//     Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
+// })->middleware(['auth:sanctum']);
+
+Route::controller(WorkspaceMembersController::class)->group(function () {
+    Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
+   
+    Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
+});
+
+Route::controller(WorkspaceInvitationsController::class)->group(function () {
+    Route::get("/search/members", 'searchNewMembersToWorkspace');
+    Route::post('/workspace/{idWorkspace}/addMember',  'inviteMemberToWorkspace');
+
+    // ở đây sẽ có hai trường hợp hợp
+    // 1. nếu là id -> sẽ được add thẳng vào workspace + email
+   
+    Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
+
+    // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
+    //
+    
+    Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
+});
+
+// Routes quản lý bảng
+Route::prefix('boards/{id}/')->group(function () {
+    Route::patch('name', [BoardController::class, 'updateName']);
+    Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
+    Route::patch('marked', [BoardController::class, 'updateIsMarked']);
+    Route::patch('archive', [BoardController::class, 'updateArchive']);
+    Route::patch('visibility', [BoardController::class, 'updateVisibility']);
+    Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
+});
 
 
 Route::prefix('boards/{boardId}/members/')->group(function () {
@@ -127,7 +161,10 @@ Route::get('/trashes', [BoardController::class, 'trash']);
 /// Route card
 
 Route::prefix('cards')->group(function () {
+    Route::get('/{listId}/get-cards', [CardController::class, 'getCardsByList']);
     Route::post('/', [CardController::class, 'store']);
+    Route::put('/{cardId}/update-name', [CardController::class, 'updateName']);
+    Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);
     // Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
     // Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
     // Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
