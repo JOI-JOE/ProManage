@@ -6,7 +6,7 @@ import Dashboard from "../pages/Dashboard";
 import Workspaces from "../pages/workspace";
 import BoardDetail from "../pages/boards/detail";
 import BoardContent from "../pages/boards/detail/BoardContent";
-
+import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 // import Login from "../pages/auth/Login";
 
@@ -49,7 +49,7 @@ const router = createBrowserRouter([
         children: [
           {
             path: "",
-            element: <BoardContent />,
+            element: <BoardContent board={mockData?.board} />,
           },
         ],
       },
