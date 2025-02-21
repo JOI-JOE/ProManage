@@ -27,7 +27,6 @@ import { useNavigate } from "react-router-dom";
 import { useLogout } from "../../../hooks/useUser";
 import { useStateContext } from "../../../contexts/ContextProvider";
 
-
 export default function ProfileMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
@@ -45,7 +44,6 @@ export default function ProfileMenu() {
   const handleClose = () => {
     setAnchorEl(null);
   };
-
 
   const handleThemeClick = (event) => {
     setThemeAnchorEl(event.currentTarget);
@@ -75,8 +73,6 @@ export default function ProfileMenu() {
   // Hook logout
   const { mutate: logout, isLoading: logoutLoading } = useLogout();
 
-
-
   // Xử lý logout
   const handleLogout = () => {
     logout(null, {
@@ -89,10 +85,9 @@ export default function ProfileMenu() {
         alert("Đã có lỗi xảy ra khi đăng xuất. Vui lòng thử lại sau.");
       },
     });
-  }
+  };
 
   return (
-
     <React.Fragment>
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
         <Tooltip title="Tài khoản">
@@ -113,8 +108,7 @@ export default function ProfileMenu() {
           <Typography
             variant="subtitle1"
             sx={{ fontWeight: "bold", mt: 1, color: "black" }}
-          >
-          </Typography>
+          ></Typography>
           <Typography variant="body2" sx={{ color: "black" }}>
             {user.email}
           </Typography>
@@ -169,7 +163,7 @@ export default function ProfileMenu() {
           <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
         </MenuItem>
 
-        <MenuItem >
+        <MenuItem>
           <ListItemIcon>
             <Logout fontSize="small" />
           </ListItemIcon>
@@ -179,9 +173,7 @@ export default function ProfileMenu() {
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>
         <Divider sx={{ marginY: "10px" }} />
-        <MenuItem onClick={handleLogout}>
-          Đăng xuất
-        </MenuItem>
+        <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
       </Menu>
 
       {/* Modal for Creating Workspace */}
