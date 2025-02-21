@@ -18,6 +18,9 @@ import { mapOrder } from "../../../../../../../utils/sort";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "react-toastify";
+import CopyColumn from "./Menu/CoppyColumn";
+import ConfirmDeleteDialog from "./Menu/DeleteColumn";
+import ArchiveColumnDialog from "./Menu/Archive";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -58,7 +61,55 @@ const StyledMenu = styled((props) => (
 }));
 
 const Column = ({ column }) => {
-  // Thêm card mới
+  // State hiển thị form sao chép cột
+  const [openCopyDialog, setOpenCopyDialog] = useState(false);
+  // State hiển thị form xác nhận xóa
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  // State hiển thị form lưu trữ
+  const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
+
+  //============================================================ COPY======================================================
+
+  // Mở form sao chép khi nhấn vào "Copy"
+  const handleCopyClick = () => {
+    setOpenCopyDialog(true); // Mở form sao chép
+    setAnchorEl(null); // Đóng menu sau khi nhấn vào "Copy"
+  };
+  // Xử lý sao chép cột
+  const handleCopyConfirm = (newTitle) => {
+    console.log("Cột đã sao chép với tên mới:", newTitle);
+    setOpenCopyDialog(false); // Đóng form sao chép sau khi sao chép
+  };
+
+  //============================================================ REMOVE======================================================
+
+  // Mở form xác nhận xóa khi nhấn vào "Remove this column"
+  const handleDeleteClick = () => {
+    setOpenDeleteDialog(true); // Mở form xác nhận xóa
+    setAnchorEl(null); // Đóng menu sau khi nhấn vào "Remove this column"
+  };
+
+  // Xác nhận xóa cột
+  const handleDeleteConfirm = () => {
+    console.log("Cột đã bị xóa");
+    setOpenDeleteDialog(false); // Đóng form sau khi xóa
+  };
+
+  //============================================================ ARCHIVE======================================================
+
+  // Xử lý mở form lưu trữ khi click "Archive this column"
+  const handleArchiveClick = () => {
+    setOpenArchiveDialog(true);
+    setAnchorEl(null);
+  };
+
+  // Xử lý xác nhận lưu trữ
+  const handleArchiveConfirm = () => {
+    console.log("Cột đã được lưu trữ");
+    setOpenArchiveDialog(false);
+  };
+
+  //======================================== Thêm card mới========================================
   const [openCard, setOpenCard] = useState(false);
   const [cardName, setCardName] = useState("");
   const addCard = () => {
@@ -74,28 +125,20 @@ const Column = ({ column }) => {
   // Chức năng sửa tiêu đề
   const [title, setTitle] = useState(column?.title);
   const [isEditing, setIsEditing] = useState(false);
+  const [prevTitle, setPrevTitle] = useState(column?.title); // Lưu giá trị trước đó
 
   const handleTitleClick = () => {
     setIsEditing(true);
   };
 
-  const handleTitleBlur = () => {
-    if (!title.trim()) {
-      setTitle(column?.title); // Trả về tên ban đầu nếu ô nhập liệu trống
-    }
-    setIsEditing(false);
-  };
-
-  const handleTitleChange = (e) => {
-    setTitle(e.target.value);
-  };
-
-  const handleTitleKeyPress = (e) => {
-    if (e.key === "Enter") {
+  const handleTitleUpdate = (e) => {
+    if (e.type === "blur" || (e.type === "keydown" && e.key === "Enter")) {
       if (!title.trim()) {
-        setTitle(column?.title); // Trả về tên ban đầu nếu ô nhập liệu trống
+        setTitle(prevTitle); // Trả về giá trị trước đó nếu rỗng
+      } else {
+        setPrevTitle(title); // Cập nhật giá trị trước đó nếu có thay đổi
       }
-      setIsEditing(false); // Dừng chỉnh sửa khi nhấn Enter
+      setIsEditing(false);
     }
   };
 
@@ -156,9 +199,10 @@ const Column = ({ column }) => {
           {isEditing ? (
             <TextField
               value={title}
-              onChange={handleTitleChange}
-              onBlur={handleTitleBlur}
-              onKeyPress={handleTitleKeyPress}
+              onChange={(e) => setTitle(e.target.value)}
+              onFocus={() => setPrevTitle(title)} // Cập nhật giá trị trước đó khi bắt đầu chỉnh sửa
+              onBlur={handleTitleUpdate}
+              onKeyDown={handleTitleUpdate}
               autoFocus
               variant="outlined"
               size="small"
@@ -216,17 +260,10 @@ const Column = ({ column }) => {
               anchorEl={anchorEl}
               open={open}
               onClose={handleClose}
+              {...(!open && { inert: "true" })}
             >
               <MenuItem
-                onClick={handleClose}
-                disableRipple
-                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-              >
-                <AddCardIcon />
-                Add new card
-              </MenuItem>
-              <MenuItem
-                onClick={handleClose}
+                onClick={handleCopyClick}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
@@ -253,7 +290,7 @@ const Column = ({ column }) => {
               <Divider sx={{ my: 0.5 }} />
 
               <MenuItem
-                onClick={handleClose}
+                onClick={handleArchiveClick}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
@@ -262,7 +299,7 @@ const Column = ({ column }) => {
               </MenuItem>
 
               <MenuItem
-                onClick={handleClose}
+                onClick={handleDeleteClick}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
@@ -363,6 +400,27 @@ const Column = ({ column }) => {
           )}
         </Box>
       </Box>
+
+      {/* Hiển thị form lưu trữ */}
+      <ArchiveColumnDialog
+        open={openArchiveDialog}
+        onClose={() => setOpenArchiveDialog(false)}
+        onConfirm={handleArchiveConfirm}
+      />
+
+      {/* Hiển thị form sao chép */}
+      <CopyColumn
+        open={openCopyDialog}
+        onClose={() => setOpenCopyDialog(false)}
+        onCopy={handleCopyConfirm}
+      />
+
+      {/* Hiển thị form xác nhận xóa */}
+      <ConfirmDeleteDialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 };
