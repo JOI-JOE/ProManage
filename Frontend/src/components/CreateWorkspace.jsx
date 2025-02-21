@@ -11,20 +11,18 @@ import CloseIcon from "@mui/icons-material/Close";
 import PeopleIcon from "@mui/icons-material/People";
 import { useCreateWorkspace } from "../hooks/useWorkspace";
 
-
 const CreateWorkspace = () => {
-    const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false); // 🔹 Thêm state
+    const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
     const [openInviteModal, setOpenInviteModal] = React.useState(false);
     const [workspaceName, setWorkspaceName] = React.useState("");
     const [workspaceType, setWorkspaceType] = React.useState("");
-    const [workspaceDescription, setWorkspaceDescription] = React.useState(""); // Thêm state mới
-
-
+    const [workspaceDescription, setWorkspaceDescription] = React.useState("");
 
     const handleCloseWorkspaceModal = () => {
         setOpenWorkspaceModal(false);
-        setWorkspaceName(""); // Reset tên không gian làm việc
-        setWorkspaceType(""); // Reset loại không gian làm việc
+        setWorkspaceName("");
+        setWorkspaceType("");
+        setWorkspaceDescription("");
     };
 
     const handleOpenWorkspaceModal = () => {
@@ -33,20 +31,18 @@ const CreateWorkspace = () => {
 
     const { mutate: handleCreateWorkspace, isLoading } = useCreateWorkspace();
 
-
     const handleSubmit = () => {
-        // Kiểm tra dữ liệu trước khi gửi
         console.log("Dữ liệu workspace trước khi gửi:", {
             name: workspaceName,
             type: workspaceType,
-            desc: workspaceDescription
+            desc: workspaceDescription,
         });
 
         handleCreateWorkspace(
             {
                 display_name: workspaceName,
                 team_type: workspaceType,
-                desc: workspaceDescription
+                desc: workspaceDescription,
             },
             {
                 onSuccess: (data) => {
@@ -54,7 +50,7 @@ const CreateWorkspace = () => {
                     setOpenWorkspaceModal(false);
                     setWorkspaceName("");
                     setWorkspaceType("");
-                    setWorkspaceDescription(""); // Reset mô tả sau khi gửi
+                    setWorkspaceDescription("");
                     setOpenInviteModal(true);
                 },
                 onError: (error) => {
@@ -65,10 +61,9 @@ const CreateWorkspace = () => {
         );
     };
 
-
     return (
-
-        <div>{/* Modal Tạo Không gian làm việc */}
+        <div>
+            {/* Modal Tạo Không gian làm việc */}
             <MenuItem onClick={handleOpenWorkspaceModal}>
                 <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
             </MenuItem>
@@ -121,9 +116,11 @@ const CreateWorkspace = () => {
                         variant="outlined"
                         sx={{ mb: 1, color: "black" }}
                         value={workspaceName}
-                        onChange={(e) => setWorkspaceName(e.target.value)} // Cập nhật giá trị
+                        onChange={(e) => {
+                            console.log("workspaceName:", e.target.value); // Debug
+                            setWorkspaceName(e.target.value);
+                        }}
                     />
-
                     <Typography variant="body2" sx={{ mb: 4, color: "black" }}>
                         Đây là tên của công ty, nhóm hoặc tổ chức của bạn.
                     </Typography>
@@ -137,7 +134,10 @@ const CreateWorkspace = () => {
                     <Select
                         fullWidth
                         value={workspaceType}
-                        onChange={(e) => setWorkspaceType(e.target.value)}
+                        onChange={(e) => {
+                            console.log("workspaceType:", e.target.value); // Debug
+                            setWorkspaceType(e.target.value);
+                        }}
                         displayEmpty
                         sx={{ mb: 2 }}
                     >
@@ -164,8 +164,8 @@ const CreateWorkspace = () => {
                         placeholder="Nhóm của chúng tôi tổ chức mọi thứ ở đây"
                         variant="outlined"
                         sx={{ mb: 1 }}
-                        value={workspaceDescription} // Liên kết với state
-                        onChange={(e) => setWorkspaceDescription(e.target.value)} // Cập nhật state khi nhập
+                        value={workspaceDescription}
+                        onChange={(e) => setWorkspaceDescription(e.target.value)}
                     />
                     <Typography variant="body2" sx={{ mb: 4, color: "black" }}>
                         Đưa các thành viên của bạn vào bảng với mô tả ngắn về Không gian làm
@@ -176,7 +176,7 @@ const CreateWorkspace = () => {
                         fullWidth
                         variant="contained"
                         onClick={handleSubmit}
-                        disabled={!workspaceName || !workspaceType}
+                    // disabled={!workspaceName || !workspaceType || !workspaceDescription} // Kiểm tra điều kiện
                     >
                         Tiếp tục
                     </Button>
@@ -198,7 +198,6 @@ const CreateWorkspace = () => {
                         borderRadius: 2,
                     }}
                 >
-                    {/* Nút đóng */}
                     <IconButton
                         onClick={() => setOpenInviteModal(false)}
                         sx={{ position: "absolute", top: 8, right: 8 }}
@@ -206,7 +205,6 @@ const CreateWorkspace = () => {
                         <CloseIcon />
                     </IconButton>
 
-                    {/* Tiêu đề */}
                     <Typography
                         variant="h5"
                         sx={{ fontWeight: "bold", mb: 1, fontSize: "27px" }}
@@ -214,18 +212,15 @@ const CreateWorkspace = () => {
                         Mời nhóm của bạn
                     </Typography>
 
-                    {/* Phần mô tả */}
                     <Typography variant="body2" sx={{ mb: 2 }}>
                         Mời tối đa 9 người khác bằng liên kết hoặc nhập tên hoặc email của
                         họ.
                     </Typography>
 
-                    {/* 🔹 Thêm dòng "Các thành viên Không gian làm việc" ở góc trái */}
                     <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
                         Các thành viên Không gian làm việc
                     </Typography>
 
-                    {/* Ô nhập email */}
                     <TextField
                         fullWidth
                         placeholder="ví dụ: calrissian@cloud.ci"
@@ -233,12 +228,10 @@ const CreateWorkspace = () => {
                         sx={{ mb: 2 }}
                     />
 
-                    {/* Nút Mời */}
                     <Button fullWidth variant="contained" disabled>
                         Mời vào Không gian làm việc
                     </Button>
 
-                    {/* 🔹 Chuyển "Tôi sẽ thực hiện sau" thành link */}
                     <Typography
                         variant="body2"
                         sx={{
@@ -246,16 +239,16 @@ const CreateWorkspace = () => {
                             mt: 2,
                             color: "blue",
                             cursor: "pointer",
-                            textDecoration: "underline", // Làm cho nó trông giống link
+                            textDecoration: "underline",
                         }}
-                        onClick={() => setOpenInviteModal(false)} // Đóng modal khi nhấn vào
+                        onClick={() => setOpenInviteModal(false)}
                     >
                         Tôi sẽ thực hiện sau
                     </Typography>
                 </Box>
             </Modal>
         </div>
-    )
-}
+    );
+};
 
-export default CreateWorkspace
+export default CreateWorkspace;
