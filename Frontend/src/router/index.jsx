@@ -6,7 +6,8 @@ import Dashboard from "../pages/Dashboard";
 import Workspaces from "../pages/workspace";
 import BoardDetail from "../pages/boards/detail";
 import BoardContent from "../pages/boards/detail/BoardContent";
-// import GoogleAuth from "../pages/auth/GoogleAuth";
+
+import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
@@ -61,6 +62,14 @@ const router = createBrowserRouter([
         ]
     },
 
+          {
+            path: "",
+            element: <BoardContent board={mockData?.board} />,
+          },
+        ],
+      },
+    ],
+  },
 ]);
 
 export default router;
