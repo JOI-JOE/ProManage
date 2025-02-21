@@ -25,6 +25,10 @@ import { ListItemIcon } from "@mui/material";
 import { useLogout, useUser } from "../../../hooks/useUser";
 import { useNavigate } from "react-router-dom";
 
+import { useLogout } from "../../../hooks/useUser";
+import { useStateContext } from "../../../contexts/ContextProvider";
+
+
 export default function ProfileMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
