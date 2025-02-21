@@ -15,7 +15,7 @@ import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAlt
 import MyBoard from "./MyBoard";
 import CreateBoard from "./CreateBoard";
 
-const MyWorkspace = () => {
+const MyWorkspace = ({ workspace, boards }) => {
     return (
         <div>
             <ListItem
@@ -24,15 +24,16 @@ const MyWorkspace = () => {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "10px 0",
-                    gap: " 20px",
+                    gap: "20px",
                 }}
             >
                 {/* Avatar & Tiêu đề */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
+                    <Avatar sx={{ bgcolor: "#5D87FF" }}>
+                        {workspace.name.charAt(0).toUpperCase()}
+                    </Avatar>
                     <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
-                        {/* {workspace.name} */}
-                        hậu
+                        {workspace.name.length > 10 ? workspace.name.substring(0, 20) + "..." : workspace.name}
                     </Typography>
                 </Box>
 
@@ -94,7 +95,7 @@ const MyWorkspace = () => {
                         }}
                     >
                         <PeopleIcon fontSize="small" />
-                        Thành viên (1)
+                        Thành viên ({workspace.members?.length || 0})
                     </Button>
 
                     <Button
@@ -137,17 +138,16 @@ const MyWorkspace = () => {
 
             {/* Danh sách bảng Trello */}
             <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-                {/* {boards.map((board) => (
-                    <ListItem key={board.link} sx={{ width: "auto", padding: 0 }}>
-                        <MyBoard key={board.link} board={board} id={`recent-board-${board.id}`} />
+                {boards?.map((board) => (
+                    <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                        <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
                     </ListItem>
-                ))} */}
-                <MyBoard />
+                ))}
 
                 <CreateBoard />
             </List>
         </div>
-    )
-}
+    );
+};
 
-export default MyWorkspace
+export default MyWorkspace;
