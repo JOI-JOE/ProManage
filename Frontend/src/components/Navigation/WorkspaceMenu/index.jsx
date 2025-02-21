@@ -11,29 +11,16 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import AddIcon from '@mui/icons-material/Add'
 import { Link } from 'react-router-dom'
 
-<<<<<<< HEAD
 
 
 const WorkspaceMenu = ({ workspace }) => {
-    const [openSettings, setOpenSettings] = useState(false)
-    const [hoveredItem, setHoveredItem] = useState(null)
-    const [workspaces, setWorkspaces] = useState([]); // State để lưu workspace
-    const [loading, setLoading] = useState(true); // State để kiểm tra trạng thái loading
-    const [error, setError] = useState(null); // State để lưu lỗi (nếu có)
 
+  const [openSettings, setOpenSettings] = useState(false)
+  const [hoveredItem, setHoveredItem] = useState(null)
+  const [workspaces, setWorkspaces] = useState([]); // State để lưu workspace
+  const [loading, setLoading] = useState(true); // State để kiểm tra trạng thái loading
+  const [error, setError] = useState(null); // State để lưu lỗi (nếu có)
 
-    const toggleSettings = ({ workspace }) => {
-        setOpenSettings(!openSettings)
-    }
-
-    const handleMouseEnter = (item) => {
-        setHoveredItem(item)
-    }
-
-=======
-const WorkspaceMenu = ({ workspace }) => {
-    const [openSettings, setOpenSettings] = useState(false)
-    const [hoveredItem, setHoveredItem] = useState(null)
 
     const toggleSettings = ({ workspace }) => {
         setOpenSettings(!openSettings)
@@ -89,50 +76,51 @@ const WorkspaceMenu = ({ workspace }) => {
                             <ListItemText primary="Điểm nổi bật" sx={{ color: "black" }} />
                         </ListItemButton>
 
-                        <ListItemButton
-                            onMouseEnter={() => handleMouseEnter("Hình")}
-                            onMouseLeave={handleMouseLeave}
-                        >
-                            <ListItemIcon sx={{ color: "black" }}>
-                                <ViewStreamIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Hình" sx={{ color: "black" }} />
-                            {hoveredItem === "Hình" && (
-                                <ChevronRightIcon sx={{ color: "gray" }} />
-                            )}
-                        </ListItemButton>
+            <ListItemButton
+              onMouseEnter={() => handleMouseEnter("Hình")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <ListItemIcon sx={{ color: "black" }}>
+                <ViewStreamIcon />
+              </ListItemIcon>
+              <ListItemText primary="Hình" sx={{ color: "black" }} />
+              {hoveredItem === "Hình" && (
+                <ChevronRightIcon sx={{ color: "gray" }} />
+              )}
+            </ListItemButton>
 
-                        <ListItemButton
-                            onMouseEnter={() => handleMouseEnter("Thành viên")}
-                            onMouseLeave={handleMouseLeave}
-                        >
-                            <ListItemIcon sx={{ color: "black" }}>
-                                <PeopleIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Thành viên" sx={{ color: "black" }} />
-                            <AddIcon sx={{ color: "gray" }} />
-                            {hoveredItem === "Thành viên" && (
-                                <ChevronRightIcon sx={{ color: "gray" }} />
-                            )}
-                        </ListItemButton>
+            <ListItemButton
+              onMouseEnter={() => handleMouseEnter("Thành viên")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <ListItemIcon sx={{ color: "black" }}>
+                <PeopleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Thành viên" sx={{ color: "black" }} />
+              <AddIcon sx={{ color: "gray" }} />
+              {hoveredItem === "Thành viên" && (
+                <ChevronRightIcon sx={{ color: "gray" }} />
+              )}
+            </ListItemButton>
 
-                        <ListItemButton
-                            onMouseEnter={() => handleMouseEnter("Cài đặt")}
-                            onMouseLeave={handleMouseLeave}
-                        >
-                            <ListItemIcon sx={{ color: "black" }}>
-                                <SettingsIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Cài đặt" sx={{ color: "black" }} />
-                            {hoveredItem === "Cài đặt" && (
-                                <ChevronRightIcon sx={{ color: "gray" }} />
-                            )}
-                        </ListItemButton>
-                    </List>
-                </Box>
-            </Collapse>
-        </div>
-    )
+            <ListItemButton
+              onMouseEnter={() => handleMouseEnter("Cài đặt")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <ListItemIcon sx={{ color: "black" }}>
+                <SettingsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Cài đặt" sx={{ color: "black" }} />
+              {hoveredItem === "Cài đặt" && (
+                <ChevronRightIcon sx={{ color: "gray" }} />
+              )}
+            </ListItemButton>
+          </List>
+        </Box>
+      </Collapse>
+    </div>
+  )
+
 }
 
 export default WorkspaceMenu
