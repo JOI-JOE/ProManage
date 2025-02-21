@@ -50,11 +50,11 @@ const router = createBrowserRouter([
         ]
       },
       {
-        path: "b/:id/:displayName",
+        path: "",
         element: <BoardDetail />,
         children: [
           {
-            path: "",
+            path: "b/:id/:displayName",
             element: <BoardContent />
           }
         ]
