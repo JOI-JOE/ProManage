@@ -3,9 +3,8 @@ import { Box, Container } from "@mui/material";
 import AppBar from "../../../components/Navigation/AppBar";
 import SideBar from "./SideBar";
 import { Outlet } from "react-router-dom";
-import BoardBar from "./BoardBar";
-// import BoardContent from "./BoardContent";
-// import { mockData } from "../../../api/Api_fake";
+import BoardBar from "./BoardContent/BoardBar";
+// import BoardBar from './BoardBar';
 
 const BoardDetail = () => {
   return (
@@ -16,7 +15,6 @@ const BoardDetail = () => {
           <SideBar />
           <Box sx={{ width: "81%" }}>
             <BoardBar />
-            {/* <BoardContent board={mockData?.board} /> */}
             <Outlet />
           </Box>
         </Box>

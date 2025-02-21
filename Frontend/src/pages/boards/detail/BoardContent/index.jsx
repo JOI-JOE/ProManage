@@ -2,9 +2,9 @@ import { Box } from "@mui/material";
 import ListColumns from "./ListColumns/ListColumns";
 import Column from "./ListColumns/Column/Column";
 import C_ard from "./ListColumns/Column/ListCards/Card/Card";
-import { cloneDeep, isEmpty } from "lodash";
 import { mapOrder } from "../../../../../utils/sort";
 
+import { cloneDeep, isEmpty } from "lodash";
 import {
   DndContext,
   MouseSensor,
@@ -23,6 +23,7 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { generatePlaceholderCard } from "../../../../../utils/formatters";
+
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
   CARD: "ACTIVE_DRAG_ITEM_TYPE_CARD",

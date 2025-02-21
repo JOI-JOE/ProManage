@@ -11,12 +11,14 @@ import {
 import FilterListIcon from "@mui/icons-material/FilterList";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import BoltIcon from "@mui/icons-material/Bolt";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import AutomationDialog from "./childComponent/Auto/Auto";
 import FilterDialog from "./childComponent/Filter/Filter";
 import ViewPermissionsDialog from "./childComponent/View/View";
 import ShareBoardDialog from "./childComponent/Share/Share";
 import BoardMenu from "./BoardMenu";
+import StarButton from "./childComponent/Star/Star";
 
 const style = {
   border: "none",
@@ -50,6 +52,13 @@ const BoardBar = ({ board }) => {
   const [openShareDialog, setOpenShareDialog] = useState(false);
   const [editTitle, setEditTitle] = useState(false);
   const [teamName, setTeamName] = useState(board?.title || "Team WD-51");
+
+  // Quản lý trạng thái sao (isStarred)
+  const [isStarred, setIsStarred] = useState(false);
+
+  const handleStarClick = () => {
+    setIsStarred((prev) => !prev); // Đảo ngược trạng thái sao
+  };
 
   const handleTitleClick = () => setEditTitle(true);
 
@@ -105,6 +114,7 @@ const BoardBar = ({ board }) => {
         ) : (
           <Chip label={teamName} sx={style} onClick={handleTitleClick} />
         )}
+        <StarButton isStarred={isStarred} onStarClick={handleStarClick} />
         <Chip
           icon={<LockOpenIcon />}
           label="Khả năng xem"
