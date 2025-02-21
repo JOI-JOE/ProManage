@@ -66,10 +66,6 @@ const router = createBrowserRouter([
             path: "",
             element: <BoardContent board={mockData?.board} />,
           },
-        ],
-      },
-    ],
-  },
-]);
-
+    ]);
+    
 export default router;
