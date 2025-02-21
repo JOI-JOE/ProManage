@@ -29,30 +29,44 @@ class AuthController extends Controller
     }
     public function handleLogin(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
+        try {
+            // Validate the request
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
 
-        // Kiểm tra xem email có tồn tại không
-        $user = User::where('email', $request->email)->first();
-        if (!$user) {
-            return response()->json(['message' => 'Email không tồn tại'], 404);
+            // Kiểm tra xem email có tồn tại không
+            $user = User::where('email', $request->email)->first();
+            if (!$user) {
+                return response()->json(['message' => 'Email không tồn tại'], 404);
+            }
+
+            // // Xác thực người dùng
+            // if (!Auth::attempt($request->only('email', 'password'))) {
+            //     return response()->json(['message' => 'Mật khẩu không đúng'], 401);
+            // }
+
+            // Tạo token sau khi xác thực thành công
+            $token = $user->createToken('token')->plainTextToken;
+
+            // Lấy thông tin người dùng đã đăng nhập
+            $user = Auth::user();
+
+            return response()->json([
+                'message' => 'Đăng nhập thành công',
+                'token' => $token,
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            // Ghi log lỗi
+            Log::error('Lỗi đăng nhập: ' . $e->getMessage());
+
+            // Trả về thông báo lỗi chung
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi trong quá trình đăng nhập. Vui lòng thử lại sau.',
+            ], 500);
         }
-
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Mật khẩu không đúng'], 401);
-        }
-
-        // Tạo token sau khi xác thực thành công
-        $token = $user->createToken('token')->plainTextToken;
-
-        $user = Auth::user();
-        // Auth::login($user);
-        return response()->json([
-            'message' => 'Đăng nhập thành công',
-            'token' => $token,
-            'user' => $user
-        ]);
     }
 
     // Register
@@ -147,7 +161,7 @@ class AuthController extends Controller
             return response()->json(
                 ['error' => $e->getMessage()],
                 500
-            );  
+            );
         }
     }
 }
