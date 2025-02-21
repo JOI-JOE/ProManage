@@ -22,7 +22,6 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
 import { ListItemIcon } from "@mui/material";
-import { useLogout, useUser } from "../../../hooks/useUser";
 import { useNavigate } from "react-router-dom";
 
 import { useLogout } from "../../../hooks/useUser";
@@ -82,42 +81,14 @@ export default function ProfileMenu() {
     }
   };
 
-  // const [user, setUser] = React.useState(null);
-  // const [isLoading, setIsLoading] = React.useState(true);
-  // const [error, setError] = React.useState(null);
-
-  // React.useEffect(() => {
-  //   const fetchUser = async () => {
-  //     try {
-  //       const response = await getUser(); // Gọi API không cần token
-  //       setUser(response); // Lưu user vào state
-  //     } catch (err) {
-  //       console.error("Lỗi lấy thông tin người dùng:", err);
-  //       setError(err);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-
-  //   fetchUser();
-  // }, []);
-  // console.log(user);
   const navigate = useNavigate();
 
   // Lấy thông tin user từ hook
-  const { data: user, isLoading: userLoading, error: userError } = useUser();
-
+  const { user } = useStateContext();
   // Hook logout
   const { mutate: logout, isLoading: logoutLoading } = useLogout();
 
-  // Nếu đang tải dữ liệu user
-  if (userLoading) return <p>Đang tải thông tin người dùng...</p>;
 
-  // Nếu có lỗi khi lấy user
-  if (userError) return <p>Lỗi: {userError.message}</p>;
-
-  // Nếu không có user (có thể chưa đăng nhập)
-  if (!user) return <p>Không có thông tin người dùng.</p>;
 
   // Xử lý logout
   const handleLogout = () => {
