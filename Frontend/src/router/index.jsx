@@ -6,12 +6,14 @@ import Dashboard from "../pages/Dashboard";
 import Workspaces from "../pages/workspace";
 import BoardDetail from "../pages/boards/detail";
 import BoardContent from "../pages/boards/detail/BoardContent";
+
 import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
-// import Login from "../pages/auth/Login";
 
-import GoogleAuth from "../pages/Auth/GoogleAuth";
 import LoginForm from "../pages/Auth/LoginForm";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
+import GitHubAuth from "../pages/Auth/GitHubAuth";
+// import LoginForm from "../pages/auth/LoginForm";
 
 const router = createBrowserRouter([
   {
@@ -25,6 +27,10 @@ const router = createBrowserRouter([
       {
         path: "login/google", // Add this route!
         element: <GoogleAuth />, // Use your GoogleAuth component here
+      },
+      {
+        path: "auth/callback", // Add this route!
+        element: <GitHubAuth />, // Use your GoogleAuth component here
       },
     ],
   },
@@ -40,8 +46,8 @@ const router = createBrowserRouter([
         element: <Dashboard />,
         children: [
           { path: "u/:username/boards", element: <Boards /> },
-          { path: "w/:displayName/home", element: <Workspaces /> },
-        ],
+          { path: "w/:displayName/home", element: <Workspaces /> }
+        ]
       },
       {
         path: "b/:id/:displayName",
@@ -49,11 +55,15 @@ const router = createBrowserRouter([
         children: [
           {
             path: "",
-            element: <BoardContent board={mockData?.board} />,
-          },
-        ],
-      },
-    ],
+            element: <BoardContent />
+          }
+        ]
+      }
+    ]
+  },
+  {
+    path: "",
+    element: <BoardContent board={mockData?.board} />,
   },
 ]);
 
