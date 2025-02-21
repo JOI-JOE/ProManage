@@ -13,8 +13,9 @@ import ViewStreamIcon from "@mui/icons-material/ViewStream";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAltOutlined";
 import MyBoard from "./MyBoard";
+import CreateBoard from "./CreateBoard";
 
-const MyWorkspace = ({ workspace, boards }) => {
+const MyWorkspace = () => {
     return (
         <div>
             <ListItem
@@ -30,7 +31,8 @@ const MyWorkspace = ({ workspace, boards }) => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
                     <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
-                        {workspace.name}
+                        {/* {workspace.name} */}
+                        hậu
                     </Typography>
                 </Box>
 
@@ -135,31 +137,14 @@ const MyWorkspace = ({ workspace, boards }) => {
 
             {/* Danh sách bảng Trello */}
             <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-                {boards.map((board) => (
+                {/* {boards.map((board) => (
                     <ListItem key={board.link} sx={{ width: "auto", padding: 0 }}>
                         <MyBoard key={board.link} board={board} id={`recent-board-${board.id}`} />
                     </ListItem>
-                ))}
+                ))} */}
+                <MyBoard />
 
-                <ListItem sx={{ width: "auto", padding: 0 }}>
-                    <Box
-                        sx={{
-                            width: "180px",
-                            height: "100px",
-                            backgroundColor: "#EDEBFC",
-                            borderRadius: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            "&:hover": { backgroundColor: "#DCDFE4" },
-                        }}
-                    >
-                        <Typography sx={{ color: "Black", fontWeight: "bold" }}>
-                            Tạo bảng mới
-                        </Typography>
-                    </Box>
-                </ListItem>
+                <CreateBoard />
             </List>
         </div>
     )

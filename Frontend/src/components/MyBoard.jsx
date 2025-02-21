@@ -7,11 +7,10 @@ import StarBorderIcon from "@mui/icons-material/StarBorder";
 import PeopleIcon from "@mui/icons-material/People";
 import { Link } from "react-router-dom";
 
-const MyBoard = ({ board }) => { // Nhận dữ liệu board qua props
+const MyBoard = () => { // Nhận dữ liệu board qua props
     const [hoveredItem, setHoveredItem] = useState(null);
-    { board.name }
     return (
-        <Link to={`/b/${board.id}/${board.displayName}`} key={board.id} style={{ textDecoration: 'none' }}> {/* Wrap with Link */}
+        <Link to={`/b/12214/trang`} style={{ textDecoration: 'none' }}> {/* Wrap with Link */}
             <Box // Removed the extra div
                 // component={Link}
                 // to={board.link} // Use board.link
@@ -43,7 +42,8 @@ const MyBoard = ({ board }) => { // Nhận dữ liệu board qua props
                         textAlign: "center",
                     }}
                 >
-                    {board.name} {/* Use board.name */}
+                    {/* Use board.name */}
+                    sakjklasfjk
                 </Typography>
                 {hoveredItem === 1 && (
                     <StarBorderIcon
