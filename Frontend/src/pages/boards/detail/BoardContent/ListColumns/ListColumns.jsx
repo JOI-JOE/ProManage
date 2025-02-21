@@ -46,7 +46,7 @@ const ListColumns = ({ columns }) => {
         }}
       >
         {columns?.map((column) => (
-          <Column key={column.id} column={column} />
+          <Column key={column._id} column={column} />
         ))}
 
         {/* Box Add Column */}
