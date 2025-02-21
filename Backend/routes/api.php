@@ -9,11 +9,11 @@ use App\Http\Controllers\api\CardController;
 use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
-use App\Http\Controllers\Api\WorkspaceInvitationsController;
-use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Api\LabelController;
+use App\Http\Controllers\Api\WorkspaceInvitationsController;
+use App\Http\Controllers\Api\WorkspaceMembersController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
