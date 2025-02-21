@@ -34,14 +34,13 @@ const WorkspaceMenu = ({ workspace }) => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <ListItemIcon sx={{ color: "black" }}>
                         <Avatar sx={{ bgcolor: "#5D87FF" }}>
-                            L {/* Hiển thị chữ cái đầu của tên workspace */}
+                            {workspace.name.charAt(0)}
                         </Avatar>
                     </ListItemIcon>
                     <ListItemText
                         primary={
                             <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap", color: "black" }}>
-                                {workspace.name}
-                            </Typography>
+                                {workspace.name.length > 15 ? workspace.name.substring(0, 15) + "..." : workspace.name}                            </Typography>
                         }
                     />
                 </Box>
