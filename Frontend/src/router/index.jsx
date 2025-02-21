@@ -6,12 +6,13 @@ import Dashboard from "../pages/Dashboard";
 import Workspaces from "../pages/workspace";
 import BoardDetail from "../pages/boards/detail";
 import BoardContent from "../pages/boards/detail/BoardContent";
-import GoogleAuth from "../pages/auth/GoogleAuth";
+
 import Home from "../pages/Home";
-import Login from "../pages/auth/Login";
-import LoginForm from "../pages/auth/LoginForm";
-import Member from "../pages/boards/detail/Member";
-import { mockData } from "../api/Api_fake";
+// import Login from "../pages/auth/Login";
+
+import GoogleAuth from "../pages/Auth/GoogleAuth";
+import LoginForm from "../pages/Auth/LoginForm";
+
 const router = createBrowserRouter([
   {
     path: "/", // Path RIÊNG BIỆT cho GuestLayout
@@ -43,20 +44,12 @@ const router = createBrowserRouter([
         ],
       },
       {
-        path: "",
+        path: "b/:id/:displayName",
         element: <BoardDetail />,
         children: [
           {
-            path: "b/:id/:displayName",
-            element: <BoardContent board={mockData?.board} />,
-          },
-          {
-            path: "w/:displayName",
-            element: <Member />,
-          },
-          {
-            path: "w/:displayName/members",
-            element: <Member />,
+            path: "",
+            element: <BoardContent />,
           },
         ],
       },
