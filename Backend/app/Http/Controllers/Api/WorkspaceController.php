@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class WorkspaceController extends Controller
 {
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $user = Auth::user(); // Lấy user hiện tại
@@ -26,7 +26,6 @@ class WorkspaceController extends Controller
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
-            // Lấy tất cả workspace mà user này đã tạo
             $workspaces = $user->workspaces;
 
             return response()->json([
