@@ -13,6 +13,7 @@ import ViewStreamIcon from "@mui/icons-material/ViewStream";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAltOutlined";
 import MyBoard from "./MyBoard";
+import CreateBoard from "./CreateBoard";
 
 const MyWorkspace = ({ workspace, boards }) => {
     return (
@@ -23,14 +24,16 @@ const MyWorkspace = ({ workspace, boards }) => {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "10px 0",
-                    gap: " 20px",
+                    gap: "20px",
                 }}
             >
                 {/* Avatar & Tiêu đề */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
+                    <Avatar sx={{ bgcolor: "#5D87FF" }}>
+                        {workspace.name.charAt(0).toUpperCase()}
+                    </Avatar>
                     <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
-                        {workspace.name}
+                        {workspace.name.length > 10 ? workspace.name.substring(0, 20) + "..." : workspace.name}
                     </Typography>
                 </Box>
 
@@ -92,7 +95,7 @@ const MyWorkspace = ({ workspace, boards }) => {
                         }}
                     >
                         <PeopleIcon fontSize="small" />
-                        Thành viên (1)
+                        Thành viên ({workspace.members?.length || 0})
                     </Button>
 
                     <Button
@@ -135,34 +138,16 @@ const MyWorkspace = ({ workspace, boards }) => {
 
             {/* Danh sách bảng Trello */}
             <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-                {boards.map((board) => (
-                    <ListItem key={board.link} sx={{ width: "auto", padding: 0 }}>
-                        <MyBoard key={board.link} board={board} id={`recent-board-${board.id}`} />
+                {boards?.map((board) => (
+                    <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                        <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
                     </ListItem>
                 ))}
 
-                <ListItem sx={{ width: "auto", padding: 0 }}>
-                    <Box
-                        sx={{
-                            width: "180px",
-                            height: "100px",
-                            backgroundColor: "#EDEBFC",
-                            borderRadius: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            "&:hover": { backgroundColor: "#DCDFE4" },
-                        }}
-                    >
-                        <Typography sx={{ color: "Black", fontWeight: "bold" }}>
-                            Tạo bảng mới
-                        </Typography>
-                    </Box>
-                </ListItem>
+                <CreateBoard />
             </List>
         </div>
-    )
-}
+    );
+};
 
-export default MyWorkspace
+export default MyWorkspace;

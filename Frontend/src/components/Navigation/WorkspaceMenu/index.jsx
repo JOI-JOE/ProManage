@@ -11,15 +11,9 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import AddIcon from '@mui/icons-material/Add'
 import { Link } from 'react-router-dom'
 
-
-
 const WorkspaceMenu = ({ workspace }) => {
     const [openSettings, setOpenSettings] = useState(false)
     const [hoveredItem, setHoveredItem] = useState(null)
-    const [workspaces, setWorkspaces] = useState([]); // State để lưu workspace
-    const [loading, setLoading] = useState(true); // State để kiểm tra trạng thái loading
-    const [error, setError] = useState(null); // State để lưu lỗi (nếu có)
-
 
     const toggleSettings = ({ workspace }) => {
         setOpenSettings(!openSettings)
@@ -40,14 +34,13 @@ const WorkspaceMenu = ({ workspace }) => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <ListItemIcon sx={{ color: "black" }}>
                         <Avatar sx={{ bgcolor: "#5D87FF" }}>
-                            L {/* Hiển thị chữ cái đầu của tên workspace */}
+                            {workspace.name.charAt(0)}
                         </Avatar>
                     </ListItemIcon>
                     <ListItemText
                         primary={
                             <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap", color: "black" }}>
-                                {workspace.name}
-                            </Typography>
+                                {workspace.name.length > 15 ? workspace.name.substring(0, 15) + "..." : workspace.name}                            </Typography>
                         }
                     />
                 </Box>
