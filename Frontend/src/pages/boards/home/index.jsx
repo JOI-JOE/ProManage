@@ -11,6 +11,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 // import MyWorkspace from "./MyWorkspace";
 import MyBoard from "../../../components/MyBoard";
 import MyWorkspace from "../../../components/MyWorkspace";
+import { useWorkspaces } from "../../../hooks/useWorkspace";
 
 const recentBoard = [
     { id: 1, name: "Bảng thiết kế dự án", displayName: "xObU9h1u" },
@@ -18,22 +19,15 @@ const recentBoard = [
     { id: 3, name: "Bảng công việc nhóm", displayName: "sfkj" },
 ]
 
-const MyBoardInWorkspace = [
-    {
-        workspace: {
-            name: "Dự án thiết kế thái",
-            // ...
-            boards: [
-                { name: "Bảng thiết kế trang chủ", displayName: "Dự án thiết kế thái - Bảng thiết kế trang chủ" },
-                { name: "Bảng thiết kế trang sản phẩm", displayName: "Dự án thiết kế thái - Bảng thiết kế trang sản phẩm" },
-                { name: "Bảng thiết kế trang liên hệ", displayName: "Dự án thiết kế thái - Bảng thiết kế trang liên hệ" }
-            ]
-        }
-    }
-];
+
 
 const HomeBoard = () => {
     const [hoveredItem, setHoveredItem] = useState(null);
+
+    const { data: workspaces, isLoading, isError } = useWorkspaces();
+    if (isLoading) return <p>Đang tải workspaces...</p>;
+    if (isError) return <p>Lỗi khi tải workspaces!</p>;
+
     return (
         <Box
             sx={{
@@ -72,10 +66,13 @@ const HomeBoard = () => {
                 CÁC KHÔNG GIAN LÀM VIỆC CỦA BẠN
             </Typography>
             <div id="myBoardInWorkspace">
-                {/* {MyBoardInWorkspace.map((item) => (
-                    <MyWorkspace key={item.workspace.displayName} workspace={item.workspace} boards={item.workspace.boards} />
-                ))} */}
-                <MyWorkspace />
+                {workspaces?.map((workspace) => (
+                    <MyWorkspace
+                        key={workspace.display_name}
+                        workspace={workspace}
+                        boards={workspace.boards}
+                    />
+                ))}
             </div>
             {/* ENDư Các không gian làm việc của bạn */}
 
@@ -92,7 +89,7 @@ const HomeBoard = () => {
             >
                 Xem tất cả các bảng đã đóng
             </Button>
-            
+
         </Box>
     );
 }

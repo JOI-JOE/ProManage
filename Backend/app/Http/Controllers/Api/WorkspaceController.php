@@ -25,13 +25,9 @@ class WorkspaceController extends Controller
             if (!$user) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
-
             $workspaces = $user->workspaces;
 
-            return response()->json([
-                'success' => true,
-                'data' => $workspaces,
-            ]);
+            return WorkspaceResource::collection($workspaces);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
         }
@@ -81,8 +77,15 @@ class WorkspaceController extends Controller
 
     public function store(WorkspaceRequest $request)
     {
-        // Dữ liệu đã được validate trong WorkspaceRequest
+        // Dữ liệu đã được validate trong WworkspaceRequest
+        $user = Auth::user(); // Lấy user hiện tại
+
+
         $validatedData = $request->validated();
+
+        $validatedData['name'] = Workspace::generateUniqueName($validatedData['display_name']);
+
+        $validatedData['id_member_creator'] =  $user->id;
 
         $validatedData['board_delete_restrict'] = json_encode([
             'private' => 'org',

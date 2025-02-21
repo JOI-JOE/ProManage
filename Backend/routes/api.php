@@ -48,56 +48,18 @@ Route::middleware(['web'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
 
-    // Router cho workspace
-    Route::controller(controller: WorkspaceController::class)->group(function () {
-        // Get all workspace
-        Route::get('/workspaces', 'index');
-        // Get workspace by
-        Route::get('/workspaces/{id}/boards', 'show');
-
-        Route::get('/workspaces/{id}', 'show_deltail_workspace');
-        // Create new workspace
-        Route::post('/workspaces', 'store');
-        // Delete workspace
-        Route::delete('/workspaces/{workspace}', 'destroy');
-
-        // Update infor workspace
-        Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
+    Route::controller(WorkspaceController::class)->group(function () {
+        Route::get('workspaces', 'index');
+        Route::get('workspaces/{id}/boards', 'show');
+        Route::get('workspaces/{id}', 'showDetailWorkspace');
+        Route::post('workspaces', 'store');
+        Route::delete('workspaces/{workspace}', 'destroy');
+        Route::put('workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
     });
 });
 
 
 
-Route::controller(WorkspaceMembersController::class)->group(function () {
-    Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
-
-    Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
-});
-
-Route::controller(WorkspaceInvitationsController::class)->group(function () {
-    Route::get("/search/members", 'searchNewMembersToWorkspace');
-    Route::post('/workspace/{idWorkspace}/addMember',  'inviteMemberToWorkspace');
-
-    // ở đây sẽ có hai trường hợp hợp
-    // 1. nếu là id -> sẽ được add thẳng vào workspace + email
-
-    Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
-
-    // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
-    //
-
-    Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
-});
-
-// Routes quản lý bảng
-Route::prefix('boards/{id}/')->group(function () {
-    Route::patch('name', [BoardController::class, 'updateName']);
-    Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
-    Route::patch('marked', [BoardController::class, 'updateIsMarked']);
-    Route::patch('archive', [BoardController::class, 'updateArchive']);
-    Route::patch('visibility', [BoardController::class, 'updateVisibility']);
-    Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
-});
 
 
 Route::prefix('boards/{boardId}/members/')->group(function () {
