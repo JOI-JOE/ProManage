@@ -54,7 +54,7 @@ const ShareBoardDialog = ({ open, onClose }) => {
               fontSize: "0.765rem", // Chỉnh kích thước chữ trong placeholder
             },
             "& input": {
-              fontSize: "0.8rem", // Chỉnh kích thước chữ khi nhập vào
+              fontSize: "0.675rem", // Chỉnh kích thước chữ khi nhập vào
             },
           }}
         />
@@ -75,7 +75,7 @@ const ShareBoardDialog = ({ open, onClose }) => {
           />
           <Typography
             variant="body2"
-            color="primary"
+            color="teal"
             sx={{ cursor: "pointer", ml: 1 }}
             onClick={handleCreateLink}
           >
