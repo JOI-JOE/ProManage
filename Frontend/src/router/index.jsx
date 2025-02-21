@@ -5,12 +5,12 @@ import Boards from "../pages/boards";
 import Dashboard from "../pages/Dashboard";
 import Workspaces from "../pages/workspace";
 import BoardDetail from "../pages/boards/detail";
-// import BoardContent from "../pages/boards/detail/BoardContent";
+import BoardContent from "../pages/boards/detail/BoardContent";
 import GoogleAuth from "../pages/auth/GoogleAuth";
 import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
 import LoginForm from "../pages/auth/LoginForm";
-
+import { mockData } from "../api/Api_fake";
 const router = createBrowserRouter([
   {
     path: "/", // Path RIÊNG BIỆT cho GuestLayout
@@ -44,12 +44,12 @@ const router = createBrowserRouter([
       {
         path: "b/:id/:displayName",
         element: <BoardDetail />,
-        // children: [
-        //   {
-        //     path: "",
-        //     element: <BoardContent />,
-        //   },
-        // ],
+        children: [
+          {
+            path: "",
+            element: <BoardContent board={mockData?.board} />,
+          },
+        ],
       },
     ],
   },
