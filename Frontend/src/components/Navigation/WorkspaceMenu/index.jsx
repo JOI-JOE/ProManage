@@ -30,7 +30,6 @@ const WorkspaceMenu = ({ workspace }) => {
         setHoveredItem(item)
     }
 
->>>>>>> 550dea5b5277605849543a8249d9b51119838bdc
     const handleMouseLeave = () => {
         setHoveredItem(null)
     }

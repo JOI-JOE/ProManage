@@ -8,7 +8,7 @@ import BoardDetail from "../pages/boards/detail";
 import BoardContent from "../pages/boards/detail/BoardContent";
 // import GoogleAuth from "../pages/auth/GoogleAuth";
 import Home from "../pages/Home";
-import Login from "../pages/auth/Login";
+
 import LoginForm from "../pages/Auth/LoginForm";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";

@@ -104,7 +104,7 @@ class AuthController extends Controller
     public function handleLoginGitHub()
     {
         try {
-            $githubUser = Socialite::driver('github')->user();
+            $githubUser = Socialite::driver('github')->stateless()->user();
 
             if (!$githubUser->getEmail()) {
                 throw new \Exception("GitHub account missing email");

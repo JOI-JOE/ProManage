@@ -60,10 +60,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 
-<<<<<<< HEAD
-    // Update infor workspace
-    Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
-})->middleware(['auth:sanctum']);
+//     // Update infor workspace
+//     Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
+// })->middleware(['auth:sanctum']);
 
 Route::controller(WorkspaceMembersController::class)->group(function () {
     Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
@@ -95,8 +94,6 @@ Route::prefix('boards/{id}/')->group(function () {
     Route::patch('visibility', [BoardController::class, 'updateVisibility']);
     Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
 });
-=======
->>>>>>> 550dea5b5277605849543a8249d9b51119838bdc
 
 
 Route::prefix('boards/{boardId}/members/')->group(function () {
