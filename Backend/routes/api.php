@@ -126,7 +126,10 @@ Route::get('/trashes', [BoardController::class, 'trash']);
 /// Route card
 
 Route::prefix('cards')->group(function () {
+    Route::get('/{listId}/get-cards', [CardController::class, 'getCardsByList']);
     Route::post('/', [CardController::class, 'store']);
+    Route::put('/{cardId}/update-name', [CardController::class, 'updateName']);
+    Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);
     // Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
     // Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
     // Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
