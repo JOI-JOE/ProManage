@@ -1,6 +1,7 @@
-import HomeBoard from "./home"
+import HomeBoard from "./home";
 
 const Boards = () => {
+
     return (
         <>
             <HomeBoard />
@@ -8,4 +9,5 @@ const Boards = () => {
     )
 }
 
-export default Boards
+
+export default Boards;

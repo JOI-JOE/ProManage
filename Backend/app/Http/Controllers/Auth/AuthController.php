@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\MeResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,9 +25,8 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        return response()->json($user);
+        return new MeResource($user);
     }
-    ///// Login
     public function handleLogin(Request $request)
     {
         $request->validate([
@@ -53,7 +53,6 @@ class AuthController extends Controller
             'message' => 'Đăng nhập thành công',
             'token' => $token,
             'user' => $user
-
         ]);
     }
 
@@ -106,7 +105,7 @@ class AuthController extends Controller
     public function handleLoginGitHub()
     {
         try {
-            $githubUser = Socialite::driver('github')->stateless()->user();
+            $githubUser = Socialite::driver('github')->user();
 
             if (!$githubUser->getEmail()) {
                 throw new \Exception("GitHub account missing email");

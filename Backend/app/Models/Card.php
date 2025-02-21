@@ -33,5 +33,4 @@ class Card extends Model
     {
         return $this->belongsToMany(Label::class, 'card_label');
     }
-
 }

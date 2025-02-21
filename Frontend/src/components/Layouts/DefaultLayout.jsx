@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { Navigate, Outlet } from "react-router-dom";
-// import { getUser } from "../../api/models/user";
 import { getUser } from "../../api/models/userApi";
 
 const DefaultLayout = () => {
@@ -14,7 +13,7 @@ const DefaultLayout = () => {
             if (token) {
                 try {
                     const user = await getUser(token); // Gọi API lấy thông tin người dùng
-                    setUser(user); // Lưu thông tin người dùng vào context
+                    setUser(user); // Lưu thông tin người dùng vào <context></context>
                     console.log(user)
                 } catch (err) {
                     console.error("Lỗi lấy thông tin người dùng:", err);
