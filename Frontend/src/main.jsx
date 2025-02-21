@@ -7,7 +7,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { RouterProvider } from "react-router-dom";
 import { ContextProvider } from "./contexts/ContextProvider";
@@ -24,8 +24,10 @@ createRoot(document.getElementById("root")).render(
       <ContextProvider>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <ToastContainer theme="light" position="bottom-right" /> {/* ToastContainer có thể ở đây */}
-          <RouterProvider router={router} /> {/* RouterProvider nên ở trong ThemeProvider */}
+          <ToastContainer theme="light" position="bottom-right" />{" "}
+          {/* ToastContainer có thể ở đây */}
+          <RouterProvider router={router} />{" "}
+          {/* RouterProvider nên ở trong ThemeProvider */}
         </ThemeProvider>
       </ContextProvider>
     </QueryClientProvider>

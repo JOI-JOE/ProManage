@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 
 // Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
 // Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
+
 Route::middleware(['web'])->group(function () {
     Route::controller(GoogleAuthController::class)->group(function () {
         Route::get('/auth/redirect/google', 'redirectToAuthProvider');
@@ -46,20 +47,20 @@ Route::middleware(['web'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
+
+    Route::controller(WorkspaceController::class)->group(function () {
+        Route::get('workspaces', 'index');
+        Route::get('workspaces/{id}/boards', 'show');
+        Route::get('workspaces/{id}', 'showDetailWorkspace');
+        Route::post('workspaces', 'store');
+        Route::delete('workspaces/{workspace}', 'destroy');
+        Route::put('workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
+    });
 });
 
-Route::controller(controller: WorkspaceController::class)->group(function () {
-    // Get all workspace
-    Route::get('/workspaces', 'index');
-    // Get workspace by
-    Route::get('/workspaces/{id}/boards', 'show');
 
-    Route::get('/workspaces/{id}', 'show_deltail_workspace');
-    // Create new workspace
-    Route::post('/workspaces', 'store');
-    // Delete workspace
-    Route::delete('/workspaces/{workspace}', 'destroy');
 
+<<<<<<< HEAD
     // Update infor workspace
     Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
 })->middleware(['auth:sanctum']);
@@ -94,6 +95,8 @@ Route::prefix('boards/{id}/')->group(function () {
     Route::patch('visibility', [BoardController::class, 'updateVisibility']);
     Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
 });
+=======
+>>>>>>> 550dea5b5277605849543a8249d9b51119838bdc
 
 
 Route::prefix('boards/{boardId}/members/')->group(function () {

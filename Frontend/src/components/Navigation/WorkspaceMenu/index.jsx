@@ -11,6 +11,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import AddIcon from '@mui/icons-material/Add'
 import { Link } from 'react-router-dom'
 
+<<<<<<< HEAD
 
 
 const WorkspaceMenu = ({ workspace }) => {
@@ -29,6 +30,20 @@ const WorkspaceMenu = ({ workspace }) => {
         setHoveredItem(item)
     }
 
+=======
+const WorkspaceMenu = ({ workspace }) => {
+    const [openSettings, setOpenSettings] = useState(false)
+    const [hoveredItem, setHoveredItem] = useState(null)
+
+    const toggleSettings = ({ workspace }) => {
+        setOpenSettings(!openSettings)
+    }
+
+    const handleMouseEnter = (item) => {
+        setHoveredItem(item)
+    }
+
+>>>>>>> 550dea5b5277605849543a8249d9b51119838bdc
     const handleMouseLeave = () => {
         setHoveredItem(null)
     }
@@ -40,14 +55,13 @@ const WorkspaceMenu = ({ workspace }) => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <ListItemIcon sx={{ color: "black" }}>
                         <Avatar sx={{ bgcolor: "#5D87FF" }}>
-                            L {/* Hiển thị chữ cái đầu của tên workspace */}
+                            {workspace.name.charAt(0)}
                         </Avatar>
                     </ListItemIcon>
                     <ListItemText
                         primary={
                             <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap", color: "black" }}>
-                                {workspace.name}
-                            </Typography>
+                                {workspace.name.length > 15 ? workspace.name.substring(0, 15) + "..." : workspace.name}                            </Typography>
                         }
                     />
                 </Box>

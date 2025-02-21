@@ -25,14 +25,12 @@ class Card extends Model
     {
         return $this->belongsToMany(User::class, 'card_user');
     }
-<<<<<<< HEAD
-=======
-    public function list() {
-        return $this->belongsTo(ListBoard::class,'list_board_id');
+    public function list()
+    {
+        return $this->belongsTo(ListBoard::class, 'list_board_id');
     }
     public function labels()
     {
         return $this->belongsToMany(Label::class, 'card_label');
     }
->>>>>>> d580ef7cd5022addf6dfc03089e75e225905beda
 }
