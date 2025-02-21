@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { useUser } from "../hooks/useUser";
 
 const StateContext = createContext({
@@ -6,11 +6,13 @@ const StateContext = createContext({
     token: null,
     setUser: () => { },
     setToken: () => { },
+    isLoading: true,
+    error: null,
 });
 
 export const ContextProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
     const [token, _setToken] = useState(localStorage.getItem("token"));
+    const [user, setUser] = useState(null); // Khai báo user ở đây
 
     const setToken = (token) => {
         _setToken(token);
@@ -21,8 +23,34 @@ export const ContextProvider = ({ children }) => {
         }
     };
 
+    const { data: fetchedUser, isLoading, error, refetch } = useUser();
+
+    useEffect(() => {
+        if (token) {
+            refetch();
+        } else {
+            setUser(null); // Không cần callback form ở đây vì không phụ thuộc vào state trước đó
+        }
+    }, [token, refetch]);
+
+
+    useEffect(() => {
+        if (!isLoading && fetchedUser) {
+            setUser(fetchedUser)
+        }
+    }, [isLoading, fetchedUser])
+
+    const value = {
+        user,
+        token,
+        setUser,
+        setToken,
+        isLoading,
+        error,
+    };
+
     return (
-        <StateContext.Provider value={{ user, token, setUser, setToken }}>
+        <StateContext.Provider value={value}>
             {children}
         </StateContext.Provider>
     );
