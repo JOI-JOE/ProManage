@@ -1,11 +1,11 @@
-import HomeBoard from "./home"
+import HomeBoard from "./home";
 
 const Boards = () => {
-    return (
-        <>
-            <HomeBoard />
-        </>
-    )
-}
+  return (
+    <>
+      <HomeBoard />
+    </>
+  );
+};
 
-export default Boards
+export default Boards;
