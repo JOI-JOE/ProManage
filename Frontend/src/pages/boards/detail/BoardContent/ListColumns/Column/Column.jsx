@@ -270,14 +270,14 @@ const Column = ({ column }) => {
                 <ContentCopyIcon />
                 Coppy
               </MenuItem>
-              <MenuItem
+              {/* <MenuItem
                 onClick={handleClose}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
                 <MoveUpIcon />
                 Move
-              </MenuItem>
+              </MenuItem> */}
               <MenuItem
                 onClick={handleClose}
                 disableRipple
