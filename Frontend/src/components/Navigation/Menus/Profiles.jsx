@@ -26,6 +26,7 @@ export default function ProfileMenu() {
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
   const [selectedTheme, setSelectedTheme] = React.useState("system");
 
+
   const open = Boolean(anchorEl);
   const themeOpen = Boolean(themeAnchorEl);
 
@@ -49,7 +50,6 @@ export default function ProfileMenu() {
   const handleThemeChange = (event) => {
     setSelectedTheme(event.target.value);
   };
-
   const navigate = useNavigate();
 
   // Lấy thông tin user từ hook
@@ -162,7 +162,6 @@ export default function ProfileMenu() {
         </MenuItem>
       </Menu>
 
-      {/* Create workspace */}
     </React.Fragment>
   );
 }
