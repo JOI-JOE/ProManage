@@ -11,11 +11,12 @@ import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
-// import GoogleAuth from "../pages/Auth/GoogleAuth";
+
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
-// import LoginForm from "../pages/auth/LoginForm";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
+
 
 const router = createBrowserRouter([
     {
@@ -82,11 +83,6 @@ const router = createBrowserRouter([
 
   
     ]);
-    
-          {
-            path: "",
-            element: <BoardContent board={mockData?.board} />,
-          },
-    ]);
+  
     
 export default router;

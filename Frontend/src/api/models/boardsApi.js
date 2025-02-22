@@ -9,3 +9,19 @@ export const getBoardsAll = async () => {
     throw error;
   }
 };
+
+export const createBoard = async (boardData) => {
+  try {
+    const response = await authClient.post("boards", boardData);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      console.error("Lỗi từ server:", error.response.data);
+    } else {
+      console.error("Lỗi kết nối:", error.message);
+    }
+    throw error;
+  }
+};
+
+

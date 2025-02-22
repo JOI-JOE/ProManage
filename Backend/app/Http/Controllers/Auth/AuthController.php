@@ -121,7 +121,7 @@ class AuthController extends Controller
 
         // Gửi email mật khẩu mới
         Mail::raw("Mật khẩu mới của bạn là: $newPassword", function ($message) use ($user) {
-            $message->to($user->email)
+                $message->to($user->email)
                 ->subject('Mật khẩu mới của bạn');
         });
 

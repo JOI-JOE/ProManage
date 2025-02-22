@@ -44,6 +44,7 @@ const LoginForm = () => {
     login(formData, {
       onSuccess: (data) => {
         localStorage.setItem("token", data.token); // Store the token
+        alert('Đăng nhập thành công');
         navigate("/home");
         window.location.reload(); // Reset lại trang
       },
@@ -97,13 +98,12 @@ const LoginForm = () => {
   };
 
   return (
-    <section className="bg-[#1693E1] min-h-screen flex items-center justify-center">
-      <div className="container mx-auto">
-        <div className="flex justify-center">
-          <div className="w-full max-w-[525px] rounded-lg bg-white py-16 px-10 text-center sm:px-12 md:px-[60px]">
-            <div className="mb-10 text-center md:mb-16">TRELLO</div>
+     <section className="bg-[#1693E1] min-h-screen flex items-center justify-center">
+          <div className="w-full max-w-[525px] bg-white rounded-lg p-10 text-center shadow-lg">
+            <h2 className="mb-10 text-center md:mb-16">PROMANAGE</h2>
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
+              
+            <div className="mb-4">
                 <input
                   type="email"
                   name="email"
@@ -119,6 +119,7 @@ const LoginForm = () => {
                 )}
               </div>
 
+    
               <div className="mb-4">
                 <input
                   type="password"
@@ -135,45 +136,49 @@ const LoginForm = () => {
                 )}
               </div>
 
+
               {errors.general && (
                 <p className="text-red-500 text-sm mb-4">{errors.general}</p>
               )}
-
-              <div className="mb-10">
-                <button
-                  type="submit"
-                  className="w-full px-4 py-3 bg-indigo-500 hover:bg-indigo-700 rounded-md text-white"
-                >
-                  Đăng nhập
-                </button>
-              </div>
+    
+              <button
+                type="submit"
+                className="w-full bg-indigo-500 text-white p-3 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                disabled={isLoading}
+              >
+                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+              </button>
             </form>
-            {/* <button> LOGIN GIT */}
-            <GitHubAuth />
 
-            {/* </button> LOGIN GOOGLE */}
-            <GoogleAuth />
-          </div>
-          <p className="text-center mt-3">
+            <p className="text-center mt-3">
             <button
               onClick={() => navigate("/forgort-password")} // Chuyển hướng
               className="text-blue-500 hover:underline"
             >
               Quên mật khẩu?
             </button>
-          </p>
+            </p>
 
-          <p className="text-center mt-3">
+            <p className="text-center mt-3">
             <button
               onClick={() => navigate("/register")} // Chuyển hướng
               className="text-blue-500 hover:underline"
             >
-              Đăng ký tài khoảnkhoản
+              Đăng ký tài khoản
             </button>
-          </p>
-        </div>
-      </div>
-    </section>
+            </p>
+
+            <p className="text-center mt-3">
+           
+             Hoặc đăng nhập bằng
+          <GitHubAuth/>
+          <GoogleAuth/>
+            </p>
+
+
+            
+          </div>
+        </section>
   );
 };
 

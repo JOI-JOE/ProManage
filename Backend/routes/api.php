@@ -89,6 +89,7 @@ Route::controller(WorkspaceInvitationsController::class)->group(function () {
 
 // Routes quản lý bảng
 Route::prefix('boards/{id}/')->group(function () {
+    
     Route::patch('name', [BoardController::class, 'updateName']);
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
     Route::patch('marked', [BoardController::class, 'updateIsMarked']);
@@ -96,6 +97,8 @@ Route::prefix('boards/{id}/')->group(function () {
     Route::patch('visibility', [BoardController::class, 'updateVisibility']);
     Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
 });
+
+Route::resource('boards', BoardController::class);
 
 
 Route::prefix('boards/{boardId}/members/')->group(function () {
@@ -136,17 +139,6 @@ Route::prefix('lists')->group(function () {
     Route::post('/dragging', [ListController::class, 'dragging']);
 });
 
-
-Route::resource('boards', BoardController::class);
-
-// Routes quản lý bảng
-Route::prefix('boards/{id}/')->group(function () {
-    Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
-    Route::patch('marked', [BoardController::class, 'updateIsMarked']);
-    Route::patch('archive', [BoardController::class, 'updateArchive']);
-    Route::patch('visibility', [BoardController::class, 'updateVisibility']);
-    Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
-});
 
 // Routes cho thành viên bảng
 Route::prefix('boards/{boardId}/members')->group(function () {
