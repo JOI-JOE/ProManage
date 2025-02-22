@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Board;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BoardController extends Controller
 {
@@ -49,17 +51,72 @@ class BoardController extends Controller
     
     public function store(Request $request)
     {
-        $data = $request->all();
-        if ($request->hasFile('thumbnail')) {
-            $data['thumbnail'] = $this->upload_image($request->file('thumbnail'));
+        Log::info('📩 Dữ liệu nhận được:', $request->all()); // Ghi log
+        try {
+            // Validate dữ liệu đầu vào
+            // $request->validate([
+            //     'name' => 'required|string|max:255',
+            //     'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // Kiểm tra hình ảnh
+            //     'description' => 'nullable|string',
+            //     'is_marked' => 'boolean',
+            //     'archive' => 'boolean',
+            //     'closed' => 'boolean',
+            //     'visibility' => 'required|in:public,private,member',
+            //     'workspace_id' => 'required|exists:workspaces,id',
+            // ]);
+
+            $user = Auth::user(); // Lấy user hiện tại
+
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+    
+            // Lấy ID của user đang đăng nhập
+            $userId = $user->id;
+    
+            // Lưu dữ liệu từ request
+            $data = $request->all();
+    
+            // Kiểm tra và upload hình ảnh
+            if ($request->hasFile('thumbnail')) {
+                $data['thumbnail'] = $this->upload_image($request->file('thumbnail'));
+            }
+    
+            // Tạo board mới
+            $board = Board::create([
+                'name' => $request->name,
+                'thumbnail' => $data['thumbnail'] ?? null,
+                'description' => $request->description,
+                'is_marked' => $request->is_marked ?? false,
+                'archive' => $request->archive ?? false,
+                'closed' => $request->closed ?? false,
+                'created_by' => $userId,
+                'visibility' => $request->visibility,
+                'workspace_id' => $request->workspace_id,
+            ]);
+    
+            return response()->json([
+                'result' => true,
+                'message' => 'Tạo board thành công',
+                'data' => $board,
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Trả về lỗi validate
+            return response()->json([
+                'result' => false,
+                'message' => 'Dữ liệu không hợp lệ',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            // Xử lý lỗi chung
+            return response()->json([
+                'result' => false,
+                'message' => 'Đã xảy ra lỗi khi tạo board',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-        Board::create($data);
-        return response()->json([
-            'result' => true,
-            'message' => 'success',
-            'data' => $data,
-        ]);
     }
+    
     /**
      * Update cho các trường ngoài ảnh
      */

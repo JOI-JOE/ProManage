@@ -15,6 +15,9 @@ import LockIcon from "@mui/icons-material/Lock";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
+import { useCreateBoard } from "../hooks/useBoard";
+import { useWorkspaces } from "../hooks/useWorkspace";
+
 
 const colors = ["#E3F2FD", "#64B5F6", "#1565C0", "#283593", "#8E24AA"];
 
@@ -23,16 +26,21 @@ const CreateBoard = () => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [boardTitle, setBoardTitle] = useState("");
     const [selectedBg, setSelectedBg] = useState(null);
-    const [workspace, setWorkspace] = useState("workspace1");
-    const [viewPermission, setViewPermission] = useState("default");
+    const [workspace, setWorkspace] = useState("");
+    const [viewPermission, setViewPermission] = useState("");
+    // const userId = localStorage.getItem("user_id"); // ID được lưu sau khi đăng nhập
+
+
+    // Sử dụng hook useCreateBoard
+  // Sử dụng hook useCreateBoard
+    const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
+
+// Sử dụng hook useWorkspaces
+    const { data: workspaces, isLoading: isLoadingWorkspaces, error } = useWorkspaces();
 
     const handleOpen = (event) => {
         setAnchorEl(event.currentTarget);
         setOpenPopover(true);
-    };
-
-    const handleChange = (e) => {
-        setBoardTitle(e.target.value);
     };
 
     const handleClose = () => {
@@ -42,12 +50,31 @@ const CreateBoard = () => {
 
     const handleCreateBoard = () => {
         if (boardTitle.trim() === "") {
-            alert("Vui lòng nhập tiêu đề bảng!");
-            return;
+          alert("Vui lòng nhập tiêu đề bảng!");
+          return;
         }
-        alert(`🎉 Bảng "${boardTitle}" đã được tạo thành công!`);
-        handleClose();
-    };
+      
+        const boardData = {
+          name: boardTitle,
+          thumbnail: selectedBg,
+          workspace_id: Number(workspace),
+          visibility: viewPermission,
+        };
+      
+        createBoard(boardData, {
+          onSuccess: (data) => {
+            console.log(data);
+            alert(`🎉 Bảng "${boardTitle}" đã được tạo thành công!`);
+            handleClose();
+          },
+          onError: (error) => {
+            alert(`❌ Lỗi khi tạo bảng: ${error.message}`);
+          },
+        });
+      
+        console.log("📩 Dữ liệu gửi lên API:", boardData);
+      };
+
 
     return (
         <div>
@@ -98,7 +125,6 @@ const CreateBoard = () => {
                         Tạo bảng
                     </Typography>
 
-                    {/* Chọn hình nền */}
                     <Box
                         sx={{
                             width: "100%",
@@ -141,13 +167,12 @@ const CreateBoard = () => {
                         Tiêu đề bảng <span style={{ color: "red" }}>*</span>
                     </Typography>
 
-                    {/* Ô nhập tiêu đề */}
                     <TextField
                         fullWidth
                         label="Tiêu đề bảng"
                         variant="outlined"
                         value={boardTitle}
-                        onChange={handleChange}
+                        onChange={(e) => setBoardTitle(e.target.value)}
                         error={boardTitle.trim() === ""}
                         helperText={
                             boardTitle.trim() === "" ? "👋 Tiêu đề bảng là bắt buộc" : ""
@@ -158,7 +183,7 @@ const CreateBoard = () => {
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
                         Không gian làm việc
                     </Typography>
-                    <Select
+                    {/* <Select
                         fullWidth
                         value={workspace}
                         onChange={(e) => setWorkspace(e.target.value)}
@@ -166,7 +191,21 @@ const CreateBoard = () => {
                     >
                         <MenuItem value="workspace1">Workspace 1</MenuItem>
                         <MenuItem value="workspace2">Workspace 2</MenuItem>
-                    </Select>
+                    </Select> */}
+
+{isLoadingWorkspaces ? (
+    <Typography>Đang tải...</Typography>
+) : error ? (
+    <Typography color="error">Lỗi tải workspace</Typography>
+) : (
+    <Select fullWidth value={workspace} onChange={(e) => setWorkspace(e.target.value)} sx={{ marginBottom: 2 }}>
+        {workspaces.map((ws) => (
+            <MenuItem key={ws.id} value={ws.id}>
+                {ws.name}
+            </MenuItem>
+        ))}
+    </Select>
+)}
 
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
                         Quyền xem
@@ -182,7 +221,7 @@ const CreateBoard = () => {
                             <LockIcon fontSize="small" />
                             Riêng tư
                         </MenuItem>
-                        <MenuItem value="workspace">
+                        <MenuItem value="member">
                             <GroupsIcon fontSize="small" />
                             Không gian làm việc
                         </MenuItem>
@@ -192,15 +231,14 @@ const CreateBoard = () => {
                         </MenuItem>
                     </Select>
 
-                    {/* Nút tạo bảng */}
                     <Box sx={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
                         <Button
                             variant="contained"
                             color="primary"
                             onClick={handleCreateBoard}
-                            disabled={boardTitle.trim() === ""}
+                            disabled={isCreatingBoard || boardTitle.trim() === ""}
                         >
-                            Tạo bảng
+                            {isCreatingBoard ? "Đang tạo..." : "Tạo bảng"}
                         </Button>
                     </Box>
                 </Box>

@@ -11,60 +11,78 @@ import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
-import GoogleAuth from "../pages/Auth/GoogleAuth";
+
 import GitHubAuth from "../pages/Auth/GitHubAuth";
-// import LoginForm from "../pages/auth/LoginForm";
+import ForgotPassword from "../pages/auth/ForgortPassword";
+import Register from "../pages/auth/Register";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
+
 
 const router = createBrowserRouter([
-  {
-    path: "/", // Path RIÊNG BIỆT cho GuestLayout
-    element: <GuestLayout />,
-    children: [
-      {
-        path: "login",
-        element: <LoginForm />,
-      },
-      {
-        path: "login/google", // Add this route!
-        element: <GoogleAuth />, // Use your GoogleAuth component here
-      },
-      {
-        path: "auth/callback", // Add this route!
-        element: <GitHubAuth />, // Use your GoogleAuth component here
-      },
-    ],
-  },
-  {
-    path: "/", // Parent route
-    element: <DefaultLayout />,
-    children: [
-      {
-        path: "home", // Or perhaps redirect if you have a separate home page
-        element: <Home />,
-      },
-      {
-        element: <Dashboard />,
+    {
+        path: "/", // Path RIÊNG BIỆT cho GuestLayout
+        element: <GuestLayout />,
         children: [
-          { path: "u/:username/boards", element: <Boards /> },
-          { path: "w/:displayName/home", element: <Workspaces /> }
-        ]
-      },
-      {
-        path: "",
-        element: <BoardDetail />,
+            {
+                path: "login",
+                element: <LoginForm />,
+            },
+            {
+                path: "register",
+                element: <Register />,
+            },
+            {
+                path: "login/google", // Add this route!
+                element: <GoogleAuth />, // Use your GoogleAuth component here
+            },
+            {
+                path: "auth/callback", // Add this route!
+                element: <GitHubAuth />, // Use your GoogleAuth component here
+            },
+            {
+              path: "/forgort-password", // Add this route!
+              element: <ForgotPassword />, // Use your GoogleAuth component here
+          },
+        ],
+    },
+    {
+        path: "/", // Parent route
+        element: <DefaultLayout />,
         children: [
-          {
-            path: "b/:id/:displayName",
-            element: <BoardContent />
-          }
+            {
+                path: "home", // Or perhaps redirect if you have a separate home page
+                element: <Home />,
+            },
+            {
+                element: <Dashboard />,
+                children: [
+                    { path: "u/:username/boards", element: <Boards /> },
+                    { path: "w/:displayName/home", element: <Workspaces /> }
+                ]
+            },
+            {
+                path: "/",
+                element: <BoardDetail />,
+                children: [
+                    {
+                        path: "b/:boardId/:name",
+                        element: <BoardContent />,
+                    },
+                    // {
+                    //   path: "w/:displayName",
+                    //   element: <Member />,
+                    // },
+                    // {
+                    //   path: "w/:displayName/members",
+                    //   element: <Member />,
+                    // },
+                ]
+            }
         ]
-      }
-    ]
-  },
-  {
-    path: "",
-    element: <BoardContent board={mockData?.board} />,
-  },
-]);
+    },
 
+  
+    ]);
+  
+    
 export default router;
