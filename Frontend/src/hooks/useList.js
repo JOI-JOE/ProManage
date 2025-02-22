@@ -101,21 +101,37 @@ export const useLists = (boardId) => {
   );
 
   // Lắng nghe sự kiện từ Pusher
+
   useEffect(() => {
     if (!boardId || !echoInstance) {
       console.warn("⚠️ Không có boardId hoặc echoInstance chưa khởi tạo.");
       return;
     }
 
+    console.log("📡 echoInstance:", echoInstance); // Kiểm tra echoInstance
+
+    // Kiểm tra xem echoInstance có phải là instance của Echo không
+    if (!echoInstance.channel) {
+      console.error("❌ echoInstance không phải là một instance của Echo.");
+      return;
+    }
+
     console.log(`📡 Đăng ký kênh board.${boardId}`);
-    const channel = echoInstance.channel(`board.${boardId}`); // Dùng .private()
+    const channel = echoInstance.channel(`board.${boardId}`); // Sử dụng .channel()
+
+    if (!channel) {
+      console.error("❌ Không thể đăng ký kênh.");
+      return;
+    }
+
+    console.log("📡 Kênh đã đăng ký:", channel); // Kiểm tra kênh
 
     channel.listen(".list.reordered", handleListReordered);
 
     return () => {
       console.log(`🛑 Hủy đăng ký kênh board.${boardId}`);
       channel.stopListening(".list.reordered");
-      channel.unsubscribe();
+      echoInstance.leave(`board.${boardId}`);
     };
   }, [boardId, echoInstance, handleListReordered]);
 

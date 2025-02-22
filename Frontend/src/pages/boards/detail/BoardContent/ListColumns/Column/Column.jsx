@@ -22,7 +22,6 @@ import CopyColumn from "./Menu/CoppyColumn";
 import ConfirmDeleteDialog from "./Menu/DeleteColumn";
 import ArchiveColumnDialog from "./Menu/Archive";
 import { useListById } from '../../../../../../hooks/useList';
-// import { useLists } from "../../../../../hooks/useList"; 
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -106,7 +105,7 @@ const Column = ({ list }) => {
     setAnchorEl(null);
   };
 
-  
+
 
   //======================================== Thêm card mới========================================
   const [openCard, setOpenCard] = useState(false);
@@ -153,7 +152,7 @@ const Column = ({ list }) => {
   //   setAnchorEl(null);
   // };
 
-  
+
   // const handleArchiveColumn = async (event) => {
   //   try {
   //     await updateClosed(list.closed);  // Gọi API lưu trữ cột
@@ -162,7 +161,7 @@ const Column = ({ list }) => {
   //     toast.error("Có lỗi xảy ra khi lưu trữ cột.");
   //   }
   //   setOpenArchiveDialog(false);  // Đóng hộp thoại
-   
+
   // }
 
 
@@ -294,7 +293,7 @@ const Column = ({ list }) => {
             </Tooltip>
 
             {/* Nút điều khiển column */}
-            {/* <StyledMenu
+            <StyledMenu
               id="demo-customized-menu-workspace"
               MenuListProps={{
                 "aria-labelledby": "basic-column-dropdown",
@@ -313,7 +312,7 @@ const Column = ({ list }) => {
                 Coppy
               </MenuItem>
               <MenuItem
-                onClick={handleClose}
+                onMouseDown={handleClose}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
@@ -321,7 +320,7 @@ const Column = ({ list }) => {
                 Move
               </MenuItem>
               <MenuItem
-                onClick={handleClose}
+                onMouseDown={handleClose}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
@@ -340,7 +339,7 @@ const Column = ({ list }) => {
                 Archive this column
               </MenuItem>
 
-        
+
 
               <MenuItem
                 onClick={handleDeleteClick}
@@ -350,7 +349,7 @@ const Column = ({ list }) => {
                 <DeleteForeverIcon />
                 Remove this column
               </MenuItem>
-            </StyledMenu> */}
+            </StyledMenu>
           </Box>
         </Box>
 

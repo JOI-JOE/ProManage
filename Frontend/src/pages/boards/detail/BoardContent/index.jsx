@@ -3,7 +3,7 @@ import { DndContext } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useEffect } from "react";
 import ListColumns from "./ListColumns/ListColumns";
 import { useLists } from "../../../../hooks/useList";
 
@@ -51,9 +51,16 @@ const BoardContent = () => {
   // Sử dụng useMemo để tối ưu hóa việc trả về dữ liệu
   const memoizedLists = useMemo(() => lists, [lists]);
 
+  // Sử dụng useEffect để theo dõi sự thay đổi của lists
+  // useEffect(() => {
+  //   if (memoizedLists) {
+  //     console.log("📦 Danh sách đã được cập nhật:", memoizedLists);
+  //   }
+  // }, [memoizedLists]);
+
   if (isLoading) return <p>Đang tải danh sách...</p>;
   if (error) return <p>Lỗi: {error.message}</p>;
-  if (!memoizedLists || memoizedLists.length === 0) return <p>Không có danh sách nào.</p>;
+  // if (!memoizedLists || memoizedLists.length === 0) return <p>Không có danh sách nào.</p>;
 
   return (
     <DndContext onDragEnd={handleDragEnd}>

@@ -32,8 +32,8 @@ class ListController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
             ]);
-    
-            $boardId = $request->route('boardId'); 
+
+            $boardId = $request->route('boardId');
 
             $maxPosition = ListBoard::where('board_id', $boardId)->max('position');
             $newPosition = $maxPosition !== null ? $maxPosition + 1 : 1;
@@ -48,7 +48,7 @@ class ListController extends Controller
 
             // Đảm bảo tất cả danh sách trong board có vị trí đúng
             $this->normalizePositions($boardId);
-            
+
             return response()->json($list, 201);
         } catch (\Exception $e) {
             Log::error('Lỗi khi thêm mới danh sách: ' . $e->getMessage());
@@ -134,7 +134,7 @@ class ListController extends Controller
                 ->orderBy('position')
                 ->get();
 
-            broadcast(new ListReordered($boardId, $updatedLists))->toOthers();
+            broadcast(new ListReordered($boardId, $updatedLists));
 
             return response()->json([
                 'message' => 'List positions updated successfully',

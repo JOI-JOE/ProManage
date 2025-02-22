@@ -10,12 +10,14 @@ export const PusherProvider = ({ children }) => {
     const [echoInstance, setEchoInstance] = useState(null);
 
     useEffect(() => {
+        // Khởi tạo Pusher với key và cluster
         const pusherClient = new Pusher("526535f4e858cf0c70e9", {
             cluster: "ap1",
             forceTLS: true,
             encrypted: true,
         });
 
+        // Khởi tạo Echo với cấu hình Pusher
         const echo = new Echo({
             broadcaster: "pusher",
             client: pusherClient,
@@ -32,13 +34,16 @@ export const PusherProvider = ({ children }) => {
             },
         });
 
+        // Lưu instance của Echo vào state
         setEchoInstance(echo);
 
+        // Dọn dẹp khi component unmount
         return () => {
             echo.disconnect(); // Ngắt kết nối khi unmount
         };
     }, []);
 
+    // Cung cấp echoInstance cho các component con
     return (
         <PusherContext.Provider value={echoInstance}>
             {children}
@@ -48,5 +53,12 @@ export const PusherProvider = ({ children }) => {
 
 // Hook để sử dụng echoInstance
 export const usePusher = () => {
-    return useContext(PusherContext);
+    const echoInstance = useContext(PusherContext);
+
+    // Kiểm tra xem echoInstance có tồn tại không
+    if (!echoInstance) {
+        console.warn("⚠️ echoInstance chưa được khởi tạo.");
+    }
+
+    return echoInstance;
 };
