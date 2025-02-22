@@ -16,61 +16,55 @@ import GitHubAuth from "../pages/Auth/GitHubAuth";
 // import LoginForm from "../pages/auth/LoginForm";
 
 const router = createBrowserRouter([
-    {
-        path: "/", // Path RIÊNG BIỆT cho GuestLayout
-        element: <GuestLayout />,
+  {
+    path: "/", // Path RIÊNG BIỆT cho GuestLayout
+    element: <GuestLayout />,
+    children: [
+      {
+        path: "login",
+        element: <LoginForm />,
+      },
+      {
+        path: "login/google", // Add this route!
+        element: <GoogleAuth />, // Use your GoogleAuth component here
+      },
+      {
+        path: "auth/callback", // Add this route!
+        element: <GitHubAuth />, // Use your GoogleAuth component here
+      },
+    ],
+  },
+  {
+    path: "/", // Parent route
+    element: <DefaultLayout />,
+    children: [
+      {
+        path: "home", // Or perhaps redirect if you have a separate home page
+        element: <Home />,
+      },
+      {
+        element: <Dashboard />,
         children: [
-            {
-                path: "login",
-                element: <LoginForm />,
-            },
-            {
-                path: "login/google", // Add this route!
-                element: <GoogleAuth />, // Use your GoogleAuth component here
-            },
-            {
-                path: "auth/callback", // Add this route!
-                element: <GitHubAuth />, // Use your GoogleAuth component here
-            },
-        ],
-    },
-    {
-        path: "/", // Parent route
-        element: <DefaultLayout />,
-        children: [
-            {
-                path: "home", // Or perhaps redirect if you have a separate home page
-                element: <Home />,
-            },
-            {
-                element: <Dashboard />,
-                children: [
-                    { path: "u/:username/boards", element: <Boards /> },
-                    { path: "w/:displayName/home", element: <Workspaces /> }
-                ]
-            },
-            {
-                path: "/",
-                element: <BoardDetail />,
-                children: [
-                    {
-                        path: "b/:boardId/:name",
-                        element: <BoardContent />,
-                    },
-                    // {
-                    //   path: "w/:displayName",
-                    //   element: <Member />,
-                    // },
-                    // {
-                    //   path: "w/:displayName/members",
-                    //   element: <Member />,
-                    // },
-                ]
-            }
+          { path: "u/:username/boards", element: <Boards /> },
+          { path: "w/:displayName/home", element: <Workspaces /> }
         ]
-    },
+      },
+      {
+        path: "",
+        element: <BoardDetail />,
+        children: [
+          {
+            path: "b/:id/:displayName",
+            element: <BoardContent />
+          }
+        ]
+      }
+    ]
+  },
+  {
+    path: "",
+    element: <BoardContent board={mockData?.board} />,
+  },
+]);
 
-  
-    ]);
-    
 export default router;
