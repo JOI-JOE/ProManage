@@ -20,4 +20,15 @@ class BoardMember extends Model
         'referrer_id',
         'last_active',
     ];
+
+    
+    public function board()
+    {
+        return $this->belongsTo(Board::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
