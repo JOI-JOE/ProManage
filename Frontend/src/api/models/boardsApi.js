@@ -1,3 +1,4 @@
+import axios from "axios";
 import authClient from "../authClient";
 
 export const getBoardsAll = async () => {
@@ -10,16 +11,12 @@ export const getBoardsAll = async () => {
   }
 };
 
-export const createBoard = async (boardData) => {
+export const createBoard = async (data) => {
   try {
-    const response = await authClient.post("boards", boardData);
+    const response = await authClient.post("/createBoard",data);
     return response.data;
   } catch (error) {
-    if (error.response) {
-      console.error("Lỗi từ server:", error.response.data);
-    } else {
-      console.error("Lỗi kết nối:", error.message);
-    }
+    console.error("Lỗi khi tạo bảng:", error);
     throw error;
   }
 };

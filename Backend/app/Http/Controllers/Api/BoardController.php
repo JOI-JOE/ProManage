@@ -8,6 +8,7 @@ use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BoardController extends Controller
 {
@@ -50,21 +51,28 @@ class BoardController extends Controller
     
     public function store(Request $request)
     {
+        Log::info('📩 Dữ liệu nhận được:', $request->all()); // Ghi log
         try {
             // Validate dữ liệu đầu vào
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // Kiểm tra hình ảnh
-                'description' => 'nullable|string',
-                'is_marked' => 'boolean',
-                'archive' => 'boolean',
-                'closed' => 'boolean',
-                'visibility' => 'required|in:public,private,member',
-                'workspace_id' => 'required|exists:workspaces,id',
-            ]);
+            // $request->validate([
+            //     'name' => 'required|string|max:255',
+            //     'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // Kiểm tra hình ảnh
+            //     'description' => 'nullable|string',
+            //     'is_marked' => 'boolean',
+            //     'archive' => 'boolean',
+            //     'closed' => 'boolean',
+            //     'visibility' => 'required|in:public,private,member',
+            //     'workspace_id' => 'required|exists:workspaces,id',
+            // ]);
+
+            $user = Auth::user(); // Lấy user hiện tại
+
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
     
             // Lấy ID của user đang đăng nhập
-            $userId = Auth::id();
+            $userId = $user->id;
     
             // Lưu dữ liệu từ request
             $data = $request->all();

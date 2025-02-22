@@ -122,11 +122,11 @@ Route::prefix('lists')->group(function () {
 });
 
 
-
+Route::post('/createBoard',[BoardController::class ,'store'])->middleware('auth:sanctum');
 // Routes quản lý bảng
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'index']); // Lấy danh sách boards
-    Route::post('/', [BoardController::class, 'store']); // Tạo board mới
+    // Route::post('/', [BoardController::class, 'store']); // Tạo board mới
     Route::get('{boardId}', [BoardController::class, 'show']); // Lấy thông tin chi tiết board
     Route::put('{boardId}', [BoardController::class, 'update']); // Cập nhật board
     Route::delete('{boardId}', [BoardController::class, 'destroy']); // Xóa board

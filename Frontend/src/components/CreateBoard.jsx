@@ -26,8 +26,10 @@ const CreateBoard = () => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [boardTitle, setBoardTitle] = useState("");
     const [selectedBg, setSelectedBg] = useState(null);
-    const [workspace, setWorkspace] = useState("workspace1");
-    const [viewPermission, setViewPermission] = useState("default");
+    const [workspace, setWorkspace] = useState("");
+    const [viewPermission, setViewPermission] = useState("");
+    // const userId = localStorage.getItem("user_id"); // ID được lưu sau khi đăng nhập
+
 
     // Sử dụng hook useCreateBoard
   // Sử dụng hook useCreateBoard
@@ -48,29 +50,31 @@ const CreateBoard = () => {
 
     const handleCreateBoard = () => {
         if (boardTitle.trim() === "") {
-            alert("Vui lòng nhập tiêu đề bảng!");
-            return;
+          alert("Vui lòng nhập tiêu đề bảng!");
+          return;
         }
+      
+        const boardData = {
+          name: boardTitle,
+          thumbnail: selectedBg,
+          workspace_id: Number(workspace),
+          visibility: viewPermission,
+        };
+      
+        createBoard(boardData, {
+          onSuccess: (data) => {
+            console.log(data);
+            alert(`🎉 Bảng "${boardTitle}" đã được tạo thành công!`);
+            handleClose();
+          },
+          onError: (error) => {
+            alert(`❌ Lỗi khi tạo bảng: ${error.message}`);
+          },
+        });
+      
+        console.log("📩 Dữ liệu gửi lên API:", boardData);
+      };
 
-        // Gọi API để tạo bảng
-        createBoard(
-            {
-                name: boardTitle,
-                background: selectedBg,
-                workspace,
-                permission: viewPermission,
-            },
-            {
-                onSuccess: () => {
-                    alert(`🎉 Bảng "${boardTitle}" đã được tạo thành công!`);
-                    handleClose();
-                },
-                onError: (error) => {
-                    alert(`❌ Lỗi khi tạo bảng: ${error.message}`);
-                },
-            }
-        );
-    };
 
     return (
         <div>
@@ -217,7 +221,7 @@ const CreateBoard = () => {
                             <LockIcon fontSize="small" />
                             Riêng tư
                         </MenuItem>
-                        <MenuItem value="workspace">
+                        <MenuItem value="member">
                             <GroupsIcon fontSize="small" />
                             Không gian làm việc
                         </MenuItem>
