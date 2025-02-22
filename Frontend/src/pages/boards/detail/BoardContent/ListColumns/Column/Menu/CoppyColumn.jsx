@@ -36,10 +36,10 @@ const CopyColumn = ({ open, onClose, onCopy }) => {
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onMouseDown={onClose} color="primary">
           Hủy
         </Button>
-        <Button onClick={handleCopy} color="secondary">
+        <Button onMouseDown={handleCopy} color="secondary">
           Sao chép
         </Button>
       </DialogActions>
