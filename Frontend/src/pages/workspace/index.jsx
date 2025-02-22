@@ -1,46 +1,40 @@
-import React from 'react'
-import HomeWorkspace from './home'
-import { useParams } from 'react-router-dom';
+import React from "react";
+import HomeWorkspace from "./home";
+import { useParams } from "react-router-dom";
+import { useGetWorkspaceByDisplayName } from "../../hooks/useWorkspace";
 
 const Workspaces = () => {
-    let { displayName } = useParams();
+    const { displayName } = useParams(); // Lấy displayName từ URL
 
-    const workspaces = [
-        {
-            name: 'Vu',
-            initial: 'V',
-            display_name: 'vu109',
-            desc: 'đây là test dữ liệu',
-            boards: [
-                { name: "Bảng thiết kế trang chủ", link: "/boards/4" },
-                { name: "Bảng thiết kế trang sản phẩm", link: "/boards/5" },
-                { name: "Bảng thiết kế trang liên hệ", link: "/boards/6" }
-            ]
+    // Sử dụng hook useGetWorkspaceByDisplayName để fetch dữ liệu từ API
+    const {
+        data: workspace,
+        isLoading,
+        isError,
+        error,
+    } = useGetWorkspaceByDisplayName(displayName);
 
-        },
-        {
-            name: 'Vito',
-            initial: 'V',
-            display_name: 'vito109',
-            desc: 'đây là test dữ liệu',
-            boards: [
-                { name: "Bảng thiết kế trang sản phẩm", link: "/boards/5" },
-                { name: "Bảng thiết kế trang liên hệ", link: "/boards/6" }
-            ]
-        }
-    ]
-
-    const workspace = workspaces.find(ws => ws.display_name === displayName);
-
-    if (!workspace) {
-        return <div>Workspace not found</div>;
+    // Hiển thị loading nếu đang fetch dữ liệu
+    if (isLoading) {
+        return <div>Đang tải thông tin workspace...</div>;
     }
 
+    // Hiển thị lỗi nếu có lỗi xảy ra
+    if (isError) {
+        return <div>Lỗi: {error.message}</div>;
+    }
+
+    // Kiểm tra nếu không tìm thấy workspace
+    if (!workspace) {
+        return <div>Không tìm thấy workspace.</div>;
+    }
+
+    // Render component HomeWorkspace với dữ liệu workspace
     return (
         <>
             <HomeWorkspace workspace={workspace} />
         </>
-    )
-}
+    );
+};
 
-export default Workspaces
+export default Workspaces;

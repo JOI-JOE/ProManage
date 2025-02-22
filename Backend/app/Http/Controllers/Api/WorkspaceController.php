@@ -35,38 +35,28 @@ class WorkspaceController extends Controller
         }
     }
 
-    public function show_detail_workspace($display_name)
+    public function showDetailWorkspace($display_name)
     {
         try {
-            // Kiểm tra xem display_name có hợp lệ không (ví dụ: không rỗng)
-            if (empty($display_name)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tên workspace không hợp lệ.',
-                ], 400); // Bad Request
-            }
-
             // Tìm workspace theo display_name
             $workspace = Workspace::where('display_name', $display_name)->firstOrFail();
 
             // Trả về dữ liệu workspace nếu tìm thấy
-            return response()->json([
-                'data' => $workspace,
-            ]);
+            return new WorkspaceResource($workspace);
         } catch (ModelNotFoundException $e) {
             // Xử lý khi không tìm thấy workspace
             return response()->json([
+                'success' => false,
                 'message' => 'Không tìm thấy workspace.',
-            ], 404); // Not Found
+            ], 404);
         } catch (\Throwable $th) {
-            // Log lỗi để debug
+            // Ghi log lỗi
             Log::error('Lỗi khi lấy chi tiết workspace: ' . $th->getMessage());
 
-            // Trả về thông báo lỗi chi tiết
             return response()->json([
+                'success' => false,
                 'message' => 'Có lỗi xảy ra khi lấy chi tiết workspace.',
-                'error' => $th->getMessage(), // Trả về thông báo lỗi cụ thể (chỉ dùng trong môi trường development)
-            ], 500); // Internal Server Error
+            ], 500);
         }
     }
 
