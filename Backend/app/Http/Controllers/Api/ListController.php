@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Events\ListClosed;
-use App\Events\ListDragging;
 use App\Events\ListReordered;
 use App\Http\Requests\ListRequest;
 use App\Http\Requests\ListUpdateNameRequest;
@@ -109,51 +107,47 @@ class ListController extends Controller
         ]);
     }
 
-    public function dragging(Request $request)
-    {
-        broadcast(new ListDragging($request->board_id, $request->dragging_list_id, $request->position));
-        return response()->json(['message' => 'Dragging event sent']);
-    }
-
     public function reorder(Request $request)
     {
-        // Validate dữ liệu nhận từ frontend
         $validatedData = $request->validate([
             'board_id' => 'required|exists:boards,id|integer', // Kiểm tra board_id có tồn tại không
             'positions' => 'required|array', // Đảm bảo positions là mảng
-            'positions.*.id' => 'required|exists:list_boards,id|integer', // Kiểm tra id của từng list có tồn tại trong bảng list_boards
+            'positions.*.id' => 'required|exists:list_boards,id|integer', // Kiểm tra id của từng list có tồn tại
             'positions.*.position' => 'required|integer', // Đảm bảo position là số
         ]);
 
         $boardId = $validatedData['board_id'];
+        $updatedPositions = $validatedData['positions'];
 
-        // Kiểm tra và xử lý mảng positions
-        // Nếu positions là mảng hợp lệ, tiếp tục xử lý
-        if (is_array($validatedData['positions'])) {
-            DB::transaction(function () use ($validatedData) {
-                foreach ($validatedData['positions'] as $positionData) {
-                    // Cập nhật vị trí của từng item trong list
+        try {
+            DB::transaction(function () use ($updatedPositions) {
+                foreach ($updatedPositions as $positionData) {
+                    // Cập nhật vị trí của từng danh sách (list)
                     ListBoard::where('id', $positionData['id'])->update(['position' => $positionData['position']]);
                 }
             });
 
-            // Cập nhật danh sách từ database sau khi thay đổi vị trí
+            // Lấy danh sách sau khi cập nhật từ DB
             $updatedLists = ListBoard::select('id', 'name', 'position')
                 ->where('board_id', $boardId)
                 ->where('closed', false)
                 ->orderBy('position')
                 ->get();
 
-            // Broadcasting sự kiện khi thay đổi vị trí
-            broadcast(new ListReordered($boardId, $updatedLists));
+            broadcast(new ListReordered($boardId, $updatedLists))->toOthers();
 
-            // Trả về phản hồi thành công
-            return response()->json(['message' => 'List positions updated successfully']);
-        } else {
-            // Trả về lỗi nếu positions không phải là mảng hợp lệ
-            return response()->json(['error' => 'Positions must be an array'], 400);
+            return response()->json([
+                'message' => 'List positions updated successfully',
+                'updated_lists' => $updatedLists
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Có lỗi xảy ra khi cập nhật vị trí danh sách',
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
+
 
 
 

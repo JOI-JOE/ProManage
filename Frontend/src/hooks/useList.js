@@ -1,126 +1,166 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getListByBoardId,
-         updateListPositions,
-         createList, 
-         updateListName, 
-         updateClosed } from "../api/models/listsApi";
-import { useEffect } from 'react';
-// import '../../utils/pusher';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePusher } from "../contexts/PusherContext";
+import { useEffect, useCallback, useMemo } from "react";
+import {
+  getListByBoardId,
+  updateListPositions,
+  createList,
+  updateListName,
+  updateClosed,
+} from "../api/models/listsApi";
 
-// Custom hook dùng để lấy danh sách và cập nhật vị trí
 export const useLists = (boardId) => {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
+  const echoInstance = usePusher(); // Lấy echoInstance từ context
 
-    // Lấy danh sách boards từ API
-    const listsQuery = useQuery({
-        queryKey: ["boardLists", boardId],
-        queryFn: () => getListByBoardId(boardId),
-        enabled: !!boardId, // Chỉ gọi khi boardId có giá trị
-        staleTime: 1000 * 60 * 5,
-        cacheTime: 1000 * 60 * 30,
-    });
+  // Query lấy danh sách các list theo boardId
+  const listsQuery = useQuery({
+    queryKey: ["boardLists", boardId],
+    queryFn: () => getListByBoardId(boardId),
+    enabled: !!boardId, // Chỉ kích hoạt query khi có boardId
+    staleTime: 1000 * 60 * 5, // Cache trong 5 phút
+    cacheTime: 1000 * 60 * 30, // Giữ dữ liệu trong 30 phút ngay cả khi query bị hủy
+  });
 
-    const reorderMutation = useMutation({
-        mutationFn: updateListPositions,
-        onMutate: async ({ boardId, updatedPositions }) => {
-            await queryClient.cancelQueries(["boardLists", boardId]);
+  // Mutation để cập nhật vị trí list
+  const reorderMutation = useMutation({
+    mutationFn: updateListPositions,
+    onMutate: async ({ boardId, updatedPositions }) => {
+      await queryClient.cancelQueries(["boardLists", boardId]); // Hủy query cũ
 
-            // Lưu lại dữ liệu cũ trước khi thay đổi
-            const previousLists = queryClient.getQueryData(["boardLists", boardId]);
+      const previousLists = queryClient.getQueryData(["boardLists", boardId]); // Lấy dữ liệu cũ
 
-            // Cập nhật cache ngay lập tức
-            queryClient.setQueryData(["boardLists", boardId], (oldData) => {
-                if (!oldData) return [];
-                return updatedPositions.map((pos) => ({
-                    ...oldData.find((list) => list.id === pos.id),
-                    position: pos.position,
-                }));
-            });
+      // Cập nhật cache ngay lập tức (Optimistic Update)
+      queryClient.setQueryData(["boardLists", boardId], (oldLists) => {
+        if (!oldLists) return [];
+        return oldLists
+          .map((list) => {
+            const updatedList = updatedPositions.find(
+              (pos) => pos.id === list.id
+            );
+            return updatedList
+              ? { ...list, position: updatedList.position }
+              : list;
+          })
+          .sort((a, b) => a.position - b.position);
+      });
 
-            return { previousLists };
-        },
-        onError: (error, _, context) => {
-            console.error("❌ Lỗi khi cập nhật vị trí:", error);
-            if (context?.previousLists) {
-                queryClient.setQueryData(["boardLists", boardId], context.previousLists);
-            }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries(["boardLists", boardId]);
-        },
-    });
+      return { previousLists }; // Lưu để rollback nếu lỗi
+    },
+    onError: (error, _, context) => {
+      if (context?.previousLists) {
+        queryClient.setQueryData(
+          ["boardLists", boardId],
+          context.previousLists
+        );
+      }
+      console.error("❌ Lỗi khi cập nhật vị trí:", error);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["boardLists", boardId]); // Làm mới dữ liệu từ server
+    },
+  });
 
-    const createListMutation = useMutation({
-        mutationFn: (listName) => createList(boardId, listName),  // Truyền boardId vào trong api call
-        onSuccess: (data) => {
-            console.log("Danh sách mới đã được tạo:", data);
-            // Có thể thêm logic xử lý sau khi thêm thành công (ví dụ: cập nhật danh sách trong state)
+  // Mutation để tạo list mới
+  const createListMutation = useMutation({
+    mutationFn: (listName) => createList(boardId, listName),
+    onSuccess: (data) => {
+      console.log("Danh sách mới đã được tạo:", data);
+      queryClient.invalidateQueries(["boardLists", boardId]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi tạo danh sách:", error);
+    },
+  });
 
-            queryClient.invalidateQueries(["boardLists", boardId]);
-        },
-        onError: (error) => {
-            console.error("Lỗi khi tạo danh sách:", error);
-        }
-    });
+  // Hàm xử lý sự kiện từ Pusher
+  const handleListReordered = useCallback(
+    (event) => {
+      console.log("📡 Nhận dữ liệu từ Pusher:", event);
 
+      if (!event?.positions) {
+        console.warn("⚠️ Không có dữ liệu vị trí trong sự kiện Pusher.");
+        return;
+      }
 
-    // const updateListNameMutation = useMutation({
-    //     mutationFn: (data) => updateListName(data.listId, data.newName),
-    //     onSuccess: (data) => {
-    //         console.log("Danh sách đã được cập nhật:", data);
-    //         // Thực hiện invalidate queries hoặc bất kỳ xử lý nào sau khi thành công
-    //         queryClient.invalidateQueries(["boardLists", boardId]);
-    //     },
-    //     onError: (error) => {
-    //         console.error("Lỗi khi cập nhật tên danh sách:", error);
-    //     },
-    // });
+      // Cập nhật cache ngay lập tức (Optimistic UI)
+      queryClient.setQueryData(["boardLists", boardId], (oldLists) => {
+        if (!oldLists) return [];
 
+        const updatedLists = oldLists.map((list) => {
+          const updatedList = event.positions.find((pos) => pos.id === list.id);
+          return updatedList
+            ? { ...list, position: updatedList.position }
+            : list;
+        });
 
+        return updatedLists.sort((a, b) => a.position - b.position);
+      });
+    },
+    [boardId, queryClient]
+  );
 
+  // Lắng nghe sự kiện từ Pusher
+  useEffect(() => {
+    if (!boardId || !echoInstance) {
+      console.warn("⚠️ Không có boardId hoặc echoInstance chưa khởi tạo.");
+      return;
+    }
 
+    console.log(`📡 Đăng ký kênh board.${boardId}`);
+    const channel = echoInstance.channel(`board.${boardId}`); // Dùng .private()
 
-    return {
-        ...listsQuery, // Trả về tất cả các giá trị từ useQuery như data, isLoading, error, ...
-        reorderLists: reorderMutation.mutate,
-        createList: createListMutation.mutate,
-        // updateListName: updateListNameMutation.mutate,
+    channel.listen(".list.reordered", handleListReordered);
+
+    return () => {
+      console.log(`🛑 Hủy đăng ký kênh board.${boardId}`);
+      channel.stopListening(".list.reordered");
+      channel.unsubscribe();
     };
+  }, [boardId, echoInstance, handleListReordered]);
 
+  // Sử dụng useMemo để tối ưu hóa việc trả về dữ liệu
+  const memoizedReturnValue = useMemo(
+    () => ({
+      ...listsQuery,
+      reorderLists: reorderMutation.mutate,
+      createList: createListMutation.mutate,
+    }),
+    [listsQuery, reorderMutation.mutate, createListMutation.mutate]
+  );
+
+  return memoizedReturnValue;
 };
-
 
 export const useListById = (listId) => {
-    const queryClient = useQueryClient();
-    const updateListNameMutation = useMutation({
-        mutationFn: (newName) => updateListName(listId, newName),
-        onSuccess: (data) => {
-          // Sau khi thành công, làm mới dữ liệu danh sách
-        //   queryClient.invalidateQueries(["boardLists", listId]);
-          console.log("Danh sách đã được cập nhật:", data);
-        },
-        onError: (error) => {
-          console.error("Lỗi khi cập nhật tên danh sách:", error);
-        },
-      });
+  const queryClient = useQueryClient();
 
+  // Mutation để cập nhật tên list
+  const updateListNameMutation = useMutation({
+    mutationFn: (newName) => updateListName(listId, newName),
+    onSuccess: (data) => {
+      console.log("Danh sách đã được cập nhật:", data);
+      queryClient.invalidateQueries(["boardLists", listId]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật tên danh sách:", error);
+    },
+  });
 
-      const updateClosedMutation = useMutation({
-        mutationFn: (listId) => updateClosed(listId, closed),  // Gọi API để cập nhật trạng thái lưu trữ
-        onSuccess: (data) => {
-          console.log("Trạng thái lưu trữ đã được cập nhật:", data);
-          // Bạn có thể thêm logic để làm mới danh sách hoặc thông báo thành công
-          queryClient.invalidateQueries(["boardLists", listId]);
-        },
-        onError: (error) => {
-          console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
-        },
-      });
+  // Mutation để cập nhật trạng thái đóng/mở list
+  const updateClosedMutation = useMutation({
+    mutationFn: (closed) => updateClosed(listId, closed),
+    onSuccess: (data) => {
+      console.log("Trạng thái lưu trữ đã được cập nhật:", data);
+      queryClient.invalidateQueries(["boardLists", listId]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
+    },
+  });
 
-    return {
-        updateListName: updateListNameMutation.mutate,
-        updateClosed: updateClosedMutation.mutate,
-    };
+  return {
+    updateListName: updateListNameMutation.mutate,
+    updateClosed: updateClosedMutation.mutate,
+  };
 };
-
-

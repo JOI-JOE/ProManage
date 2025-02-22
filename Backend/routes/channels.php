@@ -18,12 +18,9 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 Broadcast::channel('board.{boardId}', function ($user, $boardId) {
-    return true; // Cho phép tất cả người dùng truy cập
+    return true;
 });
 
 Broadcast::channel('cards-channel', function () {
-    return true; // Cho phép tất cả user có thể nghe sự kiện này
+    return true;
 });
-
-
-
