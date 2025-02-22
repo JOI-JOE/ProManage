@@ -13,6 +13,7 @@ import Home from "../pages/Home";
 import LoginForm from "../pages/Auth/LoginForm";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
+import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 // import LoginForm from "../pages/auth/LoginForm";
 
 const router = createBrowserRouter([
@@ -50,12 +51,16 @@ const router = createBrowserRouter([
         ],
       },
       {
-        path: "b/:id/:displayName",
+        path: "",
         element: <BoardDetail />,
         children: [
           {
-            path: "",
+            path: "b/:boardId/:name",
             element: <BoardContent board={mockData?.board} />,
+          },
+          {
+            path: "c/:cardId/:name",
+            element: <CardModal />,
           },
         ],
       },
