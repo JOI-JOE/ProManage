@@ -6,24 +6,37 @@ import {
   SortableContext,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useParams } from "react-router-dom";
+import { useLists } from "../../../../../hooks/useList"; 
 
 const ListColumns = ({ lists }) => {
-  const [openColumn, setOpenColumn] = useState(false); // State để kiểm soát hiển thị input
+  // const [openColumn, setOpenColumn] = useState(false); // State để kiểm soát hiển thị input
   const toggleOpenColumn = () => setOpenColumn(!openColumn);
 
-  const [columnName, setColumnName] = useState("");
-
-  const addColumn = () => {
-    if (!columnName) {
+  const { boardId } = useParams();  // Lấy boardId từ URL
+  const { createList } = useLists(boardId);  // Sử dụng custom hook để gọi API tạo danh sách
+  const [openColumn, setOpenColumn] = useState(false);  // State để kiểm soát hiển thị input
+  const [columnName, setColumnName] = useState(""); 
+  // console.log(boardId);
+  // const [columnName, setColumnName] = useState("");
+  
+  const addColumn = async () => {
+    if (!columnName.trim()) {
       toast.error("Nhập tên cột");
       return;
     }
-    console.log(columnName);
 
-    toggleOpenColumn();
-    setColumnName("");
+    try {
+      // Gửi tên cột mới đến API để tạo
+      await createList(columnName);
+      setColumnName("");  // Reset input sau khi tạo thành công
+      toggleOpenColumn();  // Đóng lại input
+    } catch (error) {
+      toast.error("Lỗi khi thêm cột");
+      console.error("Lỗi khi thêm cột:", error);
+    }
   };
 
   return (

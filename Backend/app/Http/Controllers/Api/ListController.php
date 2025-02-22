@@ -22,8 +22,8 @@ class ListController extends Controller
     public function index($boardId)
     {
         $lists = ListBoard::where('board_id', $boardId)
-        ->where('closed', false)
-        ->orderBy('position')->get();
+            ->where('closed', false)
+            ->orderBy('position')->get();
         return response()->json($lists);
     }
 
@@ -31,21 +31,26 @@ class ListController extends Controller
     public function store(ListRequest $request)
     {
         try {
-            $validated = $request->validated();
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+            ]);
+    
+            $boardId = $request->route('boardId'); 
 
-            $maxPosition = ListBoard::where('board_id', $validated['board_id'])->max('position');
+            $maxPosition = ListBoard::where('board_id', $boardId)->max('position');
             $newPosition = $maxPosition !== null ? $maxPosition + 1 : 1;
 
             $list = ListBoard::create([
                 'name' => $validated['name'],
                 'closed' => false,
                 'position' => $newPosition,
-                'board_id' => $validated['board_id'],
+                'board_id' =>  $boardId,
                 'color_id' => $validated['color_id'] ?? null,
             ]);
 
             // Đảm bảo tất cả danh sách trong board có vị trí đúng
-            $this->normalizePositions($validated['board_id']);
+            $this->normalizePositions($boardId);
+            
             return response()->json($list, 201);
         } catch (\Exception $e) {
             Log::error('Lỗi khi thêm mới danh sách: ' . $e->getMessage());

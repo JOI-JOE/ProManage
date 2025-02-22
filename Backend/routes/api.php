@@ -114,7 +114,7 @@ Route::prefix('cards')->group(function () {
     Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']);
 });
 Route::prefix('lists')->group(function () {
-    Route::post('/', [ListController::class, 'store']);
+    Route::post('/{boardId}', [ListController::class, 'store']);
     Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
     Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
     Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
