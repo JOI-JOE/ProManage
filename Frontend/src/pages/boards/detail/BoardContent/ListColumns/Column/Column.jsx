@@ -60,7 +60,7 @@ const StyledMenu = styled((props) => (
   },
 }));
 
-const Column = ({ column }) => {
+const Column = ({ list }) => {
   // State hiển thị form sao chép cột
   const [openCopyDialog, setOpenCopyDialog] = useState(false);
   // State hiển thị form xác nhận xóa
@@ -123,9 +123,9 @@ const Column = ({ column }) => {
   };
 
   // Chức năng sửa tiêu đề
-  const [title, setTitle] = useState(column?.title);
+  const [title, setTitle] = useState(list.name);
   const [isEditing, setIsEditing] = useState(false);
-  const [prevTitle, setPrevTitle] = useState(column?.title); // Lưu giá trị trước đó
+  const [prevTitle, setPrevTitle] = useState(list.name); // Lưu giá trị trước đó
 
   const handleTitleClick = () => {
     setIsEditing(true);
@@ -150,7 +150,8 @@ const Column = ({ column }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: column._id, data: { ...column } });
+  } = useSortable({ id: String(list.id) }); //id: là của thư viện, _id:là của DB
+
 
   const columnStyle = {
     transform: CSS.Translate.toString(transform),
@@ -170,7 +171,7 @@ const Column = ({ column }) => {
   };
 
   //Sắp xếp card
-  const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
+  // const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
 
   return (
     <div ref={setNodeRef} style={columnStyle} {...attributes}>
@@ -236,7 +237,7 @@ const Column = ({ column }) => {
               }}
               onClick={handleTitleClick}
             >
-              {title}
+               {list.name}
             </Typography>
           )}
 
@@ -248,7 +249,7 @@ const Column = ({ column }) => {
                 aria-controls={open ? "basic-menu-column-dropdown" : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? "true" : undefined}
-                onClick={handleClick}
+                onMouseDown={handleClick}
               />
             </Tooltip>
 
@@ -311,7 +312,7 @@ const Column = ({ column }) => {
         </Box>
 
         {/* Column List Cart */}
-        <ListCards cards={orderedCards} />
+        {/* <ListCards cards={orderedCards} /> */}
 
         {/* Colum Footer */}
         <Box

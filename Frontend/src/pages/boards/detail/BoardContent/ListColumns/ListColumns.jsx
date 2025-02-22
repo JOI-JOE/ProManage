@@ -9,7 +9,7 @@ import {
 import { useState } from "react";
 import { toast } from "react-toastify";
 
-const ListColumns = ({ columns }) => {
+const ListColumns = ({ lists }) => {
   const [openColumn, setOpenColumn] = useState(false); // State để kiểm soát hiển thị input
   const toggleOpenColumn = () => setOpenColumn(!openColumn);
 
@@ -28,9 +28,9 @@ const ListColumns = ({ columns }) => {
 
   return (
     <SortableContext
-      items={columns?.map((c) => c._id)}
-      strategy={horizontalListSortingStrategy}
-    >
+    items={lists.map((list) => String(list.id))}
+    strategy={horizontalListSortingStrategy}
+  >
       <Box
         sx={{
           bgcolor: "inherit",
@@ -45,8 +45,8 @@ const ListColumns = ({ columns }) => {
           },
         }}
       >
-        {columns?.map((column) => (
-          <Column key={column._id} column={column} />
+        {lists.map((list) => (
+          <Column key={list.id} list={list} />
         ))}
 
         {/* Box Add Column */}

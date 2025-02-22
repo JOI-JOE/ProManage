@@ -176,7 +176,7 @@ const CreateWorkspace = () => {
                         fullWidth
                         variant="contained"
                         onClick={handleSubmit}
-                    // disabled={!workspaceName || !workspaceType || !workspaceDescription} // Kiểm tra điều kiện
+                        disabled={!workspaceName || !workspaceType || !workspaceDescription} // Kiểm tra điều kiện
                     >
                         Tiếp tục
                     </Button>

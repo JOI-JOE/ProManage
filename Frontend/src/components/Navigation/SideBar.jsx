@@ -14,6 +14,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import { Link } from "react-router-dom";
 import WorkspaceMenu from "./WorkspaceMenu";
 
+
 const SideBar = ({ workspaces, username }) => {
     return (
         <Drawer
