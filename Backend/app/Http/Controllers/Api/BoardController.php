@@ -96,8 +96,8 @@ class BoardController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Lấy thông tin board với điều kiện closed = 0
-        $board = $workspace->boards()->where('id', $boardId)->where('closed', 0)->firstOrFail();
+        // Lấy thông tin board 
+        $board = $workspace->boards()->firstOrFail();
 
         return response()->json([
             'success' => true,
