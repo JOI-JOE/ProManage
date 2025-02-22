@@ -35,3 +35,61 @@ export const updateListPositions = async ({ boardId, updatedPositions }) => {
     }
 };
 
+
+export const createList = async (boardId, listName) => {
+    try {
+        const response = await authClient.post(
+            `/lists/${boardId}`, // Chú ý đường dẫn chứa boardId
+            {
+                name: listName,  // Truyền tên danh sách trong body
+            }
+        );
+        return response.data;  // Trả về dữ liệu danh sách mới tạo
+    } catch (error) {
+        console.error("❌ Lỗi khi tạo danh sách:", error);
+        throw error;  // Xử lý lỗi nếu có
+    }
+};
+
+
+//   export const updateListName = async (boardId, listId, newName) => {
+//     try {
+//       const response = await authClient.patch(
+//         `/lists/${listId}/updateName`, // Đường dẫn API cập nhật tên danh sách
+//         {
+//           name: newName, // Gửi tên danh sách mới trong body
+//         }
+//       );
+//       return response.data; // Trả về dữ liệu danh sách đã được cập nhật
+//     } catch (error) {
+//       console.error("❌ Lỗi khi cập nhật tên danh sách:", error);
+//       throw error; // Xử lý lỗi nếu có
+//     }
+//   };
+
+export const updateListName = async (listId, newName) => {
+    try {
+        const response = await authClient.patch(
+            `/lists/${listId}/updateName`, // Đường dẫn API cập nhật tên danh sách
+            {
+                name: newName, // Gửi tên danh sách mới trong body
+            }
+        );
+        return response.data; // Trả về dữ liệu danh sách đã được cập nhật
+    } catch (error) {
+        console.error("❌ Lỗi khi cập nhật tên danh sách:", error);
+        throw error; // Xử lý lỗi nếu có
+    }
+};
+
+export const updateClosed = async (listId) => {
+    try {
+        const response = await authClient.patch(`/lists/${listId}/closed`,{
+            closed: closed,
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
+        throw error;  // Xử lý lỗi nếu có
+    }
+};

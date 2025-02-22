@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getListByBoardId, updateListPositions } from "../api/models/listsApi";
 import { usePusher } from "../contexts/PusherContext";
 import { useEffect, useCallback, useMemo } from "react";
+import {
+  getListByBoardId,
+  updateListPositions,
+  createList,
+  updateListName,
+  updateClosed,
+} from "../api/models/listsApi";
 
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();
@@ -55,6 +61,18 @@ export const useLists = (boardId) => {
     },
   });
 
+  // Mutation để tạo list mới
+  const createListMutation = useMutation({
+    mutationFn: (listName) => createList(boardId, listName),
+    onSuccess: (data) => {
+      console.log("Danh sách mới đã được tạo:", data);
+      queryClient.invalidateQueries(["boardLists", boardId]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi tạo danh sách:", error);
+    },
+  });
+
   // Hàm xử lý sự kiện từ Pusher
   const handleListReordered = useCallback(
     (event) => {
@@ -105,10 +123,44 @@ export const useLists = (boardId) => {
   const memoizedReturnValue = useMemo(
     () => ({
       ...listsQuery,
-      reorderLists: reorderMutation.mutateAsync,
+      reorderLists: reorderMutation.mutate,
+      createList: createListMutation.mutate,
     }),
-    [listsQuery, reorderMutation.mutateAsync]
+    [listsQuery, reorderMutation.mutate, createListMutation.mutate]
   );
 
   return memoizedReturnValue;
+};
+
+export const useListById = (listId) => {
+  const queryClient = useQueryClient();
+
+  // Mutation để cập nhật tên list
+  const updateListNameMutation = useMutation({
+    mutationFn: (newName) => updateListName(listId, newName),
+    onSuccess: (data) => {
+      console.log("Danh sách đã được cập nhật:", data);
+      queryClient.invalidateQueries(["boardLists", listId]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật tên danh sách:", error);
+    },
+  });
+
+  // Mutation để cập nhật trạng thái đóng/mở list
+  const updateClosedMutation = useMutation({
+    mutationFn: (closed) => updateClosed(listId, closed),
+    onSuccess: (data) => {
+      console.log("Trạng thái lưu trữ đã được cập nhật:", data);
+      queryClient.invalidateQueries(["boardLists", listId]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
+    },
+  });
+
+  return {
+    updateListName: updateListNameMutation.mutate,
+    updateClosed: updateClosedMutation.mutate,
+  };
 };

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -99,6 +100,32 @@ class AuthController extends Controller
             'token' => $token,
             'user' => $user,
         ]);
+    }
+
+    public function sendResetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'Email không tồn tại!'], 404);
+        }
+
+        // Tạo mật khẩu mới ngẫu nhiên
+        $newPassword = Str::random(10);
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        // Gửi email mật khẩu mới
+        Mail::raw("Mật khẩu mới của bạn là: $newPassword", function ($message) use ($user) {
+                $message->to($user->email)
+                ->subject('Mật khẩu mới của bạn');
+        });
+
+        return response()->json(['message' => 'Mật khẩu mới đã được gửi qua email!']);
     }
 
     ////// Logout

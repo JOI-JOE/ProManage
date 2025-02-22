@@ -11,10 +11,12 @@ import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
-// import GoogleAuth from "../pages/Auth/GoogleAuth";
+
 import GitHubAuth from "../pages/Auth/GitHubAuth";
-import GoogleAuth from "../pages/auth/GoogleAuth";
-// import LoginForm from "../pages/auth/LoginForm";
+import ForgotPassword from "../pages/auth/ForgortPassword";
+import Register from "../pages/auth/Register";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
+
 
 const router = createBrowserRouter([
     {
@@ -26,6 +28,10 @@ const router = createBrowserRouter([
                 element: <LoginForm />,
             },
             {
+                path: "register",
+                element: <Register />,
+            },
+            {
                 path: "login/google", // Add this route!
                 element: <GoogleAuth />, // Use your GoogleAuth component here
             },
@@ -33,6 +39,10 @@ const router = createBrowserRouter([
                 path: "auth/callback", // Add this route!
                 element: <GitHubAuth />, // Use your GoogleAuth component here
             },
+            {
+              path: "/forgort-password", // Add this route!
+              element: <ForgotPassword />, // Use your GoogleAuth component here
+          },
         ],
     },
     {
@@ -73,5 +83,6 @@ const router = createBrowserRouter([
 
   
     ]);
+  
     
 export default router;

@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Board;
 use App\Models\BoardMember;
 use App\Models\BoardUserPermission;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class BoardMemberController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $boardMember = BoardMember::all();
         return response()->json($boardMember);
     }
@@ -55,6 +57,15 @@ class BoardMemberController extends Controller
             ], 404);
         }
 
+        // Lấy user theo username
+        $user = User::where('username', $validated['username'])->first();
+        if (!$user) {
+            return response()->json([
+                'result' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
         // Kiểm tra nếu user đã có trong board rồi
         $existingMember = BoardUserPermission::where('board_id', $boardId)
             ->where('user_id', $validated['user_id'])
@@ -69,7 +80,7 @@ class BoardMemberController extends Controller
         // Tạo bản ghi mới trong bảng board_user_permissions
         $boardUserPermission = BoardUserPermission::create([
             'board_id' => $boardId,
-            'user_id' => $validated['user_id'],
+            'user_id' => $user->id,
             'role' => $validated['role'],
         ]);
 
@@ -127,4 +138,45 @@ class BoardMemberController extends Controller
             ], 500);
         }
     }
+
+    public function leaveBoard($boardId, $userId)
+{
+    try {
+        // Kiểm tra board có tồn tại không
+        $board = Board::find($boardId);
+        if (!$board) {
+            return response()->json([
+                'result' => false,
+                'message' => 'Board not found'
+            ], 404);
+        }
+
+        // Kiểm tra nếu user có tham gia board không
+        $boardUser = BoardMember::where('board_id', $boardId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$boardUser) {
+            return response()->json([
+                'result' => false,
+                'message' => 'Member not found in this board'
+            ], 404);
+        }
+
+        // Xóa thành viên khỏi board
+        $boardUser->delete();
+
+        return response()->json([
+            'result' => true,
+            'message' => 'Member left the board successfully'
+        ]);
+    } catch (\Exception $e) {
+        // Nếu có lỗi bất ngờ, bắt lỗi và trả về thông báo lỗi chi tiết
+        return response()->json([
+            'result' => false,
+            'message' => 'An error occurred: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
 }
