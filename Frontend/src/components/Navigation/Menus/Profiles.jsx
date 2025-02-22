@@ -6,10 +6,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import Logout from "@mui/icons-material/Logout";
-import axios from "axios";
 import Typography from "@mui/material/Typography";
-import PeopleIcon from "@mui/icons-material/People";
 import SettingsIcon from "@mui/icons-material/Settings";
 import Modal from "@mui/material/Modal";
 import TextField from "@mui/material/TextField";
@@ -24,8 +21,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import { ListItemIcon } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-import { useLogout } from "../../../hooks/useUser";
-import { useStateContext } from "../../../contexts/ContextProvider";
+import { useLogout, useUser } from "../../../hooks/useUser";
+import CreateWorkspace from "../../CreateWorkspace";
+// import { useStateContext } from "../../../contexts/ContextProvider";
+
 
 export default function ProfileMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -69,7 +68,7 @@ export default function ProfileMenu() {
   const navigate = useNavigate();
 
   // Lấy thông tin user từ hook
-  const { user } = useStateContext();
+  const { data: user } = useUser(); // Sử dụng useUser
   // Hook logout
   const { mutate: logout, isLoading: logoutLoading } = useLogout();
 
@@ -159,16 +158,11 @@ export default function ProfileMenu() {
           </RadioGroup>
         </Menu>
         <Divider sx={{ my: 2 }} />
-        <MenuItem onClick={handleOpenWorkspaceModal}>
+        {/* <MenuItem onClick={handleOpenWorkspaceModal}>
           <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
-        </MenuItem>
+        </MenuItem> */}
+        <CreateWorkspace />
 
-        <MenuItem>
-          <ListItemIcon>
-            <Logout fontSize="small" />
-          </ListItemIcon>
-          Logout
-        </MenuItem>
         <Divider />
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>

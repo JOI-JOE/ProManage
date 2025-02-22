@@ -9,11 +9,11 @@ use App\Http\Controllers\api\CardController;
 use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
-use App\Http\Controllers\Api\WorkspaceInvitationsController;
-use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Api\LabelController;
+use App\Http\Controllers\Api\WorkspaceInvitationsController;
+use App\Http\Controllers\Api\WorkspaceMembersController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -52,8 +52,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
-        Route::get('workspaces/{id}/boards', 'show');
-        Route::get('workspaces/{id}', 'showDetailWorkspace');
+        // Route::get('workspaces/{id}/boards', 'show');
+        Route::get('workspaces/{display_name}', 'showDetailWorkspace');
         Route::post('workspaces', 'store');
         Route::delete('workspaces/{workspace}', 'destroy');
         Route::put('workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
@@ -68,7 +68,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::controller(WorkspaceMembersController::class)->group(function () {
     Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
-   
+
     Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
 });
 
@@ -78,12 +78,12 @@ Route::controller(WorkspaceInvitationsController::class)->group(function () {
 
     // ở đây sẽ có hai trường hợp hợp
     // 1. nếu là id -> sẽ được add thẳng vào workspace + email
-   
+
     Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
 
     // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
     //
-    
+
     Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
 });
 

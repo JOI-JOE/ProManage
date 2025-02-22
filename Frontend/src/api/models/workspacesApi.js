@@ -10,6 +10,17 @@ export const getWorkspacesAll = async () => {
   }
 };
 
+// Lấy chi tiết workspace theo display_name
+export const getWorkspaceByDisplayName = async (displayName) => {
+  try {
+    const response = await authClient.get(`/workspaces/${displayName}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy workspace của người dùng:", error);
+    throw error;
+  }
+};
+
 export const createWorkspace = async (data) => {
   try {
     const response = await authClient.post("/workspaces", data);

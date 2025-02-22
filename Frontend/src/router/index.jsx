@@ -11,7 +11,7 @@ import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
-import GoogleAuth from "../pages/Auth/GoogleAuth";
+// import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
@@ -60,18 +60,29 @@ const router = createBrowserRouter([
                 ]
             },
             {
-                path: "b/:id/:displayName",
+                path: "/",
                 element: <BoardDetail />,
                 children: [
                     {
-                        path: "",
-                        element: <BoardContent />
-                    }
+                        path: "b/:boardId/:name",
+                        element: <BoardContent />,
+                    },
+                    // {
+                    //   path: "w/:displayName",
+                    //   element: <Member />,
+                    // },
+                    // {
+                    //   path: "w/:displayName/members",
+                    //   element: <Member />,
+                    // },
                 ]
             }
         ]
     },
 
+  
+    ]);
+    
           {
             path: "",
             element: <BoardContent board={mockData?.board} />,
