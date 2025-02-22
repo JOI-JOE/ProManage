@@ -4,19 +4,46 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Board;
+use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class BoardController extends Controller
 {
-    public function index()
-    {
-        $board = Board::where('deleted', 0)->get();
-        return response()->json($board);
+    // public function index()
+    // {
+    //     $board = Board::where('closed', 0)->get();
+    //     return response()->json($board);
+        
+    // }
+    
+    public function index($workspaceId)
+{
+    try {
+        // Kiểm tra nếu workspace tồn tại
+        $workspace = Workspace::findOrFail($workspaceId);
+        
+        // Kiểm tra quyền truy cập của user
+        if ($workspace->user_id != auth()->id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Lấy các boards của workspace với điều kiện closed = 0
+        $boards = $workspace->boards()->where('closed', 0)->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $boards,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
     }
+}
+
+    
     public function trash()
     {
-        $board = Board::where('deleted', 1)->get();
+        $board = Board::where('closed', 1)->get();
         return response()->json($board);
     }
     
@@ -58,6 +85,29 @@ class BoardController extends Controller
             throw $th;
         }
     }
+
+
+    public function show($workspaceId, $boardId)
+{
+    try {
+        // Kiểm tra quyền truy cập
+        $workspace = Workspace::findOrFail($workspaceId);
+        if ($workspace->user_id != auth()->id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Lấy thông tin board 
+        $board = $workspace->boards()->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'data' => $board,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+    }
+}
+
 
     /**
      * Update tên board

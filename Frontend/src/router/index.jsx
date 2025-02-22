@@ -11,9 +11,8 @@ import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
-// import GoogleAuth from "../pages/Auth/GoogleAuth";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
-import GoogleAuth from "../pages/auth/GoogleAuth";
 // import LoginForm from "../pages/auth/LoginForm";
 
 const router = createBrowserRouter([
