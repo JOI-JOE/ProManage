@@ -55,7 +55,7 @@ const BoardContent = ({ }) => {
   if (error) return <p>Lỗi: {error.message}</p>;
 
   // Kiểm tra nếu không có dữ liệu
-  if (!lists || lists.length === 0) return <p>Không có danh sách nào.</p>;
+  // if (!lists || lists.length === 0) return <p>Không có danh sách nào.</p>;
 
 
   // useEffect(() => {
