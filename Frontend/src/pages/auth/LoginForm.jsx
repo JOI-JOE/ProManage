@@ -39,9 +39,9 @@ const LoginForm = () => {
         // Call the login mutation
         login(formData, {
             onSuccess: (data) => {
-                console.log("Đăng nhập thành công:", data);
                 localStorage.setItem("token", data.token); // Store the token
-                navigate("/home"); // Redirect to home page
+                navigate('/home')
+                window.location.reload(); // Reset lại trang
             },
             onError: (err) => {
                 console.error("Lỗi đăng nhập:", err);
