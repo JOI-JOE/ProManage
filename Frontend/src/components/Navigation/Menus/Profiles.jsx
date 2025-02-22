@@ -26,6 +26,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useLogout } from "../../../hooks/useUser";
 import { useStateContext } from "../../../contexts/ContextProvider";
+import CreateWorkspace from "../../CreateWorkspace";
 
 export default function ProfileMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -159,16 +160,11 @@ export default function ProfileMenu() {
           </RadioGroup>
         </Menu>
         <Divider sx={{ my: 2 }} />
-        <MenuItem onClick={handleOpenWorkspaceModal}>
+        {/* <MenuItem onClick={handleOpenWorkspaceModal}>
           <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
-        </MenuItem>
+        </MenuItem> */}
+        <CreateWorkspace />
 
-        <MenuItem>
-          <ListItemIcon>
-            <Logout fontSize="small" />
-          </ListItemIcon>
-          Logout
-        </MenuItem>
         <Divider />
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>
