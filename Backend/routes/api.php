@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\api\CardController;
+use App\Http\Controllers\Api\ChecklistController;
+use App\Http\Controllers\Api\ChecklistItemController;
 use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
@@ -197,4 +199,17 @@ Route::prefix('/{cardId}/attachments')->group(function () {
     Route::delete('/{attachmentId}', [AttachmentController::class, 'deleteAttachment']); // Xóa tệp đính kèm
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']); // Đặt tệp làm ảnh bìa
 });
+// checklists
+Route::get('/cards/{cardId}/checklists', [ChecklistController::class, 'index']);// lấy danh sách checkist theo card
+Route::post('/cards/{cardId}/checklists', [ChecklistController::class, 'store']);// thêm mới checkist theo card
+Route::put('/checklists/{id}', [ChecklistController::class, 'update']);// cập nhật checklist
+Route::delete('/checklists/{id}', [ChecklistController::class, 'destroy']);// xóa checklists
+// checklist_item
+Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'index']);// lấy danh sách checkist theo card
+Route::post('/checklist/{checklistId}/item', [ChecklistItemController::class, 'store']);// thêm mới checkist theo card
+Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']);// cập nhật tên của checklistitem
+Route::put('/item/{id}/completed', [ChecklistItemController::class, 'updateStatus']);// cập nhật trạng thái hoàn thành của checklistitem
+
+// Route::delete('/checklists/{id}', [ChecklistItemController::class, 'destroy']);// xóa checklists
+
 // });
