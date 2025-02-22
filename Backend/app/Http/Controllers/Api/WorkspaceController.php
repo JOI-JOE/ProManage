@@ -8,10 +8,10 @@ use App\Http\Resources\BoardResource;
 use App\Http\Resources\WorkspaceResource;
 use App\Models\User;
 use App\Models\Workspace;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Log;
 
 
 class WorkspaceController extends Controller
@@ -25,7 +25,7 @@ class WorkspaceController extends Controller
             if (!$user) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
-    
+
             // Lấy tất cả workspace mà user này đã tạo
             $workspaces = $user->workspaces;
 
@@ -35,20 +35,28 @@ class WorkspaceController extends Controller
         }
     }
 
-    public function show_deltail_workspace($id)
+    public function showDetailWorkspace($display_name)
     {
         try {
-            $workspace = Workspace::findOrFail($id);
+            // Tìm workspace theo display_name
+            $workspace = Workspace::where('display_name', $display_name)->firstOrFail();
 
-            return response()->json([
-                'success' => true,
-                'data' => $workspace,
-            ]);
-        } catch (\Throwable $th) {
+            // Trả về dữ liệu workspace nếu tìm thấy
+            return new WorkspaceResource($workspace);
+        } catch (ModelNotFoundException $e) {
+            // Xử lý khi không tìm thấy workspace
             return response()->json([
                 'success' => false,
+                'message' => 'Không tìm thấy workspace.',
+            ], 404);
+        } catch (\Throwable $th) {
+            // Ghi log lỗi
+            Log::error('Lỗi khi lấy chi tiết workspace: ' . $th->getMessage());
 
-            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lấy chi tiết workspace.',
+            ], 500);
         }
     }
 
