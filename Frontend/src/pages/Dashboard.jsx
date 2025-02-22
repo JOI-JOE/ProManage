@@ -20,7 +20,7 @@ const Dashboard = () => {
     const workspaces = user.workspaces
     return (
         <Container disableGutters maxWidth={false} sx={{ height: "100vh" }}>
-            <AppBar username={user.user_name} />
+            <AppBar username={user.user_name} email={user.email} />
             <Box sx={{ display: "flex" }}>
                 <SideBar workspaces={workspaces} username={user.user_name} />
                 <Box sx={{ width: "81%" }}>

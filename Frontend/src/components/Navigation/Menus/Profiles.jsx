@@ -23,10 +23,9 @@ import { useNavigate } from "react-router-dom";
 
 import { useLogout, useUser } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
-// import { useStateContext } from "../../../contexts/ContextProvider";
 
 
-export default function ProfileMenu() {
+export default function ProfileMenu({ email }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
   const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
@@ -68,7 +67,6 @@ export default function ProfileMenu() {
   const navigate = useNavigate();
 
   // Lấy thông tin user từ hook
-  const { data: user } = useUser(); // Sử dụng useUser
   // Hook logout
   const { mutate: logout, isLoading: logoutLoading } = useLogout();
 
@@ -109,7 +107,7 @@ export default function ProfileMenu() {
             sx={{ fontWeight: "bold", mt: 1, color: "black" }}
           ></Typography>
           <Typography variant="body2" sx={{ color: "black" }}>
-            {user.email}
+            {email}
           </Typography>
         </Box>
         <Divider />

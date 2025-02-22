@@ -237,7 +237,7 @@ const Column = ({ list }) => {
               }}
               onClick={handleTitleClick}
             >
-               {list.name}
+              {list.name}
             </Typography>
           )}
 
@@ -253,7 +253,8 @@ const Column = ({ list }) => {
               />
             </Tooltip>
 
-            <StyledMenu
+            {/* Nút điều khiển column */}
+            {/* <StyledMenu
               id="demo-customized-menu-workspace"
               MenuListProps={{
                 "aria-labelledby": "basic-column-dropdown",
@@ -271,14 +272,14 @@ const Column = ({ list }) => {
                 <ContentCopyIcon />
                 Coppy
               </MenuItem>
-              {/* <MenuItem
+              <MenuItem
                 onClick={handleClose}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
                 <MoveUpIcon />
                 Move
-              </MenuItem> */}
+              </MenuItem>
               <MenuItem
                 onClick={handleClose}
                 disableRipple
@@ -307,7 +308,7 @@ const Column = ({ list }) => {
                 <DeleteForeverIcon />
                 Remove this column
               </MenuItem>
-            </StyledMenu>
+            </StyledMenu> */}
           </Box>
         </Box>
 

@@ -29,7 +29,7 @@ import Profile from "./Menus/Profiles";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
-const AppBar = ({ username }) => {
+const AppBar = ({ username, email }) => {
   const [searchText, setSearchText] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [showUnread, setShowUnread] = useState(false);
@@ -181,7 +181,7 @@ const AppBar = ({ username }) => {
             }}
           />
         </Tooltip>
-        <Profile />
+        <Profile email={email} />
 
         {/* Popover hiển thị thông báo */}
         <Popover
