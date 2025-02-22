@@ -112,33 +112,45 @@ class ListController extends Controller
 
     public function reorder(Request $request)
     {
-
+        // Validate dữ liệu nhận từ frontend
         $validatedData = $request->validate([
-            'board_id' => 'required|exists:boards,id', // Đảm bảo board_id tồn tại
-            'positions' => 'required|array',
-            'positions.*.id' => 'required|exists:list_boards,id',
-            'positions.*.position' => 'required|integer',
+            'board_id' => 'required|exists:boards,id|integer', // Kiểm tra board_id có tồn tại không
+            'positions' => 'required|array', // Đảm bảo positions là mảng
+            'positions.*.id' => 'required|exists:list_boards,id|integer', // Kiểm tra id của từng list có tồn tại trong bảng list_boards
+            'positions.*.position' => 'required|integer', // Đảm bảo position là số
         ]);
 
         $boardId = $validatedData['board_id'];
 
-        DB::transaction(function () use ($request) {
-            foreach ($request->positions as $positionData) {
-                ListBoard::where('id', $positionData['id'])->update(['position' => $positionData['position']]);
-            }
-        });
+        // Kiểm tra và xử lý mảng positions
+        // Nếu positions là mảng hợp lệ, tiếp tục xử lý
+        if (is_array($validatedData['positions'])) {
+            DB::transaction(function () use ($validatedData) {
+                foreach ($validatedData['positions'] as $positionData) {
+                    // Cập nhật vị trí của từng item trong list
+                    ListBoard::where('id', $positionData['id'])->update(['position' => $positionData['position']]);
+                }
+            });
 
-        $updatedLists = ListBoard::select('id', 'name', 'position')
-            ->where('board_id', $boardId)
-            ->where('closed', false)
-            ->orderBy('position')
-            ->get();
+            // Cập nhật danh sách từ database sau khi thay đổi vị trí
+            $updatedLists = ListBoard::select('id', 'name', 'position')
+                ->where('board_id', $boardId)
+                ->where('closed', false)
+                ->orderBy('position')
+                ->get();
 
+            // Broadcasting sự kiện khi thay đổi vị trí
+            broadcast(new ListReordered($boardId, $updatedLists));
 
-        broadcast(new ListReordered($request->board_id, $updatedLists));
-
-        return response()->json(['message' => 'List positions updated successfully']);
+            // Trả về phản hồi thành công
+            return response()->json(['message' => 'List positions updated successfully']);
+        } else {
+            // Trả về lỗi nếu positions không phải là mảng hợp lệ
+            return response()->json(['error' => 'Positions must be an array'], 400);
+        }
     }
+
+
 
 
     public function updateColor(Request $request, string $id)
