@@ -13,6 +13,8 @@ import Home from "../pages/Home";
 import LoginForm from "../pages/Auth/LoginForm";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
+import ForgotPassword from "../pages/auth/ForgortPassword";
+import Register from "../pages/auth/Register";
 // import LoginForm from "../pages/auth/LoginForm";
 
 const router = createBrowserRouter([
@@ -25,6 +27,10 @@ const router = createBrowserRouter([
                 element: <LoginForm />,
             },
             {
+                path: "register",
+                element: <Register />,
+            },
+            {
                 path: "login/google", // Add this route!
                 element: <GoogleAuth />, // Use your GoogleAuth component here
             },
@@ -32,6 +38,10 @@ const router = createBrowserRouter([
                 path: "auth/callback", // Add this route!
                 element: <GitHubAuth />, // Use your GoogleAuth component here
             },
+            {
+              path: "/forgort-password", // Add this route!
+              element: <ForgotPassword />, // Use your GoogleAuth component here
+          },
         ],
     },
     {
@@ -66,10 +76,6 @@ const router = createBrowserRouter([
             path: "",
             element: <BoardContent board={mockData?.board} />,
           },
-        ],
-      },
-    ],
-  },
-]);
-
+    ]);
+    
 export default router;

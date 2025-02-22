@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLogin } from "../../hooks/useUser";
 import { handle401Error } from "../../api/interceptors/handle401Error";
 import GoogleAuth from "./GoogleAuth";
@@ -34,7 +34,7 @@ const LoginForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         login(
-            { email, password },
+            { email:formData.email, password:formData.email },
             {
                 onSuccess: (data) => {
                     console.log("Đăng nhập thành công:", data);
@@ -54,7 +54,7 @@ const LoginForm = () => {
         <div className="container mx-auto">
             <div className="flex justify-center">
                 <div className="w-full max-w-[525px] rounded-lg bg-white py-16 px-10 text-center sm:px-12 md:px-[60px]">
-                    <div className="mb-10 text-center md:mb-16">TRELLO</div>
+                    <div className="mb-10 text-center md:mb-16">PROMANAGE</div>
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
                             <input
@@ -75,6 +75,7 @@ const LoginForm = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                                 placeholder="Password"
+                                autoComplete="current-password"
                                 className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${errors.password ? "border-red-500" : "border-gray-300"}`}
                             />
                             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
@@ -84,34 +85,34 @@ const LoginForm = () => {
 
                         <div className="mb-10">
                             <button type="submit" className="w-full px-4 py-3 bg-indigo-500 hover:bg-indigo-700 rounded-md text-white">
-                                Login
+                               Đăng nhập 
                             </button>
                         </div>
                     </form>
-
-                    {/* <button
-                        onClick={handleGitHubLogin}
-                        className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300"
-                    >
-                        <IoLogoGithub size={20} className="mr-2" />
-                        Login with GitHub
-                    </button> */}
+                    {/* <button> LOGIN GIT */}
                     <GitHubAuth/>
 
-                    {/* <button> */}
+                  {/* </button> LOGIN GOOGLE */}
                     <GoogleAuth />
-                    {/* </button> */}
+                   
 
-                    {/* <Link to="/forgot-password" className="mt-4 block text-base text-[#adadad] hover:text-primary hover:underline">
-                        Forgot Password?
-                    </Link> */}
+                    <p className="text-center mt-3">
+          <button
+            onClick={() => navigate("/forgort-password")} // Chuyển hướng
+            className="text-blue-500 hover:underline"
+          >
+            Quên mật khẩu?
+          </button>
+        </p>
 
-                    <p className="text-base text-[#adadad] mt-2">
-                        Don't have an account?
-                        {/* <Link to="/register" className="text-primary hover:underline ml-1">
-                            Sign Up
-                        </Link> */}
-                    </p>
+        <p className="text-center mt-3">
+          <button
+            onClick={() => navigate("/register")} // Chuyển hướng
+            className="text-blue-500 hover:underline"
+          >
+           Đăng ký tài khoảnkhoản
+          </button>
+        </p>
                 </div>
             </div>
         </div>
