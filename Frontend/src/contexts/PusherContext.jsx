@@ -11,7 +11,7 @@ export const PusherProvider = ({ children }) => {
 
     useEffect(() => {
         // Khởi tạo Pusher với key và cluster
-        const pusherClient = new Pusher("526535f4e858cf0c70e9", {
+        const pusherClient = new Pusher("011ba3f5ec97a6948d45", {
             cluster: "ap1",
             forceTLS: true,
             encrypted: true,

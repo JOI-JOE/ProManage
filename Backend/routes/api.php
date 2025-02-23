@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\ColorController;
+
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\api\CardController;
 use App\Http\Controllers\Api\ChecklistController;
 use App\Http\Controllers\Api\ChecklistItemController;
+use App\Http\Controllers\Api\ColorController;
 use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\WorkspaceController;
@@ -133,6 +134,8 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::put('{boardId}', [BoardController::class, 'update']); // Cập nhật board
     Route::delete('{boardId}', [BoardController::class, 'destroy']); // Xóa board
 });
+
+Route::get('/colors',[ColorController::class , 'index']);
 
 Route::prefix('boards/{id}/')->group(function () {
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);

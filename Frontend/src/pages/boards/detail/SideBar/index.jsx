@@ -33,28 +33,7 @@ const SideBar = () => {
     const { workspaceId, boardId } = useParams();
     const navigate = useNavigate();
 
-    // useEffect(() => {
-    //     if (workspaceId) {
-    //         fetch(`http://127.0.0.1:8000/api/workspaces/${workspaceId}/boards`)
-    //             .then((response) => response.json())
-    //             .then((data) => {
-    //                 if (data.success) {
-    //                     setBoards(data.boards);
-
-    //                     // Nếu boardId không hợp lệ hoặc không tồn tại trong workspace, điều hướng
-    //                     const isBoardValid = data.boards.some((board) => board.id === Number(boardId));
-
-    //                     if (!isBoardValid && data.boards.length > 0) {
-    //                         navigate(`/workspaces/${workspaceId}/boards/${data.boards[0].id}`);
-    //                     } else if (data.boards.length === 0) {
-    //                         navigate(`/workspaces/${workspaceId}`);
-    //                     }
-    //                 }
-    //             })
-    //             .catch((error) => console.error("Lỗi khi lấy boards:", error));
-    //     }
-    // }, [workspaceId, boardId, navigate]);
-
+   
     const toggleSettings = () => {
         setOpenSettings(!openSettings);
     };
