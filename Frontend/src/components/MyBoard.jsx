@@ -17,13 +17,13 @@ const MyBoard = ({ board }) => { // Nhận dữ liệu board qua props
                 sx={{
                     width: "180px",
                     height: "100px",
-                    backgroundColor: "#9c2750",
+                    backgroundColor: board.thumbnail || "#1693E1",
                     borderRadius: "8px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    "&:hover": { backgroundColor: "#9A436D" },
+                    "&:hover": { opacity: 0.8 },
                     position: 'relative' // For absolute positioning of the star
                 }}
                 onMouseEnter={() => setHoveredItem(1)}
