@@ -122,6 +122,7 @@ Route::prefix('lists')->group(function () {
     Route::put('/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
     Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
     Route::post('/dragging', [ListController::class, 'dragging']);
+    Route::get('/{id}/detail', [ListController::class, 'getListById']);
 });
 
 
