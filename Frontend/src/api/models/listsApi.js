@@ -17,6 +17,21 @@ export const getListByBoardId = async (boardId) => {
     }
 };
 
+export const getListDetail = async (listId) => {
+    try {
+        const response = await authClient.get(`/lists/${listId}/detail`);
+        console.log("API response:", response); // Kiểm tra toàn bộ response
+        if (response.data) {
+            return response.data;
+        } else {
+            console.error("No data returned from API.");
+            throw new Error("No data from API.");
+        }
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        throw error;
+    }
+};
 
 
 

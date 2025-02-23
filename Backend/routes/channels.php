@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -19,6 +20,11 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 
 Broadcast::channel('board.{boardId}', function ($user, $boardId) {
     return true;
+});
+
+Broadcast::channel('list.{listId}', function ($user, $listId) {
+    // Kiểm tra nếu người dùng có quyền truy cập vào danh sách với listId này
+    return true; // Bạn có thể thay đổi điều này tùy thuộc vào logic của mình (ví dụ, check quyền sở hữu danh sách)
 });
 
 Broadcast::channel('cards-channel', function () {

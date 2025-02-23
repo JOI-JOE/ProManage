@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ListArchived;
 use App\Events\ListClosed;
+use App\Events\ListCreated;
+use App\Events\ListNameUpdated;
 use App\Events\ListReordered;
 use App\Http\Requests\ListRequest;
 use App\Http\Requests\ListUpdateNameRequest;
@@ -42,9 +45,12 @@ class ListController extends Controller
                 'name' => $validated['name'],
                 'closed' => false,
                 'position' => $newPosition,
-                'board_id' =>  $boardId,
+                'board_id' => $boardId,
                 'color_id' => $validated['color_id'] ?? null,
             ]);
+
+
+            broadcast(new ListCreated($list));
 
             // Đảm bảo tất cả danh sách trong board có vị trí đúng
             $this->normalizePositions($boardId);
@@ -83,6 +89,8 @@ class ListController extends Controller
         $list->name = $validated['name'];
         $list->save();
 
+        broadcast(new ListNameUpdated($list)); 
+
         return response()->json($list);
     }
 
@@ -99,7 +107,7 @@ class ListController extends Controller
         $list->closed = !$list->closed;
         $list->save();
 
-        event(new ListClosed($list));
+        broadcast(new ListArchived($list));
 
         return response()->json([
             'message' => 'List archived successfully',
@@ -195,4 +203,20 @@ class ListController extends Controller
             'boards' => $boards
         ], 200);
     }
+
+    public function getListById($id)
+    {
+        // Tìm danh sách dựa trên listId
+        $list = ListBoard::find($id);
+
+        if (!$list) {
+            return response()->json(['message' => 'List not found'], 404);
+        }
+
+        return response()->json($list);
+    }
+
+
+
+
 }
