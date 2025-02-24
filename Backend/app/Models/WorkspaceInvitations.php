@@ -12,14 +12,11 @@ class WorkspaceInvitations extends Model
     protected $fillable = [
         'workspace_id',
         'invited_member_id',
-        'invitation_token',
-        'invitation_message',
-        'accept_unconfirmed',
         'email',
-        'invitation_type',
-        'invitation_status',
-        'expires_at',
-        'invited_by_user_id',
+        'invitation_message',
+        'invite_token',
+        'accept_unconfirmed',
+        'invited_by_member_id',
     ];
 
 
