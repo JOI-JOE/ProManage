@@ -16,8 +16,6 @@ import WorkspaceDetailForm from "./WorkspaceDetailForm";
 import MyBoard from "../../../components/MyBoard";
 
 const HomeWorkspace = ({ workspace }) => {
-
-    const [hoveredItem, setHoveredItem] = useState(null);
     const [isFormVisible, setFormVisible] = useState(false); // Quản lý hiển thị form
 
     console.log(workspace);
@@ -46,7 +44,9 @@ const HomeWorkspace = ({ workspace }) => {
                     }}
                 >
                     <Avatar sx={{ bgcolor: "#5D87FF", width: "80px", height: "80px" }}>
-                        {workspace.initial}
+                        <span style={{ fontSize: "30px", fontWeight: "bold" }}>
+                            {workspace.name.charAt(0).toUpperCase()}
+                        </span>
                     </Avatar>
                     <Box>
                         <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
@@ -108,11 +108,17 @@ const HomeWorkspace = ({ workspace }) => {
 
             <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {/* Bảng Trello của tôi */}
-                {workspace.boards.map((board) => (
-                    <ListItem key={board.link} sx={{ width: "auto", padding: 0 }}>
-                        <MyBoard key={board.link} board={board} id={`recent-board-${board.id}`} />
-                    </ListItem>
-                ))}
+                {workspace.boards && workspace.boards.length > 0 ? (
+                    workspace.boards.map((board) => (
+                        <ListItem key={board.link} sx={{ width: "auto", padding: 0 }}>
+                            <MyBoard key={board.link} board={board} id={`recent-board-${board.id}`} />
+                        </ListItem>
+                    ))
+                ) : (
+                    <Typography variant="body2" color="textSecondary">
+                        Không có bảng nào.
+                    </Typography>
+                )}
 
                 {/* Tạo bảng mới */}
                 <ListItem sx={{ width: "auto", padding: 0 }}>

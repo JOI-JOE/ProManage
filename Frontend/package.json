@@ -25,7 +25,7 @@
     "axios": "^1.7.9",
     "date-fns": "^4.1.0",
     "jwt-decode": "^4.0.0",
-    "laravel-echo": "^2.0.0",
+    "laravel-echo": "^2.0.2",
     "lodash": "^4.17.21",
     "pusher-js": "^8.4.0",
     "quill": "^2.0.3",

@@ -11,56 +11,64 @@ import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
+
+import GitHubAuth from "../pages/Auth/GitHubAuth";
+import ForgotPassword from "../pages/auth/ForgortPassword";
+import Register from "../pages/auth/Register";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
-import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 // import LoginForm from "../pages/auth/LoginForm";
 
 const router = createBrowserRouter([
-  {
-    path: "/", // Path RIÊNG BIỆT cho GuestLayout
-    element: <GuestLayout />,
-    children: [
-      {
-        path: "login",
-        element: <LoginForm />,
-      },
-      {
-        path: "login/google", // Add this route!
-        element: <GoogleAuth />, // Use your GoogleAuth component here
-      },
-      {
-        path: "auth/callback", // Add this route!
-        element: <GitHubAuth />, // Use your GoogleAuth component here
-      },
-    ],
-  },
-  {
-    path: "/", // Parent route
-    element: <DefaultLayout />,
-    children: [
-      {
-        path: "home", // Or perhaps redirect if you have a separate home page
-        element: <Home />,
-      },
-      {
-        element: <Dashboard />,
+    {
+        path: "/", // Path RIÊNG BIỆT cho GuestLayout
+        element: <GuestLayout />,
         children: [
-          { path: "u/:username/boards", element: <Boards /> },
-          { path: "w/:displayName/home", element: <Workspaces /> },
+            {
+                path: "login",
+                element: <LoginForm />,
+            },
+            {
+                path: "login/google", // Add this route!
+                element: <GoogleAuth />, // Use your GoogleAuth component here
+            },
+            {
+                path: "auth/callback", // Add this route!
+                element: <GitHubAuth />, // Use your GoogleAuth component here
+            },
         ],
-      },
-      {
-        path: "",
-        element: <BoardDetail />,
+    },
+    {
+        path: "/", // Parent route
+        element: <DefaultLayout />,
         children: [
+            {
+                path: "home", // Or perhaps redirect if you have a separate home page
+                element: <Home />,
+            },
+            {
+                element: <Dashboard />,
+                children: [
+                    { path: "u/:username/boards", element: <Boards /> },
+                    { path: "w/:displayName/home", element: <Workspaces /> }
+                ]
+            },
+            {
+                path: "b/:id/:displayName",
+                element: <BoardDetail />,
+                children: [
+                    {
+                        path: "",
+                        element: <BoardContent />
+                    }
+                ]
+            }
+        ]
+    },
+
           {
-            path: "b/:boardId/:name",
+            path: "",
             element: <BoardContent board={mockData?.board} />,
-          },
-          {
-            path: "c/:cardId/:name",
-            element: <CardModal />,
           },
         ],
       },
