@@ -5,41 +5,49 @@ import {
   DialogContent,
   DialogTitle,
   Button,
-  TextField,
   Typography,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
-  IconButton,
   Grid,
   Divider,
   Box,
   Avatar,
+  TextField,
 } from "@mui/material";
-import TimerIcon from "@mui/icons-material/Timer";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import "./CardDetail.css"; // Import custom CSS for scrollbar
-
+import MemberList from "./childComponent_CardDetail/member";
+import TaskModal from "./childComponent_CardDetail/Task";
+import LabelList from "./childComponent_CardDetail/Label";
+import AttachmentModal from "./childComponent_CardDetail/Attached";
+import MoveCardModal from "./childComponent_CardDetail/Move";
 const CardModal = () => {
-  const { name } = useParams(); // Lấy tên card từ URL
+  const { name } = useParams();
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(true);
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
+  const [isMemberListOpen, setIsMemberListOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [tasks, setTasks] = useState([]);
+  const [isLabelListOpen, setIsLabelListOpen] = useState(false);
+  const [selectedLabels, setSelectedLabels] = useState([]);
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
+  const [isMoveCardModalOpen, setIsMoveCardModalOpen] = useState(false); // State để mở/đóng modal di chuyển
+
+  const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
   const loggedInUser = {
-    name: "Current User", // Replace with actual logged-in user name
-    avatar: "https://via.placeholder.com/40", // Replace with actual avatar URL
+    name: "Current User",
+    avatar: "https://via.placeholder.com/40",
   };
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      // Logic to save the description
-      console.log("Description saved:", description);
       setIsEditingDescription(false);
     }
   };
@@ -61,14 +69,16 @@ const CardModal = () => {
     }
   };
 
+  const handleAddTask = (taskName) => {
+    setTasks([...tasks, { id: tasks.length + 1, name: taskName }]);
+  };
+
+  const handleSelectLabel = (newSelectedLabels) => {
+    setSelectedLabels(newSelectedLabels);
+  };
+
   return (
-    <Dialog
-      open={true}
-      onClose={() => navigate(-1)}
-      fullWidth
-      maxWidth="md"
-      sx={{ "& .MuiDialog-paper": { minHeight: "80vh" } }} // Đặt chiều cao
-    >
+    <Dialog open={true} onClose={() => navigate(-1)} fullWidth maxWidth="md">
       <DialogTitle>
         <Typography variant="h6" fontWeight="bold">
           {name || "Task4"}
@@ -78,11 +88,10 @@ const CardModal = () => {
           <span style={{ color: "#0079bf", fontWeight: "bold" }}>Doing</span>
         </Typography>
       </DialogTitle>
-      <DialogContent className="custom-scrollbar">
+      <DialogContent>
         <Grid container spacing={2}>
           {/* Cột trái (Nội dung chính) */}
           <Grid item xs={8}>
-            {/* Mô tả */}
             <Typography variant="subtitle1" fontWeight="bold">
               Description
             </Typography>
@@ -142,85 +151,71 @@ const CardModal = () => {
                   alt={cmt.user.name}
                   sx={{ mr: 1, width: 30, height: 30, fontSize: "0.7rem" }}
                 />
-                <Typography variant="body2">
+                <Typography
+                  variant="body2"
+                  style={{
+                    wordWrap: "break-word", // Giữ từ dài không bị tràn
+                    whiteSpace: "pre-wrap", // Giữ lại dòng mới
+                    overflowWrap: "break-word", // Đảm bảo từ dài sẽ ngắt xuống dòng
+                    wordBreak: "break-word", // Ngắt từ dài ra nhiều dòng nếu cần thiết
+                  }}
+                >
                   <strong>{cmt.user.name}:</strong> {cmt.text}
                 </Typography>
               </Box>
             ))}
-
-            {/* Activity */}
-            <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: "bold" }}>
-              Activity
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Yvonne Gardner Ivy</strong> added this card to{" "}
-              <strong>Doing</strong>
-            </Typography>
           </Grid>
 
           {/* Cột phải (Sidebar) */}
           <Grid item xs={4}>
             <Box sx={{ borderLeft: "1px solid #ddd", pl: 2 }}>
-              {/* Add Section */}
               <Typography variant="subtitle1" fontWeight="bold">
                 Add
               </Typography>
               <List>
                 <ListItem disablePadding>
                   <ListItemButton>
-                    <ListItemText primary="Members" />
+                    <ListItemText primary="Tham gia" />
                   </ListItemButton>
                 </ListItem>
+
                 <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemText primary="Labels" />
+                  <ListItemButton onClick={() => setIsMemberListOpen(true)}>
+                    <ListItemText primary="Thành viên" />
                   </ListItemButton>
                 </ListItem>
+
                 <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemText primary="Checklist" />
+                  <ListItemButton onClick={() => setIsLabelListOpen(true)}>
+                    <ListItemText primary="Nhãn" />
                   </ListItemButton>
                 </ListItem>
+
                 <ListItem disablePadding>
                   <ListItemButton>
-                    <ListItemText primary="Due Date" />
+                    <ListItemText
+                      primary="Việc cần làm"
+                      onClick={() => setIsTaskModalOpen(true)}
+                    />
+                  </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding>
+                  <ListItemButton
+                    onClick={() => setIsAttachmentModalOpen(true)}
+                  >
+                    <ListItemText primary="Đính kèm" />
                   </ListItemButton>
                 </ListItem>
               </List>
-
               <Divider sx={{ my: 1 }} />
-
-              {/* Actions Section */}
               <Typography variant="subtitle1" fontWeight="bold">
-                Actions
+                Thao tác
               </Typography>
               <List>
                 <ListItem disablePadding>
-                  <ListItemButton>
-                    <IconButton>
-                      <TimerIcon color="primary" />
-                    </IconButton>
-                    <ListItemText primary="Start timer" />
-                  </ListItemButton>
-                </ListItem>
-                <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemText primary="Move" />
-                  </ListItemButton>
-                </ListItem>
-                <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemText primary="Copy" />
-                  </ListItemButton>
-                </ListItem>
-                <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemText primary="Watch" />
-                  </ListItemButton>
-                </ListItem>
-                <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemText primary="Archive" />
+                  <ListItemButton onClick={() => setIsMoveCardModalOpen(true)}>
+                    <ListItemText primary="Di chuyển" />
                   </ListItemButton>
                 </ListItem>
               </List>
@@ -229,10 +224,43 @@ const CardModal = () => {
         </Grid>
       </DialogContent>
 
-      {/* Actions */}
       <DialogActions>
         <Button onClick={() => navigate(-1)}>Close</Button>
       </DialogActions>
+
+      {/* Component Member List */}
+      <MemberList
+        open={isMemberListOpen}
+        onClose={() => setIsMemberListOpen(false)}
+        members={members}
+      />
+
+      {/* Component Task Modal */}
+      <TaskModal
+        open={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onSave={handleAddTask}
+      />
+
+      {/* Component Label List */}
+      <LabelList
+        open={isLabelListOpen}
+        onClose={() => setIsLabelListOpen(false)}
+        selectedLabels={selectedLabels}
+        onSelectLabel={handleSelectLabel}
+      />
+
+      {/* Component Attachment Modal */}
+      <AttachmentModal
+        open={isAttachmentModalOpen}
+        onClose={() => setIsAttachmentModalOpen(false)}
+      />
+
+      {/* Component Move Card Modal */}
+      <MoveCardModal
+        open={isMoveCardModalOpen}
+        onClose={() => setIsMoveCardModalOpen(false)}
+      />
     </Dialog>
   );
 };
