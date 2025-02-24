@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\WorkspaceRequest;
 use App\Http\Resources\BoardResource;
 use App\Http\Resources\WorkspaceResource;
-use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,11 +34,11 @@ class WorkspaceController extends Controller
         }
     }
 
-    public function showDetailWorkspace($display_name)
+    public function showDetailWorkspace($name)
     {
         try {
             // Tìm workspace theo display_name
-            $workspace = Workspace::where('display_name', $display_name)->firstOrFail();
+            $workspace = Workspace::where('name', $name)->firstOrFail();
 
             // Trả về dữ liệu workspace nếu tìm thấy
             return new WorkspaceResource($workspace);
