@@ -6,8 +6,8 @@ const existingShortNames = ["abc", "xyz", "test"];
 
 const WorkspaceDetailForm = ({ workspaceInfo, onCancel }) => {
   const initialFormData = {
-    name: workspaceInfo ? workspaceInfo.name : "",
-    shortName: workspaceInfo ? workspaceInfo.display_name : "",
+    name: workspaceInfo ? workspaceInfo.display_name : "",
+    shortName: workspaceInfo ? workspaceInfo.name : "",
     description: workspaceInfo ? workspaceInfo.desc : "",
   };
 

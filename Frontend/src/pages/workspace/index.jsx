@@ -1,10 +1,10 @@
 import React from "react";
 import HomeWorkspace from "./home";
 import { useParams } from "react-router-dom";
-import { useGetWorkspaceByDisplayName } from "../../hooks/useWorkspace";
+import { useGetWorkspaceByName } from "../../hooks/useWorkspace";
 
 const Workspaces = () => {
-    const { displayName } = useParams(); // Lấy displayName từ URL
+    const { name } = useParams(); // Lấy displayName từ URL
 
     // Sử dụng hook useGetWorkspaceByDisplayName để fetch dữ liệu từ API
     const {
@@ -12,7 +12,7 @@ const Workspaces = () => {
         isLoading,
         isError,
         error,
-    } = useGetWorkspaceByDisplayName(displayName);
+    } = useGetWorkspaceByName(name);
 
     // Hiển thị loading nếu đang fetch dữ liệu
     if (isLoading) {

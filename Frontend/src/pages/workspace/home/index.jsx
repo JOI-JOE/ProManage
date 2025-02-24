@@ -43,7 +43,7 @@ const HomeWorkspace = ({ workspace }) => {
                 >
                     <Avatar sx={{ bgcolor: "#5D87FF", width: "80px", height: "80px" }}>
                         <span style={{ fontSize: "30px", fontWeight: "bold" }}>
-                            {workspace.name.charAt(0).toUpperCase()}
+                            {workspace.display_name.charAt(0).toUpperCase()}
                         </span>
                     </Avatar>
                     <Box>
@@ -52,7 +52,7 @@ const HomeWorkspace = ({ workspace }) => {
                                 fontWeight="bold"
                                 sx={{ whiteSpace: "nowrap", fontSize: 25 }}
                             >
-                                {workspace.name}
+                                {workspace.display_name}
                             </Typography>
                             <IconButton
                                 onClick={toggleFormVisibility}

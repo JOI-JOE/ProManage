@@ -6,9 +6,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 // } from "../api/workspacesApi"; // Import các hàm API
 import {
   getWorkspacesAll,
-  getWorkspaceByDisplayName,
   createWorkspace,
   updateWorkspaceInfo,
+  getWorkspaceByName,
 } from "../api/models/workspacesApi";
 
 /**
@@ -25,11 +25,11 @@ export const useWorkspaces = () => {
   });
 };
 
-export const useGetWorkspaceByDisplayName = (displayName) => {
+export const useGetWorkspaceByName = (name) => {
   return useQuery({
-    queryKey: ["workspace", displayName], // Key để cache dữ liệu
-    queryFn: () => getWorkspaceByDisplayName(displayName),
-    enabled: !!displayName, // Chỉ gọi API nếu displayName tồn tại
+    queryKey: ["workspace", name], // Key để cache dữ liệu
+    queryFn: () => getWorkspaceByName(name),
+    enabled: !!name, // Chỉ gọi API nếu displayName tồn tại
     onError: (error) => {
       console.error("Lỗi khi lấy chi tiết workspace:", error);
     },

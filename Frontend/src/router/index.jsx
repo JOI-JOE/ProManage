@@ -40,9 +40,9 @@ const router = createBrowserRouter([
                 element: <GitHubAuth />, // Use your GoogleAuth component here
             },
             {
-              path: "/forgort-password", // Add this route!
-              element: <ForgotPassword />, // Use your GoogleAuth component here
-          },
+                path: "/forgort-password", // Add this route!
+                element: <ForgotPassword />, // Use your GoogleAuth component here
+            },
         ],
     },
     {
@@ -57,7 +57,7 @@ const router = createBrowserRouter([
                 element: <Dashboard />,
                 children: [
                     { path: "u/:username/boards", element: <Boards /> },
-                    { path: "w/:displayName/home", element: <Workspaces /> }
+                    { path: "w/:name/home", element: <Workspaces /> }
                 ]
             },
             {
@@ -81,8 +81,8 @@ const router = createBrowserRouter([
         ]
     },
 
-  
-    ]);
-  
-    
+
+]);
+
+
 export default router;
