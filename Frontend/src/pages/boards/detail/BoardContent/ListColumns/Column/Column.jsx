@@ -1,4 +1,4 @@
-import { useState } from "react";
+// import { useState } from "react";
 import { Box, Button, TextField, Tooltip, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
@@ -18,6 +18,11 @@ import { mapOrder } from "../../../../../../../utils/sort";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "react-toastify";
+import CopyColumn from "./Menu/CoppyColumn";
+import ConfirmDeleteDialog from "./Menu/DeleteColumn";
+import ArchiveColumnDialog from "./Menu/Archive";
+import { useListById } from '../../../../../../hooks/useList';
+import React, { useState, useEffect } from 'react';
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -57,8 +62,71 @@ const StyledMenu = styled((props) => (
   },
 }));
 
-const Column = ({ column }) => {
-  // Thêm card mới
+const Column = ({ list }) => {
+
+
+
+  const { data: listDetail, isLoading, error } = useListById(list.id);
+
+
+  const [title, setTitle] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [prevTitle, setPrevTitle] = useState(''); // Lưu giá trị trước đó
+
+  // Cập nhật state khi listDetail thay đổi
+  useEffect(() => {
+      if (listDetail) {
+          setTitle(listDetail.name);
+          setPrevTitle(listDetail.name);
+      }
+  }, [listDetail]);
+
+    // State hiển thị form sao chép cột
+    const[openCopyDialog, setOpenCopyDialog] = useState(false);
+  // State hiển thị form xác nhận xóa
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  // State hiển thị form lưu trữ
+  const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
+
+  //============================================================ COPY======================================================
+
+  // Mở form sao chép khi nhấn vào "Copy"
+  const handleCopyClick = () => {
+    setOpenCopyDialog(true); // Mở form sao chép
+    setAnchorEl(null); // Đóng menu sau khi nhấn vào "Copy"
+  };
+  // Xử lý sao chép cột
+  const handleCopyConfirm = (newTitle) => {
+    console.log("Cột đã sao chép với tên mới:", newTitle);
+    setOpenCopyDialog(false); // Đóng form sao chép sau khi sao chép
+  };
+
+  //============================================================ REMOVE======================================================
+
+  // Mở form xác nhận xóa khi nhấn vào "Remove this column"
+  const handleDeleteClick = () => {
+    setOpenDeleteDialog(true); // Mở form xác nhận xóa
+    setAnchorEl(null); // Đóng menu sau khi nhấn vào "Remove this column"
+  };
+
+  // Xác nhận xóa cột
+  const handleDeleteConfirm = () => {
+    console.log("Cột đã bị xóa");
+    setOpenDeleteDialog(false); // Đóng form sau khi xóa
+  };
+
+  //============================================================ ARCHIVE======================================================
+
+  // Xử lý mở form lưu trữ khi click "Archive this column"
+
+  const handleArchiveClick = () => {
+    setOpenArchiveDialog(true);
+    setAnchorEl(null);
+  };
+
+
+
+  //======================================== Thêm card mới========================================
   const [openCard, setOpenCard] = useState(false);
   const [cardName, setCardName] = useState("");
   const addCard = () => {
@@ -71,6 +139,61 @@ const Column = ({ column }) => {
     setOpenCard(false);
   };
 
+  // Chức năng sửa tiêu đề
+  // const [title, setTitle] = useState(list.name);
+  // const [isEditing, setIsEditing] = useState(false);
+  // const [prevTitle, setPrevTitle] = useState(list.name); // Lưu giá trị trước đó
+
+  const { updateListName, updateClosed } = useListById(list.id);
+
+  // console.log(list.id);
+
+  const handleTitleClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleTitleUpdate = async (e) => {
+    if (e.type === "blur" || (e.type === "keydown" && e.key === "Enter")) {
+      if (!title.trim()) {
+        setTitle(prevTitle); // Trả về giá trị trước đó nếu rỗng
+      } else {
+        // Cập nhật giá trị trước đó nếu có thay đổi
+        setPrevTitle(title);
+        await updateListName(title);
+
+      }
+      setIsEditing(false);
+    }
+  };
+
+  // const handleArchiveClick = () => {
+  //   setOpenArchiveDialog(true);
+  //   setAnchorEl(null);
+  // };
+
+
+  // const handleArchiveColumn = async (event) => {
+  //   try {
+  //     await updateClosed(list.closed);  // Gọi API lưu trữ cột
+  //     toast.success(`Cột "${list.name}" đã được lưu trữ.`);
+  //   } catch (error) {
+  //     toast.error("Có lỗi xảy ra khi lưu trữ cột.");
+  //   }
+  //   setOpenArchiveDialog(false);  // Đóng hộp thoại
+
+  // }
+
+
+
+  const handleArchiveConfirm = async () => {
+    try {
+      await updateClosed(list.id);  // Gọi API lưu trữ cột
+      toast.success(`Cột "${list.name}" đã được lưu trữ.`);
+    } catch (error) {
+      toast.error("Có lỗi xảy ra khi lưu trữ cột.");
+    }
+    setOpenArchiveDialog(false);  // Đóng hộp thoại
+  };
   // Kéo thả
   const {
     attributes,
@@ -79,18 +202,22 @@ const Column = ({ column }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: column._id, data: { ...column } }); //id: là của thư viện, _id:là của DB
+  } = useSortable({ id: String(list.id) }); //id: là của thư viện, _id:là của DB
+
 
   const columnStyle = {
     transform: CSS.Translate.toString(transform),
     transition,
-    height: "100%",
-    opacity: isDragging ? 0.5 : undefined,
+    opacity: isDragging ? 0.5 : undefined, // Giảm độ mờ khi kéo
+    cursor: isDragging ? "grabbing" : "grab",
   };
+
+  // console.log('isDragging:', isDragging); 
 
   //dropdown trong MUI
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -99,12 +226,14 @@ const Column = ({ column }) => {
   };
 
   //Sắp xếp card
-  const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
+  // const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
 
   return (
-    <div ref={setNodeRef} style={columnStyle} {...attributes}>
+    <div ref={setNodeRef} style={columnStyle} {...attributes} {...(isEditing ? {} : listeners)}>
       <Box
-        {...listeners}
+
+        //  {...(isDragging ? listeners : {})} 
+        // {...listeners} 
         sx={{
           minWidth: "245px",
           maxWidth: "245px",
@@ -112,27 +241,63 @@ const Column = ({ column }) => {
           ml: 2,
           borderRadius: "6px",
           height: "fit-content",
-          // maxHeight: (theme) =>
-          //   `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`,
+
         }}
       >
         {/* Colum Header */}
         <Box
           sx={{
             height: (theme) => theme.trello.columnFooterHeight,
-
             p: 2,
-
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
           }}
         >
-          <Typography
-            sx={{ fontWeight: "bold", cursor: "pointer", fontSize: "0.8rem" }}
-          >
-            {column?.title}
-          </Typography>
+          {/* Sửa tiêu đề */}
+          {isEditing ? (
+            <TextField
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onFocus={() => setPrevTitle(title)} // Cập nhật giá trị trước đó khi bắt đầu chỉnh sửa
+              onBlur={handleTitleUpdate}
+              onKeyDown={handleTitleUpdate}
+              // autoFocus
+              variant="outlined"
+              size="small"
+              sx={{
+                height: "20px",
+                width: "200px",
+                "& .MuiInputBase-input": {
+                  fontSize: "0.765rem",
+                  padding: "4px",
+                },
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": {
+                    borderColor: "teal", // Màu viền
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "teal", // Màu viền khi hover
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "teal", // Màu viền khi focus
+                  },
+                },
+              }}
+            />
+          ) : (
+            <Typography
+              sx={{
+                fontWeight: "bold",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+                color: "#333",
+              }}
+              onMouseDown={handleTitleClick}
+            >
+              {title}
+            </Typography>
+          )}
 
           <Box>
             <Tooltip title="More option">
@@ -142,12 +307,11 @@ const Column = ({ column }) => {
                 aria-controls={open ? "basic-menu-column-dropdown" : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? "true" : undefined}
-                // variant="contained"
-                disableElevation
-                onClick={handleClick}
+                onMouseDown={handleClick}
               />
             </Tooltip>
 
+            {/* Nút điều khiển column */}
             <StyledMenu
               id="demo-customized-menu-workspace"
               MenuListProps={{
@@ -155,37 +319,27 @@ const Column = ({ column }) => {
               }}
               anchorEl={anchorEl}
               open={open}
-              onClose={handleClose}
+              onMouseDown={handleClose}
+              {...(!open && { inert: "true" })}
             >
               <MenuItem
-                onClick={handleClose}
-                disableRipple
-                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-              >
-                <AddCardIcon />
-                Add new cart
-              </MenuItem>
-
-              <MenuItem
-                onClick={handleClose}
+                onMouseDown={handleCopyClick}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
                 <ContentCopyIcon />
                 Coppy
               </MenuItem>
-
               <MenuItem
-                onClick={handleClose}
+                onMouseDown={handleClose}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
                 <MoveUpIcon />
                 Move
               </MenuItem>
-
               <MenuItem
-                onClick={handleClose}
+                onMouseDown={handleClose}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
@@ -196,7 +350,7 @@ const Column = ({ column }) => {
               <Divider sx={{ my: 0.5 }} />
 
               <MenuItem
-                onClick={handleClose}
+                onMouseDown={handleArchiveConfirm}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
@@ -204,8 +358,10 @@ const Column = ({ column }) => {
                 Archive this column
               </MenuItem>
 
+
+
               <MenuItem
-                onClick={handleClose}
+                onClick={handleDeleteClick}
                 disableRipple
                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
               >
@@ -217,7 +373,7 @@ const Column = ({ column }) => {
         </Box>
 
         {/* Column List Cart */}
-        <ListCards cards={orderedCards} />
+        {/* <ListCards cards={orderedCards} /> */}
 
         {/* Colum Footer */}
         <Box
@@ -306,6 +462,27 @@ const Column = ({ column }) => {
           )}
         </Box>
       </Box>
+
+      {/* Hiển thị form lưu trữ */}
+      <ArchiveColumnDialog
+        open={openArchiveDialog}
+        onClose={() => setOpenArchiveDialog(false)}
+        onConfirm={handleArchiveConfirm}
+      />
+
+      {/* Hiển thị form sao chép */}
+      <CopyColumn
+        open={openCopyDialog}
+        onClose={() => setOpenCopyDialog(false)}
+        onCopy={handleCopyConfirm}
+      />
+
+      {/* Hiển thị form xác nhận xóa */}
+      <ConfirmDeleteDialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 };

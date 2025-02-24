@@ -23,7 +23,7 @@ class ListRequest extends FormRequest
     {
         return [
             'name'      => 'required|string|max:255',
-            'board_id'  => 'required|exists:boards,id',
+            // 'board_id'  => 'required|exists:boards,id',
             'color_id'  => 'nullable|exists:colors,id',
         ];
     }

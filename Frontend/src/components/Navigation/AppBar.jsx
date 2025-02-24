@@ -29,7 +29,7 @@ import Profile from "./Menus/Profiles";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
-const AppBar = () => {
+const AppBar = ({ username, email }) => {
   const [searchText, setSearchText] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [showUnread, setShowUnread] = useState(false);
@@ -78,7 +78,7 @@ const AppBar = () => {
         <Box
           component={Link}
           // Link fix cứng
-          to="/u/ngoda235/boards"
+          to={`/u/${username}/boards`}
           sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
         >
           <SvgIcon
@@ -181,7 +181,7 @@ const AppBar = () => {
             }}
           />
         </Tooltip>
-        <Profile />
+        <Profile email={email} />
 
         {/* Popover hiển thị thông báo */}
         <Popover

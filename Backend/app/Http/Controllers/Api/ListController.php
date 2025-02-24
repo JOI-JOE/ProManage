@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-
+use App\Events\ListArchived;
 use App\Events\ListClosed;
-use App\Events\ListDragging;
+use App\Events\ListCreated;
+use App\Events\ListNameUpdated;
 use App\Events\ListReordered;
 use App\Http\Requests\ListRequest;
 use App\Http\Requests\ListUpdateNameRequest;
@@ -22,8 +23,8 @@ class ListController extends Controller
     public function index($boardId)
     {
         $lists = ListBoard::where('board_id', $boardId)
-        ->where('closed', false)
-        ->orderBy('position')->get();
+            ->where('closed', false)
+            ->orderBy('position')->get();
         return response()->json($lists);
     }
 
@@ -31,21 +32,29 @@ class ListController extends Controller
     public function store(ListRequest $request)
     {
         try {
-            $validated = $request->validated();
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+            ]);
 
-            $maxPosition = ListBoard::where('board_id', $validated['board_id'])->max('position');
+            $boardId = $request->route('boardId');
+
+            $maxPosition = ListBoard::where('board_id', $boardId)->max('position');
             $newPosition = $maxPosition !== null ? $maxPosition + 1 : 1;
 
             $list = ListBoard::create([
                 'name' => $validated['name'],
                 'closed' => false,
                 'position' => $newPosition,
-                'board_id' => $validated['board_id'],
+                'board_id' => $boardId,
                 'color_id' => $validated['color_id'] ?? null,
             ]);
 
+
+            broadcast(new ListCreated($list));
+
             // Đảm bảo tất cả danh sách trong board có vị trí đúng
-            $this->normalizePositions($validated['board_id']);
+            $this->normalizePositions($boardId);
+
             return response()->json($list, 201);
         } catch (\Exception $e) {
             Log::error('Lỗi khi thêm mới danh sách: ' . $e->getMessage());
@@ -80,6 +89,8 @@ class ListController extends Controller
         $list->name = $validated['name'];
         $list->save();
 
+        broadcast(new ListNameUpdated($list)); 
+
         return response()->json($list);
     }
 
@@ -96,7 +107,7 @@ class ListController extends Controller
         $list->closed = !$list->closed;
         $list->save();
 
-        event(new ListClosed($list));
+        broadcast(new ListArchived($list));
 
         return response()->json([
             'message' => 'List archived successfully',
@@ -104,41 +115,49 @@ class ListController extends Controller
         ]);
     }
 
-    public function dragging(Request $request)
-    {
-        broadcast(new ListDragging($request->board_id, $request->dragging_list_id, $request->position));
-        return response()->json(['message' => 'Dragging event sent']);
-    }
-
     public function reorder(Request $request)
     {
-
         $validatedData = $request->validate([
-            'board_id' => 'required|exists:boards,id', // Đảm bảo board_id tồn tại
-            'positions' => 'required|array',
-            'positions.*.id' => 'required|exists:list_boards,id',
-            'positions.*.position' => 'required|integer',
+            'board_id' => 'required|exists:boards,id|integer', // Kiểm tra board_id có tồn tại không
+            'positions' => 'required|array', // Đảm bảo positions là mảng
+            'positions.*.id' => 'required|exists:list_boards,id|integer', // Kiểm tra id của từng list có tồn tại
+            'positions.*.position' => 'required|integer', // Đảm bảo position là số
         ]);
 
         $boardId = $validatedData['board_id'];
+        $updatedPositions = $validatedData['positions'];
 
-        DB::transaction(function () use ($request) {
-            foreach ($request->positions as $positionData) {
-                ListBoard::where('id', $positionData['id'])->update(['position' => $positionData['position']]);
-            }
-        });
+        try {
+            DB::transaction(function () use ($updatedPositions) {
+                foreach ($updatedPositions as $positionData) {
+                    // Cập nhật vị trí của từng danh sách (list)
+                    ListBoard::where('id', $positionData['id'])->update(['position' => $positionData['position']]);
+                }
+            });
 
-        $updatedLists = ListBoard::select('id', 'name', 'position')
-            ->where('board_id', $boardId)
-            ->where('closed', false)
-            ->orderBy('position')
-            ->get();
+            // Lấy danh sách sau khi cập nhật từ DB
+            $updatedLists = ListBoard::select('id', 'name', 'position')
+                ->where('board_id', $boardId)
+                ->where('closed', false)
+                ->orderBy('position')
+                ->get();
 
+            broadcast(new ListReordered($boardId, $updatedLists));
 
-        broadcast(new ListReordered($request->board_id, $updatedLists));
-
-        return response()->json(['message' => 'List positions updated successfully']);
+            return response()->json([
+                'message' => 'List positions updated successfully',
+                'updated_lists' => $updatedLists
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Có lỗi xảy ra khi cập nhật vị trí danh sách',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
+
+
+
 
 
     public function updateColor(Request $request, string $id)
@@ -184,4 +203,20 @@ class ListController extends Controller
             'boards' => $boards
         ], 200);
     }
+
+    public function getListById($id)
+    {
+        // Tìm danh sách dựa trên listId
+        $list = ListBoard::find($id);
+
+        if (!$list) {
+            return response()->json(['message' => 'List not found'], 404);
+        }
+
+        return response()->json($list);
+    }
+
+
+
+
 }
