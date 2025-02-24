@@ -18,8 +18,6 @@ import MyBoard from "../../../components/MyBoard";
 const HomeWorkspace = ({ workspace }) => {
     const [isFormVisible, setFormVisible] = useState(false); // Quản lý hiển thị form
 
-    console.log(workspace);
-
     const toggleFormVisibility = () => {
         setFormVisible(!isFormVisible);
     };
@@ -84,7 +82,12 @@ const HomeWorkspace = ({ workspace }) => {
             )}
 
             {/* Form hiển thị khi bấm Edit */}
-            {isFormVisible && <WorkspaceDetailForm />}
+            {isFormVisible && (
+                <WorkspaceDetailForm
+                    workspaceInfo={workspace}
+                    onCancel={toggleFormVisibility} // Truyền hàm đóng form
+                />
+            )}
 
             {/* Danh sách bảng Trello */}
             <ListItem
@@ -110,8 +113,8 @@ const HomeWorkspace = ({ workspace }) => {
                 {/* Bảng Trello của tôi */}
                 {workspace.boards && workspace.boards.length > 0 ? (
                     workspace.boards.map((board) => (
-                        <ListItem key={board.link} sx={{ width: "auto", padding: 0 }}>
-                            <MyBoard key={board.link} board={board} id={`recent-board-${board.id}`} />
+                        <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                            <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
                         </ListItem>
                     ))
                 ) : (
@@ -141,8 +144,8 @@ const HomeWorkspace = ({ workspace }) => {
                     </Box>
                 </ListItem>
             </List>
-        </Box >
+        </Box>
     );
-}
+};
 
-export default HomeWorkspace
+export default HomeWorkspace;

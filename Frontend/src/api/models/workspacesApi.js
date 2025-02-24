@@ -33,3 +33,16 @@ export const createWorkspace = async (data) => {
     throw error;
   }
 };
+
+export const updateWorkspaceInfo = async (id, data) => {
+  try {
+    const response = await authClient.put(`/workspaces/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Lỗi khi cập nhật workspace:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};

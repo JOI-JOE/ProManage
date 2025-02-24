@@ -8,6 +8,7 @@ import {
   getWorkspacesAll,
   getWorkspaceByDisplayName,
   createWorkspace,
+  updateWorkspaceInfo,
 } from "../api/models/workspacesApi";
 
 /**
@@ -46,6 +47,25 @@ export const useCreateWorkspace = () => {
     },
     onError: (error) => {
       console.error("Lỗi khi tạo workspace:", error);
+    },
+  });
+};
+
+export const useUpdateInforWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const updatedWorkspace = await updateWorkspaceInfo(id, data);
+      return updatedWorkspace; // Đảm bảo return dữ liệu mới từ server
+    },
+    onSuccess: (data) => {
+      console.log("Workspace đã được cập nhật:", data);
+      // Invalidate query để làm mới dữ liệu
+      queryClient.invalidateQueries(["workspaces", data.id]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật workspace:", error);
     },
   });
 };

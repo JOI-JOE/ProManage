@@ -125,7 +125,7 @@ Route::prefix('lists')->group(function () {
 });
 
 
-Route::post('/createBoard',[BoardController::class ,'store'])->middleware('auth:sanctum');
+Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 // Routes quản lý bảng
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'index']); // Lấy danh sách boards
@@ -135,7 +135,7 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::delete('{boardId}', [BoardController::class, 'destroy']); // Xóa board
 });
 
-Route::get('/colors',[ColorController::class , 'index']);
+Route::get('/colors', [ColorController::class, 'index']);
 
 Route::prefix('boards/{id}/')->group(function () {
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
@@ -198,14 +198,14 @@ Route::prefix('/{cardId}/attachments')->group(function () {
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']); // Đặt tệp làm ảnh bìa
 });
 // checklists
-Route::get('/cards/{cardId}/checklists', [ChecklistController::class, 'index']);// lấy danh sách checkist theo card
-Route::post('/cards/{cardId}/checklists', [ChecklistController::class, 'store']);// thêm mới checkist theo card
-Route::put('/checklists/{id}', [ChecklistController::class, 'update']);// cập nhật checklist
-Route::delete('/checklists/{id}', [ChecklistController::class, 'destroy']);// xóa checklists
+Route::get('/cards/{cardId}/checklists', [ChecklistController::class, 'index']); // lấy danh sách checkist theo card
+Route::post('/cards/{cardId}/checklists', [ChecklistController::class, 'store']); // thêm mới checkist theo card
+Route::put('/checklists/{id}', [ChecklistController::class, 'update']); // cập nhật checklist
+Route::delete('/checklists/{id}', [ChecklistController::class, 'destroy']); // xóa checklists
 // checklist_item
-Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'index']);// lấy danh sách checkist theo card
-Route::post('/checklist/{checklistId}/item', [ChecklistItemController::class, 'store']);// thêm mới checkist theo card
-Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']);// cập nhật tên của checklistitem
+Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'index']); // lấy danh sách checkist theo card
+Route::post('/checklist/{checklistId}/item', [ChecklistItemController::class, 'store']); // thêm mới checkist theo card
+Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']); // cập nhật tên của checklistitem
 Route::put('/item/{id}/completed', [ChecklistItemController::class, 'updateStatus']);// cập nhật trạng thái hoàn thành của checklistitem
 
 // Route::delete('/checklists/{id}', [ChecklistItemController::class, 'destroy']);// xóa checklists

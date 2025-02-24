@@ -140,25 +140,34 @@ class WorkspaceController extends Controller
      * cập nhật các trường như name, display_name, desc
      * nó có sử dụng realtime event để cập nhật thông tin cho các thành viên trong workspace
      */
-    public function updateWorkspaceInfo(WorkspaceRequest $request, Workspace $workspace)
+    public function updateWorkspaceInfo(Request $request, $id)
     {
-        if ($workspace) {
+        // Tìm workspace dựa trên ID
+        $workspace = Workspace::find($id);
 
-            $validatedData = $request->validated();
-
-            // Cập nhật organization với dữ liệu đã được validate
-            $workspace->update($validatedData);
-
-
+        // Nếu không tìm thấy workspace, trả về lỗi 404
+        if (!$workspace) {
             return response()->json([
-                'message' => 'Workspace updated successfully',
-                'data' => new WorkspaceResource($workspace),
-            ], 200); // 200 OK
-
-        } else {
-            return response()->json(['error' => 'Workspace not found'], 404);
+                'message' => 'Workspace not found.',
+            ], 404);
         }
+
+        // Validate dữ liệu đầu vào
+        $validatedData = $request->validate([
+            'name' => 'sometimes|string|max:255', // 'sometimes' để cho phép trường này không bắt buộc
+            'display_name' => 'required|string|max:50|unique:workspaces,display_name,' . $id,
+            'desc' => 'nullable|string|max:1000',
+        ]);
+
+        // Cập nhật workspace với dữ liệu đã validate
+        $workspace->update($validatedData);
+
+        return response()->json([
+            'message' => 'Workspace updated successfully',
+            'data' => new WorkspaceResource($workspace->fresh()), // Sử dụng fresh() để tải lại dữ liệu mới nhất
+        ], 200);
     }
+
 
 
     public function permissionLevel(Request $request)
