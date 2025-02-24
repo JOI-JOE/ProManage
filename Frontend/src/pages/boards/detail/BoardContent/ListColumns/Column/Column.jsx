@@ -1,4 +1,4 @@
-import { useState } from "react";
+// import { useState } from "react";
 import { Box, Button, TextField, Tooltip, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
@@ -22,6 +22,7 @@ import CopyColumn from "./Menu/CoppyColumn";
 import ConfirmDeleteDialog from "./Menu/DeleteColumn";
 import ArchiveColumnDialog from "./Menu/Archive";
 import { useListById } from '../../../../../../hooks/useList';
+import React, { useState, useEffect } from 'react';
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -62,8 +63,26 @@ const StyledMenu = styled((props) => (
 }));
 
 const Column = ({ list }) => {
-  // State hiển thị form sao chép cột
-  const [openCopyDialog, setOpenCopyDialog] = useState(false);
+
+
+
+  const { data: listDetail, isLoading, error } = useListById(list.id);
+
+
+  const [title, setTitle] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [prevTitle, setPrevTitle] = useState(''); // Lưu giá trị trước đó
+
+  // Cập nhật state khi listDetail thay đổi
+  useEffect(() => {
+      if (listDetail) {
+          setTitle(listDetail.name);
+          setPrevTitle(listDetail.name);
+      }
+  }, [listDetail]);
+
+    // State hiển thị form sao chép cột
+    const[openCopyDialog, setOpenCopyDialog] = useState(false);
   // State hiển thị form xác nhận xóa
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   // State hiển thị form lưu trữ
@@ -121,9 +140,9 @@ const Column = ({ list }) => {
   };
 
   // Chức năng sửa tiêu đề
-  const [title, setTitle] = useState(list.name);
-  const [isEditing, setIsEditing] = useState(false);
-  const [prevTitle, setPrevTitle] = useState(list.name); // Lưu giá trị trước đó
+  // const [title, setTitle] = useState(list.name);
+  // const [isEditing, setIsEditing] = useState(false);
+  // const [prevTitle, setPrevTitle] = useState(list.name); // Lưu giá trị trước đó
 
   const { updateListName, updateClosed } = useListById(list.id);
 
