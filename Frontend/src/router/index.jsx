@@ -12,6 +12,7 @@ import Home from "../pages/Home";
 
 import GoogleAuth from "../pages/Auth/GoogleAuth";
 import LoginForm from "../pages/Auth/LoginForm";
+import Member from "../pages/boards/detail/Member";
 
 const router = createBrowserRouter([
   {
@@ -50,6 +51,10 @@ const router = createBrowserRouter([
           {
             path: "",
             element: <BoardContent />,
+          },
+          {
+            path: "w/:displayName/members",
+            element: <Member />,
           },
         ],
       },
