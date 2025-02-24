@@ -165,7 +165,7 @@ const Member = () => {
           xs={12}
           sm={3}
           md={2}
-          sx={{ borderRight: "1px solid #D3D3D3" }}
+          // sx={{ borderRight: "1px solid #D3D3D3" }}
         >
           <Box sx={{ padding: "0px", width: "100%" }}>
             <Typography variant="h6" fontWeight="bold">
