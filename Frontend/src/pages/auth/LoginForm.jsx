@@ -44,7 +44,7 @@ const LoginForm = () => {
     login(formData, {
       onSuccess: (data) => {
         localStorage.setItem("token", data.token); // Store the token
-        alert('Đăng nhập thành công');
+        alert("Đăng nhập thành công");
         navigate("/home");
         window.location.reload(); // Reset lại trang
       },
@@ -98,87 +98,80 @@ const LoginForm = () => {
   };
 
   return (
-     <section className="bg-[#1693E1] min-h-screen flex items-center justify-center">
-          <div className="w-full max-w-[525px] bg-white rounded-lg p-10 text-center shadow-lg">
-            <h2 className="mb-10 text-center md:mb-16">PROMANAGE</h2>
-            <form onSubmit={handleSubmit}>
-              
-            <div className="mb-4">
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Email"
-                  className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
-                    errors.email ? "border-red-500" : "border-gray-300"
-                  }`}
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                )}
-              </div>
-
-    
-              <div className="mb-4">
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Password"
-                  className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
-                    errors.password ? "border-red-500" : "border-gray-300"
-                  }`}
-                />
-                {errors.password && (
-                  <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-                )}
-              </div>
-
-
-              {errors.general && (
-                <p className="text-red-500 text-sm mb-4">{errors.general}</p>
-              )}
-    
-              <button
-                type="submit"
-                className="w-full bg-indigo-500 text-white p-3 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                disabled={isLoading}
-              >
-                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
-              </button>
-            </form>
-
-            <p className="text-center mt-3">
-            <button
-              onClick={() => navigate("/forgort-password")} // Chuyển hướng
-              className="text-blue-500 hover:underline"
-            >
-              Quên mật khẩu?
-            </button>
-            </p>
-
-            <p className="text-center mt-3">
-            <button
-              onClick={() => navigate("/register")} // Chuyển hướng
-              className="text-blue-500 hover:underline"
-            >
-              Đăng ký tài khoản
-            </button>
-            </p>
-
-            <p className="text-center mt-3">
-           
-             Hoặc đăng nhập bằng
-          <GitHubAuth/>
-          <GoogleAuth/>
-            </p>
-
-
-            
+    <section className="bg-[#1693E1] min-h-screen flex items-center justify-center">
+      <div className="w-full max-w-[525px] bg-white rounded-lg p-10 text-center shadow-lg">
+        <h2 className="mb-10 text-center md:mb-16">PROMANAGE</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email"
+              className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
+                errors.email ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+            )}
           </div>
-        </section>
+
+          <div className="mb-4">
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Password"
+              className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
+                errors.password ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+            )}
+          </div>
+
+          {errors.general && (
+            <p className="text-red-500 text-sm mb-4">{errors.general}</p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-indigo-500 text-white p-3 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+            disabled={isLoading}
+          >
+            {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
+        </form>
+
+        <p className="text-center mt-3">
+          <button
+            onClick={() => navigate("/forgort-password")} // Chuyển hướng
+            className="text-blue-500 hover:underline"
+          >
+            Quên mật khẩu?
+          </button>
+        </p>
+
+        <p className="text-center mt-3">
+          <button
+            onClick={() => navigate("/register")} // Chuyển hướng
+            className="text-blue-500 hover:underline"
+          >
+            Đăng ký tài khoản
+          </button>
+        </p>
+
+        <p className="text-center mt-3">
+          Hoặc đăng nhập bằng
+          <GitHubAuth />
+          <GoogleAuth />
+        </p>
+      </div>
+    </section>
   );
 };
 
