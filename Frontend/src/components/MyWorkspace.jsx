@@ -16,6 +16,8 @@ import MyBoard from "./MyBoard";
 import CreateBoard from "./CreateBoard";
 
 const MyWorkspace = ({ workspace, boards }) => {
+
+    const activeBoards = boards.filter(board => board.closed === 0);
     return (
         <div>
             <ListItem
@@ -137,7 +139,7 @@ const MyWorkspace = ({ workspace, boards }) => {
             </ListItem>
 
             {/* Danh sách bảng Trello */}
-            <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+            {/* <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {boards?.map((board) => (
                     <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
                         <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
@@ -145,8 +147,23 @@ const MyWorkspace = ({ workspace, boards }) => {
                 ))}
 
                 <CreateBoard />
+            </List> */}
+            <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+                {activeBoards.length > 0 ? (
+                    activeBoards.map((board) => (
+                        <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                            <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
+                        </ListItem>
+                    ))
+                ) : (
+                    <Typography variant="body2" sx={{ color: "gray" }}>
+                        Không có bảng nào đang mở.
+                    </Typography>
+                )}
+
+                <CreateBoard />
             </List>
-        </div>
+        </div>  
     );
 };
 

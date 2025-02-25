@@ -1,8 +1,15 @@
 import React from 'react'
+import {
+    Box,
+    Typography,
+    Button,
+} from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import CloseIcon from "@mui/icons-material/Close";
 
 const MemberItem = () => {
     return (
-        <div id='workspace-member-item'>
+        <>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Box
                     sx={{
@@ -47,7 +54,7 @@ const MemberItem = () => {
                     Rời khỏi
                 </Button>
             </Box>
-        </div>
+        </>
     )
 }
 

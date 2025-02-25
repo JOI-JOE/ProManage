@@ -16,6 +16,8 @@ import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
 
+import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+
 
 const router = createBrowserRouter([
     {
@@ -71,17 +73,15 @@ const router = createBrowserRouter([
                         path: "w/:workspaceName/members",
                         element: <Member />,
                     },
-                    // {
-                    //   path: "w/:displayName",
-                    //   element: <Member />,
-                    // },
+                    {
+                        path: "c/:cardId/:name",
+                        element: <CardModal />,
+                    }
                 ]
             }
         ]
     },
-
-
 ]);
 
+export default router
 
-export default router;

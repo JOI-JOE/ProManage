@@ -54,7 +54,6 @@ export const useCreateWorkspace = () => {
   return useMutation({
     mutationFn: createWorkspace,
     onSuccess: () => {
-      // Invalidate cache để làm mới danh sách workspaces
       queryClient.invalidateQueries(["workspaces"]);
     },
     onError: (error) => {
@@ -69,14 +68,10 @@ export const useUpdateInforWorkspace = () => {
   return useMutation({
     mutationFn: ({ id, data }) => updateWorkspaceInfo(id, data),
     onSuccess: (updatedWorkspace) => {
-      console.log("Workspace đã được cập nhật:", updatedWorkspace);
-
-      // Cập nhật dữ liệu cache ngay lập tức thay vì chờ refetch
       queryClient.setQueryData(
         ["workspace", updatedWorkspace.id],
         updatedWorkspace
       );
-
       // Invalidate query để refetch nếu dữ liệu cũ không còn hợp lệ
       queryClient.invalidateQueries(["workspace", updatedWorkspace.id]);
     },
