@@ -71,31 +71,31 @@ const Column = ({ list }) => {
   // const { data: listDetail, isLoading, error } = useListById(list.id);
   const { data: listDetail, isLoading, error, updateListName, updateClosed } = useListById(list.id);
   const { data: allCards, isLoadingCard, errorCard } = useCardByList(list.id);
- 
-  
+
+
   const [title, setTitle] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [prevTitle, setPrevTitle] = useState(''); // Lưu giá trị trước đó
   const [cards, setCards] = useState([]);
   // Cập nhật state khi listDetail thay đổi
   useEffect(() => {
-      if (listDetail) {
-          setTitle(listDetail.name);
-          setPrevTitle(listDetail.name);
-      }
+    if (listDetail) {
+      setTitle(listDetail.name);
+      setPrevTitle(listDetail.name);
+    }
   }, [listDetail]);
 
 
   useEffect(() => {
     if (allCards) {
-     
+
       setCards(allCards);
     }
   }, [allCards]);
-  
 
-    // State hiển thị form sao chép cột
-    const[openCopyDialog, setOpenCopyDialog] = useState(false);
+
+  // State hiển thị form sao chép cột
+  const [openCopyDialog, setOpenCopyDialog] = useState(false);
   // State hiển thị form xác nhận xóa
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   // State hiển thị form lưu trữ
@@ -242,7 +242,7 @@ const Column = ({ list }) => {
   // const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "_id");
 
   return (
-    <div ref={setNodeRef} style={columnStyle} {...attributes} {...(isEditing ? {} : listeners)}>
+    <div ref={setNodeRef} style={columnStyle} {...attributes} >
       <Box
 
         //  {...(isDragging ? listeners : {})} 
@@ -396,6 +396,7 @@ const Column = ({ list }) => {
 
         {/* Colum Footer */}
         <Box
+          {...(openCard ? {} : listeners)}
           sx={{
             height: (theme) => theme.trello.columnHeaderHeight,
             p: 2,
@@ -404,6 +405,7 @@ const Column = ({ list }) => {
             justifyContent: "space-between",
           }}
         >
+
           {!openCard ? (
             <Box
               sx={{
@@ -416,13 +418,13 @@ const Column = ({ list }) => {
               <Button
                 startIcon={<AddCardIcon />}
                 sx={{ color: "primary.dark" }}
-                onClick={() => setOpenCard(true)}
+                onMouseDown={() => setOpenCard(true)}
               >
                 Add new card
               </Button>
-              <Tooltip title="Kéo để di chuyển">
+              {/* <Tooltip title="Kéo để di chuyển">
                 <DragHandleIcon sx={{ cursor: "pointer" }} />
-              </Tooltip>
+              </Tooltip> */}
             </Box>
           ) : (
             <Box
@@ -456,7 +458,7 @@ const Column = ({ list }) => {
               />
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Button
-                  onClick={addCard}
+                  onMouseDown={addCard}
                   variant="contained"
                   color="success"
                   size="small"
@@ -474,7 +476,7 @@ const Column = ({ list }) => {
                     color: "teal",
                     cursor: "pointer",
                   }}
-                  onClick={() => setOpenCard(false)}
+                  onMouseDown={() => setOpenCard(false)}
                 />
               </Box>
             </Box>
