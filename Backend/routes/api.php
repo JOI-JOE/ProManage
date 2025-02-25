@@ -129,8 +129,6 @@ Route::prefix('lists')->group(function () {
 Route::get('/colors', [ColorController::class, 'index']);
 
 
-
-
 Route::get('/boards', action: [BoardController::class, 'index']);
 
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');

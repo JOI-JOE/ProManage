@@ -392,4 +392,26 @@ class BoardController extends Controller
             'message' => 'success',
         ]);
     }
+
+    public function getBoard($id)
+    {
+        // Tìm board theo id cùng với workspace và danh sách boards
+        $board = Board::where('id', $id)
+            ->with(['workspace.boards']) // Load luôn danh sách boards trong workspace
+            ->first();
+    
+        if ($board) {
+            return response()->json([
+                'board' => $board,
+                'workspace' => [
+                    'id' => $board->workspace->id,
+                    'name' => $board->workspace->name,
+                    'display_name' => $board->workspace->display_name,
+                    'boards' => $board->workspace->boards // Đảm bảo trả về danh sách boards
+                ]
+            ]);
+        } else {
+            return response()->json(['error' => 'Board not found'], 404);
+        }
+    }
 }
