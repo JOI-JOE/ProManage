@@ -7,7 +7,8 @@ import {
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CloseIcon from "@mui/icons-material/Close";
 
-const MemberItem = () => {
+const MemberItem = ({ member }) => {
+    console.log(member)
     return (
         <>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -27,9 +28,9 @@ const MemberItem = () => {
                     TT
                 </Box>
                 <Box>
-                    <Typography fontWeight="bold">Trang Nguyễn Thu</Typography>
+                    <Typography fontWeight="bold">{member.display_name}</Typography>
                     <Typography variant="body2" sx={{ color: "gray" }}>
-                        @trangnguyenthu41 • Lần hoạt động gần nhất 02/04
+                        @{member.email} • Lần hoạt động gần nhất 02/04
                     </Typography>
                 </Box>
             </Box>

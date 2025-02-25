@@ -20,7 +20,6 @@ import {
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import LinkIcon from "@mui/icons-material/Link";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useParams } from "react-router-dom";
@@ -44,8 +43,6 @@ const Member = () => {
 
   const { workspaceName } = useParams();
 
-  console.log(workspaceName);
-
   const {
     data: workspace,
     isLoading: workspaceLoadingByName,
@@ -54,12 +51,6 @@ const Member = () => {
     enabled: !!workspaceName, // Chỉ fetch nếu không có workspaceId
   });
 
-  console.log(workspace);
-
-
-  // const workspace = {
-  //   name: "Tên Không Gian",
-  // };
 
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
@@ -81,6 +72,8 @@ const Member = () => {
     setIsLinkActive(false);
     setLinkCopied(false);
   };
+
+  const members = workspace.members
 
   return (
     <Box
@@ -288,9 +281,15 @@ const Member = () => {
               }}
             >
               {/* Thông tin thành viên */}
-              <Box id="workspace-member-list" sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <MemberItem />
-              </Box>
+              {members?.map((member) => (
+                <Box
+                  key={member.id} // Sử dụng key để React có thể tối ưu hóa việc render
+                  id="workspace-member-list"
+                  sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                >
+                  <MemberItem member={member} /> {/* Truyền dữ liệu member vào MemberItem */}
+                </Box>
+              ))}
 
             </Box>
           </Box>
