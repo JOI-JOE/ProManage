@@ -14,6 +14,16 @@ class MembersResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id'               => $this->id,
+            'name'             => $this->name,
+            'email'            => $this->email,
+            'member_type'      => $this->pivot->member_type,
+            'is_unconfirmed'   => $this->pivot->is_unconfirmed,
+            'joined'           => $this->pivot->joined,
+            'is_deactivated'   => $this->pivot->is_deactivated,
+            'id_member_referrer' => $this->pivot->id_member_referrer,
+            'last_active'      => $this->pivot->last_active,
+        ];
     }
 }

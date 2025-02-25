@@ -19,6 +19,32 @@ class BoardController extends Controller
 
     // }
 
+    public function showBoardById($boardId)
+    {
+        try {
+            // Tìm board theo ID
+            $board = Board::findOrFail($boardId);
+
+            // Trả về kết quả nếu tìm thấy
+            return response()->json([
+                'result' => true,
+                'data' => $board
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'result' => false,
+                'message' => 'Board not found.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
     public function index($workspaceId)
     {
         try {
@@ -367,7 +393,7 @@ class BoardController extends Controller
         $board = Board::where('id', $id)
             ->with(['workspace.boards']) // Load luôn danh sách boards trong workspace
             ->first();
-    
+
         if ($board) {
             return response()->json([
                 'board' => $board,
@@ -382,5 +408,4 @@ class BoardController extends Controller
             return response()->json(['error' => 'Board not found'], 404);
         }
     }
-    
 }

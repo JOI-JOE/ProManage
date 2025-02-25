@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WorkspaceRequest;
-use App\Http\Resources\BoardResource;
 use App\Http\Resources\WorkspaceResource;
 use App\Models\Workspace;
+use App\Models\WorkspaceMembers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -34,24 +34,33 @@ class WorkspaceController extends Controller
         }
     }
 
-    public function showDetailWorkspace($name)
+    public function showWorkspaceByName($workspaceName)
     {
         try {
-            // Tìm workspace theo display_name
-            $workspace = Workspace::where('name', $name)->firstOrFail();
+            // Kiểm tra nếu tên workspace không hợp lệ
+            if (!$workspaceName) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tên workspace không được để trống.',
+                ], 400);
+            }
 
-            // Trả về dữ liệu workspace nếu tìm thấy
+            // Tìm workspace theo tên
+            $workspace = Workspace::where('name', $workspaceName)->first();
+
+            // Nếu không tìm thấy
+            if (!$workspace) {
+                Log::error("Không tìm thấy workspace: $workspaceName");
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy workspace.',
+                ], 404);
+            }
+
+            // Trả về dữ liệu workspace
             return new WorkspaceResource($workspace);
-        } catch (ModelNotFoundException $e) {
-            // Xử lý khi không tìm thấy workspace
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy workspace.',
-            ], 404);
-        } catch (\Throwable $th) {
-            // Ghi log lỗi
-            Log::error('Lỗi khi lấy chi tiết workspace: ' . $th->getMessage());
-
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy chi tiết workspace: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi lấy chi tiết workspace.',
@@ -59,30 +68,28 @@ class WorkspaceController extends Controller
         }
     }
 
-    public function show($id)
+
+    public function showWorkspaceById($workspaceId)
     {
         try {
-            // Kiểm tra xem người dùng đã đăng nhập hay chưa
-            if (!auth()->check()) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
-
-            $user = auth()->user();
-
-            // Lấy workspace của người dùng theo ID
-            $workspace = $user->workspaces->findOrFail($id);
-
-            return response()->json([
-                'workspaces' => new WorkspaceResource($workspace),
-                'boards' => BoardResource::collection($workspace->boards),
-                // 'workspaces' => WorkspaceResource::collection($workspace),
-            ]);
+            $workspace = Workspace::findOrFail($workspaceId);
+            return new WorkspaceResource($workspace);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['error' => 'Workspace not found'], 404);
+            Log::error("Không tìm thấy workspace ID: $workspaceId");
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy workspace.',
+            ], 404);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+            Log::error('Lỗi khi lấy workspace: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lấy workspace.',
+            ], 500);
         }
     }
+
+
 
     public function store(WorkspaceRequest $request)
     {

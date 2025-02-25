@@ -54,11 +54,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
-        // Route::get('workspaces/{id}/boards', 'show');
-        Route::get('workspaces/{name}', 'showDetailWorkspace');
+        Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
+        Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
+
         Route::post('workspaces', 'store');
         Route::delete('workspaces/{workspace}', 'destroy');
-        Route::put('workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
+        Route::put('workspaces/{workspace}', 'updateWorkspaceInfo');
     });
 
     Route::controller(WorkspaceInvitationsController::class)->group(callback: function () {
@@ -69,6 +70,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
         Route::get('/workspaces/{workspaceId}/addMembers', 'inviteMemberToWorkspace');
+    });
+
+    Route::controller(BoardController::class)->group(function () {
+        Route::get('boards/{boardId}', 'showBoardById');
     });
 });
 
