@@ -134,6 +134,8 @@ Route::get('/colors', [ColorController::class, 'index']);
 Route::get('/boards', action: [BoardController::class, 'index']);
 
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
+Route::get('/board/{id}', [BoardController::class, 'getBoard']);
+Route::post('/createBoard',[BoardController::class ,'store'])->middleware('auth:sanctum');
 // Routes quản lý bảng
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']); // Lấy danh sách boards

@@ -48,7 +48,8 @@ export const mockData = {
             boardId: "board-id-01",
             columnId: "column-id-01",
             title: "Card 02",
-            description: null,
+            description: "Markdown Syntax (sẽ ở khóa nâng cao nhé)",
+
             cover: null,
             memberIds: [],
             comments: [],

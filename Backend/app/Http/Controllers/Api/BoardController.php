@@ -43,11 +43,13 @@ class BoardController extends Controller
     // }
 
 
+
     public function trash()
     {
         $board = Board::where('closed', 1)->get();
         return response()->json($board);
     }
+
 
     public function store(Request $request)
     {
@@ -71,16 +73,20 @@ class BoardController extends Controller
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
+
             // Lấy ID của user đang đăng nhập
             $userId = $user->id;
 
+
             // Lưu dữ liệu từ request
             $data = $request->all();
+
 
             // Kiểm tra và upload hình ảnh
             if ($request->hasFile('thumbnail')) {
                 $data['thumbnail'] = $this->upload_image($request->file('thumbnail'));
             }
+
 
             // Tạo board mới
             $board = Board::create([
@@ -94,6 +100,7 @@ class BoardController extends Controller
                 'visibility' => $request->visibility,
                 'workspace_id' => $request->workspace_id,
             ]);
+
 
             return response()->json([
                 'result' => true,
@@ -116,6 +123,7 @@ class BoardController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Update cho các trường ngoài ảnh
