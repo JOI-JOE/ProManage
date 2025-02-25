@@ -125,7 +125,7 @@ Route::prefix('lists')->group(function () {
     Route::get('/{id}/detail', [ListController::class, 'getListById']);
 });
 
-
+Route::get('/board/{id}', [BoardController::class, 'getBoard']);
 Route::post('/createBoard',[BoardController::class ,'store'])->middleware('auth:sanctum');
 // Routes quản lý bảng
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {

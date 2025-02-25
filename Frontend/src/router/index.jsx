@@ -65,26 +65,36 @@ const router = createBrowserRouter([
         path: "/",
         element: <BoardDetail />,
         children: [
-          {
-            path: "b/:boardId/:name",
-            element: <BoardContent />,
-          },
-          {
-            path: "w/:displayName",
-            element: <Member />,
-          },
-          {
-            path: "w/:displayName/members",
-            element: <Member />,
-          },
-            path: "c/:cardId/:name",
-            element: <CardModal />,
-          },
-
-        ],
-      },
-    ],
-  },
-]);
+            {
+                path: "home", // Or perhaps redirect if you have a separate home page
+                element: <Home />,
+            },
+            {
+                element: <Dashboard />,
+                children: [
+                    { path: "u/:username/boards", element: <Boards /> },
+                    { path: "w/:displayName/home", element: <Workspaces /> }
+                ]
+            },
+            {
+                path: "/",
+                element: <BoardDetail />,
+                children: [
+                    {
+                        path: "b/:boardId/:name",
+                        element: <BoardContent />,
+                    },
+                    // {
+                    //   path: "w/:displayName",
+                    //   element: <Member />,
+                    // },
+                    {
+                      path: "w/:displayName/members",
+                      element: <Member />,
+                    },
+                ]
+            }
+        ]
+    },
 
 export default router;
