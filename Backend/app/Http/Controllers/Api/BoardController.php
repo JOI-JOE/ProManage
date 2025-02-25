@@ -12,13 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 class BoardController extends Controller
 {
-    // public function index()
-    // {
-    //     $board = Board::where('closed', 0)->get();
-    //     return response()->json($board);
-        
-    // }
-    
+
     public function index($workspaceId)
 {
     try {
