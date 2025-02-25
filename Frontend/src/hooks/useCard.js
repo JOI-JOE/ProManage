@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCardByList } from "../api/models/cardsApi";
+import { createCard, getCardByList } from "../api/models/cardsApi";
 
 
 export const useCardByList = (listId) => {
@@ -16,6 +16,26 @@ export const useCardByList = (listId) => {
         }
     }); 
 };
+
+
+export const useCreateCard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createCard,
+    onSuccess: () => {
+      // Invalidate cache để làm mới danh sách workspaces
+      queryClient.invalidateQueries(["cards"]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi tạo card:", error);
+    },
+  });
+};
+
+
+
+
 
 
 // import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

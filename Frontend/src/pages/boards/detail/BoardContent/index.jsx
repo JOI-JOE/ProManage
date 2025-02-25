@@ -83,19 +83,19 @@ const BoardContent = () => {
 //   }
 // };
 
-// const handleDragOver = (event) => {
-//   if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) return;
-//   const { active, over } = event;
-//   if (!active || !over) return;
-//   const { id: activeCardId, data: { current: activeCardData } } = active;
-//   const { id: overCardId } = over;
-//   const activeColumn = findColumnByCardId(activeCardId);
-//   const overColumn = findColumnByCardId(overCardId);
-//   if (!activeColumn || !overColumn) return;
-//   if (activeColumn.id !== overColumn.id) {
-//       moveCardBetweenDifferentColumns(overColumn, overCardId, active, over, activeColumn, activeCardId, activeCardData);
-//   }
-// };
+const handleDragOver = (event) => {
+  if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) return;
+  const { active, over } = event;
+  if (!active || !over) return;
+  const { id: activeCardId, data: { current: activeCardData } } = active;
+  const { id: overCardId } = over;
+  const activeColumn = findColumnByCardId(activeCardId);
+  const overColumn = findColumnByCardId(overCardId);
+  if (!activeColumn || !overColumn) return;
+  if (activeColumn.id !== overColumn.id) {
+      moveCardBetweenDifferentColumns(overColumn, overCardId, active, over, activeColumn, activeCardId, activeCardData);
+  }
+};
 
   // Hàm xử lý kéo thả
   const handleDragEnd = useCallback(
