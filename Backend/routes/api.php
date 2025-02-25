@@ -56,7 +56,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
-        // Route::get('workspaces/{id}/boards', 'show'); 
+        // Route::get('workspaces/{id}/boards', 'show');
         Route::get('workspaces/{display_name}', 'showDetailWorkspace');
         Route::post('workspaces', 'store');
         Route::delete('workspaces/{workspace}', 'destroy');
@@ -133,7 +133,7 @@ Route::get('/boards', action: [BoardController::class, 'index']);
 
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
-Route::post('/createBoard',[BoardController::class ,'store'])->middleware('auth:sanctum');
+Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 // Routes quản lý bảng
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']); // Lấy danh sách boards
@@ -191,6 +191,8 @@ Route::prefix('cards')->group(function () {
     Route::post('/{cardId}/labels', [LabelController::class, 'addLabelToCard']); // thêm nhãn vào thẻ
 
     Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']); // xóa nhãn khỏi thẻ
+
+    Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
 });
 // cập nhật nhãn ,Vì trello sẽ không cập nhật nhãn theo thẻ
 Route::put('/labels/{labelId}', [LabelController::class, 'updateLabel']);

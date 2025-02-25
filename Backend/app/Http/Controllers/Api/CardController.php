@@ -21,8 +21,8 @@ class CardController extends Controller
 
 
         return response()->json([
-            'status'=>true,
-            'data'=>$cards
+            'status' => true,
+            'data' => $cards
         ]);
     }
     public function store(Request $request)
@@ -40,14 +40,30 @@ class CardController extends Controller
     public function updateName($cardId, Request $request)
     {
         $card = Card::find($cardId);
+        $oldTitle = $card->title;
 
 
         $request->validate([
             'title' => 'required'
         ]);
+        $oldTitle = $card->title;
+
         $card->update([
             'title' => $request->title
         ]);
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($card)
+            ->event('updated_name')
+            ->withProperties([
+                'old_title' => $oldTitle,
+                'new_title' => $card->title,
+            ])
+            ->log($card->getCustomDescription('updated_name'));
+
+
+
+
         return response()->json(
             [
                 'status' => true,
@@ -66,6 +82,8 @@ class CardController extends Controller
         $card->update([
             'description' => $request->description
         ]);
+
+
 
         return response()->json([
             'message' => 'Mô tả đã được cập nhật thành công',
@@ -95,9 +113,22 @@ class CardController extends Controller
         // Kiểm tra nếu user đã có trong thẻ chưa
         if (!$cards->users()->where('users.id', $user->id)->exists()) {
             $cards->users()->attach($user->id);
+            // ghi lại hoạt động
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($cards)
+                ->event('added_member')
+                ->withProperties([
+                    'card_title' => $cards->title,
+                    'member_name' => $user->user_name,
+                ])
+                ->log($cards->getCustomDescription('added_member', $user->user_name));
+
 
             // Gửi thông báo
             $user->notify(new CardMemberAddedNotification($cards));
+
 
 
             return response()->json(['message' => 'Đã thêm thành viên vào thẻ và gửi thông báo'], 200);
@@ -120,6 +151,15 @@ class CardController extends Controller
 
         // Xóa user khỏi thẻ
         $card->users()->detach($user->id);
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($card)
+            ->event('removed_member')
+            ->withProperties([
+                'card_title' => $card->title,
+                'member_name' => $user->user_name,
+            ])
+            ->log($card->getCustomDescription('added_member', $user->user_name));
 
         return response()->json([
             'message' => 'Đã xóa thành viên khỏi thẻ thành công',
@@ -151,6 +191,17 @@ class CardController extends Controller
             'end_date' => $request->end_date,
             'end_time' => $request->end_time,
         ]);
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($card)
+            ->event('updated_datetime')
+            ->withProperties([
+                'card_title' => $card->title,
+                'start_date' => $request->start_date,
+                'end_date'   => $request->end_date,
+                'end_time'   => $request->end_time,
+            ])
+            ->log($card->getCustomDescription('updated_datetime', $request->start_date, $request->end_date, $request->end_time));
 
         return response()->json([
             'message' => 'Cập nhật ngày và giờ thành công!',
@@ -169,5 +220,18 @@ class CardController extends Controller
             'message' => 'Đã xóa ngày bắt đầu & ngày kết thúc khỏi thẻ!',
             'data' => $card,
         ]);
+    }
+    // lấy lịch sử hoạt động
+    public function getCardHistory($cardId)
+    {
+        $card = Card::with(['activities' => function ($query) {
+            $query->orderByDesc('created_at'); // Sắp xếp bản ghi mới nhất lên đầu
+        }])->find($cardId);
+
+        if (!$card) {
+            return response()->json(['message' => 'Card không tồn tại'], 404);
+        }
+
+        return response()->json($card->activities);
     }
 }
