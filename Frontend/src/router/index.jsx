@@ -11,12 +11,13 @@ import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
+import Member from "../pages/boards/detail/Member";
 
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
-
+import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 
 const router = createBrowserRouter([
     {
@@ -56,33 +57,66 @@ const router = createBrowserRouter([
             {
                 element: <Dashboard />,
                 children: [
-                    { path: "u/:username/boards", element: <Boards /> },
-                    { path: "w/:name/home", element: <Workspaces /> }
-                ]
+                    {
+                        path: "login",
+                        element: <LoginForm />,
+                    },
+                    {
+                        path: "register",
+                        element: <Register />,
+                    },
+                    {
+                        path: "login/google", // Add this route!
+                        element: <GoogleAuth />, // Use your GoogleAuth component here
+                    },
+                    {
+                        path: "auth/callback", // Add this route!
+                        element: <GitHubAuth />, // Use your GoogleAuth component here
+                    },
+                    {
+                        path: "/forgort-password", // Add this route!
+                        element: <ForgotPassword />, // Use your GoogleAuth component here
+                    },
+                ],
             },
             {
                 path: "/",
                 element: <BoardDetail />,
                 children: [
                     {
-                        path: "b/:boardId/:name",
-                        element: <BoardContent />,
+                        path: "home", // Or perhaps redirect if you have a separate home page
+                        element: <Home />,
                     },
-                    // {
-                    //   path: "w/:displayName",
-                    //   element: <Member />,
-                    // },
-                    // {
-                    //   path: "w/:displayName/members",
-                    //   element: <Member />,
-                    // },
+                    {
+                        element: <Dashboard />,
+                        children: [
+                            { path: "u/:username/boards", element: <Boards /> },
+                            { path: "w/:name/home", element: <Workspaces /> }
+                        ]
+                    },
+                    {
+                        path: "/",
+                        element: <BoardDetail />,
+                        children: [
+                            {
+                                path: "b/:boardId/:name",
+                                element: <BoardContent />,
+                            },
+                            // {
+                            //   path: "w/:displayName",
+                            //   element: <Member />,
+                            // },
+                            {
+                                path: "w/:displayName/members",
+                                element: <Member />,
+                            },
+                        ]
+                    }
                 ]
-            }
-        ]
-    },
+            },
 
 
-]);
+        ]);
 
 
 export default router;
