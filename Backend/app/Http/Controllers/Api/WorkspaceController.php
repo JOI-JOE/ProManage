@@ -39,7 +39,9 @@ class WorkspaceController extends Controller
     {
         try {
             // Tìm workspace theo display_name
-            $workspace = Workspace::where('display_name', $display_name)->firstOrFail();
+            $workspace = Workspace::where('display_name', $display_name)
+                                    ->where('board_closed', 0)
+                                    ->firstOrFail();
 
             // Trả về dữ liệu workspace nếu tìm thấy
             return new WorkspaceResource($workspace);

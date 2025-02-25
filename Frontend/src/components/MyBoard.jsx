@@ -44,6 +44,7 @@ const MyBoard = ({ board }) => { // Nhận dữ liệu board qua props
                 >
                     {/* Use board.name */}
                     {board.name}
+                    
                 </Typography>
                 {hoveredItem === 1 && (
                     <StarBorderIcon
