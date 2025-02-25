@@ -4,17 +4,18 @@ import { useParams } from "react-router-dom";
 import { useGetWorkspaceByName } from "../../hooks/useWorkspace";
 
 const Workspaces = () => {
-    const { name } = useParams(); // Lấy displayName từ URL
+    const { workspaceName } = useParams();
 
-    // Sử dụng hook useGetWorkspaceByDisplayName để fetch dữ liệu từ API
     const {
         data: workspace,
         isLoading,
         isError,
         error,
-    } = useGetWorkspaceByName(name);
+    } = useGetWorkspaceByName(workspaceName);
 
-    // Hiển thị loading nếu đang fetch dữ liệu
+    console.log(workspace);
+
+
     if (isLoading) {
         return <div>Đang tải thông tin workspace...</div>;
     }

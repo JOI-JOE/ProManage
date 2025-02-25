@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createBoard, getBoardById } from "../api/models/boardsApi";
 
-
 /**
  * Hook useBoard để tạo bảng mới.
  * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
@@ -12,17 +11,22 @@ export const useCreateBoard = () => {
   });
 };
 
-export const useBoards = (boardId) => {
-  const queryClient = useQueryClient();
+export const useGetBoardByID = (boardId) => {
+  return useQuery({
+    queryKey: ["boards", boardId],
+    queryFn: async () => {
+      if (!boardId) return null; // Nếu không có boardId, không gọi API
 
-  const boardsQuery = useQuery({
-    queryKey: ["boardLists", boardId],
-    queryFn: () => getBoardById(boardId),
-    enabled: !!boardId, // Chỉ kích hoạt query khi có boardId
-    staleTime: 1000 * 60 * 5, // Cache trong 5 phút
-    cacheTime: 1000 * 60 * 30, // Giữ dữ liệu trong 30 phút ngay cả khi query bị hủy
+      try {
+        const response = await getBoardById(boardId);
+        if (!response?.data) {
+          throw new Error("Board data is empty or undefined");
+        }
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching board:", error);
+        throw new Error("Failed to fetch board data");
+      }
+    },
   });
-
-  return boardsQuery;
-}
-
+};

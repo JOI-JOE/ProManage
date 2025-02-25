@@ -9,6 +9,7 @@ import {
   createWorkspace,
   updateWorkspaceInfo,
   getWorkspaceByName,
+  getWorkspaceById,
 } from "../api/models/workspacesApi";
 
 /**
@@ -25,14 +26,25 @@ export const useWorkspaces = () => {
   });
 };
 
-export const useGetWorkspaceByName = (name) => {
+export const useGetWorkspaceByName = (workspaceName) => {
   return useQuery({
-    queryKey: ["workspace", name], // Key để cache dữ liệu
-    queryFn: () => getWorkspaceByName(name),
-    enabled: !!name, // Chỉ gọi API nếu displayName tồn tại
-    onError: (error) => {
-      console.error("Lỗi khi lấy chi tiết workspace:", error);
-    },
+    queryKey: ["workspace", workspaceName], // Key để cache dữ liệu
+    queryFn: () => getWorkspaceByName(workspaceName),
+    enabled: !!workspaceName, // Chỉ gọi API nếu name tồn tại
+    staleTime: 1000 * 60 * 5, // Dữ liệu cache sẽ được giữ 5 phút trước khi bị xem là cũ
+    cacheTime: 1000 * 60 * 30, // Giữ dữ liệu cache trong 30 phút ngay cả khi không sử dụng
+    retry: 2, // Thử lại tối đa 2 lần nếu request thất bại
+  });
+};
+
+export const useGetWorkspaceById = (workspaceId) => {
+  return useQuery({
+    queryKey: ["workspace", workspaceId], // Key để cache dữ liệu
+    queryFn: () => getWorkspaceById(workspaceId),
+    enabled: !!workspaceId, // Chỉ gọi API nếu workspaceId tồn tại
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
+    retry: 2,
   });
 };
 
@@ -55,14 +67,18 @@ export const useUpdateInforWorkspace = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }) => {
-      const updatedWorkspace = await updateWorkspaceInfo(id, data);
-      return updatedWorkspace; // Đảm bảo return dữ liệu mới từ server
-    },
-    onSuccess: (data) => {
-      console.log("Workspace đã được cập nhật:", data);
-      // Invalidate query để làm mới dữ liệu
-      queryClient.invalidateQueries(["workspaces", data.id]);
+    mutationFn: ({ id, data }) => updateWorkspaceInfo(id, data),
+    onSuccess: (updatedWorkspace) => {
+      console.log("Workspace đã được cập nhật:", updatedWorkspace);
+
+      // Cập nhật dữ liệu cache ngay lập tức thay vì chờ refetch
+      queryClient.setQueryData(
+        ["workspace", updatedWorkspace.id],
+        updatedWorkspace
+      );
+
+      // Invalidate query để refetch nếu dữ liệu cũ không còn hợp lệ
+      queryClient.invalidateQueries(["workspace", updatedWorkspace.id]);
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật workspace:", error);

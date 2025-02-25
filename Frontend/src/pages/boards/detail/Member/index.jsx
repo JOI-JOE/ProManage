@@ -25,6 +25,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
+import { useParams } from "react-router-dom";
+import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
 
 const Member = () => {
   const [isFormVisible, setFormVisible] = useState(false);
@@ -39,9 +41,24 @@ const Member = () => {
     setIsLinkActive(false);
   };
 
-  const workspace = {
-    name: "Tên Không Gian",
-  };
+  const { workspaceName } = useParams();
+
+  console.log(workspaceName);
+
+  const {
+    data: workspace,
+    isLoading: workspaceLoadingByName,
+    error: workspaceErrorByName,
+  } = useGetWorkspaceByName(workspaceName, {
+    enabled: !!workspaceName, // Chỉ fetch nếu không có workspaceId
+  });
+
+  console.log(workspace);
+
+
+  // const workspace = {
+  //   name: "Tên Không Gian",
+  // };
 
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
@@ -99,13 +116,13 @@ const Member = () => {
               }}
             >
               <span style={{ fontSize: "30px", fontWeight: "bold" }}>
-                {workspace.name.charAt(0).toUpperCase()}
+                {workspace?.display_name.charAt(0).toUpperCase()}
               </span>
             </Avatar>
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <Typography fontWeight="bold" sx={{ fontSize: 25 }}>
-                  {workspace.name}
+                  {workspace?.display_name}
                 </Typography>
                 <IconButton
                   onClick={toggleFormVisibility}
@@ -165,7 +182,7 @@ const Member = () => {
           xs={12}
           sm={3}
           md={2}
-          // sx={{ borderRight: "1px solid #D3D3D3" }}
+        // sx={{ borderRight: "1px solid #D3D3D3" }}
         >
           <Box sx={{ padding: "0px", width: "100%" }}>
             <Typography variant="h6" fontWeight="bold">
@@ -270,6 +287,7 @@ const Member = () => {
               }}
             >
               {/* Thông tin thành viên */}
+              {/* <div id="workspace-member-list"> */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Box
                   sx={{
@@ -314,6 +332,8 @@ const Member = () => {
                   Rời khỏi
                 </Button>
               </Box>
+              {/* </div> */}
+
             </Box>
           </Box>
         </Grid>
