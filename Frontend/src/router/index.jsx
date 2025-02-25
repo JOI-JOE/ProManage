@@ -17,6 +17,7 @@ import GitHubAuth from "../pages/Auth/GitHubAuth";
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
+import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 
 const router = createBrowserRouter([
   {
@@ -42,10 +43,6 @@ const router = createBrowserRouter([
       {
         path: "/forgort-password", // Add this route!
         element: <ForgotPassword />, // Use your GoogleAuth component here
-      },
-      {
-        path: "w/:displayName/members",
-        element: <Member />,
       },
     ],
   },
@@ -80,6 +77,10 @@ const router = createBrowserRouter([
             path: "w/:displayName/members",
             element: <Member />,
           },
+            path: "c/:cardId/:name",
+            element: <CardModal />,
+          },
+
         ],
       },
     ],

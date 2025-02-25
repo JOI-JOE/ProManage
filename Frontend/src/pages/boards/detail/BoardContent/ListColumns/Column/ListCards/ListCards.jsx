@@ -4,6 +4,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { Link } from "react-router-dom";
 
 const ListCards = ({ cards }) => {
   return (
@@ -41,7 +42,13 @@ const ListCards = ({ cards }) => {
         }}
       >
         {cards?.map((card) => (
-          <C_ard key={card._id} card={card} />
+          <Link
+            key={card._id}
+            to={`/c/${card._id}/${encodeURIComponent(card.title)}`} // Tạo đường dẫn với cardId và tên
+            style={{ textDecoration: "none" }} // Xóa underline mặc định của link
+          >
+            <C_ard card={card} />
+          </Link>
         ))}
       </Box>
     </SortableContext>
