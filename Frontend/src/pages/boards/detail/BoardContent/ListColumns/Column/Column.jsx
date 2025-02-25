@@ -22,7 +22,9 @@ import CopyColumn from "./Menu/CoppyColumn";
 import ConfirmDeleteDialog from "./Menu/DeleteColumn";
 import ArchiveColumnDialog from "./Menu/Archive";
 import { useListById } from '../../../../../../hooks/useList';
+import { useCardByList } from '../../../../../../hooks/useCard';
 import React, { useState, useEffect } from 'react';
+// import authClient from "../../../../../../api/authClient";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -66,13 +68,15 @@ const Column = ({ list }) => {
 
 
 
-  const { data: listDetail, isLoading, error } = useListById(list.id);
-
-
+  // const { data: listDetail, isLoading, error } = useListById(list.id);
+  const { data: listDetail, isLoading, error, updateListName, updateClosed } = useListById(list.id);
+  const { data: allCards, isLoadingCard, errorCard } = useCardByList(list.id);
+ 
+  
   const [title, setTitle] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [prevTitle, setPrevTitle] = useState(''); // Lưu giá trị trước đó
-
+  const [cards, setCards] = useState([]);
   // Cập nhật state khi listDetail thay đổi
   useEffect(() => {
       if (listDetail) {
@@ -80,6 +84,15 @@ const Column = ({ list }) => {
           setPrevTitle(listDetail.name);
       }
   }, [listDetail]);
+
+
+  useEffect(() => {
+    if (allCards) {
+     
+      setCards(allCards);
+    }
+  }, [allCards]);
+  
 
     // State hiển thị form sao chép cột
     const[openCopyDialog, setOpenCopyDialog] = useState(false);
@@ -144,7 +157,7 @@ const Column = ({ list }) => {
   // const [isEditing, setIsEditing] = useState(false);
   // const [prevTitle, setPrevTitle] = useState(list.name); // Lưu giá trị trước đó
 
-  const { updateListName, updateClosed } = useListById(list.id);
+  // const { updateListName, updateClosed } = useListById(list.id);
 
   // console.log(list.id);
 
@@ -373,7 +386,13 @@ const Column = ({ list }) => {
         </Box>
 
         {/* Column List Cart */}
-        {/* <ListCards cards={orderedCards} /> */}
+        {/* <ListCards cards={cards} /> */}
+
+
+        {/* <ListCards listId={list.id} cards={list.cards} /> */}
+        <ListCards listId={list.id} cards={cards || []} />
+
+
 
         {/* Colum Footer */}
         <Box
