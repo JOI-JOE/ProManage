@@ -11,6 +11,7 @@ import { mockData } from "../api/Api_fake";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
+import Member from "../pages/boards/detail/Member";
 
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import ForgotPassword from "../pages/auth/ForgortPassword";
@@ -69,17 +70,17 @@ const router = createBrowserRouter([
             element: <BoardContent />,
           },
           {
+            path: "w/:displayName",
+            element: <Member />,
+          },
+          {
+            path: "w/:displayName/members",
+            element: <Member />,
+          },
             path: "c/:cardId/:name",
             element: <CardModal />,
           },
-          // {
-          //   path: "w/:displayName",
-          //   element: <Member />,
-          // },
-          // {
-          //   path: "w/:displayName/members",
-          //   element: <Member />,
-          // },
+
         ],
       },
     ],
