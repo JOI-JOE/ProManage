@@ -47,7 +47,7 @@ const CreateBoard = () => {
     error: errorColors,
   } = useColor();
 
-  console.log(colors);
+  // console.log(colors);
   
 
   const handleOpen = (event) => {
