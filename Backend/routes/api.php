@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ChecklistItemController;
 use App\Http\Controllers\Api\ColorController;
 use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
+use App\Http\Controllers\api\RecentBoardController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
@@ -125,18 +126,23 @@ Route::prefix('lists')->group(function () {
     Route::get('/{id}/detail', [ListController::class, 'getListById']);
 });
 
+Route::get('/colors', [ColorController::class, 'index']);
 
-Route::post('/createBoard',[BoardController::class ,'store'])->middleware('auth:sanctum');
+
+Route::get('/boards', action: [BoardController::class, 'index']);
+
+Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
+Route::get('/board/{id}', [BoardController::class, 'getBoard']);
+Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 // Routes quản lý bảng
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
-    Route::get('/', [BoardController::class, 'index']); // Lấy danh sách boards
+    Route::get('/', [BoardController::class, 'show']); // Lấy danh sách boards
     // Route::post('/', [BoardController::class, 'store']); // Tạo board mới
     Route::get('{boardId}', [BoardController::class, 'show']); // Lấy thông tin chi tiết board
     Route::put('{boardId}', [BoardController::class, 'update']); // Cập nhật board
     Route::delete('{boardId}', [BoardController::class, 'destroy']); // Xóa board
 });
 
-Route::get('/colors',[ColorController::class , 'index']);
 
 Route::prefix('boards/{id}/')->group(function () {
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
@@ -155,15 +161,23 @@ Route::prefix('boards/{boardId}/members')->group(function () {
     Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
 });
 
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('recent-boards', [RecentBoardController::class, 'index']);
+    Route::post('recent-boards', [RecentBoardController::class, 'store']);
+});
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
 
 /// Route card
 
 Route::prefix('cards')->group(function () {
-    Route::get('/{listId}/get-cards', [CardController::class, 'getCardsByList']);
+    Route::get('/{listId}/getCardsByList', [CardController::class, 'getCardsByList']);
+    // routes/api.php
+    Route::patch('/{cardId}/move', [CardController::class, 'moveCard']);
+    Route::post('/update-position', [CardController::class, 'updateCardPosition']);
     Route::post('/', [CardController::class, 'store']);
-    Route::put('/{cardId}/update-name', [CardController::class, 'updateName']);
+    Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
     Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);
     // Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
     // Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
@@ -180,6 +194,8 @@ Route::prefix('cards')->group(function () {
     Route::post('/{cardId}/labels', [LabelController::class, 'addLabelToCard']); // thêm nhãn vào thẻ
 
     Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']); // xóa nhãn khỏi thẻ
+
+    Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
 });
 // cập nhật nhãn ,Vì trello sẽ không cập nhật nhãn theo thẻ
 Route::put('/labels/{labelId}', [LabelController::class, 'updateLabel']);
@@ -199,14 +215,14 @@ Route::prefix('/{cardId}/attachments')->group(function () {
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']); // Đặt tệp làm ảnh bìa
 });
 // checklists
-Route::get('/cards/{cardId}/checklists', [ChecklistController::class, 'index']);// lấy danh sách checkist theo card
-Route::post('/cards/{cardId}/checklists', [ChecklistController::class, 'store']);// thêm mới checkist theo card
-Route::put('/checklists/{id}', [ChecklistController::class, 'update']);// cập nhật checklist
-Route::delete('/checklists/{id}', [ChecklistController::class, 'destroy']);// xóa checklists
+Route::get('/cards/{cardId}/checklists', [ChecklistController::class, 'index']); // lấy danh sách checkist theo card
+Route::post('/cards/{cardId}/checklists', [ChecklistController::class, 'store']); // thêm mới checkist theo card
+Route::put('/checklists/{id}', [ChecklistController::class, 'update']); // cập nhật checklist
+Route::delete('/checklists/{id}', [ChecklistController::class, 'destroy']); // xóa checklists
 // checklist_item
-Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'index']);// lấy danh sách checkist theo card
-Route::post('/checklist/{checklistId}/item', [ChecklistItemController::class, 'store']);// thêm mới checkist theo card
-Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']);// cập nhật tên của checklistitem
+Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'index']); // lấy danh sách checkist theo card
+Route::post('/checklist/{checklistId}/item', [ChecklistItemController::class, 'store']); // thêm mới checkist theo card
+Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']); // cập nhật tên của checklistitem
 Route::put('/item/{id}/completed', [ChecklistItemController::class, 'updateStatus']);// cập nhật trạng thái hoàn thành của checklistitem
 
 // Route::delete('/checklists/{id}', [ChecklistItemController::class, 'destroy']);// xóa checklists
