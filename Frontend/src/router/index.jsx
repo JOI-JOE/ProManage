@@ -81,6 +81,14 @@ const router = createBrowserRouter([
           //   path: "w/:displayName/members",
           //   element: <Member />,
           // },
+          // {
+          //   path: "w/:displayName",
+          //   element: <Account />,
+          // },
+          // {
+          //   path: "w/:displayName/accounts",
+          //   element: <Account />,
+          // },
         ],
       },
     ],
