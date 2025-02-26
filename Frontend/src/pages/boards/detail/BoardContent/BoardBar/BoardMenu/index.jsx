@@ -22,17 +22,20 @@ import Button from "@mui/material/Button";
 import ActivityDrawer from "./Component_BoardMenu/Activity";
 import BoardDetailsDrawer from "./Component_BoardMenu/BoardDetailsDrawer";
 import Archived from "./Component_BoardMenu/Archive";
+import Setting from "./Component_BoardMenu/Setting/Setting";
 
 const BoardMenu = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
-  const [archiveOpen, setArchiveOpen] = useState(false); // Thêm trạng thái mở Archive Drawer
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false); // Thêm state quản lý SettingsDrawer
 
   const toggleMenu = (open) => () => setMenuOpen(open);
   const toggleDetails = (open) => () => setDetailsOpen(open);
   const toggleActivity = (open) => () => setActivityOpen(open);
-  const toggleArchive = (open) => () => setArchiveOpen(open); // Thêm toggle cho Archive Drawer
+  const toggleArchive = (open) => () => setArchiveOpen(open);
+  const toggleSettings = (open) => () => setSettingsOpen(open); // Toggle cho SettingsDrawer
 
   const listItems = [
     { text: "Về bảng này", icon: <InfoIcon />, action: toggleDetails(true) },
@@ -41,11 +44,11 @@ const BoardMenu = () => {
       text: "Mục đã lưu trữ",
       icon: <ArchiveIcon />,
       action: toggleArchive(true),
-    }, // Thêm action mở Archive Drawer
+    },
   ];
 
   const settingsItems = [
-    { text: "Cài đặt", icon: <SettingsIcon /> },
+    { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) }, // Gọi toggleSettings
     { text: "Thay đổi hình nền", icon: <PaletteIcon /> },
     { text: "Nhãn", icon: <LabelIcon /> },
   ];
@@ -71,9 +74,9 @@ const BoardMenu = () => {
       </List>
       <Divider />
       <List>
-        {settingsItems.map(({ text, icon }) => (
+        {settingsItems.map(({ text, icon, action }) => (
           <ListItem key={text} disablePadding>
-            <ListItemButton>
+            <ListItemButton onClick={action}>
               <ListItemIcon>{icon}</ListItemIcon>
               <ListItemText primary={text} />
             </ListItemButton>
@@ -112,12 +115,11 @@ const BoardMenu = () => {
       >
         {drawerList}
       </Drawer>
-
       <BoardDetailsDrawer open={detailsOpen} onClose={toggleDetails(false)} />
-
       <ActivityDrawer open={activityOpen} onClose={toggleActivity(false)} />
-
       <Archived open={archiveOpen} onClose={toggleArchive(false)} />
+      <Setting open={settingsOpen} onClose={toggleSettings(false)} />{" "}
+      {/* Thêm SettingsDrawer */}
     </div>
   );
 };
