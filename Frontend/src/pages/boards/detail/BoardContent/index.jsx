@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ListColumns from "./ListColumns/ListColumns";
+import BoardBar from "./BoardBar";
 import { useLists } from "../../../../hooks/useList";
 // import { updateCardPositions } from "../../../../api/cards";
 import { useCardByList } from "../../../../hooks/useCard";
@@ -262,17 +263,20 @@ const handleDragOver = (event) => {
   if (error) return <p>Lỗi: {error.message}</p>;
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
-      <Box
-        sx={{
-          backgroundColor: "primary.main",
-          height: (theme) => theme.trello.boardContentHeight,
-          padding: "18px 0 7px 0px",
-        }}
-      >
-        <ListColumns lists={memoizedLists} />
-      </Box>
-    </DndContext>
+    <>
+      <BoardBar />
+      <DndContext onDragEnd={handleDragEnd}>
+        <Box
+          sx={{
+            backgroundColor: "primary.main",
+            height: (theme) => theme.trello.boardContentHeight,
+            padding: "18px 0 7px 0px",
+          }}
+        >
+          <ListColumns lists={memoizedLists} />
+        </Box>
+      </DndContext>
+    </>
   );
 };
 

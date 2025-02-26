@@ -20,11 +20,13 @@ import {
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import LinkIcon from "@mui/icons-material/Link";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useParams } from "react-router-dom";
 
 import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
+import MemberItem from "./MemberItem";
+import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
 
 const Member = () => {
   const [isFormVisible, setFormVisible] = useState(false);
@@ -39,9 +41,16 @@ const Member = () => {
     setIsLinkActive(false);
   };
 
-  const workspace = {
-    name: "Tên Không Gian",
-  };
+  const { workspaceName } = useParams();
+
+  const {
+    data: workspace,
+    isLoading: workspaceLoadingByName,
+    error: workspaceErrorByName,
+  } = useGetWorkspaceByName(workspaceName, {
+    enabled: !!workspaceName, // Chỉ fetch nếu không có workspaceId
+  });
+
 
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
@@ -63,6 +72,8 @@ const Member = () => {
     setIsLinkActive(false);
     setLinkCopied(false);
   };
+
+  const members = workspace.members
 
   return (
     <Box
@@ -99,13 +110,13 @@ const Member = () => {
               }}
             >
               <span style={{ fontSize: "30px", fontWeight: "bold" }}>
-                {workspace.name.charAt(0).toUpperCase()}
+                {workspace?.display_name.charAt(0).toUpperCase()}
               </span>
             </Avatar>
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <Typography fontWeight="bold" sx={{ fontSize: 25 }}>
-                  {workspace.name}
+                  {workspace?.display_name}
                 </Typography>
                 <IconButton
                   onClick={toggleFormVisibility}
@@ -158,6 +169,7 @@ const Member = () => {
         spacing={2}
         sx={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}
       >
+
         {/* Cột trái:  */}
         <Grid item xs={12} sm={3} md={2}>
           <Box sx={{ padding: "0px", width: "100%" }}>
@@ -272,50 +284,16 @@ const Member = () => {
               }}
             >
               {/* Thông tin thành viên */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {members?.map((member) => (
                 <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    backgroundColor: "#0079BF",
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "50%",
-                    fontWeight: "bold",
-                  }}
+                  key={member.id} // Sử dụng key để React có thể tối ưu hóa việc render
+                  id="workspace-member-list"
+                  sx={{ display: "flex", alignItems: "center", gap: 2 }}
                 >
-                  TT
+                  <MemberItem member={member} /> {/* Truyền dữ liệu member vào MemberItem */}
                 </Box>
-                <Box>
-                  <Typography fontWeight="bold">Trang Nguyễn Thu</Typography>
-                  <Typography variant="body2" sx={{ color: "gray" }}>
-                    @trangnguyenthu41 • Lần hoạt động gần nhất 02/04
-                  </Typography>
-                </Box>
-              </Box>
+              ))}
 
-              {/* Nút thao tác */}
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button variant="outlined" disabled>
-                  Xem bảng thông tin (0)
-                </Button>
-                <Button
-                  variant="outlined"
-                  disabled
-                  startIcon={<HelpOutlineIcon />}
-                >
-                  Quản trị viên
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<CloseIcon />}
-                >
-                  Rời khỏi
-                </Button>
-              </Box>
             </Box>
           </Box>
         </Grid>

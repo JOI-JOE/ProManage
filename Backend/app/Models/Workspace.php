@@ -59,6 +59,14 @@ class Workspace extends Model
         return $this->hasMany(Board::class);
     }
 
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'workspace_members', 'id_workspace', 'id_member')
+            ->withPivot(['member_type', 'is_unconfirmed', 'joined', 'is_deactivated', 'id_member_referrer', 'last_active'])
+            ->withTimestamps();
+    }
+
+
     protected $dispatchesEvents = [
         'created' => WorkspaceUpdate::class,
         'updated' => WorkspaceUpdate::class

@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createBoard, showBoardByWorkspaceId } from "../api/models/boardsApi";
-
+import { createBoard, getBoardById, showBoardByWorkspaceId } from "../api/models/boardsApi";
 
 /**
  * Hook useBoard để tạo bảng mới.
@@ -11,20 +10,39 @@ export const useCreateBoard = () => {
 
   return useMutation({
     mutationFn: createBoard, // Gọi API tạo board
-    onSuccess: () =>{
-            queryClient.invalidateQueries(["workspaces"]);  
-    }
+    onSuccess: () => {
+      queryClient.invalidateQueries(["workspaces"]);
+    },
   });
 };
 
-export const getBoardByClosed = ()=>{
+export const useGetBoardByID = (boardId) => {
   return useQuery({
-      queryKey: ["boards"], // Key duy nhất để xác định và cache dữ liệu người dùng.
-      queryFn: getBoardsAllByClosed, // Hàm gọi API để lấy dữ liệu người dùng.
-      staleTime: 1000 * 60 * 5, // Dữ liệu được coi là "stale" sau 5 phút (ms * s * m).
-      cacheTime: 1000 * 60 * 30, // Dữ liệu được giữ trong cache tối đa 30 phút.
-    });
-}
+    queryKey: ["boards", boardId],
+    queryFn: async () => {
+      if (!boardId) return null; // Nếu không có boardId, không gọi API
+
+      try {
+        const response = await getBoardById(boardId);
+        if (!response?.data) {
+          throw new Error("Board data is empty or undefined");
+        }
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching board:", error);
+        throw new Error("Failed to fetch board data");
+      }
+    },
+  });
+};
+export const getBoardByClosed = () => {
+  return useQuery({
+    queryKey: ["boards"], // Key duy nhất để xác định và cache dữ liệu người dùng.
+    queryFn: getBoardsAllByClosed, // Hàm gọi API để lấy dữ liệu người dùng.
+    staleTime: 1000 * 60 * 5, // Dữ liệu được coi là "stale" sau 5 phút (ms * s * m).
+    cacheTime: 1000 * 60 * 30, // Dữ liệu được giữ trong cache tối đa 30 phút.
+  });
+};
 
 /**
  * Hook để lấy bảng theo workspaceId.
@@ -51,7 +69,4 @@ export const useBoards = (boardId) => {
   });
 
   return boardsQuery;
-}
-
-
-
+};
