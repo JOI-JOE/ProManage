@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
-import Button from "@mui/material/Button";
 import List from "@mui/material/List";
 import Divider from "@mui/material/Divider";
 import ListItem from "@mui/material/ListItem";
@@ -11,34 +10,38 @@ import ListItemText from "@mui/material/ListItemText";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import SettingsIcon from "@mui/icons-material/Settings";
 import PaletteIcon from "@mui/icons-material/Palette";
-
 import LabelIcon from "@mui/icons-material/Label";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EmailIcon from "@mui/icons-material/Email";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import PrintIcon from "@mui/icons-material/Print";
-
 import ArchiveIcon from "@mui/icons-material/Archive";
 import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
+import Button from "@mui/material/Button";
+import ActivityDrawer from "./Component_BoardMenu/Activity";
+import BoardDetailsDrawer from "./Component_BoardMenu/BoardDetailsDrawer";
+import Archived from "./Component_BoardMenu/Archive";
 
 const BoardMenu = () => {
-  const [state, setState] = React.useState({ right: false });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false); // Thêm trạng thái mở Archive Drawer
 
-  const toggleDrawer = (anchor, open) => (event) => {
-    if (
-      event.type === "keydown" &&
-      (event.key === "Tab" || event.key === "Shift")
-    ) {
-      return;
-    }
-    setState({ ...state, [anchor]: open });
-  };
+  const toggleMenu = (open) => () => setMenuOpen(open);
+  const toggleDetails = (open) => () => setDetailsOpen(open);
+  const toggleActivity = (open) => () => setActivityOpen(open);
+  const toggleArchive = (open) => () => setArchiveOpen(open); // Thêm toggle cho Archive Drawer
 
   const listItems = [
-    { text: "Về bảng này", icon: <InfoIcon /> },
-    { text: "Hoạt động", icon: <HistoryIcon /> },
-    { text: "Mục đã lưu trữ", icon: <ArchiveIcon /> },
+    { text: "Về bảng này", icon: <InfoIcon />, action: toggleDetails(true) },
+    { text: "Hoạt động", icon: <HistoryIcon />, action: toggleActivity(true) },
+    {
+      text: "Mục đã lưu trữ",
+      icon: <ArchiveIcon />,
+      action: toggleArchive(true),
+    }, // Thêm action mở Archive Drawer
   ];
 
   const settingsItems = [
@@ -54,17 +57,12 @@ const BoardMenu = () => {
     { text: "In, xuất và chia sẻ", icon: <PrintIcon /> },
   ];
 
-  const drawerList = (anchor) => (
-    <Box
-      sx={{ width: 280 }}
-      role="presentation"
-      onClick={toggleDrawer(anchor, false)}
-      onKeyDown={toggleDrawer(anchor, false)}
-    >
+  const drawerList = (
+    <Box sx={{ width: 280 }} role="presentation" onClick={toggleMenu(false)}>
       <List>
-        {listItems.map(({ text, icon }) => (
+        {listItems.map(({ text, icon, action }) => (
           <ListItem key={text} disablePadding>
-            <ListItemButton>
+            <ListItemButton onClick={action}>
               <ListItemIcon>{icon}</ListItemIcon>
               <ListItemText primary={text} />
             </ListItemButton>
@@ -95,35 +93,31 @@ const BoardMenu = () => {
       </List>
     </Box>
   );
+
   return (
     <div>
-      <Button onClick={toggleDrawer("right", true)} sx={{ color: "white" }}>
+      <Button onClick={toggleMenu(true)} sx={{ color: "white" }}>
         <MoreHorizIcon />
       </Button>
       <Drawer
-        sx={{
-          "& .MuiPaper-root": {
-            top: "48px",
-          },
-          "& .MuiSvgIcon-root": {
-            fontSize: "20px",
-            color: "#000000",
-          },
-          "& .MuiTypography-root": {
-            fontSize: "18px",
-            color: "#000000",
-          },
-          "& .MuiListItemButton-root": {
-            fontSize: "18px",
-            color: "#a5b1c2",
-          },
-        }}
         anchor="right"
-        open={state.right}
-        onClose={toggleDrawer("right", false)}
+        open={menuOpen}
+        onClose={toggleMenu(false)}
+        sx={{
+          "& .MuiPaper-root": { top: "48px" },
+          "& .MuiSvgIcon-root": { fontSize: "20px", color: "#000000" },
+          "& .MuiTypography-root": { fontSize: "18px", color: "#000000" },
+          "& .MuiListItemButton-root": { fontSize: "18px", color: "#a5b1c2" },
+        }}
       >
-        {drawerList("right")}
+        {drawerList}
       </Drawer>
+
+      <BoardDetailsDrawer open={detailsOpen} onClose={toggleDetails(false)} />
+
+      <ActivityDrawer open={activityOpen} onClose={toggleActivity(false)} />
+
+      <Archived open={archiveOpen} onClose={toggleArchive(false)} />
     </div>
   );
 };
