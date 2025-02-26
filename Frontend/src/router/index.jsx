@@ -31,14 +31,14 @@ const router = createBrowserRouter([
         path: "register",
         element: <Register />,
       },
-      {
-        path: "login/google", // Add this route!
-        element: <GoogleAuth />, // Use your GoogleAuth component here
-      },
-      {
-        path: "auth/callback", // Add this route!
-        element: <GitHubAuth />, // Use your GoogleAuth component here
-      },
+      // {
+      //   path: "login/google", // Add this route!
+      //   element: <GoogleAuth />, // Use your GoogleAuth component here
+      // },
+      // {
+      //   path: "auth/callback", // Add this route!
+      //   element: <GitHubAuth />, // Use your GoogleAuth component here
+      // },
       {
         path: "/forgort-password", // Add this route!
         element: <ForgotPassword />, // Use your GoogleAuth component here
@@ -56,63 +56,30 @@ const router = createBrowserRouter([
       {
         element: <Dashboard />,
         children: [
-            {
-                path: "login",
-                element: <LoginForm />,
-            },
-            {
-                path: "register",
-                element: <Register />,
-            },
-            {
-                path: "login/google", // Add this route!
-                element: <GoogleAuth />, // Use your GoogleAuth component here
-            },
-            {
-                path: "auth/callback", // Add this route!
-                element: <GitHubAuth />, // Use your GoogleAuth component here
-            },
-            {
-                path: "/forgort-password", // Add this route!
-                element: <ForgotPassword />, // Use your GoogleAuth component here
-            },
-        ],
+          { path: "u/:username/boards", element: <Boards /> },
+          { path: "w/:workspaceName/home", element: <Workspaces /> }
+        ]
       },
       {
         path: "/",
         element: <BoardDetail />,
         children: [
-            {
-                path: "home", // Or perhaps redirect if you have a separate home page
-                element: <Home />,
-            },
-            {
-                element: <Dashboard />,
-                children: [
-                    { path: "u/:username/boards", element: <Boards /> },
-                    { path: "w/:workspaceName/home", element: <Workspaces /> }
-                ]
-            },
-            {
-                path: "/",
-                element: <BoardDetail />,
-                children: [
-                    {
-                        path: "b/:boardId/:name",
-                        element: <BoardContent />,
-                    },
-                    {
-                        path: "w/:workspaceName/members",
-                        element: <Member />,
-                    },
-                    {
-                        path: "c/:cardId/:name",
-                        element: <CardModal />,
-                    }
-                ]
-            }
+          {
+            path: "b/:boardId/:name",
+            element: <BoardContent />,
+          },
+          {
+            path: "w/:workspaceName/members",
+            element: <Member />,
+          },
+          {
+            path: "c/:cardId/:name",
+            element: <CardModal />,
+          }
         ]
-    },
+      }
+    ]
+  }
 ]);
 
 export default router
