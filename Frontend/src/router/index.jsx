@@ -16,8 +16,8 @@ import GitHubAuth from "../pages/Auth/GitHubAuth";
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
-import Member from "../pages/boards/detail/Member";
-import Account from "../pages/boards/detail/Account";
+
+import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 
 const router = createBrowserRouter([
   {
@@ -70,21 +70,17 @@ const router = createBrowserRouter([
             element: <BoardContent />,
           },
           {
-            path: "w/:displayName",
-            element: <Member />,
+            path: "c/:cardId/:name",
+            element: <CardModal />,
           },
-          {
-            path: "w/:displayName/members",
-            element: <Member />,
-          },
-          {
-            path: "w/:displayName",
-            element: <Account />,
-          },
-          {
-            path: "w/:displayName/accounts",
-            element: <Account />,
-          },
+          // {
+          //   path: "w/:displayName",
+          //   element: <Member />,
+          // },
+          // {
+          //   path: "w/:displayName/members",
+          //   element: <Member />,
+          // },
         ],
       },
     ],

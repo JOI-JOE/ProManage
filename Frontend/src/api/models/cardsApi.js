@@ -30,3 +30,13 @@ export const updateCardPositions = async ({ cardId, newListId, newPosition }) =>
     throw new Error(error.response?.data?.message || "Không thể cập nhật vị trí card");
   }
 };
+
+export const createCard = async (cardData) => {
+  try {
+    const response = await authClient.post("/cards", cardData);
+    return response.data; // Trả về dữ liệu từ API
+  } catch (error) {
+    console.error("Lỗi khi tạo thẻ:", error);
+    throw error; // Ném lỗi để xử lý phía trên (nếu cần)
+  }
+};
