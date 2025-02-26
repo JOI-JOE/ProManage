@@ -18,11 +18,43 @@ import GoogleAuth from "../pages/Auth/GoogleAuth";
 
 import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 
-
 const router = createBrowserRouter([
-    {
-        path: "/", // Path RIÊNG BIỆT cho GuestLayout
-        element: <GuestLayout />,
+  {
+    path: "/", // Path RIÊNG BIỆT cho GuestLayout
+    element: <GuestLayout />,
+    children: [
+      {
+        path: "login",
+        element: <LoginForm />,
+      },
+      {
+        path: "register",
+        element: <Register />,
+      },
+      {
+        path: "login/google", // Add this route!
+        element: <GoogleAuth />, // Use your GoogleAuth component here
+      },
+      {
+        path: "auth/callback", // Add this route!
+        element: <GitHubAuth />, // Use your GoogleAuth component here
+      },
+      {
+        path: "/forgort-password", // Add this route!
+        element: <ForgotPassword />, // Use your GoogleAuth component here
+      },
+    ],
+  },
+  {
+    path: "/", // Parent route
+    element: <DefaultLayout />,
+    children: [
+      {
+        path: "home", // Or perhaps redirect if you have a separate home page
+        element: <Home />,
+      },
+      {
+        element: <Dashboard />,
         children: [
             {
                 path: "login",
@@ -45,10 +77,10 @@ const router = createBrowserRouter([
                 element: <ForgotPassword />, // Use your GoogleAuth component here
             },
         ],
-    },
-    {
-        path: "/", // Parent route
-        element: <DefaultLayout />,
+      },
+      {
+        path: "/",
+        element: <BoardDetail />,
         children: [
             {
                 path: "home", // Or perhaps redirect if you have a separate home page
@@ -84,4 +116,5 @@ const router = createBrowserRouter([
 ]);
 
 export default router
+
 

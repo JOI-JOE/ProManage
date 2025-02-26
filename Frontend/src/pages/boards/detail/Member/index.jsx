@@ -79,7 +79,7 @@ const Member = () => {
     <Box
       sx={{
         width: "100%",
-        maxWidth: "1200px", // ✅ Giới hạn chiều rộng tối đa
+        maxWidth: "1200px",
         padding: "20px",
         margin: "30px auto",
       }}
@@ -92,9 +92,9 @@ const Member = () => {
           justifyContent: "space-between",
           borderBottom: "1px solid #D3D3D3",
           paddingBottom: "40px",
-          width: "100%", // ✅ Để 100% thay vì 75vw
-          maxWidth: "1100px", // ✅ Giới hạn kích thước
-          margin: "0 auto", // ✅ Đưa về giữa thay vì -60px
+          width: "100%",
+          maxWidth: "1100px",
+          margin: "0 auto",
           minHeight: "80px",
         }}
       >
@@ -145,7 +145,6 @@ const Member = () => {
           <WorkspaceDetailForm />
         )}
 
-        {/* Nút Mời Thành Viên luôn nằm bên phải, giữ cùng hàng với tiêu đề */}
         <Button
           variant="contained"
           sx={{
@@ -155,7 +154,7 @@ const Member = () => {
             fontWeight: "bold",
             padding: "8px 12px",
             boxShadow: "none",
-            marginRight: "60px", // ✅ Đẩy nút về bên phải tự nhiên
+            marginRight: "60px",
             "&:hover": { bgcolor: "#005A96" },
           }}
           onClick={handleOpenInvite}
@@ -170,16 +169,15 @@ const Member = () => {
         spacing={2}
         sx={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}
       >
-        {/* Cột trái: Người cộng tác - Chỉ chiếm 20% */}
-        <Grid
-          item
-          xs={12}
-          sm={3}
-          md={2}
-        // sx={{ borderRight: "1px solid #D3D3D3" }}
-        >
+
+        {/* Cột trái:  */}
+        <Grid item xs={12} sm={3} md={2}>
           <Box sx={{ padding: "0px", width: "100%" }}>
-            <Typography variant="h6" fontWeight="bold">
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{ fontSize: "20px" }}
+            >
               Người cộng tác
             </Typography>
             <Chip
@@ -213,7 +211,7 @@ const Member = () => {
           </Box>
         </Grid>
 
-        {/* Cột phải: Chi tiết Thành viên - Chiếm 80% */}
+        {/* Cột phải:  */}
         <Grid item xs={12} sm={9} md={10}>
           <Box
             sx={{
@@ -222,7 +220,11 @@ const Member = () => {
               borderBottom: "1px solid #D3D3D3",
             }}
           >
-            <Typography variant="h6" fontWeight="bold">
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{ fontSize: "20px" }}
+            >
               Thành viên không gian làm việc (1)
             </Typography>
             <Box sx={{ borderBottom: "1px solid #D3D3D3", pb: 2, mb: 2 }}>
@@ -233,7 +235,11 @@ const Member = () => {
               </Typography>
             </Box>
 
-            <Typography variant="h6" fontWeight="bold" sx={{ mt: 2 }}>
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{ mt: 2, fontSize: "20px" }}
+            >
               Mời các thành viên tham gia cùng bạn
             </Typography>
 
@@ -275,9 +281,6 @@ const Member = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                // borderBottom: "1px solid #D3D3D3",
-                // pb: 2,
-                // mb: 2,
               }}
             >
               {/* Thông tin thành viên */}

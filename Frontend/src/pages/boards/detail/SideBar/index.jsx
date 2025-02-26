@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-    Box,
-    Drawer,
-    List,
-    ListItem,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    Typography,
-    Avatar,
-    Collapse,
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  Avatar,
+  Collapse,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
@@ -37,9 +37,10 @@ const SideBar = ({ workspace }) => {
     // Nếu workspace được truyền từ props, ưu tiên sử dụng nó (tránh re-fetch)
     const currentWorkspace = workspace || workspaceData;
 
-    const toggleSettings = () => {
-        setOpenSettings(!openSettings);
-    };
+
+  const toggleSettings = () => {
+    setOpenSettings(!openSettings);
+  };
 
     return (
         <Drawer
