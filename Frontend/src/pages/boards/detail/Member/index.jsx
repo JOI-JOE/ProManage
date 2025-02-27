@@ -27,6 +27,7 @@ import { useParams } from "react-router-dom";
 import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
 import MemberItem from "./MemberItem";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
+import { useCreateInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 
 const Member = () => {
   const [isFormVisible, setFormVisible] = useState(false);
@@ -41,17 +42,6 @@ const Member = () => {
     setIsLinkActive(false);
   };
 
-  const { workspaceName } = useParams();
-
-  const {
-    data: workspace,
-    isLoading: workspaceLoadingByName,
-    error: workspaceErrorByName,
-  } = useGetWorkspaceByName(workspaceName, {
-    enabled: !!workspaceName, // Chỉ fetch nếu không có workspaceId
-  });
-
-
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
   };
@@ -60,20 +50,44 @@ const Member = () => {
     setInviteOpen(false);
   };
 
-  const handleCopyLink = () => {
-    setLinkCopied(true);
-    setIsLinkActive(true);
-    setShowCopiedMessage(true);
-    navigator.clipboard.writeText("https://example.com/invite-link");
-    setTimeout(() => setShowCopiedMessage(false), 3000);
-  };
-
   const handleDisableLink = () => {
     setIsLinkActive(false);
     setLinkCopied(false);
   };
 
+
+  const { workspaceName } = useParams();
+  const { data: workspace } = useGetWorkspaceByName(workspaceName, {
+    enabled: !!workspaceName,
+  });
+
   const members = workspace.members
+
+  const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
+
+  const handleCopyLink = () => {
+    if (!workspace?.id) {
+      console.error("Workspace ID is undefined.");
+      return;
+    }
+    createInviteLink(
+      { workspaceId: workspace.id },
+      {
+        onSuccess: (data) => {
+          const link = data.inviteLink; // Giả sử API trả về link mời trong field `inviteLink`
+          navigator.clipboard.writeText(link);
+          setLinkCopied(true);
+          setIsLinkActive(true);
+          setShowCopiedMessage(true);
+          setTimeout(() => setShowCopiedMessage(false), 3000);
+
+        },
+        onError: (error) => {
+          console.error("Lỗi khi tạo link mời:", error);
+        },
+      }
+    );
+  };
 
   return (
     <Box
@@ -279,21 +293,20 @@ const Member = () => {
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
+                flexDirection: "column", // Hiển thị theo hàng dọc
+                alignItems: "flex-start", // Căn lề trái cho các thành viên
+                gap: 2, // Khoảng cách giữa các thành viên
               }}
             >
               {/* Thông tin thành viên */}
-              {members?.map((member) => (
+              {members?.map((member, index) => (
                 <Box
-                  key={member.id} // Sử dụng key để React có thể tối ưu hóa việc render
+                  key={`${member.id}-${index}`} // Kết hợp member.id và index để tạo key duy nhất
                   id="workspace-member-list"
-                  sx={{ display: "flex", alignItems: "center", gap: 2 }}
                 >
                   <MemberItem member={member} /> {/* Truyền dữ liệu member vào MemberItem */}
                 </Box>
               ))}
-
             </Box>
           </Box>
         </Grid>
