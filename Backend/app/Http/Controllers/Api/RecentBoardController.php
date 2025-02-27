@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\recentBoard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
 
 class RecentBoardController extends Controller
 {
@@ -29,36 +29,37 @@ class RecentBoardController extends Controller
     //     ]);
     // }
     public function index()
-{
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    if (!$user) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Lấy dữ liệu từ bảng RecentBoard và eager load thông tin từ bảng Board và Workspace
+        $recentBoards = RecentBoard::where('user_id', $user->id)
+                                    ->orderBy('last_accessed', 'desc')
+                                    ->with(['board.workspace'])  // Eager load mối quan hệ với bảng Board và Workspace
+                                    ->take(5)  // Lấy 5 bảng gần đây nhất
+                                    ->get();
+
+        // Lấy các thông tin cần thiết bao gồm tên từ bảng board và display_name từ bảng workspace
+        $recentBoardsWithDetails = $recentBoards->map(function ($recentBoard) {
+            return [
+                'id' => $recentBoard->id,
+                'user_id' => $recentBoard->user_id,
+                'last_accessed' => $recentBoard->last_accessed,
+                'thumbnail' => $recentBoard->board->thumbnail, // Lấy thumbnail từ bảng Board
+                'board_name' => $recentBoard->board->name,  // Lấy tên từ bảng Board
+                'workspace_display_name' => $recentBoard->board->workspace->display_name, // Lấy display_name từ bảng Workspace
+            ];
+        });
+
+        return response()->json([
+            'result' => true,
+            'data' => $recentBoardsWithDetails
+        ]);
     }
-
-    // Lấy dữ liệu từ bảng RecentBoard và eager load thông tin từ bảng Board và Workspace
-    $recentBoards = RecentBoard::where('user_id', $user->id)
-        ->orderBy('last_accessed', 'desc')
-        ->with(['board.workspace'])  // Eager load mối quan hệ với bảng Board và Workspace
-        ->get();
-
-    // Lấy các thông tin cần thiết bao gồm tên từ bảng board và display_name từ bảng workspace
-    $recentBoardsWithDetails = $recentBoards->map(function ($recentBoard) {
-        return [
-            'id' => $recentBoard->id,
-            'user_id' => $recentBoard->user_id,
-            'last_accessed' => $recentBoard->last_accessed,
-            'thumbnail' => $recentBoard->board->thumbnail, // Lấy thumbnail từ bảng Board
-            'board_name' => $recentBoard->board->name,  // Lấy tên từ bảng Board
-            'workspace_display_name' => $recentBoard->board->workspace->display_name, // Lấy display_name từ bảng Workspace
-        ];
-    });
-
-    return response()->json([
-        'result' => true,
-        'data' => $recentBoardsWithDetails
-    ]);
-}
 
 
     /**
