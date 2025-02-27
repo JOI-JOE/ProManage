@@ -14,4 +14,14 @@ class recentBoard extends Model
         'board_id',
         'last_accessed'
     ];
+
+    public function board()
+    {
+        return $this->belongsTo(Board::class);
+    }
+
+    public function workspace()
+    {
+        return $this->belongsTo(Workspace::class);
+    }
 }

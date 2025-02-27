@@ -11,6 +11,7 @@ import { useLists } from "../../../../hooks/useList";
 import { useCardByList } from "../../../../hooks/useCard";
 import { updateCardPositions } from "../../../../api/models/cardsApi";
 import { mapOrder } from "../../../../../utils/sort";
+import { useRecentBoardAccess } from "../../../../hooks/useBoard";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -24,6 +25,8 @@ const BoardContent = () => {
   const { data: lists, isLoading, error, reorderLists } = useLists(boardId);
   // const { cards, isLoadingCard, errorCard, moveCard } = useCardByList(listId);
 
+  // Sử dụng hook để ghi nhận thông tin bảng
+  const { mutate: logBoardAccess } = useRecentBoardAccess();
 
   const [orderedColumns, setOrderedColumns] = useState([]);
   const [activeDragItemId, setActiveDragItemId] = useState(null);
@@ -35,6 +38,14 @@ const BoardContent = () => {
 
 
   console.log("🛠 list:", lists);
+  
+  useEffect(() => {
+    // Gọi API để lưu lại thông tin bảng khi người dùng vào trang bảng
+    if (boardId) {
+      logBoardAccess(boardId); // Lưu thông tin bảng vào danh sách gần đây
+    }
+  }, [boardId, logBoardAccess]);
+
 
 //   useEffect(() => {
 //     if (lists) {
