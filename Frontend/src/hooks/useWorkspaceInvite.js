@@ -2,7 +2,28 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getInviteWorkspaceById,
   createInviteWorkspace,
+  acceptInvitation,
 } from "../api/models/inviteWorkspaceApi";
+
+export const useAcceptInvitation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, inviteToken }) =>
+      acceptInvitation(workspaceId, inviteToken),
+    onSuccess: (data, variables) => {
+      // Cập nhật cache với dữ liệu mới
+      queryClient.setQueryData(
+        ["inviteWorkspace", variables.workspaceId],
+        data
+      );
+      console.log("Tham gia workspace thành công:", data);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi chấp nhận lời mời:", error);
+    },
+  });
+};
 
 export const useGetInviteWorkspace = (workspaceId) => {
   return useQuery({

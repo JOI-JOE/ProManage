@@ -31,8 +31,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('/register', [AuthController::class, 'handleRegister']);
-
+Route::post('/register', [AuthController::class, 'handleRegister'])->name('login');
 Route::post('/login', [AuthController::class, 'handleLogin']);
 
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
@@ -50,6 +49,9 @@ Route::middleware(['web'])->group(function () {
 });
 
 
+// Đường dẫn này để kiểm tra xem lời mời có hợp lệ
+Route::get('/workspaces/{workspaceId}/validate-invite/{inviteToken}', [WorkspaceInvitationsController::class, 'validateInvitation']);
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
 
@@ -64,9 +66,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::controller(WorkspaceInvitationsController::class)->group(callback: function () {
-        // Route::get('/workspaces/{workspaceId}/{inviteToken}', 'getInvitationSecret');
-        Route::get("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
-        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'validateInvitation');
+        Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
+
+        Route::get('/workspaces/{workspaceId}/{inviteToken}', 'getInvitationSecret');
+
+        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
+
+        Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
+
+        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {

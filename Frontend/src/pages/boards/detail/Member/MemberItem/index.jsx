@@ -8,9 +8,9 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CloseIcon from "@mui/icons-material/Close";
 
 const MemberItem = ({ member }) => {
-    console.log(member)
     return (
-        <>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+            {/* Phần thông tin thành viên */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Box
                     sx={{
@@ -30,7 +30,7 @@ const MemberItem = ({ member }) => {
                 <Box>
                     <Typography fontWeight="bold">{member.display_name}</Typography>
                     <Typography variant="body2" sx={{ color: "gray" }}>
-                        @{member.email} • Lần hoạt động gần nhất 02/04
+                        @{member.email} • {member.last_active}
                     </Typography>
                 </Box>
             </Box>
@@ -40,22 +40,14 @@ const MemberItem = ({ member }) => {
                 <Button variant="outlined" disabled>
                     Xem bảng thông tin (0)
                 </Button>
-                <Button
-                    variant="outlined"
-                    disabled
-                    startIcon={<HelpOutlineIcon />}
-                >
-                    Quản trị viên
+                <Button variant="outlined" disabled startIcon={<HelpOutlineIcon />}>
+                    {member.member_type}
                 </Button>
-                <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<CloseIcon />}
-                >
+                <Button variant="outlined" color="error" startIcon={<CloseIcon />}>
                     Rời khỏi
                 </Button>
             </Box>
-        </>
+        </div>
     )
 }
 
