@@ -148,12 +148,13 @@ Route::prefix('boards/{boardId}/members')->group(function () {
     Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
     Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
 });
-
-
+// Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
     Route::post('recent-boards', [RecentBoardController::class, 'store']);
 });
+
+
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
 
