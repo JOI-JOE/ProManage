@@ -12,36 +12,61 @@ use Illuminate\Support\Facades\Log;
 
 class BoardController extends Controller
 {
-    public function index()
-    {
-        $board = Board::where('closed', 0)->get();
-        return response()->json($board);
-    }
-
-    //     public function index($workspaceId)
+    // public function index()
     // {
-    //     try {
-    //         // Kiểm tra nếu workspace tồn tại
-    //         $workspace = Workspace::findOrFail($workspaceId);
+    //     $board = Board::where('closed', 0)->get();
+    //     return response()->json($board);
 
-    //         // Kiểm tra quyền truy cập của user
-    //         if ($workspace->user_id != auth()->id()) {
-    //             return response()->json(['error' => 'Unauthorized'], 403);
-    //         }
-
-    //         // Lấy các boards của workspace với điều kiện closed = 0
-    //         $boards = $workspace->boards()->where('closed', 0)->get();
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'data' => $boards,
-    //             'workspace' =>$workspace
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
-    //     }
     // }
 
+    public function showBoardById($boardId)
+    {
+        try {
+            // Tìm board theo ID
+            $board = Board::findOrFail($boardId);
+
+            // Trả về kết quả nếu tìm thấy
+            return response()->json([
+                'result' => true,
+                'data' => $board
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'result' => false,
+                'message' => 'Board not found.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    public function index($workspaceId)
+    {
+        try {
+            // Kiểm tra nếu workspace tồn tại
+            $workspace = Workspace::findOrFail($workspaceId);
+
+            // Kiểm tra quyền truy cập của user
+            if ($workspace->user_id != auth()->id()) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            // Lấy các boards của workspace với điều kiện closed = 0
+            $boards = $workspace->boards()->where('closed', 0)->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $boards,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+        }
+    }
 
 
     public function trash()
@@ -49,7 +74,6 @@ class BoardController extends Controller
         $board = Board::where('closed', 1)->get();
         return response()->json($board);
     }
-
 
     public function store(Request $request)
     {
@@ -73,20 +97,16 @@ class BoardController extends Controller
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
-
             // Lấy ID của user đang đăng nhập
             $userId = $user->id;
 
-
             // Lưu dữ liệu từ request
             $data = $request->all();
-
 
             // Kiểm tra và upload hình ảnh
             if ($request->hasFile('thumbnail')) {
                 $data['thumbnail'] = $this->upload_image($request->file('thumbnail'));
             }
-
 
             // Tạo board mới
             $board = Board::create([
@@ -100,7 +120,6 @@ class BoardController extends Controller
                 'visibility' => $request->visibility,
                 'workspace_id' => $request->workspace_id,
             ]);
-
 
             return response()->json([
                 'result' => true,
@@ -123,7 +142,6 @@ class BoardController extends Controller
             ], 500);
         }
     }
-
 
     /**
      * Update cho các trường ngoài ảnh
@@ -152,26 +170,7 @@ class BoardController extends Controller
     }
 
 
-    // public function show($workspaceId, $boardId)
-    // {
-    //     try {
-    //         // Kiểm tra quyền truy cập
-    //         $workspace = Workspace::findOrFail($workspaceId);
-    //         if ($workspace->user_id != auth()->id()) {
-    //             return response()->json(['error' => 'Unauthorized'], 403);
-    //         }
-    //         // Lấy thông tin board 
-    //         $board = $workspace->boards()->firstOrFail();
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'data' => $board,
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
-    //     }
-    // }
-    public function show($workspaceId)
+    public function show($workspaceId, $boardId)
     {
         try {
             // Kiểm tra quyền truy cập
@@ -179,24 +178,19 @@ class BoardController extends Controller
             if ($workspace->user_id != auth()->id()) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
-    
-            // Lấy tất cả các bảng của workspace
-            $boards = $workspace->boards;
-    
-            // Kiểm tra nếu workspace không có bảng nào
-            if ($boards->isEmpty()) {
-                return response()->json(['message' => 'No boards found in this workspace'], 404);
-            }
-    
+
+            // Lấy thông tin board 
+            $board = $workspace->boards()->firstOrFail();
+
             return response()->json([
                 'success' => true,
-                'data' => $boards, // Trả về tất cả các bảng của workspace
+                'data' => $board,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
         }
     }
-    
+
 
     /**
      * Update tên board
@@ -399,7 +393,7 @@ class BoardController extends Controller
         $board = Board::where('id', $id)
             ->with(['workspace.boards']) // Load luôn danh sách boards trong workspace
             ->first();
-    
+
         if ($board) {
             return response()->json([
                 'board' => $board,

@@ -1,4 +1,3 @@
-import axios from "axios";
 import authClient from "../authClient";
 
 export const getBoardsAllByClosed = async () => {
@@ -13,7 +12,7 @@ export const getBoardsAllByClosed = async () => {
 
 export const createBoard = async (data) => {
   try {
-    const response = await authClient.post("/createBoard",data);
+    const response = await authClient.post("/createBoard", data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi tạo bảng:", error);
@@ -39,15 +38,17 @@ export const getBoardById = async (boardId) => {
   }
 
   try {
-    const response = await authClient.get(`/board/${boardId}`);
+    const response = await authClient.get(`/boards/${boardId}`);
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi lấy bảng:", error?.response?.data?.message || error.message);
+    console.error(
+      "Lỗi khi lấy bảng:",
+      error?.response?.data?.message || error.message
+    );
 
     throw new Error(
-      error?.response?.data?.message || "Không thể lấy dữ liệu bảng, vui lòng thử lại sau."
+      error?.response?.data?.message ||
+        "Không thể lấy dữ liệu bảng, vui lòng thử lại sau."
     );
   }
 };
-
-

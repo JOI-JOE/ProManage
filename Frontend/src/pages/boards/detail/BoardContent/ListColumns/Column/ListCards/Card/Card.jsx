@@ -11,6 +11,7 @@ import CommentIcon from "@mui/icons-material/Comment";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { memo } from 'react';
 
 const C_ard = ({ card }) => {
   // Kéo thả
@@ -21,7 +22,23 @@ const C_ard = ({ card }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: card._id, data: { ...card } }); //id: là của thư viện, _id:là của DB
+  } = useSortable({ id: card.id, 
+    /// Bản mới
+    data: 
+    { 
+      type:'Card',
+      columnId:card.list_board_id,
+     ...card 
+  
+  } 
+  /// Bản cũ
+//   data: 
+//   { 
+   
+//    ...card 
+
+// } 
+  }); //id: là của thư viện, _id:là của DB
 
   const cardStyle = {
     transform: CSS.Translate.toString(transform),
@@ -93,4 +110,5 @@ const C_ard = ({ card }) => {
   );
 };
 
-export default C_ard;
+// export default C_ard;
+export default memo(C_ard);
