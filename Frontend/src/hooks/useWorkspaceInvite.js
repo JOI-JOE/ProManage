@@ -1,0 +1,36 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getInviteWorkspaceById,
+  createInviteWorkspace,
+} from "../api/models/inviteWorkspaceApi";
+
+export const useGetInviteWorkspace = (workspaceId) => {
+  return useQuery({
+    queryKey: ["inviteWorkspace", workspaceId], // Unique key cho query
+    queryFn: () => getInviteWorkspaceById(workspaceId), // Hàm fetch dữ liệu
+    enabled: !!workspaceId, // Chỉ fetch khi workspaceId tồn tại
+    onError: (error) => {
+      console.error("Lỗi khi lấy thông tin invite workspace:", error);
+    },
+    staleTime: 1000 * 60 * 5, // Dữ liệu được coi là "cũ" sau 5 phút
+    cacheTime: 1000 * 60 * 10, // Dữ liệu được lưu trong cache 10 phút
+  });
+};
+
+export const useCreateInviteWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId }) => createInviteWorkspace(workspaceId),
+    onSuccess: (data, variables) => {
+      // Cập nhật cache với dữ liệu mới
+      queryClient.setQueryData(
+        ["inviteWorkspace", variables.workspaceId],
+        data
+      );
+    },
+    onError: (error) => {
+      console.error("Lỗi khi tạo lời mời vào workspace:", error);
+    },
+  });
+};
