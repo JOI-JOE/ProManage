@@ -30,6 +30,6 @@ class ListBoard extends Model
     }
     public function cards()
     {
-        return $this->hasMany(Card::class, 'list_id');
+        return $this->hasMany(Card::class, 'list_board_id', 'id');
     }
 }

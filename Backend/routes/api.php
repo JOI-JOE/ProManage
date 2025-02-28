@@ -173,8 +173,8 @@ Route::get('/trashes', [BoardController::class, 'trash']);
 Route::prefix('cards')->group(function () {
     Route::get('/{listId}/getCardsByList', [CardController::class, 'getCardsByList']);
     // routes/api.php
-    Route::patch('/{cardId}/move', [CardController::class, 'moveCard']);
-    Route::post('/update-position', [CardController::class, 'updateCardPosition']);
+    // Route::patch('/{cardId}/move', [CardController::class, 'moveCard']);
+    Route::put('/update-position', [CardController::class, 'updateCardPosition']);
     Route::post('/', [CardController::class, 'store']);
     Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
     Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);
