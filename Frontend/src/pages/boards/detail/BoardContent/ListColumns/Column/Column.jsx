@@ -71,6 +71,8 @@ const Column = ({ list }) => {
   // const { data: listDetail, isLoading, error } = useListById(list.id);
   const { data: listDetail, isLoading, error, updateListName, updateClosed } = useListById(list.id);
   const { data: allCards, isLoadingCard, errorCard } = useCardByList(list.id);
+  // console.log(listDetail.cards);
+  
  
   
   const [title, setTitle] = useState('');
@@ -89,7 +91,9 @@ const Column = ({ list }) => {
   useEffect(() => {
     if (allCards) {
      
-      setCards(allCards);
+      const uniqueCards = Array.from(new Set(allCards.map(card => card.id)))
+      .map(id => allCards.find(card => card.id === id));
+    setCards(uniqueCards);
     }
   }, [allCards]);
   
@@ -178,23 +182,6 @@ const Column = ({ list }) => {
       setIsEditing(false);
     }
   };
-
-  // const handleArchiveClick = () => {
-  //   setOpenArchiveDialog(true);
-  //   setAnchorEl(null);
-  // };
-
-
-  // const handleArchiveColumn = async (event) => {
-  //   try {
-  //     await updateClosed(list.closed);  // Gọi API lưu trữ cột
-  //     toast.success(`Cột "${list.name}" đã được lưu trữ.`);
-  //   } catch (error) {
-  //     toast.error("Có lỗi xảy ra khi lưu trữ cột.");
-  //   }
-  //   setOpenArchiveDialog(false);  // Đóng hộp thoại
-
-  // }
 
 
 

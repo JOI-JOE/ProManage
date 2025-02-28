@@ -17,19 +17,26 @@ export const getCardByList = async (listId) => {
 };
 
 // Hàm cập nhật vị trí của card khi kéo thả
+// 
+
 export const updateCardPositions = async ({ cardId, newListId, newPosition }) => {
   try {
     const response = await authClient.put(`/cards/update-position`, {
-      list_id: newListId,
-      position: newPosition,
+      id: cardId, // Bổ sung ID của card
+      new_list_board_id: newListId, // Đúng tên tham số trên API
+      new_position: newPosition, // Đúng tên tham số trên API
     });
 
     return response.data;
   } catch (error) {
     console.error("❌ Lỗi khi cập nhật vị trí card:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || "Không thể cập nhật vị trí card");
+
+    throw new Error(
+      error.response?.data?.message || "Không thể cập nhật vị trí card"
+    );
   }
 };
+
 
 export const createCard = async (cardData) => {
   try {
