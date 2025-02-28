@@ -52,3 +52,27 @@ export const getBoardById = async (boardId) => {
     );
   }
 };
+
+export const getRecentBoards = async () => {
+  try {
+    const response = await authClient.get("/recent-boards");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách bảng gần đây:", error);
+    throw error;
+  }
+};
+
+
+export const logBoardAccess = async (boardId) => {
+  try {
+    const response = await authClient.post("/recent-boards", { board_id: boardId });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lưu thông tin bảng:", error);
+    throw error;
+  }
+};
+
+
+
