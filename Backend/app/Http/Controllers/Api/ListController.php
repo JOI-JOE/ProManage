@@ -24,7 +24,9 @@ class ListController extends Controller
     {
         $lists = ListBoard::where('board_id', $boardId)
             ->where('closed', false)
-            ->orderBy('position')->get();
+            ->orderBy('position')
+            ->with('cards') // Lấy luôn danh sách thẻ thuộc mỗi danh sách
+            ->get();
         return response()->json($lists);
     }
 

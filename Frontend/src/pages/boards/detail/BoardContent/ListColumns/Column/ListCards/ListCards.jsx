@@ -55,12 +55,11 @@ const ListCards = React.memo(({ listId, cards }) => {
         )}
 
       {sortedCards.map((card) => (
-        <Link  key={card.id}
-        to={`/c/${card.id}/${encodeURIComponent(card.title)}`} // Tạo đường dẫn với cardId và tên
-        style={{ textDecoration: "none" }} // Xóa underline mặc định của link
->
-          <C_ard key={card.id} card={card} />
-        </Link>
+      
+      <C_ard 
+      key={card.id} // 👈 Đã sửa ở đây
+      card={card} 
+    />
     
       ))}
 
