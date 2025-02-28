@@ -8,6 +8,7 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CloseIcon from "@mui/icons-material/Close";
 
 const MemberItem = ({ member }) => {
+    console.log(member)
     return (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
             {/* Phần thông tin thành viên */}
@@ -25,10 +26,10 @@ const MemberItem = ({ member }) => {
                         fontWeight: "bold",
                     }}
                 >
-                    TT
+                    {member?.name?.charAt(0)}
                 </Box>
                 <Box>
-                    <Typography fontWeight="bold">{member.display_name}</Typography>
+                    <Typography fontWeight="bold">{member?.name}</Typography>
                     <Typography variant="body2" sx={{ color: "gray" }}>
                         @{member.email} • {member.last_active}
                     </Typography>
