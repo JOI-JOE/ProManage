@@ -74,5 +74,15 @@ export const logBoardAccess = async (boardId) => {
   }
 };
 
+export const updateBoardName = async (boardId, name) => {
+  try {
+    const response = await authClient.patch(`/boards/${boardId}/name`, { name });
+    return response.data;
+  } catch (error) {  
+    console.error("Lỗi khi cập nhật tên bảng:", error);
+    throw error;
+  }
+};
+
 
 

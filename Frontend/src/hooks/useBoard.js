@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createBoard, getBoardById, getRecentBoards, logBoardAccess, showBoardByWorkspaceId } from "../api/models/boardsApi";
+import { createBoard, getBoardById, getRecentBoards, logBoardAccess, showBoardByWorkspaceId, updateBoardName } from "../api/models/boardsApi";
 
 /**
  * Hook useBoard để tạo bảng mới.
@@ -93,3 +93,22 @@ export const useRecentBoardAccess = () => {
   });
 };
 
+
+/**
+ * Hook để cập nhật tên bảng
+ * @returns {object} - Object chứa mutate để gọi API cập nhật tên bảng
+ */
+export const useUpdateBoardName = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ boardId, name }) => updateBoardName  (boardId, name),
+    onSuccess: (data, variables) => {
+      // Cập nhật lại dữ liệu bảng trong cache
+      queryClient.invalidateQueries(["boards", variables.boardId]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật tên bảng:", error);
+    },
+  });
+};
