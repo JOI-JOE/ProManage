@@ -59,6 +59,11 @@ class Workspace extends Model
         return $this->hasMany(Board::class);
     }
 
+    public function members()
+    {
+        return $this->hasMany(WorkspaceMembers::class, 'id_workspace');
+    }
+
     protected $dispatchesEvents = [
         'created' => WorkspaceUpdate::class,
         'updated' => WorkspaceUpdate::class

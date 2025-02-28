@@ -26,7 +26,6 @@ return new class extends Migration
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
 
-
             // Loại thành viên: admin hoặc normal
             $table->enum('member_type', ['admin', 'normal'])
                 ->default('normal'); // Mặc định là 'normal'

@@ -1,18 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, TextField, Button } from "@mui/material";
+import { useUpdateInforWorkspace } from "../../../hooks/useWorkspace";
 
 const existingShortNames = ["abc", "xyz", "test"];
 
-const WorkspaceDetailForm = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    shortName: "",
-    description: "",
-  });
+const WorkspaceDetailForm = ({ workspaceInfo, onCancel }) => {
+  const initialFormData = {
+    name: workspaceInfo ? workspaceInfo.display_name : "",
+    shortName: workspaceInfo ? workspaceInfo.name : "",
+    description: workspaceInfo ? workspaceInfo.desc : "",
+  };
 
-  const [errors, setErrors] = useState({
-    shortName: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState({ shortName: "" });
+
+  // Sử dụng hook useUpdateInforWorkspace
+  const updateWorkspace = useUpdateInforWorkspace();
+
+  useEffect(() => {
+    setFormData(initialFormData);
+    setErrors({ shortName: "" });
+  }, [workspaceInfo]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,6 +35,29 @@ const WorkspaceDetailForm = () => {
       }
       setErrors((prev) => ({ ...prev, shortName: errorMessage }));
     }
+  };
+
+  const handleUpdate = () => {
+    // Gọi API cập nhật thông tin workspace
+    updateWorkspace.mutate(
+      {
+        id: workspaceInfo.id, // Sử dụng ID từ workspaceInfo
+        data: {
+          name: formData.name,
+          display_name: formData.shortName,
+          desc: formData.description,
+        },
+      },
+      {
+        onSuccess: () => {
+          console.log("Cập nhật thành công!");
+          onCancel(); // Đóng form sau khi cập nhật thành công
+        },
+        onError: (error) => {
+          console.error("Cập nhật thất bại:", error);
+        },
+      }
+    );
   };
 
   return (
@@ -81,11 +112,18 @@ const WorkspaceDetailForm = () => {
         <Button
           variant="contained"
           color="primary"
-          disabled={!formData.name || !formData.shortName || !!errors.shortName}
+          disabled={
+            !formData.name ||
+            !formData.shortName ||
+            !!errors.shortName ||
+            updateWorkspace.isLoading
+          }
+          onClick={handleUpdate}
         >
-          Lưu
+          {updateWorkspace.isLoading ? "Đang cập nhật..." : "Lưu"}
         </Button>
-        <Button variant="outlined" onClick={() => window.location.reload()}>
+
+        <Button variant="outlined" onClick={onCancel}>
           Hủy
         </Button>
       </Box>

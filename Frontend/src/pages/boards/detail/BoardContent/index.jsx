@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ListColumns from "./ListColumns/ListColumns";
+import BoardBar from "./BoardBar";
 import { useLists } from "../../../../hooks/useList";
 // import { updateCardPositions } from "../../../../api/cards";
 // import { useCardByList, useUpdateCardPositions } from "../../../../hooks/useCard";
@@ -20,6 +21,7 @@ import {
 //   CARD: "ACTIVE_DRAG_ITEM_TYPE_CARD",
 // };
 //  Import API cập nhật vị trí card
+
 
 const BoardContent = () => {
   const { boardId } = useParams();
@@ -263,6 +265,7 @@ const BoardContent = () => {
         <ListColumns lists={memoizedLists} />
       </Box>
     </DndContext>
+
   );
 };
 

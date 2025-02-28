@@ -18,7 +18,6 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Api\LabelController;
 use App\Http\Controllers\Api\WorkspaceInvitationsController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,8 +31,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('/register', [AuthController::class, 'handleRegister']);
-
+Route::post('/register', [AuthController::class, 'handleRegister'])->name('login');
 Route::post('/login', [AuthController::class, 'handleLogin']);
 
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
@@ -51,45 +49,43 @@ Route::middleware(['web'])->group(function () {
 });
 
 
+// Đường dẫn này để kiểm tra xem lời mời có hợp lệ
+Route::get('/workspaces/{workspaceId}/validate-invite/{inviteToken}', [WorkspaceInvitationsController::class, 'validateInvitation']);
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
-        // Route::get('workspaces/{id}/boards', 'show'); 
-        Route::get('workspaces/{display_name}', 'showDetailWorkspace');
+        Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
+        Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
+
         Route::post('workspaces', 'store');
         Route::delete('workspaces/{workspace}', 'destroy');
-        Route::put('workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
+        Route::put('workspaces/{workspace}', 'updateWorkspaceInfo');
+    });
+
+    Route::controller(WorkspaceInvitationsController::class)->group(callback: function () {
+        Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
+
+        Route::get('/workspaces/{workspaceId}/{inviteToken}', 'getInvitationSecret');
+
+        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
+
+        Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
+
+        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
+    });
+
+    Route::controller(WorkspaceMembersController::class)->group(function () {
+        Route::get('/workspaces/{workspaceId}/addMembers', 'inviteMemberToWorkspace');
+    });
+
+    Route::controller(BoardController::class)->group(function () {
+        Route::get('boards/{boardId}', 'showBoardById');
     });
 });
 
-
-
-//     // Update infor workspace
-//     Route::put('/workspaces/{workspace}', 'updateWorkspaceInfo')->name('wk.updateWorkspaceInfo');
-// })->middleware(['auth:sanctum']);
-
-Route::controller(WorkspaceMembersController::class)->group(function () {
-    Route::get('/workspaces/{idWorkspace}/members', 'getAllWorkspaceMembersById');
-
-    Route::post('/workspaces/{idWorkspace}/addMembers', 'inviteMemberToWorkspace');
-});
-
-Route::controller(WorkspaceInvitationsController::class)->group(function () {
-    Route::get("/search/members", 'searchNewMembersToWorkspace');
-    Route::post('/workspace/{idWorkspace}/addMember',  'inviteMemberToWorkspace');
-
-    // ở đây sẽ có hai trường hợp hợp
-    // 1. nếu là id -> sẽ được add thẳng vào workspace + email
-
-    Route::put('workspaces/{idWorkspace}/members/{idMember}', 'sendInvitationById');
-
-    // 2. nếu là email -> sẽ add vào workspace nhưng -> 1 là tài khoản đã có / 2 tài khoản chưa có trên trello
-    //
-
-    Route::put('workspaces/{idWorkspace}/members', 'sendInvitationByEmail');
-});
 
 
 // Send Email
@@ -133,7 +129,7 @@ Route::get('/boards', action: [BoardController::class, 'index']);
 
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
-Route::post('/createBoard',[BoardController::class ,'store'])->middleware('auth:sanctum');
+Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 // Routes quản lý bảng
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']); // Lấy danh sách boards
@@ -160,12 +156,13 @@ Route::prefix('boards/{boardId}/members')->group(function () {
     Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
     Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
 });
-
-
+// Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
     Route::post('recent-boards', [RecentBoardController::class, 'store']);
 });
+
+
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
 
@@ -194,6 +191,8 @@ Route::prefix('cards')->group(function () {
     Route::post('/{cardId}/labels', [LabelController::class, 'addLabelToCard']); // thêm nhãn vào thẻ
 
     Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']); // xóa nhãn khỏi thẻ
+
+    Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
 });
 // cập nhật nhãn ,Vì trello sẽ không cập nhật nhãn theo thẻ
 Route::put('/labels/{labelId}', [LabelController::class, 'updateLabel']);

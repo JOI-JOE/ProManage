@@ -2,31 +2,34 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
 
-// Tạo context
 const PusherContext = createContext(null);
 
-// Provider component
 export const PusherProvider = ({ children }) => {
     const [echoInstance, setEchoInstance] = useState(null);
 
     useEffect(() => {
-        // Khởi tạo Pusher với key và cluster
-        const pusherClient = new Pusher("011ba3f5ec97a6948d45", {
-            cluster: "ap1",
-            forceTLS: true,
-            encrypted: true,
-        });
+        const PUSHER_KEY = import.meta.env.VITE_PUSHER_APP_KEY;
+        const PUSHER_CLUSTER = import.meta.env.VITE_PUSHER_APP_CLUSTER;
+        const PUSHER_SCHEME = import.meta.env.VITE_PUSHER_SCHEME || "https";
+        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-        // Khởi tạo Echo với cấu hình Pusher
+        if (!PUSHER_KEY || !PUSHER_CLUSTER) {
+            console.error("❌ Thiếu cấu hình Pusher trong .env");
+            return;
+        }
+
+        window.Pusher = Pusher;
         const echo = new Echo({
             broadcaster: "pusher",
-            client: pusherClient,
-            wsHost: "ws-ap1.pusher.com",
-            wsPort: 6001,
-            wssPort: 6001,
-            forceTLS: false,
+            key: PUSHER_KEY,
+            cluster: PUSHER_CLUSTER,
+            forceTLS: PUSHER_SCHEME === "https",
+            wsHost: `ws-${PUSHER_CLUSTER}.pusher.com`,
+            wsPort: 80,
+            wssPort: 443,
             disableStats: true,
             enabledTransports: ["ws", "wss"],
+            authEndpoint: `${BACKEND_URL}/broadcasting/auth`,
             auth: {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -34,16 +37,13 @@ export const PusherProvider = ({ children }) => {
             },
         });
 
-        // Lưu instance của Echo vào state
         setEchoInstance(echo);
 
-        // Dọn dẹp khi component unmount
         return () => {
-            echo.disconnect(); // Ngắt kết nối khi unmount
+            echo.disconnect();
         };
     }, []);
 
-    // Cung cấp echoInstance cho các component con
     return (
         <PusherContext.Provider value={echoInstance}>
             {children}
@@ -51,14 +51,6 @@ export const PusherProvider = ({ children }) => {
     );
 };
 
-// Hook để sử dụng echoInstance
 export const usePusher = () => {
-    const echoInstance = useContext(PusherContext);
-
-    // Kiểm tra xem echoInstance có tồn tại không
-    if (!echoInstance) {
-        console.warn("⚠️ echoInstance chưa được khởi tạo.");
-    }
-
-    return echoInstance;
+    return useContext(PusherContext);
 };

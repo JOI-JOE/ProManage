@@ -12,6 +12,16 @@ class recentBoard extends Model
     protected $fillable = [
         'user_id',
         'board_id',
-        // thêm các trường khác vào đây nếu cần thiết
+        'last_accessed'
     ];
+
+    public function board()
+    {
+        return $this->belongsTo(Board::class);
+    }
+
+    public function workspace()
+    {
+        return $this->belongsTo(Workspace::class);
+    }
 }

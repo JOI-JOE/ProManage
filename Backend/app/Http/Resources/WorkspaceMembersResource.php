@@ -15,17 +15,16 @@ class WorkspaceMembersResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'id_workspace' => $this->id_workspace,
-            'id_member' => $this->id_member,
+            // 'id' => $this->id,
+            // 'id_workspace' => $this->id_workspace,
+            'email' => $this->user->email,
+            'name' => $this->user->full_name,
+            'is_deactivated' => (bool) $this->is_deactivated, // Convert to boolean
+            'activity_blocked' => $this->activity_blocked === null ? false : (bool) $this->activity_blocked, // Handle null and convert
             'member_type' => $this->member_type,
-            'is_unconfirmed' => $this->is_unconfirmed,
-            'is_deactivated' => $this->is_deactivated,
-            'activity_blocked' => $this->activity_blocked,
-            'id_member_referrer' => $this->id_member_referrer,
-            'last_active' => $this->last_active,
-            // 'created_at' => $this->created_at,
-            // 'updated_at' => $this->updated_at,
+            // 'last_active' => , // Handle null and convert
+            // 'is_unconfirmed' => $this->is_unconfirmed,
+            // 'id_member_referrer' => $this->id_member_referrer,
         ];
     }
 }
