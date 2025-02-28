@@ -25,8 +25,8 @@ class WorkspaceMembers extends Model
         return $this->belongsTo(Workspace::class, 'id_workspace');
     }
 
-    public function member()
+    public function user()
     {
-        return $this->belongsTo(User::class, 'id_member');
+        return $this->belongsTo(User::class, 'id_member'); // 'id_member' is the foreign key
     }
 }

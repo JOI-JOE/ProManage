@@ -68,12 +68,8 @@ class User extends Authenticatable
         return $this->hasMany(Workspace::class, 'id_member_creator');
     }
 
-    /**
-     * Get the workspace members associated with the user.
-     */
-
-    public function workspaceMembers()
+    public function workspaceMember()
     {
-        return $this->hasMany(WorkspaceMembers::class, 'id_member'); // 🔹 Đặt đúng tên khóa ngoại
+        return $this->hasOne(WorkspaceMembers::class, 'id_member');
     }
 }

@@ -10,6 +10,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import MyBoard from "../../../components/MyBoard";
 import MyWorkspace from "../../../components/MyWorkspace";
 import { useWorkspaces } from "../../../hooks/useWorkspace";
+import WorkspaceShare from "../../../components/WorkspaceShare";
 
 const HomeBoard = () => {
 
@@ -63,7 +64,31 @@ const HomeBoard = () => {
                     />
                 ))}
             </div>
-            {/* ENDư Các không gian làm việc của bạn */}
+            {/* END Các không gian làm việc của bạn */}
+
+
+            {/* Các không gian làm việc của của khách */}
+            <Typography
+                variant="h6"
+                sx={{
+                    marginTop: "50px",
+                    marginBottom: "10px",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                }}
+            >
+                CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
+            </Typography>
+            <div id="myBoardInWorkspace">
+                {/* <WorkspaceShare workspace={} boards={} /> */}
+                {/* {workspaces?.map((workspace) => (
+                    <MyWorkspace
+                        key={workspace.display_name}
+                        workspace={workspace}
+                        boards={workspace.boards}
+                    />
+                ))} */}
+            </div>
 
 
             {/* Nút xem tất cả các bảng đã đóng */}

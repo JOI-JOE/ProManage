@@ -10,6 +10,7 @@ import ArchiveIcon from "@mui/icons-material/Archive";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import { useRecentBoards } from "../../../hooks/useBoard";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -55,9 +56,24 @@ const Recent = () => {
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
+  
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+
+  // Lấy dữ liệu từ useRecentBoards hook
+  const { data: recentBoards, isLoading, error } = useRecentBoards();
+
+  if (isLoading) {
+    return <Box>Loading...</Box>;
+  }
+
+  if (error) {
+    return <Box>Error loading recent boards</Box>;
+  }
+
+
   return (
     <Box>
       <Button
@@ -82,39 +98,35 @@ const Recent = () => {
         open={open}
         onClose={handleClose}
       >
-        <MenuItem
-          onClick={handleClose}
-          disableRipple
-          sx={{ fontSize: "0.87rem", color: "secondary.main" }}
-        >
-          <EditIcon />
-          Edit
-        </MenuItem>
-        <MenuItem
-          onClick={handleClose}
-          disableRipple
-          sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-        >
-          <FileCopyIcon />
-          Duplicate
-        </MenuItem>
-        <Divider sx={{ my: 0.5 }} />
-        <MenuItem
-          onClick={handleClose}
-          disableRipple
-          sx={{ fontSize: "0.87rem", color: "secondary.main" }}
-        >
-          <ArchiveIcon />
-          Archive
-        </MenuItem>
-        <MenuItem
-          onClick={handleClose}
-          disableRipple
-          sx={{ fontSize: "0.87rem", color: "secondary.main" }}
-        >
-          <MoreHorizIcon />
-          More
-        </MenuItem>
+        {recentBoards?.data?.map((board) => (
+          <MenuItem
+            key={board.id}
+            onClick={handleClose}
+            disableRipple
+            sx={{ fontSize: "0.87rem", color: "secondary.main", display: "flex", flexDirection: "column", alignItems: "flex-start" ,padding: "8px 200px 10px 10px "}}
+          >
+            {/* Hiển thị thumbnail của board */}
+            <img
+              src={board.thumbnail} // Hiển thị thumbnail của board
+              alt={board.board_name}
+              style={{
+                width: 40,
+                height: 40,
+                marginBottom: 8,
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+            />
+            <Box sx={{ fontSize: "0.9rem", fontWeight: "bold" }}>
+              {board.workspace_display_name} {/* Tên workspace */}
+            </Box>
+            <Box sx={{ fontSize: "0.85rem", color: "text.secondary" }}>
+              {board.board_name} {/* Tên bảng */}
+            </Box>
+          </MenuItem>
+        ))}
+        
+        
       </StyledMenu>
     </Box>
   );
