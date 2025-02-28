@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createCard, getCardByList } from "../api/models/cardsApi";
+import { createCard, getCardByList, updateCardPositions } from "../api/models/cardsApi";
 
 
 export const useCardByList = (listId) => {
@@ -29,6 +29,57 @@ export const useCreateCard = () => {
     },
     onError: (error) => {
       console.error("Lỗi khi tạo card:", error);
+    },
+  });
+};
+
+export const useUpdateCardPositions = () => { 
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cardId, oldListId, newListId, newPosition }) => 
+      updateCardPositions({ cardId, newListId, newPosition }),
+
+    onMutate: async ({ cardId, oldListId, newListId, newPosition }) => {
+      // Hủy các query hiện tại để tránh ghi đè dữ liệu không cần thiết
+      await queryClient.cancelQueries(["cards", oldListId]);
+      await queryClient.cancelQueries(["cards", newListId]);
+
+      // Lưu lại danh sách card trước khi cập nhật (tránh mất dữ liệu nếu có lỗi)
+      const previousOldListCards = queryClient.getQueryData(["cards", oldListId]);
+      const previousNewListCards = queryClient.getQueryData(["cards", newListId]);
+
+      // Cập nhật danh sách cũ: Loại bỏ card đã bị di chuyển
+      queryClient.setQueryData(["cards", oldListId], (oldCards) => {
+        if (!oldCards) return [];
+        return oldCards.filter((card) => card.id !== cardId);
+      });
+
+      // Cập nhật danh sách mới: Thêm card vào vị trí mới và sắp xếp lại
+      queryClient.setQueryData(["cards", newListId], (oldCards) => {
+        if (!oldCards) return [];
+        return [...oldCards, { id: cardId, list_id: newListId, position: newPosition }]
+          .sort((a, b) => a.position - b.position);
+      });
+
+      return { previousOldListCards, previousNewListCards };
+    },
+
+ onError: (error, variables, context) => {
+  console.error("❌ Lỗi khi di chuyển card:", error);
+
+  if (context?.previousOldListCards && variables?.oldListId) {
+    queryClient.setQueryData(["cards", variables.oldListId], context.previousOldListCards);
+  }
+
+  if (context?.previousNewListCards && variables?.newListId) {
+    queryClient.setQueryData(["cards", variables.newListId], context.previousNewListCards);
+  }
+},
+
+    onSettled: (_, __, { oldListId, newListId }) => {
+      queryClient.invalidateQueries(["cards", oldListId]);
+      queryClient.invalidateQueries(["cards", newListId]);
     },
   });
 };
