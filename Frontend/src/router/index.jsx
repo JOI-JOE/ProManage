@@ -6,20 +6,29 @@ import Dashboard from "../pages/Dashboard";
 import Workspaces from "../pages/workspace";
 import BoardDetail from "../pages/boards/detail";
 import BoardContent from "../pages/boards/detail/BoardContent";
-
-import { mockData } from "../api/Api_fake";
+import Member from "../pages/boards/detail/Member";
 import Home from "../pages/Home";
 
 import LoginForm from "../pages/Auth/LoginForm";
 
-import GitHubAuth from "../pages/Auth/GitHubAuth";
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
-import GoogleAuth from "../pages/Auth/GoogleAuth";
 
 import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
+import GitHubAuth from "../pages/Auth/GitHubAuth";
+import InviteHandle from "../pages/workspace/invite/InviteHandle";
+import InviteAccept from "../pages/workspace/invite/InviteAccept";
 
 const router = createBrowserRouter([
+  {
+    path: "invite/:workspaceId/:inviteToken",
+    element: <InviteHandle />,
+  },
+  {
+    path: "invite/accept-team",
+    element: <InviteAccept />,
+  },
   {
     path: "/", // Path RIÊNG BIỆT cho GuestLayout
     element: <GuestLayout />,
@@ -58,7 +67,7 @@ const router = createBrowserRouter([
         element: <Dashboard />,
         children: [
           { path: "u/:username/boards", element: <Boards /> },
-          { path: "w/:displayName/home", element: <Workspaces /> },
+          { path: "w/:workspaceName/home", element: <Workspaces /> },
         ],
       },
       {
@@ -70,17 +79,13 @@ const router = createBrowserRouter([
             element: <BoardContent />,
           },
           {
+            path: "w/:workspaceName/members",
+            element: <Member />,
+          },
+          {
             path: "c/:cardId/:name",
             element: <CardModal />,
           },
-          // {
-          //   path: "w/:displayName",
-          //   element: <Member />,
-          // },
-          // {
-          //   path: "w/:displayName/members",
-          //   element: <Member />,
-          // },
         ],
       },
     ],

@@ -26,7 +26,9 @@ import { useParams } from "react-router-dom";
 
 import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
 import MemberItem from "./MemberItem";
+import GenerateLink from "../../../../components/GenerateLink";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
+import { useCreateInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 
 const Member = () => {
   const [isFormVisible, setFormVisible] = useState(false);
@@ -41,17 +43,6 @@ const Member = () => {
     setIsLinkActive(false);
   };
 
-  const { workspaceName } = useParams();
-
-  const {
-    data: workspace,
-    isLoading: workspaceLoadingByName,
-    error: workspaceErrorByName,
-  } = useGetWorkspaceByName(workspaceName, {
-    enabled: !!workspaceName, // Chỉ fetch nếu không có workspaceId
-  });
-
-
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
   };
@@ -60,20 +51,43 @@ const Member = () => {
     setInviteOpen(false);
   };
 
-  const handleCopyLink = () => {
-    setLinkCopied(true);
-    setIsLinkActive(true);
-    setShowCopiedMessage(true);
-    navigator.clipboard.writeText("https://example.com/invite-link");
-    setTimeout(() => setShowCopiedMessage(false), 3000);
-  };
-
   const handleDisableLink = () => {
     setIsLinkActive(false);
     setLinkCopied(false);
   };
 
+  const { workspaceName } = useParams();
+  const { data: workspace } = useGetWorkspaceByName(workspaceName, {
+    enabled: !!workspaceName,
+  });
+
   const members = workspace.members
+
+  const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
+
+  const handleGenerateLink = async () => {
+    if (!workspace?.id) {
+      console.error("Workspace ID is undefined.");
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      createInviteLink(
+        { workspaceId: workspace.id },
+        {
+          onSuccess: (data) => {
+            // Tạo link mời với format: http://localhost:5173/invite/:workspaceId/:inviteToken
+            const inviteLink = `http://localhost:5173/invite/${workspace.id}/${data.secret}`;
+            resolve(inviteLink);
+          },
+          onError: (error) => {
+            console.error("Lỗi khi tạo link mời:", error);
+            reject(error);
+          },
+        }
+      );
+    });
+  };
 
   return (
     <Box
@@ -279,21 +293,20 @@ const Member = () => {
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
+                flexDirection: "column", // Hiển thị theo hàng dọc
+                alignItems: "flex-start", // Căn lề trái cho các thành viên
+                gap: 2, // Khoảng cách giữa các thành viên
               }}
             >
               {/* Thông tin thành viên */}
-              {members?.map((member) => (
+              {members?.map((member, index) => (
                 <Box
-                  key={member.id} // Sử dụng key để React có thể tối ưu hóa việc render
+                  key={`${member.id}-${index}`} // Kết hợp member.id và index để tạo key duy nhất
                   id="workspace-member-list"
-                  sx={{ display: "flex", alignItems: "center", gap: 2 }}
                 >
                   <MemberItem member={member} /> {/* Truyền dữ liệu member vào MemberItem */}
                 </Box>
               ))}
-
             </Box>
           </Box>
         </Grid>
@@ -321,52 +334,7 @@ const Member = () => {
             placeholder="Địa chỉ email hoặc tên"
             sx={{ marginBottom: "10px" }}
           />
-          <Stack direction="column" spacing={1} sx={{ mt: 2 }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{
-                p: 1,
-                bgcolor: linkCopied ? "#E6F4EA" : "transparent",
-                borderRadius: 1,
-              }}
-            >
-              {showCopiedMessage ? (
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <CheckCircleIcon color="success" />
-                  <Typography variant="body2" color="success.main">
-                    Liên kết đã sao chép vào khay nhớ tạm
-                  </Typography>
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="textSecondary">
-                  Mời ai đó vào Không gian làm việc này bằng liên kết:
-                </Typography>
-              )}
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleCopyLink}
-              >
-                {linkCopied ? "Đã sao chép" : "Tạo liên kết"}
-              </Button>
-            </Stack>
-            {isLinkActive && (
-              <Typography
-                variant="body2"
-                color="primary"
-                sx={{
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  textAlign: "right",
-                }}
-                onClick={handleDisableLink}
-              >
-                Tắt liên kết
-              </Typography>
-            )}
-          </Stack>
+          <GenerateLink onGenerateLink={handleGenerateLink} />
         </DialogContent>
       </Dialog>
     </Box>

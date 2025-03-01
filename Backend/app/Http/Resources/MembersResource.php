@@ -16,7 +16,6 @@ class MembersResource extends JsonResource
     {
         return [
             'id'               => $this->id,
-            'name'             => $this->name,
             'email'            => $this->email,
             'member_type'      => $this->pivot->member_type,
             'is_unconfirmed'   => $this->pivot->is_unconfirmed,

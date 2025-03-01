@@ -23,7 +23,7 @@ class WorkspaceResource extends JsonResource
             'desc'             => Str::limit($this->desc, 50),
             'permission_level' => $this->permission_level,
             'team_type'        => $this->team_type,
-            'members'          => MembersResource::collection($this->members), // ✅ Thêm members vào đây
+            'members'          => WorkspaceMembersResource::collection($this->members),
         ];
     }
 }

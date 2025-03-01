@@ -31,8 +31,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('/register', [AuthController::class, 'handleRegister']);
-
+Route::post('/register', [AuthController::class, 'handleRegister'])->name('login');
 Route::post('/login', [AuthController::class, 'handleLogin']);
 
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
@@ -50,6 +49,9 @@ Route::middleware(['web'])->group(function () {
 });
 
 
+// Đường dẫn này để kiểm tra xem lời mời có hợp lệ
+Route::get('/workspaces/{workspaceId}/validate-invite/{inviteToken}', [WorkspaceInvitationsController::class, 'validateInvitation']);
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
 
@@ -64,9 +66,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::controller(WorkspaceInvitationsController::class)->group(callback: function () {
-        // Route::get('/workspaces/{workspaceId}/{inviteToken}', 'getInvitationSecret');
-        Route::get("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
-        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'validateInvitation');
+        Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
+
+        Route::get('/workspaces/{workspaceId}/{inviteToken}', 'getInvitationSecret');
+
+        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
+
+        Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
+
+        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
@@ -148,12 +156,13 @@ Route::prefix('boards/{boardId}/members')->group(function () {
     Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
     Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
 });
-
-
+// Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
     Route::post('recent-boards', [RecentBoardController::class, 'store']);
 });
+
+
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
 
@@ -162,8 +171,8 @@ Route::get('/trashes', [BoardController::class, 'trash']);
 Route::prefix('cards')->group(function () {
     Route::get('/{listId}/getCardsByList', [CardController::class, 'getCardsByList']);
     // routes/api.php
-    Route::patch('/{cardId}/move', [CardController::class, 'moveCard']);
-    Route::post('/update-position', [CardController::class, 'updateCardPosition']);
+    // Route::patch('/{cardId}/move', [CardController::class, 'moveCard']);
+    Route::put('/update-position', [CardController::class, 'updateCardPosition']);
     Route::post('/', [CardController::class, 'store']);
     Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
     Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);

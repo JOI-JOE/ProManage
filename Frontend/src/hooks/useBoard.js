@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createBoard, getBoardById, showBoardByWorkspaceId } from "../api/models/boardsApi";
+import { createBoard, getBoardById, getRecentBoards, logBoardAccess, showBoardByWorkspaceId } from "../api/models/boardsApi";
 
 /**
  * Hook useBoard để tạo bảng mới.
@@ -57,6 +57,7 @@ export const useBoardByWorkspaceId = (workspaceId) => {
     cacheTime: 1000 * 60 * 30, // Dữ liệu được giữ trong cache tối đa 30 phút.
   });
 };
+
 export const useBoards = (boardId) => {
   const queryClient = useQueryClient();
 
@@ -70,3 +71,25 @@ export const useBoards = (boardId) => {
 
   return boardsQuery;
 };
+
+export const useRecentBoards = () => {
+  return useQuery({
+    queryKey: ["recentBoards"], // Key duy nhất với "recentBoards" để cache dữ liệu.
+    queryFn: getRecentBoards, // Gọi API lấy bảng gần đây.
+    staleTime: 1000 * 60 * 5, // Dữ liệu được coi là "stale" sau 5 phút.
+    cacheTime: 1000 * 60 * 30, // Dữ liệu được giữ trong cache tối đa 30 phút.
+  });
+};
+
+export const useRecentBoardAccess = () => {
+  return useMutation({
+    mutationFn: logBoardAccess,
+    onError: (error) => {
+      console.error("Lỗi khi ghi nhận bảng:", error);
+    },
+    onSuccess: (data) => {
+      console.log("Bảng đã được lưu vào danh sách gần đây:", data);
+    },
+  });
+};
+
