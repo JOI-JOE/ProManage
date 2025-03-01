@@ -23,19 +23,25 @@ import ActivityDrawer from "./Component_BoardMenu/Activity";
 import BoardDetailsDrawer from "./Component_BoardMenu/BoardDetailsDrawer";
 import Archived from "./Component_BoardMenu/Archive";
 import Setting from "./Component_BoardMenu/Setting/Setting";
+import ChangeBackground from "./Component_BoardMenu/ChangeBackground/ChangeBackground";
+import LabelList from "./Component_BoardMenu/Label/Label";
 
 const BoardMenu = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false); // Thêm state quản lý SettingsDrawer
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [backgroundOpen, setBackgroundOpen] = useState(false); // Thêm state mới
+  const [labelOpen, setLabelOpen] = useState(false);
 
   const toggleMenu = (open) => () => setMenuOpen(open);
   const toggleDetails = (open) => () => setDetailsOpen(open);
   const toggleActivity = (open) => () => setActivityOpen(open);
   const toggleArchive = (open) => () => setArchiveOpen(open);
-  const toggleSettings = (open) => () => setSettingsOpen(open); // Toggle cho SettingsDrawer
+  const toggleSettings = (open) => () => setSettingsOpen(open);
+  const toggleBackground = (open) => () => setBackgroundOpen(open);
+  const toggleLabel = (open) => () => setLabelOpen(open);
 
   const listItems = [
     { text: "Về bảng này", icon: <InfoIcon />, action: toggleDetails(true) },
@@ -48,9 +54,13 @@ const BoardMenu = () => {
   ];
 
   const settingsItems = [
-    { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) }, // Gọi toggleSettings
-    { text: "Thay đổi hình nền", icon: <PaletteIcon /> },
-    { text: "Nhãn", icon: <LabelIcon /> },
+    { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) },
+    {
+      text: "Thay đổi hình nền",
+      icon: <PaletteIcon />,
+      action: toggleBackground(true),
+    },
+    { text: "Nhãn", icon: <LabelIcon />, action: toggleLabel(true) },
   ];
 
   const actionItems = [
@@ -118,8 +128,12 @@ const BoardMenu = () => {
       <BoardDetailsDrawer open={detailsOpen} onClose={toggleDetails(false)} />
       <ActivityDrawer open={activityOpen} onClose={toggleActivity(false)} />
       <Archived open={archiveOpen} onClose={toggleArchive(false)} />
-      <Setting open={settingsOpen} onClose={toggleSettings(false)} />{" "}
-      {/* Thêm SettingsDrawer */}
+      <Setting open={settingsOpen} onClose={toggleSettings(false)} />
+      <ChangeBackground
+        open={backgroundOpen}
+        onClose={toggleBackground(false)}
+      />{" "}
+      <LabelList open={labelOpen} onClose={toggleLabel(false)} />
     </div>
   );
 };
