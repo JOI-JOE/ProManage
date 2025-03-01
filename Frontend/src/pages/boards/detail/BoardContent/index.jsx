@@ -22,7 +22,6 @@ import {
 // };
 //  Import API cập nhật vị trí card
 
-
 const BoardContent = () => {
   const { boardId } = useParams();
   const queryClient = useQueryClient();
@@ -95,11 +94,8 @@ const BoardContent = () => {
   };
 
   const handleDragOver = (event) => {
-    
-    const { over,active } = event;
-  
-  
-  }
+    const { over, active } = event;
+  };
 
   // Hàm xử lý kéo thả
   const handleDragEnd = useCallback(
@@ -141,102 +137,100 @@ const BoardContent = () => {
         }
       }
 
-     /////////////////////// Xử lý kéo thả card /////////////////////
-    /////////////////////// Xử lý kéo thả card /////////////////////
-    const activeCardId = draggedCardRef.current.id;
-    const activeCardPositionInList = draggedCardRef.current.position;
-    //  console.log("🔥 activeIndex:", activeIndex);
-    // Vị trí index của card đang kéo
-    const overIndex = over.data.current?.sortable.index; // Vị trí index của card được kéo đến
-    console.log(
-      "🔥 Card ID đang kéo:",
-      activeCardId,
-      "🔥 Vị trí cũ:",
-      activeCardPositionInList,
-      "➡ Vị trí mới:",
-      overIndex
-    );
+      /////////////////////// Xử lý kéo thả card /////////////////////
+      /////////////////////// Xử lý kéo thả card /////////////////////
+      const activeCardId = draggedCardRef.current.id;
+      const activeCardPositionInList = draggedCardRef.current.position;
+      //  console.log("🔥 activeIndex:", activeIndex);
+      // Vị trí index của card đang kéo
+      const overIndex = over.data.current?.sortable.index; // Vị trí index của card được kéo đến
+      console.log(
+        "🔥 Card ID đang kéo:",
+        activeCardId,
+        "🔥 Vị trí cũ:",
+        activeCardPositionInList,
+        "➡ Vị trí mới:",
+        overIndex
+      );
 
-    if (
-      activeCardId === undefined ||
-      overIndex === undefined ||
-      activeCardId === overIndex
-    ) {
-      console.warn("⚠️ Không có thay đổi vị trí, dừng xử lý.");
-      return;
-    }
+      if (
+        activeCardId === undefined ||
+        overIndex === undefined ||
+        activeCardId === overIndex
+      ) {
+        console.warn("⚠️ Không có thay đổi vị trí, dừng xử lý.");
+        return;
+      }
 
-    // Tìm danh sách chứa card đang kéo
-    const oldList = orderedColumns.find(
-      (list) =>
-        list.id.toString() === String(draggedCardRef.current?.columnId)
-    );
-    // console.log("🔥 oldList:", oldList);
+      // Tìm danh sách chứa card đang kéo
+      const oldList = orderedColumns.find(
+        (list) =>
+          list.id.toString() === String(draggedCardRef.current?.columnId)
+      );
+      // console.log("🔥 oldList:", oldList);
 
-    if (!oldList) return;
+      if (!oldList) return;
 
-    // Lấy danh sách card
-    const newCards = [...oldList.cards];
-    // console.log("🔥 newCards:", newCards);
+      // Lấy danh sách card
+      const newCards = [...oldList.cards];
+      // console.log("🔥 newCards:", newCards);
 
-    // Tìm vị trí thực tế của card trong danh sách (tránh lỗi do danh sách thay đổi)
-    const actualMovedCardIndex = newCards.findIndex(
-      (card) => card.id.toString() === activeCardId
-    );
-    const actualMovedCard = newCards.find(
-      (card) => card.id.toString() === activeCardId
-    );
+      // Tìm vị trí thực tế của card trong danh sách (tránh lỗi do danh sách thay đổi)
+      const actualMovedCardIndex = newCards.findIndex(
+        (card) => card.id.toString() === activeCardId
+      );
+      const actualMovedCard = newCards.find(
+        (card) => card.id.toString() === activeCardId
+      );
 
-    // console.log("🔥 actualMovedCard:", actualMovedCard);
+      // console.log("🔥 actualMovedCard:", actualMovedCard);
 
-    if (actualMovedCardIndex === -1 || !actualMovedCard) {
-      console.error("⚠️ Không tìm thấy card để di chuyển!");
-      return;
-    }
+      if (actualMovedCardIndex === -1 || !actualMovedCard) {
+        console.error("⚠️ Không tìm thấy card để di chuyển!");
+        return;
+      }
 
-    // Xóa card khỏi vị trí cũ
-    newCards.splice(actualMovedCardIndex, 1);
+      // Xóa card khỏi vị trí cũ
+      newCards.splice(actualMovedCardIndex, 1);
 
-    // Chèn vào vị trí mới
-    newCards.splice(overIndex, 0, actualMovedCard);
+      // Chèn vào vị trí mới
+      newCards.splice(overIndex, 0, actualMovedCard);
 
-    // Cập nhật lại position cho tất cả các card
-    const updatedCards = newCards.map((card, index) => {
-      return {
-        ...card,
-        position: index + 1, // Đảm bảo position duy nhất
-      };
-    });
-    
-
-    // Cập nhật state danh sách cột
-    const updatedColumns = orderedColumns.map((list) =>
-      list.id === oldList.id ? { ...list, cards: updatedCards } : list
-    );
-
-    // console.log("🛠 updatedColumns:", updatedColumns);
-
-    // Cập nhật state với setTimeout để tránh lag UI khi kéo thả nhanh
-    requestAnimationFrame(() => {
-      setOrderedColumns(updatedColumns);
-    });
-
-    // Gọi API cập nhật vị trí
-    try {
-      await updateCardPosition.mutateAsync({
-        cardId: actualMovedCard.id,
-        newListId: oldList.id,
-        newPosition: overIndex,
+      // Cập nhật lại position cho tất cả các card
+      const updatedCards = newCards.map((card, index) => {
+        return {
+          ...card,
+          position: index + 1, // Đảm bảo position duy nhất
+        };
       });
-      console.log("✅ API cập nhật vị trí thành công:", {
-        cardId: actualMovedCard.id,
-        newListId: oldList.id,
-        newPosition: overIndex,
+
+      // Cập nhật state danh sách cột
+      const updatedColumns = orderedColumns.map((list) =>
+        list.id === oldList.id ? { ...list, cards: updatedCards } : list
+      );
+
+      // console.log("🛠 updatedColumns:", updatedColumns);
+
+      // Cập nhật state với setTimeout để tránh lag UI khi kéo thả nhanh
+      requestAnimationFrame(() => {
+        setOrderedColumns(updatedColumns);
       });
-    } catch (error) {
-      console.error("❌ Lỗi khi cập nhật vị trí:", error);
-    }
-    
+
+      // Gọi API cập nhật vị trí
+      try {
+        await updateCardPosition.mutateAsync({
+          cardId: actualMovedCard.id,
+          newListId: oldList.id,
+          newPosition: overIndex,
+        });
+        console.log("✅ API cập nhật vị trí thành công:", {
+          cardId: actualMovedCard.id,
+          newListId: oldList.id,
+          newPosition: overIndex,
+        });
+      } catch (error) {
+        console.error("❌ Lỗi khi cập nhật vị trí:", error);
+      }
     },
     [
       boardId,
@@ -254,18 +248,20 @@ const BoardContent = () => {
   if (error) return <p>Lỗi: {error.message}</p>;
 
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <Box
-        sx={{
-          backgroundColor: "primary.main",
-          height: (theme) => theme.trello.boardContentHeight,
-          padding: "18px 0 7px 0px",
-        }}
-      >
-        <ListColumns lists={memoizedLists} />
-      </Box>
-    </DndContext>
-
+    <>
+      <BoardBar />
+      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <Box
+          sx={{
+            backgroundColor: "primary.main",
+            height: (theme) => theme.trello.boardContentHeight,
+            padding: "18px 0 7px 0px",
+          }}
+        >
+          <ListColumns lists={memoizedLists} />
+        </Box>
+      </DndContext>
+    </>
   );
 };
 

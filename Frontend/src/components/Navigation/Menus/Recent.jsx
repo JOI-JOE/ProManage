@@ -56,11 +56,10 @@ const Recent = () => {
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
-  
+
   const handleClose = () => {
     setAnchorEl(null);
   };
-
 
   // Lấy dữ liệu từ useRecentBoards hook
   const { data: recentBoards, isLoading, error } = useRecentBoards();
@@ -72,7 +71,6 @@ const Recent = () => {
   if (error) {
     return <Box>Error loading recent boards</Box>;
   }
-
 
   return (
     <Box>
@@ -103,7 +101,14 @@ const Recent = () => {
             key={board.id}
             onClick={handleClose}
             disableRipple
-            sx={{ fontSize: "0.87rem", color: "secondary.main", display: "flex", flexDirection: "column", alignItems: "flex-start" ,padding: "8px 200px 10px 10px "}}
+            sx={{
+              fontSize: "0.87rem",
+              color: "secondary.main",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              padding: "8px 200px 10px 10px ",
+            }}
           >
             {/* Hiển thị thumbnail của board */}
             <img
@@ -125,8 +130,6 @@ const Recent = () => {
             </Box>
           </MenuItem>
         ))}
-        
-        
       </StyledMenu>
     </Box>
   );
