@@ -1,5 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createBoard, getBoardById, getRecentBoards, logBoardAccess, showBoardByWorkspaceId, updateBoardName } from "../api/models/boardsApi";
+import { createBoard,
+  getBoardById,
+  getRecentBoards,
+  logBoardAccess,
+  showBoardByWorkspaceId,
+  updateBoardName
+} from "../api/models/boardsApi";
 
 /**
  * Hook useBoard để tạo bảng mới.

@@ -5,13 +5,11 @@ import {
   DialogContent,
   List,
   ListItem,
-  Checkbox,
   IconButton,
   Box,
   TextField,
   Button,
   Divider,
-  FormControlLabel,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
@@ -27,7 +25,6 @@ const initialLabels = [
 const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const [search, setSearch] = useState("");
   const [labels, setLabels] = useState(initialLabels);
-  const [checkedLabels, setCheckedLabels] = useState([]);
   const [editLabelId, setEditLabelId] = useState(null);
   const [newLabelName, setNewLabelName] = useState("");
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
@@ -36,14 +33,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const filteredLabels = labels.filter((label) =>
     label.name.toLowerCase().includes(search.toLowerCase())
   );
-
-  const handleToggle = (id) => {
-    const newChecked = checkedLabels.includes(id)
-      ? checkedLabels.filter((item) => item !== id)
-      : [...checkedLabels, id];
-    setCheckedLabels(newChecked);
-    onSelectLabel && onSelectLabel(newChecked);
-  };
 
   const handleEditLabel = (id, name) => {
     setEditLabelId(id);
@@ -80,7 +69,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
 
   const handleDeleteLabel = (id) => {
     setLabels(labels.filter((label) => label.id !== id));
-    setCheckedLabels(checkedLabels.filter((labelId) => labelId !== id));
   };
 
   return (
@@ -129,7 +117,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
           }}
         />
 
-        {/* Danh sách nhãn dạng checkbox */}
+        {/* Danh sách nhãn */}
         <List
           sx={{
             maxHeight: 250,
@@ -144,77 +132,74 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
             "&::-webkit-scrollbar-thumb:hover": {
               backgroundColor: "#555",
             },
+            "& .MuiListItem-root": {
+              marginBottom: "12px", // Add spacing between labels
+            },
           }}
         >
           {filteredLabels.map((label) => (
             <ListItem key={label.id} disablePadding>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={checkedLabels.includes(label.id)}
-                    onChange={() => handleToggle(label.id)}
-                  />
-                }
-                label={
-                  <Box
+              <Box
+                sx={{
+                  width: "300px", // Thanh màu dài ra
+                  height: 24,
+                  backgroundColor: label.color,
+                  borderRadius: "4px",
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0 8px",
+                  "&:hover::after": {
+                    content: `"${label.name}"`,
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    color: "#fff",
+                    fontSize: "0.4rem",
+                    fontWeight: "bold",
+                  },
+                }}
+              >
+                {editLabelId === label.id ? (
+                  <TextField
+                    value={newLabelName}
+                    onChange={(e) => setNewLabelName(e.target.value)}
+                    onBlur={handleSaveLabelName}
+                    onKeyPress={handleKeyPress}
+                    size="small"
+                    autoFocus
                     sx={{
-                      width: "300px", // Thanh màu dài ra
-                      height: 24,
-                      backgroundColor: label.color,
-                      borderRadius: "4px",
-                      position: "relative",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "0 8px",
-                      "&:hover::after": {
-                        content: `"${label.name}"`,
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        color: "#fff",
-                        fontSize: "0.4rem",
-                        fontWeight: "bold",
+                      width: "80%",
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          border: "none",
+                        },
                       },
                     }}
-                  >
-                    {editLabelId === label.id && (
-                      <TextField
-                        value={newLabelName}
-                        onChange={(e) => setNewLabelName(e.target.value)}
-                        onBlur={handleSaveLabelName}
-                        onKeyPress={handleKeyPress}
-                        size="small"
-                        autoFocus
-                        sx={{
-                          width: "80%",
-                          "& .MuiOutlinedInput-root": {
-                            "& fieldset": {
-                              border: "none",
-                            },
-                          },
-                        }}
-                      />
-                    )}
+                  />
+                ) : (
+                  <>
                     <IconButton
                       size="small"
                       onClick={() => handleEditLabel(label.id, label.name)}
-                      sx={{ width: 24, height: 24 }}
+                      sx={{ padding: 0, width: 24, height: 24 }}
                     >
                       <EditIcon sx={{ fontSize: 12, color: "#fff" }} />
                     </IconButton>
-                  </Box>
-                }
-                // sx={{ width: "100%" }}
-              />
-              <IconButton
-                size="small"
-                onClick={() => handleDeleteLabel(label.id)}
-                sx={{ width: 24, height: 24, marginLeft: 1 }}
-              >
-                <CloseIcon sx={{ fontSize: 12, color: "#000" }} />
-              </IconButton>
+                  </>
+                )}
+              </Box>
+              <Box sx={{ display: "flex", gap: 1, marginLeft: 1 }}>
+                <IconButton
+                  size="small"
+                  onClick={() => handleDeleteLabel(label.id)}
+                  sx={{ width: 24, height: 24 }}
+                >
+                  <CloseIcon sx={{ fontSize: 12, color: "#000" }} />
+                </IconButton>
+              </Box>
             </ListItem>
           ))}
         </List>
