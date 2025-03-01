@@ -1,229 +1,242 @@
 import React, { useState } from "react";
 import {
-  Drawer,
-  Box,
-  Typography,
-  TextField,
-  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
   List,
   ListItem,
   IconButton,
+  Box,
+  TextField,
+  Button,
+  Divider,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
+import EditIcon from "@mui/icons-material/Edit";
 
 const initialLabels = [
-  { id: 1, name: "Màu xanh lá", color: "#2E7D32" },
-  { id: 2, name: "Màu vàng cam", color: "#FF8F00" },
-  { id: 3, name: "Màu đỏ ", color: "#D84315" },
+  { id: 1, color: "#137b13", name: "Label 1" },
+  { id: 2, color: "#b05900", name: "Label 2" },
+  { id: 3, color: "#d32f2f", name: "Label 3" },
+  { id: 4, color: "#673ab7", name: "Label 4" },
+  { id: 5, color: "#1976d2", name: "Label 5" },
 ];
 
-const colors = [
-  "#2E7D32",
-  "#FF8F00",
-  "#D84315",
-  "#C62828",
-  "#6A1B9A",
-  "#283593",
-  "#f39c12",
-  "#e67e22",
-  "#d35400",
-  "#c0392b",
-  "#e74c3c",
-  "#8e44ad",
-  "#3498db",
-  "#1abc9c",
-  "#2ecc71",
-  "#f1c40f",
-  "#6F1E51",
-  "#9b59b6",
-  "#ED4C67",
-];
-
-const ColorBox = styled(Box)(({ color }) => ({
-  width: "100%",
-  height: 40,
-  backgroundColor: color,
-  borderRadius: 4,
-  position: "relative",
-  cursor: "pointer",
-  "&:hover .label-name": {
-    opacity: 1, // Chỉ hiển thị khi hover
-  },
-}));
-
-const LabelName = styled(Typography)({
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  color: "white",
-  fontWeight: "bold",
-  fontSize: "0.5rem",
-  opacity: 0, // Mặc định ẩn
-  transition: "opacity 0.3s",
-});
-
-const LabelList = ({ open, onClose }) => {
-  const [labels, setLabels] = useState(initialLabels);
+const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const [search, setSearch] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [newLabel, setNewLabel] = useState({ name: "", color: colors[0] });
-  const [editingLabelId, setEditingLabelId] = useState(null);
-  const [editingLabelName, setEditingLabelName] = useState("");
-  const [selectedColor, setSelectedColor] = useState(colors[0]);
+  const [labels, setLabels] = useState(initialLabels);
+  const [editLabelId, setEditLabelId] = useState(null);
+  const [newLabelName, setNewLabelName] = useState("");
+  const [isCreatingLabel, setIsCreatingLabel] = useState(false);
+  const [newLabelColor, setNewLabelColor] = useState("#000000");
 
-  const addLabel = () => {
-    setLabels([...labels, { id: labels.length + 1, ...newLabel }]);
-    setNewLabel({ name: "", color: colors[0] });
-    setShowForm(false);
+  const filteredLabels = labels.filter((label) =>
+    label.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleEditLabel = (id, name) => {
+    setEditLabelId(id);
+    setNewLabelName(name);
   };
 
-  const handleLabelClick = (label) => {
-    setEditingLabelId(label.id);
-    setEditingLabelName(label.name);
-  };
-
-  const handleLabelNameChange = (e) => {
-    setEditingLabelName(e.target.value);
-  };
-
-  const handleLabelNameBlur = () => {
-    setLabels(
-      labels.map((label) =>
-        label.id === editingLabelId
-          ? { ...label, name: editingLabelName }
-          : label
+  const handleSaveLabelName = () => {
+    setLabels((prevLabels) =>
+      prevLabels.map((label) =>
+        label.id === editLabelId ? { ...label, name: newLabelName } : label
       )
     );
-    setEditingLabelId(null);
-    setEditingLabelName("");
+    setEditLabelId(null);
+    setNewLabelName("");
   };
 
-  const handleLabelNameKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleLabelNameBlur();
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      handleSaveLabelName();
     }
   };
 
-  const handleColorClick = (color) => {
-    setSelectedColor(color);
-    setNewLabel({ ...newLabel, color });
+  const handleCreateLabel = () => {
+    const newLabel = {
+      id: labels.length + 1,
+      color: newLabelColor,
+      name: newLabelName,
+    };
+    setLabels([...labels, newLabel]);
+    setIsCreatingLabel(false);
+    setNewLabelName("");
+    setNewLabelColor("#000000");
+  };
+
+  const handleDeleteLabel = (id) => {
+    setLabels(labels.filter((label) => label.id !== id));
   };
 
   return (
-    <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle
         sx={{
-          width: 300,
-          p: 2,
-          bgcolor: "#fff",
-          color: "black",
-          position: "relative",
+          fontSize: "1rem",
+          fontWeight: "bold",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        <IconButton
-          sx={{ position: "absolute", top: 8, right: 8 }}
-          onClick={onClose}
-        >
-          <CloseIcon />
+        Nhãn
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon fontSize="small" />
         </IconButton>
-        <Typography variant="h6" gutterBottom>
-          Nhãn
-        </Typography>
+      </DialogTitle>
+      <DialogContent
+        sx={{
+          "&::-webkit-scrollbar": {
+            width: "4px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#888",
+            borderRadius: "4px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: "#555",
+          },
+        }}
+      >
+        {/* Ô tìm kiếm nhỏ lại */}
         <TextField
-          variant="outlined"
-          placeholder="Tìm nhãn..."
           fullWidth
+          variant="outlined"
           size="small"
-          sx={{ bgcolor: "white", borderRadius: 1, mb: 2 }}
+          placeholder="Tìm nhãn..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          sx={{
+            mb: 2,
+            width: "80%",
+            height: "30px",
+            "& .MuiInputBase-root": { height: 30 },
+          }}
         />
-        <List>
-          {labels
-            .filter((label) =>
-              label.name.toLowerCase().includes(search.toLowerCase())
-            )
-            .map((label) => (
-              <ListItem key={label.id} sx={{ p: 0, mb: 1 }}>
-                <ColorBox color={label.color}>
-                  {editingLabelId === label.id ? (
-                    <TextField
-                      value={editingLabelName}
-                      onChange={handleLabelNameChange}
-                      onBlur={handleLabelNameBlur}
-                      autoFocus
+
+        {/* Danh sách nhãn */}
+        <List
+          sx={{
+            maxHeight: 250,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "4px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#888",
+              borderRadius: "4px",
+            },
+            "&::-webkit-scrollbar-thumb:hover": {
+              backgroundColor: "#555",
+            },
+            "& .MuiListItem-root": {
+              marginBottom: "12px", // Add spacing between labels
+            },
+          }}
+        >
+          {filteredLabels.map((label) => (
+            <ListItem key={label.id} disablePadding>
+              <Box
+                sx={{
+                  width: "300px", // Thanh màu dài ra
+                  height: 24,
+                  backgroundColor: label.color,
+                  borderRadius: "4px",
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0 8px",
+                  "&:hover::after": {
+                    content: `"${label.name}"`,
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    color: "#fff",
+                    fontSize: "0.4rem",
+                    fontWeight: "bold",
+                  },
+                }}
+              >
+                {editLabelId === label.id ? (
+                  <TextField
+                    value={newLabelName}
+                    onChange={(e) => setNewLabelName(e.target.value)}
+                    onBlur={handleSaveLabelName}
+                    onKeyPress={handleKeyPress}
+                    size="small"
+                    autoFocus
+                    sx={{
+                      width: "80%",
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          border: "none",
+                        },
+                      },
+                    }}
+                  />
+                ) : (
+                  <>
+                    <IconButton
                       size="small"
-                      onKeyPress={handleLabelNameKeyPress}
-                      sx={{
-                        bgcolor: "white",
-                        borderRadius: 1,
-                        width: "100%",
-                        height: "100%",
-                      }}
-                    />
-                  ) : (
-                    <LabelName
-                      className="label-name"
-                      onClick={() => handleLabelClick(label)}
+                      onClick={() => handleEditLabel(label.id, label.name)}
+                      sx={{ padding: 0, width: 24, height: 24 }}
                     >
-                      {label.name || "Click to add name"}
-                    </LabelName>
-                  )}
-                </ColorBox>
-              </ListItem>
-            ))}
+                      <EditIcon sx={{ fontSize: 12, color: "#fff" }} />
+                    </IconButton>
+                  </>
+                )}
+              </Box>
+              <Box sx={{ display: "flex", gap: 1, marginLeft: 1 }}>
+                <IconButton
+                  size="small"
+                  onClick={() => handleDeleteLabel(label.id)}
+                  sx={{ width: 24, height: 24 }}
+                >
+                  <CloseIcon sx={{ fontSize: 12, color: "#000" }} />
+                </IconButton>
+              </Box>
+            </ListItem>
+          ))}
         </List>
 
-        {showForm ? (
-          <Box sx={{ mt: 2, bgcolor: "#f0f0f0", p: 2, borderRadius: 1 }}>
+        <Divider sx={{ my: 2 }} />
+
+        {/* Form tạo nhãn mới */}
+        {isCreatingLabel ? (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
-              variant="outlined"
-              placeholder="Tên nhãn..."
               fullWidth
+              variant="outlined"
               size="small"
-              sx={{ bgcolor: "white", borderRadius: 1, mb: 1 }}
-              value={newLabel.name}
-              onChange={(e) =>
-                setNewLabel({ ...newLabel, name: e.target.value })
-              }
+              placeholder="Tên nhãn mới"
+              value={newLabelName}
+              onChange={(e) => setNewLabelName(e.target.value)}
             />
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              Chọn màu:
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              {colors.map((color) => (
-                <Box
-                  key={color}
-                  sx={{
-                    width: 30,
-                    height: 30,
-                    backgroundColor: color,
-                    borderRadius: "50%",
-                    cursor: "pointer",
-                    border:
-                      newLabel.color === color
-                        ? "2px solid white"
-                        : "2px solid transparent",
-                  }}
-                  onClick={() => handleColorClick(color)}
-                />
-              ))}
-            </Box>
+            <TextField
+              fullWidth
+              variant="outlined"
+              size="small"
+              type="color"
+              value={newLabelColor}
+              onChange={(e) => setNewLabelColor(e.target.value)}
+            />
             <Button
               variant="contained"
               fullWidth
-              sx={{ mt: 2, bgcolor: "#FF8F00" }}
-              onClick={addLabel}
+              sx={{ backgroundColor: "#1976d2" }}
+              onClick={handleCreateLabel}
             >
-              Thêm nhãn
+              Lưu nhãn
             </Button>
             <Button
               variant="outlined"
               fullWidth
-              sx={{ mt: 1 }}
-              onClick={() => setShowForm(false)}
+              onClick={() => setIsCreatingLabel(false)}
             >
               Hủy
             </Button>
@@ -232,14 +245,14 @@ const LabelList = ({ open, onClose }) => {
           <Button
             variant="contained"
             fullWidth
-            sx={{ mt: 2, bgcolor: "teal" }}
-            onClick={() => setShowForm(true)}
+            sx={{ backgroundColor: "#1976d2" }}
+            onClick={() => setIsCreatingLabel(true)}
           >
             Tạo nhãn mới
           </Button>
         )}
-      </Box>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 };
 

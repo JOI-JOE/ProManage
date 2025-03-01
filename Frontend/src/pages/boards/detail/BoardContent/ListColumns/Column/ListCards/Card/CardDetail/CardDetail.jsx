@@ -84,8 +84,10 @@ const CardModal = () => {
           {name || "Task4"}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          in list{" "}
-          <span style={{ color: "#0079bf", fontWeight: "bold" }}>Doing</span>
+          Trong danh sách{" "}
+          <span style={{ color: "#0079bf", fontWeight: "bold" }}>
+            Tên của Board
+          </span>
         </Typography>
       </DialogTitle>
       <DialogContent>
@@ -216,6 +218,12 @@ const CardModal = () => {
                 <ListItem disablePadding>
                   <ListItemButton onClick={() => setIsMoveCardModalOpen(true)}>
                     <ListItemText primary="Di chuyển" />
+                  </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding>
+                  <ListItemButton>
+                    <ListItemText primary="Sao chép" />
                   </ListItemButton>
                 </ListItem>
               </List>
