@@ -254,6 +254,8 @@ const BoardContent = () => {
   if (error) return <p>Lỗi: {error.message}</p>;
 
   return (
+    <>
+    <BoardBar/>
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <Box
         sx={{
@@ -265,7 +267,7 @@ const BoardContent = () => {
         <ListColumns lists={memoizedLists} />
       </Box>
     </DndContext>
-
+    </>
   );
 };
 
