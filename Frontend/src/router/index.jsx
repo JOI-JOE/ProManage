@@ -27,7 +27,7 @@ const router = createBrowserRouter([
   },
   {
     path: "invite/accept-team",
-    element: <InviteAccept />
+    element: <InviteAccept />,
   },
   {
     path: "/", // Path RIÊNG BIỆT cho GuestLayout
@@ -67,8 +67,8 @@ const router = createBrowserRouter([
         element: <Dashboard />,
         children: [
           { path: "u/:username/boards", element: <Boards /> },
-          { path: "w/:workspaceName/home", element: <Workspaces /> }
-        ]
+          { path: "w/:workspaceName/home", element: <Workspaces /> },
+        ],
       },
       {
         path: "/",
@@ -85,13 +85,11 @@ const router = createBrowserRouter([
           {
             path: "c/:cardId/:name",
             element: <CardModal />,
-          }
-        ]
-      }
-    ]
-  }
+          },
+        ],
+      },
+    ],
+  },
 ]);
 
-export default router
-
-
+export default router;
