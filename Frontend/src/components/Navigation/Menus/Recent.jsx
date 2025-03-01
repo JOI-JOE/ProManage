@@ -11,6 +11,8 @@ import FileCopyIcon from "@mui/icons-material/FileCopy";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useRecentBoards } from "../../../hooks/useBoard";
+import { Link } from "react-router-dom";
+
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -99,6 +101,8 @@ const Recent = () => {
         {recentBoards?.data?.map((board) => (
           <MenuItem
             key={board.id}
+            component={Link}
+          to={`/b/${board.board_id}/${board.board_name}`}
             onClick={handleClose}
             disableRipple
             sx={{
