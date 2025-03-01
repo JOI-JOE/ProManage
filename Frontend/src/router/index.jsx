@@ -19,6 +19,8 @@ import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import InviteHandle from "../pages/workspace/invite/InviteHandle";
 import InviteAccept from "../pages/workspace/invite/InviteAccept";
+import Account from "../pages/boards/detail/Account";
+import Board from "../pages/boards/detail/Board/Board";
 
 const router = createBrowserRouter([
   {
@@ -79,8 +81,16 @@ const router = createBrowserRouter([
             element: <BoardContent />,
           },
           {
+            path: "w/:workspaceName/",
+            element: <Board />,
+          },
+          {
             path: "w/:workspaceName/members",
             element: <Member />,
+          },
+          {
+            path: "w/:workspaceName/accounts",
+            element: <Account />,
           },
           {
             path: "c/:cardId/:name",

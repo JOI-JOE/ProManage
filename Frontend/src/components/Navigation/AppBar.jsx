@@ -268,7 +268,16 @@ const AppBar = ({ username, email }) => {
             </Box>
 
             {/* Nội dung thông báo */}
-            <Box sx={{ textAlign: "center", mt: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                mt: 2,
+                mb: 5,
+              }}
+            >
               <img
                 src="https://cdn-icons-png.flaticon.com/512/6596/6596121.png"
                 alt="No Notifications"
