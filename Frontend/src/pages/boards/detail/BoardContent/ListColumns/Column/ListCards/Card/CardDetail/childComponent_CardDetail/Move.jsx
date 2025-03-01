@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogActions,
@@ -30,18 +30,30 @@ const MoveCardModal = ({ open, onClose }) => {
     onClose(); // Close the modal
   };
 
+  useEffect(() => {
+    if (!open) {
+      setSelectedBoard("");
+      setSelectedList("");
+      setSelectedPosition("");
+    }
+  }, [open]);
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" inert={!open}>
       <DialogTitle sx={{ fontSize: "14px" }}>Di chuyển thẻ</DialogTitle>
       <DialogContent>
         <Box sx={boxStyle}>
           <FormControl fullWidth>
-            <InputLabel sx={{ fontSize: "12px" }}>Bảng thông tin</InputLabel>
             <Select
               value={selectedBoard}
               onChange={(e) => setSelectedBoard(e.target.value)}
-              label="Bảng thông tin"
               sx={inputStyle}
+              displayEmpty
+              renderValue={
+                selectedBoard !== ""
+                  ? undefined
+                  : () => "Chọn bảng thông tin..."
+              }
             >
               {boards.map((board, index) => (
                 <MenuItem key={index} value={board} sx={{ fontSize: "12px" }}>
@@ -54,12 +66,14 @@ const MoveCardModal = ({ open, onClose }) => {
 
         <Box sx={boxStyle}>
           <FormControl fullWidth>
-            <InputLabel sx={{ fontSize: "12px" }}>Danh sách</InputLabel>
             <Select
               value={selectedList}
               onChange={(e) => setSelectedList(e.target.value)}
-              label="Danh sách"
               sx={inputStyle}
+              displayEmpty
+              renderValue={
+                selectedList !== "" ? undefined : () => "Chọn danh sách..."
+              }
             >
               {lists.map((list, index) => (
                 <MenuItem key={index} value={list} sx={{ fontSize: "12px" }}>
@@ -72,12 +86,14 @@ const MoveCardModal = ({ open, onClose }) => {
 
         <Box sx={boxStyle}>
           <FormControl fullWidth>
-            <InputLabel sx={{ fontSize: "12px" }}>Vị trí</InputLabel>
             <Select
               value={selectedPosition}
               onChange={(e) => setSelectedPosition(e.target.value)}
-              label="Vị trí"
               sx={inputStyle}
+              displayEmpty
+              renderValue={
+                selectedPosition !== "" ? undefined : () => "Chọn vị trí..."
+              }
             >
               {positions.map((position, index) => (
                 <MenuItem
