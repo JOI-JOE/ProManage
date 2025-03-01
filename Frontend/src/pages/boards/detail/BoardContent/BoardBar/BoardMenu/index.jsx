@@ -27,6 +27,8 @@ import Setting from "./Component_BoardMenu/Setting/Setting";
 import Email from "./Component_BoardMenu/Email";
 import Copy from "./Component_BoardMenu/Copy";
 import Print from "./Component_BoardMenu/Print";
+import ChangeBackground from "./Component_BoardMenu/ChangeBackground/ChangeBackground";
+import LabelList from "./Component_BoardMenu/Label/Label";
 
 const BoardMenu = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -40,6 +42,9 @@ const BoardMenu = () => {
   const [copyAnchorEl, setCopyAnchorEl] = useState(null);
   const [printOpen, setPrintOpen] = useState(false);
   const [printAnchorEl, setPrintAnchorEl] = useState(null);
+
+  const [backgroundOpen, setBackgroundOpen] = useState(false); // Thêm state mới
+  const [labelOpen, setLabelOpen] = useState(false);
 
   const toggleMenu = (open) => () => setMenuOpen(open);
   const toggleDetails = (open) => () => setDetailsOpen(open);
@@ -58,6 +63,8 @@ const BoardMenu = () => {
     setPrintAnchorEl(event.currentTarget);
     setPrintOpen(true);
   };
+  const toggleBackground = (open) => () => setBackgroundOpen(open);
+  const toggleLabel = (open) => () => setLabelOpen(open);
 
   const listItems = [
     { text: "Về bảng này", icon: <InfoIcon />, action: toggleDetails(true) },
@@ -73,6 +80,13 @@ const BoardMenu = () => {
     { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) },
     { text: "Thay đổi hình nền", icon: <PaletteIcon /> },
     { text: "Nhãn", icon: <LabelIcon /> },
+
+    {
+      text: "Thay đổi hình nền",
+      icon: <PaletteIcon />,
+      action: toggleBackground(true),
+    },
+    { text: "Nhãn", icon: <LabelIcon />, action: toggleLabel(true) },
   ];
 
   const actionItems = [
@@ -158,6 +172,11 @@ const BoardMenu = () => {
         onClose={() => setPrintOpen(false)}
         anchorEl={printAnchorEl}
       />
+      <ChangeBackground
+        open={backgroundOpen}
+        onClose={toggleBackground(false)}
+      />{" "}
+      <LabelList open={labelOpen} onClose={toggleLabel(false)} />
     </div>
   );
 };
