@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-const MemberList = ({ open, onClose, members }) => {
+const MemberList = ({ open, onClose, members = [] }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredMembers = members.filter((member) =>

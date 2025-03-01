@@ -24,6 +24,9 @@ import TaskModal from "./childComponent_CardDetail/Task";
 import LabelList from "./childComponent_CardDetail/Label";
 import AttachmentModal from "./childComponent_CardDetail/Attached";
 import MoveCardModal from "./childComponent_CardDetail/Move";
+import CopyCardModal from "./childComponent_CardDetail/Copy";
+import ShareModal from "./childComponent_CardDetail/Share";
+
 const CardModal = () => {
   const { name } = useParams();
   const navigate = useNavigate();
@@ -38,6 +41,8 @@ const CardModal = () => {
   const [selectedLabels, setSelectedLabels] = useState([]);
   const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
   const [isMoveCardModalOpen, setIsMoveCardModalOpen] = useState(false); // State để mở/đóng modal di chuyển
+  const [isCopyCardModalOpen, setIsCopyCardModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
   const loggedInUser = {
@@ -203,6 +208,12 @@ const CardModal = () => {
                 </ListItem>
 
                 <ListItem disablePadding>
+                  <ListItemButton>
+                    <ListItemText primary="Ngày" />
+                  </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding>
                   <ListItemButton
                     onClick={() => setIsAttachmentModalOpen(true)}
                   >
@@ -222,8 +233,26 @@ const CardModal = () => {
                 </ListItem>
 
                 <ListItem disablePadding>
-                  <ListItemButton>
+                  <ListItemButton onClick={() => setIsCopyCardModalOpen(true)}>
                     <ListItemText primary="Sao chép" />
+                  </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding>
+                  <ListItemButton>
+                    <ListItemText primary="Tạo mẫu" />
+                  </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding>
+                  <ListItemButton>
+                    <ListItemText primary="Lưu trữ" />
+                  </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding>
+                  <ListItemButton onClick={() => setIsShareModalOpen(true)}>
+                    <ListItemText primary="Chia sẻ" />
                   </ListItemButton>
                 </ListItem>
               </List>
@@ -268,6 +297,18 @@ const CardModal = () => {
       <MoveCardModal
         open={isMoveCardModalOpen}
         onClose={() => setIsMoveCardModalOpen(false)}
+      />
+
+      {/* Component CopyCardModal */}
+      <CopyCardModal
+        open={isCopyCardModalOpen}
+        onClose={() => setIsCopyCardModalOpen(false)}
+      />
+
+      <ShareModal
+        open={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        shareLink="https://trello.com/c/aZDXteH6"
       />
     </Dialog>
   );
