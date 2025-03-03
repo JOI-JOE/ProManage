@@ -1,49 +1,52 @@
 import authClient from "../authClient";
-
+// Lấy danh sách card theo list
 export const getCardByList = async (listId) => {
-  try {
-    const response = await authClient.get(`cards/${listId}/getCardsByList`);
-    
-    if (!response.data || !response.data.data) {
-      throw new Error("Dữ liệu API trả về không hợp lệ");
-    }
-
-    // Sắp xếp danh sách card theo `position` từ nhỏ đến lớn
-    return response.data.data.sort((a, b) => a.position - b.position);
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách card:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || "Không thể lấy danh sách card");
-  }
+  const response = await authClient.get(`/cards/list/${listId}`);
+  return response.data.data;
 };
 
-// Hàm cập nhật vị trí của card khi kéo thả
-// 
+// Tạo card mới
+export const createCard = async (data) => {
+  const response = await authClient.post("/cards", data);
+  return response.data;
+};
 
-export const updateCardPositions = async ({ cardId, newListId, newPosition }) => {
+export const updateCardPosition = async ({
+  cardId,
+  sourceListId,
+  targetListId,
+  newPosition,
+  boardId,
+}) => {
   try {
-    const response = await authClient.put(`/cards/update-position`, {
-      id: cardId, // Bổ sung ID của card
-      new_list_board_id: newListId, // Đúng tên tham số trên API
-      new_position: newPosition, // Đúng tên tham số trên API
+    // Log dữ liệu trước khi gửi để debug
+    console.log("📤 Gửi request cập nhật vị trí:", {
+      card_id: cardId,
+      source_list_id: sourceListId,
+      target_list_id: targetListId,
+      position: newPosition,
+      board_id: boardId,
     });
+
+    // Gọi API cập nhật vị trí card
+    const response = await authClient.put(`/cards/update-position`, {
+      card_id: cardId,
+      source_list_id: sourceListId,
+      target_list_id: targetListId,
+      position: newPosition,
+      board_id: boardId,
+    });
+
+    console.log("✅ Cập nhật vị trí thành công:", response.data);
 
     return response.data;
   } catch (error) {
-    console.error("❌ Lỗi khi cập nhật vị trí card:", error.response?.data || error.message);
-
+    console.error(
+      "❌ Lỗi khi cập nhật vị trí card:",
+      error.response?.data || error.message
+    );
     throw new Error(
       error.response?.data?.message || "Không thể cập nhật vị trí card"
     );
-  }
-};
-
-
-export const createCard = async (cardData) => {
-  try {
-    const response = await authClient.post("/cards", cardData);
-    return response.data; // Trả về dữ liệu từ API
-  } catch (error) {
-    console.error("Lỗi khi tạo thẻ:", error);
-    throw error; // Ném lỗi để xử lý phía trên (nếu cần)
   }
 };

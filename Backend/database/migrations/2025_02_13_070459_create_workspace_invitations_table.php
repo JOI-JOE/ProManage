@@ -13,24 +13,28 @@ return new class extends Migration
     {
         Schema::create('workspace_invitations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('workspace_id')
+            $table->foreignId('id_workspace')
                 ->constrained('workspaces')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
-            $table->foreignId('invited_member_id')
+
+            $table->foreignId('id_invited_member')
                 ->nullable()
                 ->constrained('users')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
-            $table->string('email')->nullable();
-            $table->text('invitation_message')->nullable();
-            $table->string('invite_token')->unique(); // Thêm cột này
-            $table->boolean('accept_unconfirmed')->default(false);
-            $table->foreignId('invited_by_member_id')
+
+            $table->foreignId('id_invited_by_member')
                 ->nullable()
                 ->constrained('users')
                 ->onUpdate('cascade')
                 ->onDelete('set null');
+
+            $table->string('email')->nullable();
+            $table->text('invitation_message')->nullable();
+            $table->string('invite_token')->unique(); // Token để xác nhận lời mời
+            $table->boolean('accept_unconfirmed')->default(false); // Cho phép tham gia khi chưa xác nhận?
+
             $table->timestamps();
         });
     }

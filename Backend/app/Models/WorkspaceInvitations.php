@@ -8,25 +8,29 @@ use Illuminate\Database\Eloquent\Model;
 class WorkspaceInvitations extends Model
 {
     use HasFactory;
-
+    protected $table = 'workspace_invitations'; // Xác định tên bảng đúng
     protected $fillable = [
-        'workspace_id',
-        'invited_member_id',
+        'id_workspace',
+        'id_invited_member',
         'email',
         'invitation_message',
         'invite_token',
         'accept_unconfirmed',
-        'invited_by_member_id',
+        'id_invited_by_member',
     ];
-
 
     public function workspace()
     {
-        return $this->belongsTo(Workspace::class, 'workspace_id');
+        return $this->belongsTo(Workspace::class, 'id_workspace');
     }
 
-    public function invitedUser()
+    public function invitedMember()
     {
-        return $this->belongsTo(User::class, 'invited_member_id');
+        return $this->belongsTo(User::class, 'id_invited_member');
+    }
+
+    public function invitedBy()
+    {
+        return $this->belongsTo(User::class, 'id_invited_by_member');
     }
 }
