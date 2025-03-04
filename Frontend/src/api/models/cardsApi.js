@@ -11,7 +11,7 @@ export const createCard = async (data) => {
   return response.data;
 };
 
-export const updateCardPositions = async ({ cards }) => {
+export const updateCardPositionsSameCol = async ({ cards }) => {
   try {
     const response = await authClient.put("/boards/update-card-same-col", {
       cards,
@@ -20,5 +20,17 @@ export const updateCardPositions = async ({ cards }) => {
   } catch (error) {
     console.error("Error in updateCardPositions:", error);
     throw new Error("Failed to update card positions");
+  }
+};
+
+export const updateCardPositionsDiffCol = async ({ cards }) => {
+  try {
+    const response = await authClient.put("/boards/update-card-diff-col", {
+      cards,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in updateCardPositionsDifferentColumn:", error);
+    throw new Error("Failed to update card positions across columns");
   }
 };

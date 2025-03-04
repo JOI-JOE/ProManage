@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createCard,
   getCardByList,
-  updateCardPositions,
+  updateCardPositionsDiffCol,
+  updateCardPositionsSameCol,
 } from "../api/models/cardsApi";
 import { useEffect } from "react";
 import { createEchoInstance } from "./useRealtime";
@@ -99,26 +100,22 @@ export const useCreateCard = () => {
   });
 };
 
-// Tối ưu hàm tính position
-const calculateNewPosition = (cards, index) => {
-  if (!cards || cards.length === 0) return 65535; // Nếu không có card nào, đặt vị trí đầu tiên
-  if (index === 0) return Math.floor(cards[0].position / 2);
-  if (index >= cards.length) return cards[cards.length - 1].position + 65535;
-  return Math.floor((cards[index - 1].position + cards[index].position) / 2);
-};
-
-export const useCardPositionsInColumns = async (cards) => {
-  // Kiểm tra xem có cards hợp lệ và là mảng không
+const updateCardPositionsGeneric = async (cards, updateFunction) => {
   if (!Array.isArray(cards) || cards.length === 0) {
     console.error("Invalid or empty cards data:", cards);
     throw new Error("No valid card data to update.");
   }
 
   try {
-    const result = await updateCardPositions({ cards });
-    return result;
+    return await updateFunction({ cards });
   } catch (error) {
     console.error("Failed to update card positions:", error);
     throw error;
   }
 };
+
+export const useCardPositionsInColumns = (cards) =>
+  updateCardPositionsGeneric(cards, updateCardPositionsSameCol);
+
+export const useCardPositionsOutColumns = (cards) =>
+  updateCardPositionsGeneric(cards, updateCardPositionsDiffCol);
