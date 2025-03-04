@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createCard,
   getCardByList,
-  updateCardPosition,
+  updateCardPositions,
 } from "../api/models/cardsApi";
 import { useEffect } from "react";
 import { createEchoInstance } from "./useRealtime";
@@ -17,8 +17,6 @@ export const useCardByList = (listId) => {
     if (!echo) return;
 
     const channel = echo.channel(`list.${listId}`);
-
-    // Xử lý cập nhật vị trí card
 
     // Xử lý thêm card mới
     channel.listen(".card.added", (e) => {
@@ -109,16 +107,18 @@ const calculateNewPosition = (cards, index) => {
   return Math.floor((cards[index - 1].position + cards[index].position) / 2);
 };
 
-export const useUpdateCardPosition = () => {
-  const mutation = useMutation({
-    mutationFn: updateCardPosition,
-    onSuccess: (data) => {
-      console.log("✅ Card position updated:", data);
-    },
-    onError: (error) => {
-      console.error("❌ Failed to update card position:", error);
-    },
-  });
+export const useCardPositionsInColumns = async (cards) => {
+  // Kiểm tra xem có cards hợp lệ và là mảng không
+  if (!Array.isArray(cards) || cards.length === 0) {
+    console.error("Invalid or empty cards data:", cards);
+    throw new Error("No valid card data to update.");
+  }
 
-  return mutation;
+  try {
+    const result = await updateCardPositions({ cards });
+    return result;
+  } catch (error) {
+    console.error("Failed to update card positions:", error);
+    throw error;
+  }
 };

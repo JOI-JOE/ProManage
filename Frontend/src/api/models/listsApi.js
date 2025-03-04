@@ -2,18 +2,19 @@ import authClient from "../authClient";
 
 export const getListByBoardId = async (boardId) => {
   try {
+    if (!boardId) {
+      console.error("Lỗi: boardId không được cung cấp.");
+      return [];
+    }
     const response = await authClient.get(`/lists/${boardId}`);
 
-    // Kiểm tra nếu response.data là một mảng và sắp xếp theo position
-    if (Array.isArray(response.data)) {
-      return response.data.sort((a, b) => a.position - b.position);
-    } else {
-      console.error("Lỗi: API không trả về danh sách đúng", response.data);
-      return []; // Trả về mảng rỗng nếu dữ liệu không hợp lệ
-    }
+    return response.data; // Trả về danh sách columns
   } catch (error) {
-    console.error("Lỗi khi lấy danh sách các list của board:", error);
-    throw error;
+    console.error(
+      `Lỗi khi lấy danh sách các list của board với ID: ${boardId}`,
+      error
+    );
+    return [];
   }
 };
 
@@ -112,3 +113,23 @@ export const updateClosed = async (listId) => {
     throw error; // Xử lý lỗi nếu có
   }
 };
+
+export const updateListPosition = async (boardId, updatedLists) => {
+  if (!boardId || !Array.isArray(updatedLists) || updatedLists.length === 0) {
+    console.error("Dữ liệu đầu vào không hợp lệ.");
+    return;
+  }
+
+  try {
+    const response = await authClient.put(`/boards/update-column-position`, {
+      board_id: boardId,
+      lists: updatedLists.map(({ id, position }) => ({ id, position })), // Chỉ gửi id và position
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật vị trí list_board:", error);
+    throw error;
+  }
+};
+

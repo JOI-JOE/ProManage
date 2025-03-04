@@ -11,42 +11,14 @@ export const createCard = async (data) => {
   return response.data;
 };
 
-export const updateCardPosition = async ({
-  cardId,
-  sourceListId,
-  targetListId,
-  newPosition,
-  boardId,
-}) => {
+export const updateCardPositions = async ({ cards }) => {
   try {
-    // Log dữ liệu trước khi gửi để debug
-    console.log("📤 Gửi request cập nhật vị trí:", {
-      card_id: cardId,
-      source_list_id: sourceListId,
-      target_list_id: targetListId,
-      position: newPosition,
-      board_id: boardId,
+    const response = await authClient.put("/boards/update-card-same-col", {
+      cards,
     });
-
-    // Gọi API cập nhật vị trí card
-    const response = await authClient.put(`/cards/update-position`, {
-      card_id: cardId,
-      source_list_id: sourceListId,
-      target_list_id: targetListId,
-      position: newPosition,
-      board_id: boardId,
-    });
-
-    console.log("✅ Cập nhật vị trí thành công:", response.data);
-
     return response.data;
   } catch (error) {
-    console.error(
-      "❌ Lỗi khi cập nhật vị trí card:",
-      error.response?.data || error.message
-    );
-    throw new Error(
-      error.response?.data?.message || "Không thể cập nhật vị trí card"
-    );
+    console.error("Error in updateCardPositions:", error);
+    throw new Error("Failed to update card positions");
   }
 };

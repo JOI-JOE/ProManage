@@ -24,8 +24,8 @@ class Card extends Model
         'is_completed',
         'is_archived',
         'list_board_id',
-
     ];
+    
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

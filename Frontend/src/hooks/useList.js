@@ -1,24 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useState } from "react";
 import {
   getListDetail,
   getListByBoardId,
-  updateListPositions,
-  createList,
   updateListName,
   updateClosed,
+  updateListPosition,
 } from "../api/models/listsApi";
 import { createEchoInstance } from "./useRealtime";
-
-export const useLists = (boardId) => {
-  return useQuery({
-    queryKey: ["boardLists", boardId],
-    queryFn: () => getListByBoardId(boardId),
-    enabled: !!boardId,
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 30,
-  });
-};
 
 export const useListById = (listId) => {
   const queryClient = useQueryClient();
@@ -90,4 +79,52 @@ export const useListById = (listId) => {
     updateListName: updateListNameMutation.mutate,
     updateClosed: updateClosedMutation.mutate,
   };
+};
+
+export const useLists = (boardId) => {
+  return useQuery({
+    queryKey: ["boardLists", boardId],
+    queryFn: () => getListByBoardId(boardId),
+    enabled: !!boardId,
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
+  });
+};
+
+export const useDragAndDropLists = (boardId) => {
+  const queryClient = useQueryClient();
+  const { data: orderedLists = [], isLoading, isError } = useLists(boardId);
+  const [localLists, setLocalLists] = useState(orderedLists);
+
+  const mutation = useMutation({
+    mutationFn: (updatedLists) => updateListPosition(boardId, updatedLists),
+    onMutate: async (newLists) => {
+      await queryClient.cancelQueries(["boardLists", boardId]);
+
+      // Lưu snapshot trước khi cập nhật
+      const previousLists = queryClient.getQueryData(["boardLists", boardId]);
+
+      // Cập nhật cache tạm thời
+      queryClient.setQueryData(["boardLists", boardId], (old) => ({
+        ...old,
+        lists: newLists,
+      }));
+
+      return { previousLists };
+    },
+    onError: (err, _, context) => {
+      console.error("Không thể cập nhật vị trí trên server:", err);
+      if (context?.previousLists) {
+        queryClient.setQueryData(
+          ["boardLists", boardId],
+          context.previousLists
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["boardLists", boardId]);
+    },
+  });
+
+  return { mutation };
 };

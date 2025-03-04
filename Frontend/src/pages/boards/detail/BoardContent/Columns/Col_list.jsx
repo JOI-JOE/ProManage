@@ -1,55 +1,141 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
-import { useDroppable } from "@dnd-kit/core";
-import { Box } from "@mui/material";
-import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
-import { useLists } from "../../../../../hooks/useList";
-import useAddColumn from "../../../../../hooks/useAddColumn";
+import { Box, Button, TextField } from "@mui/material";
+import NoteAddIcon from "@mui/icons-material/NoteAdd";
+import CloseIcon from "@mui/icons-material/Close";
+import {
+    SortableContext,
+    horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useState } from "react";
+import { toast } from "react-toastify";
 import Col from "./Col";
-import Col_new from "./Col_new";
 
-const Col_list = ({ lists, activeColumn, onColumnDrop }) => {
-    const { boardId } = useParams();
-    const { createList } = useLists(boardId);
-    const { openColumn, setOpenColumn, columnName, setColumnName, addColumn } = useAddColumn(createList);
+const Col_list = ({ columns }) => {
+    const [openColumn, setOpenColumn] = useState(false); // State để kiểm soát hiển thị input
+    const toggleOpenColumn = () => setOpenColumn(!openColumn);
 
-    const { setNodeRef, isOver } = useDroppable({
-        id: `column-drop-area-${boardId}`,
-        data: {
-            type: 'column-drop-area', // Quan trọng: Đảm bảo type là "column-drop-area"
-            boardId,
-        },
-    });
+    const [columnName, setColumnName] = useState("");
+
+    const addColumn = () => {
+        if (!columnName) {
+            toast.error("Nhập tên cột");
+            return;
+        }
+        console.log(columnName);
+
+        toggleOpenColumn();
+        setColumnName("");
+    };
 
     return (
-        <Box
-            ref={setNodeRef}
-            sx={{
-                bgcolor: "inherit",
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                overflowX: "auto",
-                overflowY: "hidden",
-                "&::-webkit-scrollbar-track": { m: 2 },
-            }}
+        <SortableContext
+            items={columns?.map((c) => c.id)}
+            strategy={horizontalListSortingStrategy}
         >
-            {/* SortableContext để quản lý việc kéo thả các column */}
-            <SortableContext items={lists.map((list) => list.id)} strategy={horizontalListSortingStrategy}>
-                {/* Hiển thị các column */}
-                {lists?.map((column) => (
-                    <Col key={column.id} list={column} isDragging={activeColumn?.id === column.id} />
+            <Box
+                sx={{
+                    bgcolor: "inherit",
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    overflowX: "auto",
+                    overflowY: "hidden",
+
+                    "&::-webkit-scrollbar-track": {
+                        m: 2,
+                    },
+                }}
+            >
+                {columns?.map((column) => (
+                    <Col key={column.id} column={column} />
                 ))}
-            </SortableContext>
-            {/* Footer cột để tạo mới column */}
-            <Col_new
-                open={openColumn}
-                setOpen={setOpenColumn}
-                columnName={columnName}
-                setColumnName={setColumnName}
-                onAdd={addColumn}
-            />
-        </Box>
+
+                {/* Box Add Column */}
+                {openColumn ? (
+                    <Box
+                        sx={{
+                            minWidth: "250px",
+                            maxWidth: "250px",
+                            mx: 2,
+                            p: 1,
+                            borderRadius: "6px",
+                            height: "fit-content",
+                            bgcolor: "#ffffff3d",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                        }}
+                    >
+                        <TextField
+                            label="Enter..."
+                            type="text"
+                            size="small"
+                            variant="outlined"
+                            autoFocus
+                            value={columnName}
+                            onChange={(e) => setColumnName(e.target.value)}
+                            sx={{
+                                "& label": { color: "white" },
+                                "& input": { color: "white", fontSize: "14px" },
+                                "& label.Mui-focused": { color: "white" },
+                                "& .MuiOutlinedInput-root": {
+                                    "& fieldset": { borderColor: "white" },
+                                    "&:hover fieldset": { borderColor: "white" },
+                                    "&.Mui-focused fieldset": { borderColor: "white" },
+                                },
+                            }}
+                        />
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Button
+                                onClick={addColumn}
+                                variant="contained"
+                                color="success"
+                                size="small"
+                                sx={{
+                                    boxShadow: "none",
+                                    border: "none",
+                                    bgcolor: "teal",
+                                }}
+                            >
+                                Add Column
+                            </Button>
+                            <CloseIcon
+                                fontSize="small"
+                                sx={{
+                                    color: "white",
+                                    cursor: "pointer",
+                                }}
+                                onClick={toggleOpenColumn}
+                            />
+                        </Box>
+                    </Box>
+                ) : (
+                    <Box
+                        sx={{
+                            minWidth: "200px",
+                            maxWidth: "200px",
+                            mx: 2,
+                            borderRadius: "6px",
+                            height: "fit-content",
+                            bgcolor: "#ffffff3d",
+                        }}
+                    >
+                        <Button
+                            startIcon={<NoteAddIcon />}
+                            sx={{
+                                color: "#ffffff",
+                                width: "100%",
+                                justifyContent: "flex-start",
+                                pl: 2.5,
+                                py: 1,
+                            }}
+                            onClick={toggleOpenColumn}
+                        >
+                            Add new column
+                        </Button>
+                    </Box>
+                )}
+            </Box>
+        </SortableContext>
     );
 };
 

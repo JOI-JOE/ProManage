@@ -21,12 +21,17 @@ class Board extends Model
         'workspace_id',   // ID của workspace liên quan
     ];
 
-        /**
+    /**
      * Mối quan hệ giữa Board và Workspace (một Board thuộc về một Workspace).
      */
     public function workspace()
     {
         return $this->belongsTo(Workspace::class);  // Liên kết với model Workspace
+    }
+
+    public function listBoards()
+    {
+        return $this->hasMany(ListBoard::class, 'board_id');
     }
 
     public function creator()
