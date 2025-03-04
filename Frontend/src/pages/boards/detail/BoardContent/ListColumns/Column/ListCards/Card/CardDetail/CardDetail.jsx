@@ -43,6 +43,10 @@ const CardModal = () => {
   const [isMoveCardModalOpen, setIsMoveCardModalOpen] = useState(false); // State để mở/đóng modal di chuyển
   const [isCopyCardModalOpen, setIsCopyCardModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [editingCommentIndex, setEditingCommentIndex] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
 
   const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
   const loggedInUser = {
@@ -80,6 +84,31 @@ const CardModal = () => {
 
   const handleSelectLabel = (newSelectedLabels) => {
     setSelectedLabels(newSelectedLabels);
+  };
+
+  const handleEditComment = (index) => {
+    setEditingCommentIndex(index);
+    setEditingCommentText(comments[index].text);
+  };
+
+  const handleSaveEditedComment = () => {
+    const updatedComments = comments.map((cmt, index) =>
+      index === editingCommentIndex ? { ...cmt, text: editingCommentText } : cmt
+    );
+    setComments(updatedComments);
+    setEditingCommentIndex(null);
+    setEditingCommentText("");
+  };
+
+  const handleDeleteComment = (index) => {
+    setCommentToDelete(index);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteComment = () => {
+    setComments(comments.filter((_, i) => i !== commentToDelete));
+    setIsDeleteConfirmOpen(false);
+    setCommentToDelete(null);
   };
 
   return (
@@ -151,24 +180,81 @@ const CardModal = () => {
             {comments.map((cmt, index) => (
               <Box
                 key={index}
-                sx={{ display: "flex", alignItems: "center", mt: 1 }}
+                sx={{ display: "flex", flexDirection: "column", mt: 1 }}
               >
-                <Avatar
-                  src={cmt.user.avatar}
-                  alt={cmt.user.name}
-                  sx={{ mr: 1, width: 30, height: 30, fontSize: "0.7rem" }}
-                />
-                <Typography
-                  variant="body2"
-                  style={{
-                    wordWrap: "break-word", // Giữ từ dài không bị tràn
-                    whiteSpace: "pre-wrap", // Giữ lại dòng mới
-                    overflowWrap: "break-word", // Đảm bảo từ dài sẽ ngắt xuống dòng
-                    wordBreak: "break-word", // Ngắt từ dài ra nhiều dòng nếu cần thiết
-                  }}
-                >
-                  <strong>{cmt.user.name}:</strong> {cmt.text}
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Avatar
+                    src={cmt.user.avatar}
+                    alt={cmt.user.name}
+                    sx={{ mr: 1, width: 30, height: 30, fontSize: "0.7rem" }}
+                  />
+                  <Box>
+                    {editingCommentIndex === index ? (
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        multiline
+                        rows={1}
+                        value={editingCommentText}
+                        onChange={(e) => setEditingCommentText(e.target.value)}
+                        sx={{ fontSize: "0.7rem" }}
+                        InputProps={{
+                          style: { fontSize: "0.7rem" },
+                        }}
+                      />
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        style={{
+                          wordWrap: "break-word",
+                          whiteSpace: "pre-wrap",
+                          overflowWrap: "break-word",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        <strong>{cmt.user.name}:</strong> {cmt.text}
+                      </Typography>
+                    )}
+                    <Box sx={{ display: "flex", mt: "-4px" }}>
+                      {editingCommentIndex === index ? (
+                        <Button
+                          size="small"
+                          onClick={handleSaveEditedComment}
+                          sx={{
+                            fontSize: "0.456rem",
+                            textTransform: "none",
+                          }}
+                        >
+                          Save
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            size="small"
+                            onClick={() => handleEditComment(index)}
+                            sx={{
+                              fontSize: "0.456rem",
+                              textTransform: "none",
+                            }}
+                          >
+                            Chỉnh sửa
+                          </Button>
+                          <Button
+                            size="small"
+                            onClick={() => handleDeleteComment(index)}
+                            sx={{
+                              fontSize: "0.456rem",
+                              textTransform: "none",
+                            }}
+                          >
+                            Xóa
+                          </Button>
+                        </>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
               </Box>
             ))}
           </Grid>
@@ -310,6 +396,22 @@ const CardModal = () => {
         onClose={() => setIsShareModalOpen(false)}
         shareLink="https://trello.com/c/aZDXteH6"
       />
+
+      <Dialog
+        open={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this comment?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDeleteConfirmOpen(false)}>Cancel</Button>
+          <Button onClick={confirmDeleteComment} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

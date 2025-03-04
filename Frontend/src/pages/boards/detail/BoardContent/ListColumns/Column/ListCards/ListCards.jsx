@@ -11,7 +11,6 @@ const ListCards = React.memo(({ listId, cards }) => {
   // Sắp xếp cards theo vị trí
   const sortedCards = useMemo(() => {
     return [...cards].sort((a, b) => a.position - b.position);
-    
   }, [cards]);
 
   return (
@@ -48,22 +47,21 @@ const ListCards = React.memo(({ listId, cards }) => {
           },
         }}
       >
-         {sortedCards.length === 0 && (
+        {sortedCards.length === 0 && (
           <Typography color="gray" textAlign="center">
             Chưa có card nào
           </Typography>
         )}
 
-      {sortedCards.map((card) => (
-      
-      <C_ard 
-      key={card.id} // 👈 Đã sửa ở đây
-      card={card} 
-    />
-    
-      ))}
-
-    
+        {sortedCards?.map((card) => (
+          <Link
+            key={card.id}
+            to={`/c/${card.id}/${encodeURIComponent(card.title)}`} // Tạo đường dẫn với cardId và tên
+            style={{ textDecoration: "none" }} // Xóa underline mặc định của link
+          >
+            <C_ard card={card} />
+          </Link>
+        ))}
       </Box>
     </SortableContext>
   );
