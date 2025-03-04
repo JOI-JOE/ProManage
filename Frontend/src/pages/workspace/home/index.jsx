@@ -14,6 +14,7 @@ import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
 
 import WorkspaceDetailForm from "./WorkspaceDetailForm";
 import MyBoard from "../../../components/MyBoard";
+import CreateBoard from "../../../components/CreateBoard";
 
 const HomeWorkspace = ({ workspace }) => {
     const [isFormVisible, setFormVisible] = useState(false); // Quản lý hiển thị form
@@ -124,25 +125,7 @@ const HomeWorkspace = ({ workspace }) => {
                 )}
 
                 {/* Tạo bảng mới */}
-                <ListItem sx={{ width: "auto", padding: 0 }}>
-                    <Box
-                        sx={{
-                            width: "180px",
-                            height: "100px",
-                            backgroundColor: "#EDEBFC",
-                            borderRadius: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            "&:hover": { backgroundColor: "#DCDFE4" },
-                        }}
-                    >
-                        <Typography sx={{ color: "Black", fontWeight: "bold" }}>
-                            Tạo bảng mới
-                        </Typography>
-                    </Box>
-                </ListItem>
+             <CreateBoard/>
             </List>
         </Box>
     );

@@ -90,7 +90,7 @@ export default function ProfileMenu({ email }) {
         <Tooltip title="Tài khoản">
           <IconButton onClick={handleClick} size="small">
             <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
-              TT
+            {email?.charAt(0)?.toUpperCase() || ""}
             </Avatar>
           </IconButton>
         </Tooltip>
@@ -100,7 +100,7 @@ export default function ProfileMenu({ email }) {
           <Avatar
             sx={{ width: 40, height: 40, margin: "auto", bgcolor: "#00A3BF" }}
           >
-            TT
+           {email?.charAt(0)?.toUpperCase() || ""}
           </Avatar>
           <Typography
             variant="subtitle1"
