@@ -82,7 +82,7 @@ const BoardBar = () => {
   console.log("🔍 boardId từ useParams:", boardId);
 
   
-  const { data , isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["board", boardId],
     queryFn: () => getBoardById(boardId),
   });

@@ -15,6 +15,7 @@ import {
   useCardByList,
   useUpdateCardPositions,
 } from "../../../../hooks/useCard";
+import { useRecentBoardAccess } from "../../../../hooks/useBoard";
 
 // const ACTIVE_DRAG_ITEM_TYPE = {
 //   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -34,6 +35,8 @@ const BoardContent = () => {
 
   const draggedCardRef = useRef(null);
 
+  const { mutate: logBoardAccess } = useRecentBoardAccess();
+
   // console.log("🛠 list:", lists);
 
   useEffect(() => {
@@ -41,6 +44,15 @@ const BoardContent = () => {
       setOrderedColumns(lists);
     }
   }, [lists]);
+
+   
+  useEffect(() => {
+    // Gọi API để lưu lại thông tin bảng khi người dùng vào trang bảng
+    if (boardId) {
+      logBoardAccess(boardId); // Lưu thông tin bảng vào danh sách gần đây
+    }
+  }, [boardId, logBoardAccess]);
+
 
   const handleDragStart = (event) => {
     const { active } = event;
