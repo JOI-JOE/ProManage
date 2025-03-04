@@ -47,6 +47,9 @@ const CardModal = () => {
   const [editingCommentText, setEditingCommentText] = useState("");
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [cardName, setCardName] = useState(name || "Task4");
+  const [previousCardName, setPreviousCardName] = useState(cardName);
 
   const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
   const loggedInUser = {
@@ -111,12 +114,51 @@ const CardModal = () => {
     setCommentToDelete(null);
   };
 
+  const handleNameClick = () => {
+    setPreviousCardName(cardName);
+    setIsEditingName(true);
+  };
+
+  const handleNameChange = (event) => {
+    setCardName(event.target.value);
+  };
+
+  const handleNameBlur = () => {
+    if (!cardName.trim()) {
+      setCardName(previousCardName);
+    }
+    setIsEditingName(false);
+  };
+
+  const handleNameKeyPress = (event) => {
+    if (event.key === "Enter") {
+      if (!cardName.trim()) {
+        setCardName(previousCardName);
+      }
+      setIsEditingName(false);
+    }
+  };
+
   return (
     <Dialog open={true} onClose={() => navigate(-1)} fullWidth maxWidth="md">
       <DialogTitle>
-        <Typography variant="h6" fontWeight="bold">
-          {name || "Task4"}
-        </Typography>
+        {isEditingName ? (
+          <TextField
+            value={cardName}
+            onChange={handleNameChange}
+            onBlur={handleNameBlur}
+            onKeyPress={handleNameKeyPress}
+            autoFocus
+            fullWidth
+            InputProps={{
+              style: { height: "30px" },
+            }}
+          />
+        ) : (
+          <Typography variant="h6" fontWeight="bold" onClick={handleNameClick}>
+            {cardName}
+          </Typography>
+        )}
         <Typography variant="body2" color="text.secondary">
           Trong danh sách{" "}
           <span style={{ color: "#0079bf", fontWeight: "bold" }}>
@@ -234,6 +276,7 @@ const CardModal = () => {
                             size="small"
                             onClick={() => handleEditComment(index)}
                             sx={{
+                              mr: "-8px",
                               fontSize: "0.456rem",
                               textTransform: "none",
                             }}
@@ -244,6 +287,7 @@ const CardModal = () => {
                             size="small"
                             onClick={() => handleDeleteComment(index)}
                             sx={{
+                              ml: "-16px",
                               fontSize: "0.456rem",
                               textTransform: "none",
                             }}
@@ -401,9 +445,8 @@ const CardModal = () => {
         open={isDeleteConfirmOpen}
         onClose={() => setIsDeleteConfirmOpen(false)}
       >
-        <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this comment?</Typography>
+          <Typography>Bạn có muốn xoa bình luận không?</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsDeleteConfirmOpen(false)}>Cancel</Button>
