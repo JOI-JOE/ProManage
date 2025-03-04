@@ -13,14 +13,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('recent_boards', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('board_id');
-            $table->timestamp('last_accessed')->default(DB::raw('CURRENT_TIMESTAMP'));
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('board_id')->references('id')->on('boards')->onDelete('cascade');
-            $table->timestamps();
-        });
+        
+                $table->id(); // ID tự tăng cho bảng activity
+                $table->uuid('user_id'); // UUID của board
+                $table->uuid('board_id'); // UUID của board
+            
+                $table->timestamp('last_accessed')->default(DB::raw('CURRENT_TIMESTAMP'));
+            
+                // Khóa ngoại
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+                $table->foreign('board_id')->references('id')->on('boards')->onDelete('cascade');
+            
+                $table->timestamps();
+            });
+            
+        
     }
 
     /**

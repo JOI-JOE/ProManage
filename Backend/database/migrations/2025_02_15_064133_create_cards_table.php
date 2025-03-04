@@ -12,21 +12,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cards', function (Blueprint $table) {
-            $table->id();
-            $table->string('title',255);
+            $table->uuid('id')->primary(); // Sử dụng UUID thay vì id tự tăng
+            $table->string('title', 255);
             $table->text('description')->nullable();
-            $table->string('thumbnail',255)->nullable();
+            $table->string('thumbnail', 255)->nullable();
             $table->integer('position');
-
-            $table->dateTime('start_date')->nullable(); // Thời gian bắt đầu
-            $table->date('end_date')->nullable(); // Chỉ lưu ngày kết thúc
-            $table->time('end_time')->nullable(); // Chỉ lưu giờ trong ngày kết thúc
-            //Hạn cuối làm việc của thẻ
-     
+        
+            // Thời gian bắt đầu và kết thúc
+            $table->dateTime('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->time('end_time')->nullable();
+        
+            // Trạng thái card
             $table->boolean('is_completed')->default(false);
-            $table->boolean('is_archived')->default(false);// lưu trữ card
-            $table->foreignId('list_board_id')->constrained('list_boards');
-             
+            $table->boolean('is_archived')->default(false);
+        
+            // Liên kết đến bảng list_boards bằng UUID
+            $table->uuid('list_board_id');
+            $table->foreign('list_board_id')->references('id')->on('list_boards')->onUpdate('cascade')->onDelete('cascade');
+        
             $table->timestamps();
         });
     }

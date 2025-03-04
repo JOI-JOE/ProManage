@@ -12,10 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('comment_cards', function (Blueprint $table) {
-            $table->id();
+            $table->id(); // ID số nguyên tự tăng cho comment
             $table->string('content');
-            $table->foreignId('card_id')->constrained('cards');
-            $table->foreignId('user_id')->constrained('users');
+        
+            $table->uuid('card_id'); // UUID của card
+            $table->uuid('user_id'); // UUID của user
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+        
+            $table->foreign('card_id')->references('id')->on('cards')->onDelete('cascade');
+        
             $table->timestamps();
         });
     }

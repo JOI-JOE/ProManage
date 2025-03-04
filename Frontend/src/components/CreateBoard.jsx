@@ -69,7 +69,7 @@ const CreateBoard = () => {
     const boardData = {
       name: boardTitle,
       thumbnail: selectedBg,
-      workspace_id: Number(workspace),
+      workspace_id: workspace,
       visibility: viewPermission,
     };
 
