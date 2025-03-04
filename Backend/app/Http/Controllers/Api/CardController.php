@@ -19,6 +19,7 @@ class CardController extends Controller
 
 
 
+<<<<<<< HEAD
     // public function move(Card $card, Request $request)
     // {
     //     DB::transaction(function () use ($card, $request) {
@@ -90,6 +91,71 @@ class CardController extends Controller
             ], 500);
         }
     }
+=======
+
+
+ // Cập nhật vị trí của card trong cùng 1 column hoặc giữa 2 column
+ public function updateCardPosition(Request $request)
+ {
+    Log::info('Dữ liệu nhận được:', $request->all());
+
+    $validated = $request->validate([
+        'id' => 'required|exists:cards,id',
+        'new_position' => 'required|integer|min:0',
+        'new_list_board_id' => 'required|exists:list_boards,id',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        $card = Card::findOrFail($validated['id']);
+
+        // Nếu card di chuyển sang column khác
+        if ($card->list_board_id !== $validated['new_list_board_id']) {
+            // Giảm vị trí của các card trong column cũ
+            Card::where('list_board_id', $card->list_board_id)
+                ->where('position', '>', $card->position)
+                ->decrement('position');
+
+            // Cập nhật column mới và vị trí mới
+            $card->update([
+                'list_board_id' => $validated['new_list_board_id'],
+                'position' => $validated['new_position']
+            ]);
+        } else {
+            // Nếu card di chuyển trong cùng một column
+            if ($card->position < $validated['new_position']) {
+                // Di chuyển xuống: giảm vị trí các card từ (vị trí cũ + 1) đến vị trí mới
+                Card::where('list_board_id', $card->list_board_id)
+                    ->whereBetween('position', [$card->position + 1, $validated['new_position']])
+                    ->decrement('position');
+            } else {
+                // Di chuyển lên: tăng vị trí các card từ vị trí mới đến (vị trí cũ - 1)
+                Card::where('list_board_id', $card->list_board_id)
+                    ->whereBetween('position', [$validated['new_position'], $card->position - 1])
+                    ->increment('position');
+            }
+
+            // Cập nhật vị trí mới cho card
+            $card->update(['position' => $validated['new_position']]);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'Cập nhật vị trí card thành công!',
+            'card' => $card
+        ], 200);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Lỗi khi cập nhật vị trí card:', ['error' => $e->getMessage()]);
+
+        return response()->json([
+            'message' => 'Có lỗi xảy ra!',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+>>>>>>> f34934b20d87598eb0de12be441d8203c53d5c8f
     // lấy thẻ theo danh sách
     public function getCardsByList($listId)
     {
@@ -110,6 +176,11 @@ class CardController extends Controller
                 // 'data'=>$cards
             ]);
         }
+<<<<<<< HEAD
+=======
+       
+
+>>>>>>> f34934b20d87598eb0de12be441d8203c53d5c8f
     }
     public function store(Request $request)
     {
@@ -286,6 +357,7 @@ class CardController extends Controller
         // Kiểm tra sự thay đổi của ngày kết thúc và giờ kết thúc
         $changes = [];
 
+<<<<<<< HEAD
 
         // Kiểm tra sự thay đổi giữa giá trị trong request và giá trị hiện tại trong cơ sở dữ liệu
         if ($request->has('end_date') && $request->end_date !== $card->end_date) {
@@ -329,6 +401,31 @@ class CardController extends Controller
                 $user->notify(new CardNotification('update_datetime', $card, [], $user_name));
             }
         }
+=======
+        // $card->start_date = $request->start_date;
+        // $card->end_date = $request->end_date;
+        // $card->end_time = $request->end_time;
+        // dd($request->all());
+        // $card->save();
+        $card->update([
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'end_time' => $request->end_time,
+        ]);
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($card)
+            ->event('updated_datetime')
+            ->withProperties([
+                'card_title' => $card->title,
+                'start_date' => $request->start_date,
+                'end_date'   => $request->end_date,
+                'end_time'   => $request->end_time,
+            ])
+            // ->log($card->getCustomDescription('updated_datetime', $request->start_date, $request->end_date, $request->end_time));
+            ->log(description: $card->getCustomDescription(eventName: 'updated_datetime', memberName: $request->start_date));
+
+>>>>>>> f34934b20d87598eb0de12be441d8203c53d5c8f
 
         return response()->json([
             'message' => 'Cập nhật ngày và giờ thành công!',

@@ -20,11 +20,15 @@ import {
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import LinkIcon from "@mui/icons-material/Link";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useParams } from "react-router-dom";
 
 import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
+import MemberItem from "./MemberItem";
+import GenerateLink from "../../../../components/GenerateLink";
+import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
+import { useCreateInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 
 const Member = () => {
   const [isFormVisible, setFormVisible] = useState(false);
@@ -39,10 +43,6 @@ const Member = () => {
     setIsLinkActive(false);
   };
 
-  const workspace = {
-    name: "Tên Không Gian",
-  };
-
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
   };
@@ -51,24 +51,49 @@ const Member = () => {
     setInviteOpen(false);
   };
 
-  const handleCopyLink = () => {
-    setLinkCopied(true);
-    setIsLinkActive(true);
-    setShowCopiedMessage(true);
-    navigator.clipboard.writeText("https://example.com/invite-link");
-    setTimeout(() => setShowCopiedMessage(false), 3000);
-  };
-
   const handleDisableLink = () => {
     setIsLinkActive(false);
     setLinkCopied(false);
+  };
+
+  const { workspaceName } = useParams();
+  const { data: workspace } = useGetWorkspaceByName(workspaceName, {
+    enabled: !!workspaceName,
+  });
+
+  const members = workspace.members
+
+  const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
+
+  const handleGenerateLink = async () => {
+    if (!workspace?.id) {
+      console.error("Workspace ID is undefined.");
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      createInviteLink(
+        { workspaceId: workspace.id },
+        {
+          onSuccess: (data) => {
+            // Tạo link mời với format: http://localhost:5173/invite/:workspaceId/:inviteToken
+            const inviteLink = `http://localhost:5173/invite/${workspace.id}/${data.secret}`;
+            resolve(inviteLink);
+          },
+          onError: (error) => {
+            console.error("Lỗi khi tạo link mời:", error);
+            reject(error);
+          },
+        }
+      );
+    });
   };
 
   return (
     <Box
       sx={{
         width: "100%",
-        maxWidth: "1200px", // ✅ Giới hạn chiều rộng tối đa
+        maxWidth: "1200px",
         padding: "20px",
         margin: "30px auto",
       }}
@@ -81,9 +106,9 @@ const Member = () => {
           justifyContent: "space-between",
           borderBottom: "1px solid #D3D3D3",
           paddingBottom: "40px",
-          width: "100%", // ✅ Để 100% thay vì 75vw
-          maxWidth: "1100px", // ✅ Giới hạn kích thước
-          margin: "0 auto", // ✅ Đưa về giữa thay vì -60px
+          width: "100%",
+          maxWidth: "1100px",
+          margin: "0 auto",
           minHeight: "80px",
         }}
       >
@@ -99,13 +124,13 @@ const Member = () => {
               }}
             >
               <span style={{ fontSize: "30px", fontWeight: "bold" }}>
-                {workspace.name.charAt(0).toUpperCase()}
+                {workspace?.display_name.charAt(0).toUpperCase()}
               </span>
             </Avatar>
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <Typography fontWeight="bold" sx={{ fontSize: 25 }}>
-                  {workspace.name}
+                  {workspace?.display_name}
                 </Typography>
                 <IconButton
                   onClick={toggleFormVisibility}
@@ -134,7 +159,6 @@ const Member = () => {
           <WorkspaceDetailForm />
         )}
 
-        {/* Nút Mời Thành Viên luôn nằm bên phải, giữ cùng hàng với tiêu đề */}
         <Button
           variant="contained"
           sx={{
@@ -144,7 +168,7 @@ const Member = () => {
             fontWeight: "bold",
             padding: "8px 12px",
             boxShadow: "none",
-            marginRight: "60px", // ✅ Đẩy nút về bên phải tự nhiên
+            marginRight: "60px",
             "&:hover": { bgcolor: "#005A96" },
           }}
           onClick={handleOpenInvite}
@@ -159,16 +183,15 @@ const Member = () => {
         spacing={2}
         sx={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}
       >
-        {/* Cột trái: Người cộng tác - Chỉ chiếm 20% */}
-        <Grid
-          item
-          xs={12}
-          sm={3}
-          md={2}
-          // sx={{ borderRight: "1px solid #D3D3D3" }}
-        >
+
+        {/* Cột trái:  */}
+        <Grid item xs={12} sm={3} md={2}>
           <Box sx={{ padding: "0px", width: "100%" }}>
-            <Typography variant="h6" fontWeight="bold">
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{ fontSize: "20px" }}
+            >
               Người cộng tác
             </Typography>
             <Chip
@@ -202,7 +225,7 @@ const Member = () => {
           </Box>
         </Grid>
 
-        {/* Cột phải: Chi tiết Thành viên - Chiếm 80% */}
+        {/* Cột phải:  */}
         <Grid item xs={12} sm={9} md={10}>
           <Box
             sx={{
@@ -211,7 +234,11 @@ const Member = () => {
               borderBottom: "1px solid #D3D3D3",
             }}
           >
-            <Typography variant="h6" fontWeight="bold">
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{ fontSize: "20px" }}
+            >
               Thành viên không gian làm việc (1)
             </Typography>
             <Box sx={{ borderBottom: "1px solid #D3D3D3", pb: 2, mb: 2 }}>
@@ -222,7 +249,11 @@ const Member = () => {
               </Typography>
             </Box>
 
-            <Typography variant="h6" fontWeight="bold" sx={{ mt: 2 }}>
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{ mt: 2, fontSize: "20px" }}
+            >
               Mời các thành viên tham gia cùng bạn
             </Typography>
 
@@ -262,58 +293,20 @@ const Member = () => {
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                // borderBottom: "1px solid #D3D3D3",
-                // pb: 2,
-                // mb: 2,
+                flexDirection: "column", // Hiển thị theo hàng dọc
+                alignItems: "flex-start", // Căn lề trái cho các thành viên
+                gap: 2, // Khoảng cách giữa các thành viên
               }}
             >
               {/* Thông tin thành viên */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {members?.map((member, index) => (
                 <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    backgroundColor: "#0079BF",
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "50%",
-                    fontWeight: "bold",
-                  }}
+                  key={`${member.id}-${index}`} // Kết hợp member.id và index để tạo key duy nhất
+                  id="workspace-member-list"
                 >
-                  TT
+                  <MemberItem member={member} /> {/* Truyền dữ liệu member vào MemberItem */}
                 </Box>
-                <Box>
-                  <Typography fontWeight="bold">Trang Nguyễn Thu</Typography>
-                  <Typography variant="body2" sx={{ color: "gray" }}>
-                    @trangnguyenthu41 • Lần hoạt động gần nhất 02/04
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Nút thao tác */}
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button variant="outlined" disabled>
-                  Xem bảng thông tin (0)
-                </Button>
-                <Button
-                  variant="outlined"
-                  disabled
-                  startIcon={<HelpOutlineIcon />}
-                >
-                  Quản trị viên
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<CloseIcon />}
-                >
-                  Rời khỏi
-                </Button>
-              </Box>
+              ))}
             </Box>
           </Box>
         </Grid>
@@ -341,52 +334,7 @@ const Member = () => {
             placeholder="Địa chỉ email hoặc tên"
             sx={{ marginBottom: "10px" }}
           />
-          <Stack direction="column" spacing={1} sx={{ mt: 2 }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{
-                p: 1,
-                bgcolor: linkCopied ? "#E6F4EA" : "transparent",
-                borderRadius: 1,
-              }}
-            >
-              {showCopiedMessage ? (
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <CheckCircleIcon color="success" />
-                  <Typography variant="body2" color="success.main">
-                    Liên kết đã sao chép vào khay nhớ tạm
-                  </Typography>
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="textSecondary">
-                  Mời ai đó vào Không gian làm việc này bằng liên kết:
-                </Typography>
-              )}
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleCopyLink}
-              >
-                {linkCopied ? "Đã sao chép" : "Tạo liên kết"}
-              </Button>
-            </Stack>
-            {isLinkActive && (
-              <Typography
-                variant="body2"
-                color="primary"
-                sx={{
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  textAlign: "right",
-                }}
-                onClick={handleDisableLink}
-              >
-                Tắt liên kết
-              </Typography>
-            )}
-          </Stack>
+          <GenerateLink onGenerateLink={handleGenerateLink} />
         </DialogContent>
       </Dialog>
     </Box>

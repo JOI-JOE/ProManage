@@ -20,6 +20,12 @@ import ShareBoardDialog from "./childComponent/Share/Share";
 import BoardMenu from "./BoardMenu";
 import StarButton from "./childComponent/Star/Star";
 
+import { useQuery } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
+import { useUpdateBoardName } from "../../../../../hooks/useBoard";
+import { getBoardById } from "../../../../../api/models/boardsApi";
+
+
 const style = {
   border: "none",
   fontWeight: "bold",
@@ -33,7 +39,7 @@ const style = {
   },
 };
 
-const BoardBar = ({ board }) => {
+const BoardBar = () => {
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
   const handleFilterDialogOpen = () => setOpenFilterDialog(true);
   const handleFilterDialogClose = () => setOpenFilterDialog(false);
@@ -50,8 +56,8 @@ const BoardBar = ({ board }) => {
     setOpenViewPermissionsDialog(false);
 
   const [openShareDialog, setOpenShareDialog] = useState(false);
-  const [editTitle, setEditTitle] = useState(false);
-  const [teamName, setTeamName] = useState(board?.title || "Team WD-51");
+  // const [editTitle, setEditTitle] = useState(false);
+  // const [teamName, setTeamName] = useState(board?.title || "Team WD-51");
 
   // Quản lý trạng thái sao (isStarred)
   const [isStarred, setIsStarred] = useState(false);
@@ -60,17 +66,70 @@ const BoardBar = ({ board }) => {
     setIsStarred((prev) => !prev); // Đảo ngược trạng thái sao
   };
 
+  // const handleTitleClick = () => setEditTitle(true);
+
+  // const handleTitleChange = (e) => setTeamName(e.target.value);
+
+  // const handleTitleBlur = () => setEditTitle(false);
+
+  // const handleTitleKeyPress = (e) => {
+  //   if (e.key === "Enter") {
+  //     setEditTitle(false);
+  //   }
+  // };
+
+  const { boardId } = useParams(); // Lấy boardId từ URL
+  console.log("🔍 boardId từ useParams:", boardId);
+
+  
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["board", boardId],
+    queryFn: () => getBoardById(boardId),
+  });
+
+  const board = data?.data;
+  console.log("🔍 Dữ liệu board từ API:", board);
+
+  const updateBoardName = useUpdateBoardName();
+
+  const [editTitle, setEditTitle] = useState(false);
+  const [teamName, setTeamName] = useState("");
+
+  // Cập nhật khi dữ liệu board thay đổi
+  React.useEffect(() => {
+    if (board) {
+      setTeamName(board.name || "Team WD-51");
+    }
+  }, [board]);
+
   const handleTitleClick = () => setEditTitle(true);
 
   const handleTitleChange = (e) => setTeamName(e.target.value);
 
-  const handleTitleBlur = () => setEditTitle(false);
+  const handleTitleBlur = () => {
+    if (teamName.trim() === "" || teamName === board?.name) {
+      setEditTitle(false);
+      return;
+    }
+
+    updateBoardName.mutate(
+      { boardId, name: teamName },
+      {
+        onSuccess: () => {
+          setEditTitle(false);
+        },
+      }
+    );
+  };
 
   const handleTitleKeyPress = (e) => {
     if (e.key === "Enter") {
-      setEditTitle(false);
+      handleTitleBlur();
     }
   };
+
+  if (isLoading) return <p>Loading board...</p>;
+  if (error) return <p>Board not found</p>;
 
   return (
     <Box

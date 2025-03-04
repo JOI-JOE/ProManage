@@ -12,45 +12,35 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('workspace_invitations', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
-            // Khóa ngoại đến bảng workspaces
-            $table->foreignId('workspace_id')
-                ->constrained('workspaces')
-                ->onUpdate('cascade')
-                ->onDelete('cascade');
-
-            // Còn đây là khi có tài khoản thì sẽ lấy id: 
-            $table->foreignId('invited_member_id')
-                ->nullable()
-                ->constrained('users')
-                ->onUpdate('cascade')
-                ->onDelete('cascade');
-
-            // Khi mà chưa có tài khoản thì sẽ lấy @email vì
+            // Khóa ngoại đến bảng workspaces (UUID)
+            $table->uuid('workspace_id');
+            $table->foreign('workspace_id')->references('id')->on('workspaces')->onUpdate('cascade')->onDelete('cascade');
+        
+            // Khóa ngoại đến bảng users (UUID) - người được mời
+            $table->uuid('invited_member_id')->nullable();
+            $table->foreign('invited_member_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');
+        
+            // Email của người được mời (nếu không có tài khoản)
             $table->string('email')->nullable();
-
+        
             // Tin nhắn mời
             $table->text('invitation_message')->nullable();
-
-            // Mã hash để xác thực lời mời
-            // https: //id.atlassian.com/login?application=trello&continue=https%3A%2F%2Ftrello.com%2Fauth%2Fatlassian%2Fcallback%3FreturnUrl%3D%252Forg%252F678b57031faba8dd978f0dee%26display%3D%26aaOnboarding%3D%26updateEmail%3D%26traceId%3D%26ssoVerified%3D%26createMember%3D%26jiraInviteLink%3D&email=haungodang2003%40gmail.com&restrict=true
-            // $table->string('dsc_hash', 255)->unique();
-
-            // Nếu TRUE, thành viên được thêm ngay lập tức
+        
+            // Mã token mời (để kiểm tra xác nhận)
+            $table->string('invite_token')->unique();
+        
+            // Cho phép chấp nhận mà không cần xác nhận email
             $table->boolean('accept_unconfirmed')->default(false);
-
-            // Người gửi lời mời (tùy chọn)
-            $table->foreignId('invited_by_member_id')
-                ->nullable()
-                ->constrained('users')
-                ->onUpdate('cascade')
-                ->onDelete('set null');
-
+        
+            // Người gửi lời mời (UUID)
+            $table->uuid('invited_by_member_id')->nullable();
+            $table->foreign('invited_by_member_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('set null');
+        
             $table->timestamps();
         });
     }
-
     /**
      * Reverse the migrations.
      */

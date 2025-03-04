@@ -24,7 +24,9 @@ class ListController extends Controller
     {
         $lists = ListBoard::where('board_id', $boardId)
             ->where('closed', false)
-            ->orderBy('position')->get();
+            ->orderBy('position')
+            ->with('cards') // Lấy luôn danh sách thẻ thuộc mỗi danh sách
+            ->get();
         return response()->json($lists);
     }
 
@@ -207,7 +209,7 @@ class ListController extends Controller
     public function getListById($id)
     {
         // Tìm danh sách dựa trên listId
-        $list = ListBoard::find($id);
+        $list = ListBoard::with('board', 'cards')->findOrFail($id);
 
         if (!$list) {
             return response()->json(['message' => 'List not found'], 404);

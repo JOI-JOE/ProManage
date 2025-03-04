@@ -5,110 +5,126 @@ import { useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ListColumns from "./ListColumns/ListColumns";
+import BoardBar from "./BoardBar";
 import { useLists } from "../../../../hooks/useList";
 // import { updateCardPositions } from "../../../../api/cards";
-import { useCardByList } from "../../../../hooks/useCard";
+// import { useCardByList, useUpdateCardPositions } from "../../../../hooks/useCard";
 import { updateCardPositions } from "../../../../api/models/cardsApi";
 import { mapOrder } from "../../../../../utils/sort";
+import {
+  useCardByList,
+  useUpdateCardPositions,
+} from "../../../../hooks/useCard";
+import { useRecentBoardAccess } from "../../../../hooks/useBoard";
 
-const ACTIVE_DRAG_ITEM_TYPE = {
-  COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
-  CARD: "ACTIVE_DRAG_ITEM_TYPE_CARD",
-};
- // Import API cập nhật vị trí card
+// const ACTIVE_DRAG_ITEM_TYPE = {
+//   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
+//   CARD: "ACTIVE_DRAG_ITEM_TYPE_CARD",
+// };
+//  Import API cập nhật vị trí card
 
 const BoardContent = () => {
   const { boardId } = useParams();
   const queryClient = useQueryClient();
   const { data: lists, isLoading, error, reorderLists } = useLists(boardId);
-  // const { cards, isLoadingCard, errorCard, moveCard } = useCardByList(listId);
-
+  const updateCardPosition = useUpdateCardPositions();
 
   const [orderedColumns, setOrderedColumns] = useState([]);
-  const [activeDragItemId, setActiveDragItemId] = useState(null);
-  const [activeDragItemType, setActiveDragItemType] = useState(null);
-  const [activeDragItemData, setActiveDragItemData] = useState(null);
-  const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null);
+
   const lastOverId = useRef(null);
 
+  const draggedCardRef = useRef(null);
+
+  const { mutate: logBoardAccess } = useRecentBoardAccess();
+
+  // console.log("🛠 list:", lists);
+
+  useEffect(() => {
+    if (lists) {
+      setOrderedColumns(lists);
+    }
+  }, [lists]);
+
+   
+  useEffect(() => {
+    // Gọi API để lưu lại thông tin bảng khi người dùng vào trang bảng
+    if (boardId) {
+      logBoardAccess(boardId); // Lưu thông tin bảng vào danh sách gần đây
+    }
+  }, [boardId, logBoardAccess]);
 
 
-  console.log("🛠 list:", lists);
+  const handleDragStart = (event) => {
+    const { active } = event;
+    if (!active) return;
 
-//   useEffect(() => {
-//     if (lists) {
-//       // console.log(lists)
-//         setOrderedColumns(mapOrder(lists, lists.map(list => list.id), "id"));
-//     }
-// }, [lists]);
+    const activeIdCard = active.id.toString(); // ID của card đang kéo
+    const activeIdColumn = active.data.current.columnId; // ID của column chứa card
 
-// const findColumnByCardId = (cardId) => {
-//   return orderedColumns.find((column) =>
-//       column?.cards?.map((card) => card.id)?.includes(cardId)
-//   );
-// };
+    // Tìm danh sách chứa card đang kéo
+    const oldListBeForeDrag = lists.find(
+      (list) => list.id.toString() === String(activeIdColumn)
+    );
+    console.log("🔥 oldListBeForeDrag:", oldListBeForeDrag);
 
-// const moveCardBetweenDifferentColumns = (overColumn, overCardId, active, over, activeColumn, activeCardId, activeCardData) => {
-//   setOrderedColumns((prevColumns) => {
-//       const overCardIndex = overColumn?.cards?.findIndex((card) => card.id === overCardId);
-//       let newCardIndex;
-//       const isBelowOverItem = active.rect.current.translated && active.rect.current.translated.top > over.rect.top + over.rect.height;
-//       const modifier = isBelowOverItem ? 1 : 0;
-//       newCardIndex = overCardIndex >= 0 ? overCardIndex + modifier : overColumn?.cards?.length + 1;
+    if (!oldListBeForeDrag) {
+      console.error("⚠️ Không tìm thấy danh sách chứa card!");
+      return;
+    }
 
-//       const nextColumns = cloneDeep(prevColumns);
-//       const nextActiveColumn = nextColumns.find((column) => column.id === activeColumn.id);
-//       const nextOverColumn = nextColumns.find((column) => column.id === overColumn.id);
+    /// Tìm được thẻ đang kéo
+    const activePosition = oldListBeForeDrag.cards.find(
+      (card) => card.id.toString() === activeIdCard
+    );
 
-//       if (nextActiveColumn) {
-//           nextActiveColumn.cards = nextActiveColumn.cards.filter((card) => card.id !== activeCardId);
-//       }
+    // const activePosition = oldListBeForeDrag.cards.findIndex(
+    //   (card) => card.id.toString() === activeIdCard
+    // );
 
-//       if (nextOverColumn) {
-//           nextOverColumn.cards = nextOverColumn.cards.filter((card) => card.id !== activeCardId);
-//           const rebuild_activeCardData = { ...activeCardData, list_board_id: nextOverColumn.id };
-//           nextOverColumn.cards = nextOverColumn.cards.toSpliced(newCardIndex, 0, rebuild_activeCardData);
-//       }
+    // Tìm vị trí thực tế của card trong danh sách
+    const activePositionTrue = activePosition.position;
+    console.log("🔥 activePosition:", activePositionTrue);
 
-//       return nextColumns;
-//   });
-// };
+    if (activePosition === -1) {
+      console.error("⚠️ Không tìm thấy card trong danh sách!");
+      return;
+    }
 
-// const handleDragStart = (event) => {
-//   setActiveDragItemId(event?.active?.id);
-//   setActiveDragItemType(event?.active?.data?.current?.list_board_id ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN);
-//   setActiveDragItemData(event?.active?.data?.current);
-//   if (event?.active?.data?.current?.list_board_id) {
-//       setOldColumnDraggingCard(findColumnByCardId(event?.active?.id));
-//   }
-// };
+    // Lưu thông tin vào ref
+    draggedCardRef.current = {
+      id: activeIdCard,
+      position: activePosition.position, // Index thực tế trong danh sách
+      columnId: activeIdColumn,
+    };
 
-const handleDragOver = (event) => {
-  if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) return;
-  const { active, over } = event;
-  if (!active || !over) return;
-  const { id: activeCardId, data: { current: activeCardData } } = active;
-  const { id: overCardId } = over;
-  const activeColumn = findColumnByCardId(activeCardId);
-  const overColumn = findColumnByCardId(overCardId);
-  if (!activeColumn || !overColumn) return;
-  if (activeColumn.id !== overColumn.id) {
-      moveCardBetweenDifferentColumns(overColumn, overCardId, active, over, activeColumn, activeCardId, activeCardData);
-  }
-};
+    console.log("🔥 Card đang kéo:", {
+      activeIdCard,
+      activePositionTrue,
+      activeIdColumn,
+    });
+    // console.log("🔥 draggedCardRef:", draggedCardRef.current);
+  };
+
+  const handleDragOver = (event) => {
+    const { over, active } = event;
+  };
 
   // Hàm xử lý kéo thả
   const handleDragEnd = useCallback(
     async (event) => {
       const { active, over } = event;
+
       if (!active || !over || active.id === over.id) return;
 
       // Kiểm tra xem phần tử bị kéo là column hay card
       const activeId = active.id.toString();
       const overId = over.id.toString();
+      // console.log('das:',overId);
 
       // Kéo thả trong danh sách (List)
-      const oldIndex = lists.findIndex((list) => list.id.toString() === activeId);
+      const oldIndex = lists.findIndex(
+        (list) => list.id.toString() === activeId
+      );
       const newIndex = lists.findIndex((list) => list.id.toString() === overId);
 
       if (oldIndex !== -1 && newIndex !== -1) {
@@ -133,127 +149,109 @@ const handleDragOver = (event) => {
         }
       }
 
-  //     if(activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD){
-  //       const { id: activeCardId, data: { current: activeCardData } } = active;
-  //       const { id: overCardId } = over;
-  //       const activeColumn = findColumnByCardId(activeCardId);
-  //       const overColumn = findColumnByCardId(overCardId);
-  //       if (!activeColumn || !overColumn) return;
+      /////////////////////// Xử lý kéo thả card /////////////////////
+      /////////////////////// Xử lý kéo thả card /////////////////////
+      const activeCardId = draggedCardRef.current.id;
+      const activeCardPositionInList = draggedCardRef.current.position;
+      //  console.log("🔥 activeIndex:", activeIndex);
+      // Vị trí index của card đang kéo
+      const overIndex = over.data.current?.sortable.index; // Vị trí index của card được kéo đến
+      console.log(
+        "🔥 Card ID đang kéo:",
+        activeCardId,
+        "🔥 Vị trí cũ:",
+        activeCardPositionInList,
+        "➡ Vị trí mới:",
+        overIndex
+      );
 
-  //       if (oldColumnDraggingCard.id !== overColumn.id) {
-  //           moveCardBetweenDifferentColumns(overColumn, overCardId, active, over, activeColumn, activeCardId, activeCardData);
-  //           try {
-  //               await updateCardPositions({ card_id: activeCardId, new_position: overColumn.cards.findIndex(c => c.id === overCardId) + 1, new_list_board_id: overColumn.id });
-  //               console.log("✅ Cập nhật vị trí card giữa 2 danh sách thành công");
-  //           } catch (error) {
-  //               console.error("❌ Lỗi cập nhật vị trí card:", error);
-  //               queryClient.setQueryData(["cards", activeColumn.id], activeColumn.cards);
-  //               queryClient.setQueryData(["cards", overColumn.id], overColumn.cards);
-  //           }
-  //       } else {
-  //           const oldCardIndex = oldColumnDraggingCard?.cards?.findIndex(c => c.id === activeDragItemId);
-  //           const newCardIndex = overColumn?.cards?.findIndex(c => c.id === overCardId);
-  //           if (oldCardIndex !== -1 && newCardIndex !== -1) {
-  //               const updatedCards = arrayMove(cloneDeep(oldColumnDraggingCard.cards), oldCardIndex, newCardIndex); // Use cloneDeep
-  //               setOrderedColumns((prevColumns) => {
-  //                   const nextColumns = cloneDeep(prevColumns);
-  //                   const targetColumn = nextColumns.find(col => col.id === overColumn.id);
-  //                   if (targetColumn) {
-  //                       targetColumn.cards = updatedCards;
-  //                   }
-  //                   return nextColumns;
-  //               });
-  //               try {
-  //                   await updateCardPositions({ listId: overColumn.id, updatedCardPositions: updatedCards.map((card, index) => ({ id: card.id, position: index + 1 })) });
-  //                   console.log("✅ Cập nhật vị trí card thành công");
-  //               } catch (error) {
-  //                   console.error("❌ Lỗi cập nhật vị trí card:", error);
-  //     }
-  //   }
-  // }
+      if (
+        activeCardId === undefined ||
+        overIndex === undefined ||
+        activeCardId === overIndex
+      ) {
+        console.warn("⚠️ Không có thay đổi vị trí, dừng xử lý.");
+        return;
+      }
 
+      // Tìm danh sách chứa card đang kéo
+      const oldList = orderedColumns.find(
+        (list) =>
+          list.id.toString() === String(draggedCardRef.current?.columnId)
+      );
+      // console.log("🔥 oldList:", oldList);
 
+      if (!oldList) return;
 
+      // Lấy danh sách card
+      const newCards = [...oldList.cards];
+      // console.log("🔥 newCards:", newCards);
 
+      // Tìm vị trí thực tế của card trong danh sách (tránh lỗi do danh sách thay đổi)
+      const actualMovedCardIndex = newCards.findIndex(
+        (card) => card.id.toString() === activeCardId
+      );
+      const actualMovedCard = newCards.find(
+        (card) => card.id.toString() === activeCardId
+      );
 
+      // console.log("🔥 actualMovedCard:", actualMovedCard);
 
-  //     ///////////////////Card////////////
+      if (actualMovedCardIndex === -1 || !actualMovedCard) {
+        console.error("⚠️ Không tìm thấy card để di chuyển!");
+        return;
+      }
 
-  //   // Xác định danh sách chứa card trước và sau khi kéo thả
-  //   // let sourceList = null;
-  //   // let destinationList = null;
-  //   // //  
-  //   // lists.forEach((list) => {
-  //   //   if (Array.isArray(list.cards) && list.cards.some((card) => card.id.toString() === activeId)) {
-  //   //     sourceList = list;
-  //   //   }
-  //   //   if (Array.isArray(list.cards) && list.cards.some((card) => card.id.toString() === overId)) {
-  //   //     destinationList = list;
-  //   //   }
-  //   // });
-    
-  //   // if (!sourceList || !destinationList) return;
+      // Xóa card khỏi vị trí cũ
+      newCards.splice(actualMovedCardIndex, 1);
 
-  //   // const oldCardIndex = sourceList.cards.findIndex((card) => card.id.toString() === activeId);
-  //   // const newCardIndex = destinationList.cards.findIndex((card) => card.id.toString() === overId);
+      // Chèn vào vị trí mới
+      newCards.splice(overIndex, 0, actualMovedCard);
 
-  //   // // Nếu kéo thả trong cùng một danh sách
-  //   // if (sourceList.id === destinationList.id) {
-  //   //   if (oldCardIndex !== -1 && newCardIndex !== -1) {
-  //   //     const updatedCards = arrayMove(sourceList.cards, oldCardIndex, newCardIndex);
-        
-  //   //     // Cập nhật cache ngay lập tức
-  //   //     queryClient.setQueryData(["cards", sourceList.id], updatedCards);
+      // Cập nhật lại position cho tất cả các card
+      const updatedCards = newCards.map((card, index) => {
+        return {
+          ...card,
+          position: index + 1, // Đảm bảo position duy nhất
+        };
+      });
 
-  //   //     const updatedCardPositions = updatedCards.map((card, index) => ({
-  //   //       id: card.id,
-  //   //       position: index + 1,
-  //   //     }));
+      // Cập nhật state danh sách cột
+      const updatedColumns = orderedColumns.map((list) =>
+        list.id === oldList.id ? { ...list, cards: updatedCards } : list
+      );
 
-  //   //     console.log("🛠 Gửi lên API vị trí card trong cùng danh sách:", updatedCardPositions);
+      // console.log("🛠 updatedColumns:", updatedColumns);
 
-  //   //     try {
-  //   //       await updateCardPositions({ listId: sourceList.id, updatedCardPositions });
-  //   //       console.log("✅ Cập nhật vị trí card thành công");
-  //   //     } catch (error) {
-  //   //       console.error("❌ Lỗi cập nhật vị trí card:", error);
-  //   //       queryClient.setQueryData(["cards", sourceList.id], sourceList.cards);
-  //   //     }
-  //   //   }
-  //   // } else {
-  //   //   // Nếu kéo thả giữa hai danh sách khác nhau
-  //   //   const movedCard = sourceList.cards.find((card) => card.id.toString() === activeId);
-  //   //   if (!movedCard) return;
+      // Cập nhật state với setTimeout để tránh lag UI khi kéo thả nhanh
+      requestAnimationFrame(() => {
+        setOrderedColumns(updatedColumns);
+      });
 
-  //   //   // Xóa card khỏi danh sách cũ và thêm vào danh sách mới
-  //   //   const updatedSourceCards = sourceList.cards.filter((card) => card.id.toString() !== activeId);
-  //   //   const updatedDestinationCards = [
-  //   //     ...destinationList.cards.slice(0, newCardIndex),
-  //   //     { ...movedCard, list_board_id: destinationList.id },
-  //   //     ...destinationList.cards.slice(newCardIndex),
-  //   //   ];
-
-  //   //   // Cập nhật cache React Query
-  //   //   queryClient.setQueryData(["cards", sourceList.id], updatedSourceCards);
-  //   //   queryClient.setQueryData(["cards", destinationList.id], updatedDestinationCards);
-
-  //   //   // Gửi API cập nhật vị trí mới
-  //   //   try {
-  //   //     await updateCardPositions({
-  //   //       card_id: movedCard.id,
-  //   //       new_position: newCardIndex + 1,
-  //   //       new_list_board_id: destinationList.id,
-  //   //     });
-  //   //     console.log("✅ Cập nhật vị trí card giữa 2 danh sách thành công");
-  //   //   } catch (error) {
-  //   //     console.error("❌ Lỗi cập nhật vị trí card:", error);
-  //   //     queryClient.setQueryData(["cards", sourceList.id], sourceList.cards);
-  //   //     queryClient.setQueryData(["cards", destinationList.id], destinationList.cards);
-  //   //   }
-  //   // }
-  // }
-},
-    [boardId, lists, queryClient, reorderLists]
+      // Gọi API cập nhật vị trí
+      try {
+        await updateCardPosition.mutateAsync({
+          cardId: actualMovedCard.id,
+          newListId: oldList.id,
+          newPosition: overIndex,
+        });
+        console.log("✅ API cập nhật vị trí thành công:", {
+          cardId: actualMovedCard.id,
+          newListId: oldList.id,
+          newPosition: overIndex,
+        });
+      } catch (error) {
+        console.error("❌ Lỗi khi cập nhật vị trí:", error);
+      }
+    },
+    [
+      boardId,
+      lists,
+      queryClient,
+      reorderLists,
+      updateCardPosition,
+      orderedColumns,
+    ]
   );
 
   const memoizedLists = useMemo(() => lists, [lists]);
@@ -262,17 +260,20 @@ const handleDragOver = (event) => {
   if (error) return <p>Lỗi: {error.message}</p>;
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
-      <Box
-        sx={{
-          backgroundColor: "primary.main",
-          height: (theme) => theme.trello.boardContentHeight,
-          padding: "18px 0 7px 0px",
-        }}
-      >
-        <ListColumns lists={memoizedLists} />
-      </Box>
-    </DndContext>
+    <>
+      <BoardBar />
+      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <Box
+          sx={{
+            backgroundColor: "primary.main",
+            height: (theme) => theme.trello.boardContentHeight,
+            padding: "18px 0 7px 0px",
+          }}
+        >
+          <ListColumns lists={memoizedLists} />
+        </Box>
+      </DndContext>
+    </>
   );
 };
 

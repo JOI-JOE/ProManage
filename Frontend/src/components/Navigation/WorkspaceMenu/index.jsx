@@ -20,63 +20,61 @@ const WorkspaceMenu = ({ workspace }) => {
 
   const [openSettings, setOpenSettings] = useState(false)
   const [hoveredItem, setHoveredItem] = useState(null)
-  const [workspaces, setWorkspaces] = useState([]); // State để lưu workspace
-  const [loading, setLoading] = useState(true); // State để kiểm tra trạng thái loading
-  const [error, setError] = useState(null); // State để lưu lỗi (nếu có)
 
 
-    const toggleSettings = ({ workspace }) => {
-        setOpenSettings(!openSettings)
-    }
+  const toggleSettings = ({ workspace }) => {
+    setOpenSettings(!openSettings)
+  }
 
-    const handleMouseEnter = (item) => {
-        setHoveredItem(item)
-    }
+  const handleMouseEnter = (item) => {
+    setHoveredItem(item)
+  }
 
-    const handleMouseLeave = () => {
-        setHoveredItem(null)
-    }
+  const handleMouseLeave = () => {
+    setHoveredItem(null)
+  }
 
 
-    return (
-        <div id="workspace-main">
-            <ListItemButton key="workspace-item" onClick={toggleSettings} sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <ListItemIcon sx={{ color: "black" }}>
-                        <Avatar sx={{ bgcolor: "#5D87FF" }}>
-                            {workspace.name.charAt(0)}
-                        </Avatar>
-                    </ListItemIcon>
-                    <ListItemText
-                        primary={
-                            <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap", color: "black" }}>
-                                {workspace.name.length > 15 ? workspace.name.substring(0, 15) + "..." : workspace.name}                            </Typography>
-                        }
-                    />
-                </Box>
+  return (
+    <div id="workspace-main">
+      <ListItemButton key="workspace-item" onClick={toggleSettings} sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <ListItemIcon sx={{ color: "black" }}>
+            <Avatar sx={{ bgcolor: "#5D87FF" }}>
+              {workspace.display_name.charAt(0)}
+            </Avatar>
+          </ListItemIcon>
+          <ListItemText
+            primary={
+              <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap", color: "black" }}>
+                {workspace.display_name.length > 15 ? workspace.display_name.substring(0, 15) + "..." : workspace.display_name}
+              </Typography>
+            }
+          />
+        </Box>
 
-                {openSettings ? (
-                    <ExpandLess sx={{ color: "black" }} />
-                ) : (
-                    <ExpandMore sx={{ color: "black" }} />
-                )}
+        {openSettings ? (
+          <ExpandLess sx={{ color: "black" }} />
+        ) : (
+          <ExpandMore sx={{ color: "black" }} />
+        )}
+      </ListItemButton>
+
+      <Collapse in={openSettings} timeout="auto" unmountOnExit>
+        <Box sx={{ pl: 4 }}>
+          <List>
+            <ListItemButton component={Link} to={`/w/${workspace.name}/home`}>
+              <ListItemIcon sx={{ color: "black" }}>
+                <ViewKanbanIcon />
+              </ListItemIcon>
+              <ListItemText primary="Bảng" sx={{ color: "black" }} />
             </ListItemButton>
-
-            <Collapse in={openSettings} timeout="auto" unmountOnExit>
-                <Box sx={{ pl: 4 }}>
-                    <List>
-                        <ListItemButton component={Link} to={`/w/${workspace.display_name}/home`}>
-                            <ListItemIcon sx={{ color: "black" }}>
-                                <ViewKanbanIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Bảng" sx={{ color: "black" }} />
-                        </ListItemButton>
-                        <ListItemButton>
-                            <ListItemIcon sx={{ color: "black" }}>
-                                <FavoriteBorderIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Điểm nổi bật" sx={{ color: "black" }} />
-                        </ListItemButton>
+            <ListItemButton>
+              <ListItemIcon sx={{ color: "black" }}>
+                <FavoriteBorderIcon />
+              </ListItemIcon>
+              <ListItemText primary="Điểm nổi bật" sx={{ color: "black" }} />
+            </ListItemButton>
 
             <ListItemButton
               onMouseEnter={() => handleMouseEnter("Hình")}

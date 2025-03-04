@@ -8,12 +8,17 @@ use Spatie\Activitylog\Contracts\Activity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
-
+use Illuminate\Support\Str;
 class Card extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'id'; // Đặt UUID làm khóa chính
+    public $incrementing = false; // Vô hiệu hóa tự động tăng ID
+    protected $keyType = 'string'; // Định dạng khóa chính là chuỗi
+
     protected $fillable = [
+        'id',
         'title',
         'description',
         'thumbnail',
@@ -26,18 +31,29 @@ class Card extends Model
         'list_board_id',
 
     ];
-    // public function getActivitylogOptions(): LogOptions
-    // {
-    //     return LogOptions::defaults()
-    //         ->logOnlyDirty() // chỉ ghi log khi thay đổi thực sự dữ liệu VD:Thẻ A ->Thẻ A thì sẽ không ghi log
-    //         ->logOnly(['title', 'description', 'start_date', 'end_date', 'end_time', 'position',]) // chỉ ghi log của những trường này
-    //         ->setDescriptionForEvent(fn(string $eventName) => $this->getCustomDescription($eventName))
-    //         //Khi một sự kiện xảy ra (created, updated, deleted, restored...),
-    //         //  Spatie sẽ gọi phương thức getCustomDescription($eventName)
-    //         //getCustomDescription là hàm mô tả thông tin hoạt động
-    //         ->useLogName('card') // model card
-    //         ->dontSubmitEmptyLogs(); //Ngăn chặn việc ghi log nếu không có sự thay đổi dữ liệu thực sự
-    // }
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
+            }
+        });
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnlyDirty() // chỉ ghi log khi thay đổi thực sự dữ liệu VD:Thẻ A ->Thẻ A thì sẽ không ghi log
+            ->logOnly(['title', 'description', 'start_date', 'end_date', 'end_time', 'position',]) // chỉ ghi log của những trường này
+            ->setDescriptionForEvent(fn(string $eventName) => $this->getCustomDescription($eventName))
+            //Khi một sự kiện xảy ra (created, updated, deleted, restored...),
+            //  Spatie sẽ gọi phương thức getCustomDescription($eventName)
+            //getCustomDescription là hàm mô tả thông tin hoạt động
+            ->useLogName('card') // model card
+            ->dontSubmitEmptyLogs(); //Ngăn chặn việc ghi log nếu không có sự thay đổi dữ liệu thực sự
+    }
 
     // /**
     //  * Tùy chỉnh mô tả log hoạt động.
