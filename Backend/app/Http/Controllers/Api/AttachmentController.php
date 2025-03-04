@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
+use App\Models\Card;
+use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -40,6 +42,25 @@ class AttachmentController extends Controller
             'is_cover' => false,
             'card_id' => $cardId,
         ]);
+        $user_name = auth()->user()?->user_name ?? 'ai đó';
+
+        $card = Card::findOrFail($cardId);
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($card)
+            ->event('uploaded_attachment')
+            ->withProperties([
+                'file_name' => $fileNameDefault,
+                'file_path' => $path,
+            ])
+            ->log("{$user_name} đã tải lên tệp đính kèm '{$fileNameDefault}' trong thẻ '{$card->title}'");
+             // Lấy tất cả người dùng liên quan đến thẻ, trừ người dùng đang đăng nhập
+             $users = $card->users()->where('id', '!=', auth()->id())->get();
+
+             // Gửi thông báo cho tất cả người dùng trừ người dùng đang đăng nhập
+             foreach ($users as $user) {
+                 $user->notify(new CardNotification('uploaded_attachment', $card, [], $user_name));
+             }
 
         return response()->json([
             'message' => 'Tệp đã được tải lên thành công!',
@@ -49,12 +70,26 @@ class AttachmentController extends Controller
     }
 
     // Xóa file đính kèm
-    public function deleteAttachment($cardId,$attachmentId)
+    public function deleteAttachment($cardId, $attachmentId)
     {
         $attachment = Attachment::findOrFail($attachmentId);
+        $fileNameDefault = $attachment->file_name_defaut; // Lấy tên file gốc
 
         Storage::disk('public')->delete($attachment->path_url);
         $attachment->delete();
+        $user_name = auth()->user()?->user_name ?? 'ai đó';
+
+        $card = Card::findOrFail($cardId);
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($card)
+            ->event('deleted_attachment')
+            ->withProperties([
+                'card_id' => $cardId,
+                'attachment_id' => $attachmentId,
+                'file_name' => $fileNameDefault,
+            ])
+            ->log("{$user_name} đã xóa tệp đính kèm '{$fileNameDefault}' trong thẻ '");
 
         return response()->json([
             'message' => 'Xóa tệp đính kèm thành công!',
@@ -62,7 +97,7 @@ class AttachmentController extends Controller
         ]);
     }
     // tải ảnh bìa lên
-    public function uploadCover(Request $request,$cardId)
+    public function uploadCover(Request $request, $cardId)
     {
         $request->validate([
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -93,7 +128,7 @@ class AttachmentController extends Controller
     }
 
     // Cập nhật tệp đính kèm thành ảnh bìa
-    public function setCoverImage(Request $request,$cardId, $attachmentId)
+    public function setCoverImage(Request $request, $cardId, $attachmentId)
     {
         $attachment = Attachment::findOrFail($attachmentId);
 

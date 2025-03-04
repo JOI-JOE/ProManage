@@ -7,8 +7,13 @@ import { createBoard, showBoardByWorkspaceId } from "../api/models/boardsApi";
  * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
  */
 export const useCreateBoard = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: createBoard, // Gọi API tạo board
+    onSuccess: () =>{
+            queryClient.invalidateQueries(["workspaces"]);  
+    }
   });
 };
 

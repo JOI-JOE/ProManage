@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Card;
 use App\Models\CommentCard;
+use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -20,11 +22,12 @@ class CommentCardController extends Controller
 
         return response()->json($comments);
     }
-    
+
 
 
 
     public function addCommentIntoCard(Request $request){
+       
 
          // Tạo rules cho validation
     $rules = [
@@ -57,6 +60,8 @@ class CommentCardController extends Controller
         'comment' => $comment
     ], 201);
 
+
+
     }
 
     // Xóa bình luận (chỉ cho phép người tạo bình luận hoặc admin xóa)
@@ -73,5 +78,5 @@ class CommentCardController extends Controller
         return response()->json(['message' => 'Bình luận đã bị xóa']);
     }
 
-    
+
 }
