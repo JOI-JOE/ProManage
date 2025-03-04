@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class WorkspaceMembers extends Model
 {
     use HasFactory;
+    public $incrementing = false; // Không sử dụng auto-increment
+    protected $keyType = 'string'; // UUID là kiểu string
+    protected $primaryKey = ['id_workspace', 'id_member']; // Đặt khóa chính kép
+
 
     protected $fillable = [
         'id_workspace',
@@ -22,11 +26,11 @@ class WorkspaceMembers extends Model
 
     public function workspace()
     {
-        return $this->belongsTo(Workspace::class, 'id_workspace');
+        return $this->belongsTo(Workspace::class, 'workspace_id'); // 'workspace_id' is the foreign key
     }
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'id_member'); // 'id_member' is the foreign key
+        return $this->belongsTo(User::class, 'user_id'); // 'id_member' is the foreign key
     }
 }

@@ -9,6 +9,11 @@ class BoardMember extends Model
 {
     use HasFactory;
 
+    // protected $primaryKey = 'id'; // Đặt UUID làm khóa chính
+    public $incrementing = false; // Vô hiệu hóa tự động tăng ID
+    protected $primaryKey = ['board_id', 'user_id']; // Đặt khóa chính kép
+
+
 
     protected $fillable = [
         'board_id',

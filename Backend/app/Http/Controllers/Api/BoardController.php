@@ -17,6 +17,12 @@ class BoardController extends Controller
         $board = Board::where('closed', 0)->get();
         return response()->json($board);
     }
+    
+    public function getBoardDetail($id)
+    {
+        $board = Board::with('lists.cards')->findOrFail($id);
+        return response()->json($board);
+    }
 
     public function showBoardById($boardId)
     {

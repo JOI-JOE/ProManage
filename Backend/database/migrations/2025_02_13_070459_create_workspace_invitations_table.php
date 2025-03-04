@@ -12,25 +12,32 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('workspace_invitations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('workspace_id')
-                ->constrained('workspaces')
-                ->onUpdate('cascade')
-                ->onDelete('cascade');
-            $table->foreignId('invited_member_id')
-                ->nullable()
-                ->constrained('users')
-                ->onUpdate('cascade')
-                ->onDelete('cascade');
+            $table->uuid('id')->primary();
+
+            // Khóa ngoại đến bảng workspaces (UUID)
+            $table->uuid('workspace_id');
+            $table->foreign('workspace_id')->references('id')->on('workspaces')->onUpdate('cascade')->onDelete('cascade');
+        
+            // Khóa ngoại đến bảng users (UUID) - người được mời
+            $table->uuid('invited_member_id')->nullable();
+            $table->foreign('invited_member_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');
+        
+            // Email của người được mời (nếu không có tài khoản)
             $table->string('email')->nullable();
+        
+            // Tin nhắn mời
             $table->text('invitation_message')->nullable();
-            $table->string('invite_token')->unique(); // Thêm cột này
+        
+            // Mã token mời (để kiểm tra xác nhận)
+            $table->string('invite_token')->unique();
+        
+            // Cho phép chấp nhận mà không cần xác nhận email
             $table->boolean('accept_unconfirmed')->default(false);
-            $table->foreignId('invited_by_member_id')
-                ->nullable()
-                ->constrained('users')
-                ->onUpdate('cascade')
-                ->onDelete('set null');
+        
+            // Người gửi lời mời (UUID)
+            $table->uuid('invited_by_member_id')->nullable();
+            $table->foreign('invited_by_member_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('set null');
+        
             $table->timestamps();
         });
     }
