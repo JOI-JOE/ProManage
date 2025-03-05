@@ -181,5 +181,4 @@ class CardController extends Controller
             'data' => $card,
         ]);
     }
-
 }

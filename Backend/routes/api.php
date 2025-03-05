@@ -89,12 +89,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('cards')->group(function () {
         Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
         Route::put('/update-position', [DragDropController::class, 'updateCardPosition']);
+        // Function tạo card
         Route::post('/', [CardController::class, 'store']);
+
         Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
         Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);
         Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail']);
         Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])
             ->name('cards.removeMember');
+
         Route::put('/{cardId}/dates', [CardController::class, 'updateDates']);
         Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']);
         Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']);
@@ -119,7 +122,7 @@ Route::get('/color', [ColorController::class, 'index']);
 Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
 
 Route::prefix('lists')->group(function () {
-    Route::post('/{boardId}', [ListController::class, 'store']);
+    Route::post('/', [ListController::class, 'store']);
     Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
     Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
     Route::get('/{boardId}', [ListController::class, 'index']);

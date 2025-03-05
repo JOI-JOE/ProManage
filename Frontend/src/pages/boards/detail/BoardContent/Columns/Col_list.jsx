@@ -1,36 +1,56 @@
+import { useState, useEffect } from "react";
 import { Box, Button, TextField } from "@mui/material";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import CloseIcon from "@mui/icons-material/Close";
-import {
-    SortableContext,
-    horizontalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { useState } from "react";
+import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { toast } from "react-toastify";
 import Col from "./Col";
+import { useCreateList } from "../../../../../hooks/useList";
 
-const Col_list = ({ columns }) => {
-    const [openColumn, setOpenColumn] = useState(false); // State để kiểm soát hiển thị input
-    const toggleOpenColumn = () => setOpenColumn(!openColumn);
+const Col_list = ({ columns: initialColumns, boardId }) => {
+    const [columns, setColumns] = useState([]);
+    const createListMutation = useCreateList();
 
+    useEffect(() => {
+        setColumns(initialColumns); // Cập nhật columns khi API trả về dữ liệu mới
+    }, [initialColumns]); // Chỉ chạy khi initialColumns thay đổi
+
+    const [openColumn, setOpenColumn] = useState(false);
     const [columnName, setColumnName] = useState("");
 
-    const addColumn = () => {
-        if (!columnName) {
+    const toggleOpenColumn = () => setOpenColumn(!openColumn);
+
+    const addColumn = async () => {
+        if (!columnName.trim()) {
             toast.error("Nhập tên cột");
             return;
         }
-        console.log(columnName);
+        try {
+            // Tạo dữ liệu gửi lên backend
+            const newColumn = {
+                id: Date.now(),
+                board_id: Number(boardId),
+                title: columnName,
+                position: Array.isArray(columns) && columns.length
+                    ? Math.max(...columns.map(column => column.position)) + 1000
+                    : 1000,
+            };
 
-        toggleOpenColumn();
-        setColumnName("");
+            setColumns((prevColumns) => [...prevColumns, newColumn]);
+            setColumnName("");
+            toggleOpenColumn();
+            await createListMutation.mutateAsync({ newColumn });
+            // toast.success("Tạo danh sách thành công!");
+
+        } catch (error) {
+            console.error("Lỗi khi tạo danh sách:", error);
+            toast.error("Có lỗi xảy ra khi tạo danh sách!");
+        }
     };
 
+
     return (
-        <SortableContext
-            items={columns?.map((c) => c.id)}
-            strategy={horizontalListSortingStrategy}
-        >
+        <SortableContext items={columns?.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
             <Box
                 sx={{
                     bgcolor: "inherit",
@@ -39,10 +59,7 @@ const Col_list = ({ columns }) => {
                     display: "flex",
                     overflowX: "auto",
                     overflowY: "hidden",
-
-                    "&::-webkit-scrollbar-track": {
-                        m: 2,
-                    },
+                    "&::-webkit-scrollbar-track": { m: 2 },
                 }}
             >
                 {columns?.map((column) => (
@@ -100,10 +117,7 @@ const Col_list = ({ columns }) => {
                             </Button>
                             <CloseIcon
                                 fontSize="small"
-                                sx={{
-                                    color: "white",
-                                    cursor: "pointer",
-                                }}
+                                sx={{ color: "white", cursor: "pointer" }}
                                 onClick={toggleOpenColumn}
                             />
                         </Box>

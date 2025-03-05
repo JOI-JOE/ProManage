@@ -100,6 +100,7 @@ export const useCreateCard = () => {
   });
 };
 
+
 const updateCardPositionsGeneric = async (cards, updateFunction) => {
   if (!Array.isArray(cards) || cards.length === 0) {
     console.error("Invalid or empty cards data:", cards);

@@ -34,58 +34,19 @@ export const getListDetail = async (listId) => {
   }
 };
 
-export const updateListPositions = async ({ boardId, updatedPositions }) => {
+export const createList = async ({ newColumn }) => {
   try {
-    const response = await authClient.put(`/lists/reorder`, {
-      board_id: boardId,
-      positions: updatedPositions.map((pos) => ({
-        id: pos.id,
-        position: pos.position,
-      })),
+    // Gọi API để tạo danh sách mới
+    const createResponse = await authClient.post(`/lists`, {
+      newColumn,
     });
 
-    console.log("✅ Cập nhật vị trí thành công:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error(
-      "❌ Lỗi cập nhật vị trí:",
-      error.response?.data || error.message
-    );
-    throw new Error(
-      error.response?.data?.message || "Không thể cập nhật vị trí list"
-    );
-  }
-};
-
-export const createList = async (boardId, listName) => {
-  try {
-    const response = await authClient.post(
-      `/lists/${boardId}`, // Chú ý đường dẫn chứa boardId
-      {
-        name: listName, // Truyền tên danh sách trong body
-      }
-    );
-    return response.data; // Trả về dữ liệu danh sách mới tạo
+    return createResponse.data;
   } catch (error) {
     console.error("❌ Lỗi khi tạo danh sách:", error);
-    throw error; // Xử lý lỗi nếu có
+    throw error;
   }
 };
-
-//   export const updateListName = async (boardId, listId, newName) => {
-//     try {
-//       const response = await authClient.patch(
-//         `/lists/${listId}/updateName`, // Đường dẫn API cập nhật tên danh sách
-//         {
-//           name: newName, // Gửi tên danh sách mới trong body
-//         }
-//       );
-//       return response.data; // Trả về dữ liệu danh sách đã được cập nhật
-//     } catch (error) {
-//       console.error("❌ Lỗi khi cập nhật tên danh sách:", error);
-//       throw error; // Xử lý lỗi nếu có
-//     }
-//   };
 
 export const updateListName = async (listId, newName) => {
   try {
@@ -114,16 +75,10 @@ export const updateClosed = async (listId) => {
   }
 };
 
-export const updateListPosition = async (boardId, updatedLists) => {
-  if (!boardId || !Array.isArray(updatedLists) || updatedLists.length === 0) {
-    console.error("Dữ liệu đầu vào không hợp lệ.");
-    return;
-  }
-
+export const updateColPosition = async ({ columns }) => {
   try {
     const response = await authClient.put(`/boards/update-column-position`, {
-      board_id: boardId,
-      lists: updatedLists.map(({ id, position }) => ({ id, position })), // Chỉ gửi id và position
+      columns,
     });
 
     return response.data;
@@ -133,3 +88,17 @@ export const updateListPosition = async (boardId, updatedLists) => {
   }
 };
 
+//   export const updateListName = async (boardId, listId, newName) => {
+//     try {
+//       const response = await authClient.patch(
+//         `/lists/${listId}/updateName`, // Đường dẫn API cập nhật tên danh sách
+//         {
+//           name: newName, // Gửi tên danh sách mới trong body
+//         }
+//       );
+//       return response.data; // Trả về dữ liệu danh sách đã được cập nhật
+//     } catch (error) {
+//       console.error("❌ Lỗi khi cập nhật tên danh sách:", error);
+//       throw error; // Xử lý lỗi nếu có
+//     }
+//   };
