@@ -29,7 +29,6 @@ class Card extends Model
         'is_completed',
         'is_archived',
         'list_board_id',
-
     ];
 
     protected static function boot()
