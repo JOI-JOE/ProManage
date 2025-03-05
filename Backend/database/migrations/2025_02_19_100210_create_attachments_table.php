@@ -12,12 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('attachments', function (Blueprint $table) {
-            $table->id();
+          
+            $table->uuid('id')->primary();
+            $table->uuid('card_id');
             $table->string('path_url');
             $table->string('file_name_defaut');
             $table->string('file_name')->unique(); /// Cho phép thay đổi
             $table->boolean('is_cover');
-            $table->foreignId('card_id')->constrained()->onDelete('cascade');
+            $table->foreign('card_id')->references('id')->on('cards')->onDelete('cascade');
             $table->timestamps();
         });
     }

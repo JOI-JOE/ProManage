@@ -4,12 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Board extends Model
 {
     use HasFactory;
+    public $incrementing = false; // Không dùng auto-increment
+    protected $keyType = 'string'; // UUID là string
+
 
     protected $fillable = [
+        'id',             // ID của board
         'name',           // Tên của board
         'thumbnail',      // Ảnh thu nhỏ của board
         'description',    // Mô tả của board
@@ -21,6 +26,17 @@ class Board extends Model
         'workspace_id',   // ID của workspace liên quan
     ];
 
+
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid(); // Gán UUID khi tạo mới
+            }
+        });
+    }
     /**
      * Mối quan hệ giữa Board và Workspace (một Board thuộc về một Workspace).
      */
@@ -37,5 +53,26 @@ class Board extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by'); // 'created_by' là trường ngoại trong bảng 'boards'
+    }
+    public function lists()
+    {
+        return $this->hasMany(ListBoard::class, 'board_id');
+    }
+
+
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'board_members', 'board_id', 'user_id')
+            ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated')
+            ->withTimestamps();
+    }
+
+
+    public function activeMembers()
+    {
+        return $this->members()
+            ->wherePivot('is_unconfirmed', false)
+            ->wherePivot('joined', true)
+            ->wherePivot('is_deactivated', false);
     }
 }

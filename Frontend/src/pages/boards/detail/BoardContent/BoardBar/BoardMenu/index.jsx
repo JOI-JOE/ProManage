@@ -19,23 +19,52 @@ import ArchiveIcon from "@mui/icons-material/Archive";
 import HistoryIcon from "@mui/icons-material/History";
 import InfoIcon from "@mui/icons-material/Info";
 import Button from "@mui/material/Button";
+
 import ActivityDrawer from "./Component_BoardMenu/Activity";
 import BoardDetailsDrawer from "./Component_BoardMenu/BoardDetailsDrawer";
 import Archived from "./Component_BoardMenu/Archive";
 import Setting from "./Component_BoardMenu/Setting/Setting";
+import Email from "./Component_BoardMenu/Email";
+import Copy from "./Component_BoardMenu/Copy";
+import Print from "./Component_BoardMenu/Print";
+import ChangeBackground from "./Component_BoardMenu/ChangeBackground/ChangeBackground";
+import LabelList from "./Component_BoardMenu/Label/Label";
 
 const BoardMenu = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false); // Thêm state quản lý SettingsDrawer
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailAnchorEl, setEmailAnchorEl] = useState(null);
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [copyAnchorEl, setCopyAnchorEl] = useState(null);
+  const [printOpen, setPrintOpen] = useState(false);
+  const [printAnchorEl, setPrintAnchorEl] = useState(null);
+
+  const [backgroundOpen, setBackgroundOpen] = useState(false); // Thêm state mới
+  const [labelOpen, setLabelOpen] = useState(false);
 
   const toggleMenu = (open) => () => setMenuOpen(open);
   const toggleDetails = (open) => () => setDetailsOpen(open);
   const toggleActivity = (open) => () => setActivityOpen(open);
   const toggleArchive = (open) => () => setArchiveOpen(open);
-  const toggleSettings = (open) => () => setSettingsOpen(open); // Toggle cho SettingsDrawer
+  const toggleSettings = (open) => () => setSettingsOpen(open);
+  const toggleEmail = (event) => {
+    setEmailAnchorEl(event.currentTarget);
+    setEmailOpen(true);
+  };
+  const toggleCopy = (event) => {
+    setCopyAnchorEl(event.currentTarget);
+    setCopyOpen(true);
+  };
+  const togglePrint = (event) => {
+    setPrintAnchorEl(event.currentTarget);
+    setPrintOpen(true);
+  };
+  const toggleBackground = (open) => () => setBackgroundOpen(open);
+  const toggleLabel = (open) => () => setLabelOpen(open);
 
   const listItems = [
     { text: "Về bảng này", icon: <InfoIcon />, action: toggleDetails(true) },
@@ -48,20 +77,39 @@ const BoardMenu = () => {
   ];
 
   const settingsItems = [
-    { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) }, // Gọi toggleSettings
+    { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) },
     { text: "Thay đổi hình nền", icon: <PaletteIcon /> },
     { text: "Nhãn", icon: <LabelIcon /> },
+
+    {
+      text: "Thay đổi hình nền",
+      icon: <PaletteIcon />,
+      action: toggleBackground(true),
+    },
+    { text: "Nhãn", icon: <LabelIcon />, action: toggleLabel(true) },
   ];
 
   const actionItems = [
     { text: "Theo dõi", icon: <VisibilityIcon /> },
-    { text: "Cài đặt Email-tới-bảng", icon: <EmailIcon /> },
-    { text: "Sao chép bảng thông tin", icon: <ContentCopyIcon /> },
-    { text: "In, xuất và chia sẻ", icon: <PrintIcon /> },
+    {
+      text: "Cài đặt Email-tới-bảng",
+      icon: <EmailIcon />,
+      action: toggleEmail,
+    },
+    {
+      text: "Sao chép bảng thông tin",
+      icon: <ContentCopyIcon />,
+      action: toggleCopy,
+    },
+    { text: "In, xuất và chia sẻ", icon: <PrintIcon />, action: togglePrint },
   ];
 
   const drawerList = (
-    <Box sx={{ width: 280 }} role="presentation" onClick={toggleMenu(false)}>
+    <Box
+      sx={{ width: 320 }}
+      role="presentation"
+      onClick={(e) => e.stopPropagation()}
+    >
       <List>
         {listItems.map(({ text, icon, action }) => (
           <ListItem key={text} disablePadding>
@@ -85,9 +133,9 @@ const BoardMenu = () => {
       </List>
       <Divider />
       <List>
-        {actionItems.map(({ text, icon }) => (
+        {actionItems.map(({ text, icon, action }) => (
           <ListItem key={text} disablePadding>
-            <ListItemButton>
+            <ListItemButton onClick={action}>
               <ListItemIcon>{icon}</ListItemIcon>
               <ListItemText primary={text} />
             </ListItemButton>
@@ -102,24 +150,33 @@ const BoardMenu = () => {
       <Button onClick={toggleMenu(true)} sx={{ color: "white" }}>
         <MoreHorizIcon />
       </Button>
-      <Drawer
-        anchor="right"
-        open={menuOpen}
-        onClose={toggleMenu(false)}
-        sx={{
-          "& .MuiPaper-root": { top: "48px" },
-          "& .MuiSvgIcon-root": { fontSize: "20px", color: "#000000" },
-          "& .MuiTypography-root": { fontSize: "18px", color: "#000000" },
-          "& .MuiListItemButton-root": { fontSize: "18px", color: "#a5b1c2" },
-        }}
-      >
+      <Drawer anchor="right" open={menuOpen} onClose={toggleMenu(false)}>
         {drawerList}
       </Drawer>
       <BoardDetailsDrawer open={detailsOpen} onClose={toggleDetails(false)} />
       <ActivityDrawer open={activityOpen} onClose={toggleActivity(false)} />
       <Archived open={archiveOpen} onClose={toggleArchive(false)} />
-      <Setting open={settingsOpen} onClose={toggleSettings(false)} />{" "}
-      {/* Thêm SettingsDrawer */}
+      <Setting open={settingsOpen} onClose={toggleSettings(false)} />
+      <Email
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        anchorEl={emailAnchorEl}
+      />
+      <Copy
+        open={copyOpen}
+        onClose={() => setCopyOpen(false)}
+        anchorEl={copyAnchorEl}
+      />
+      <Print
+        open={printOpen}
+        onClose={() => setPrintOpen(false)}
+        anchorEl={printAnchorEl}
+      />
+      <ChangeBackground
+        open={backgroundOpen}
+        onClose={toggleBackground(false)}
+      />{" "}
+      <LabelList open={labelOpen} onClose={toggleLabel(false)} />
     </div>
   );
 };

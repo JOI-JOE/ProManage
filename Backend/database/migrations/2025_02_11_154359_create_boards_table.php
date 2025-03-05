@@ -12,19 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('boards', function (Blueprint $table): void {
-            $table->id();
-            $table->string("name");
+            $table->uuid('id')->primary();
+            $table->string('name');
             $table->string('thumbnail')->nullable();
             $table->text('description')->nullable();
 
             $table->boolean('is_marked'); // Đánh dấu bảng nổi bật
             $table->boolean('archive'); // Lưu trữ bảng: 0 là hiện, 1 là lưu trữ
             $table->boolean('closed')->default(false); // Lưu trữ rác: 0 là hiện, 1 là xóa
-            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
-            
+
+            // Dùng UUID thay vì foreignId() cho khóa ngoại
+            $table->uuid('created_by');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+
             $table->enum('visibility', ['public', 'private', 'member']);
-            $table->foreignId('workspace_id')->constrained('workspaces');
-            
+
+            $table->uuid('workspace_id');
+            $table->foreign('workspace_id')->references('id')->on('workspaces')->onDelete('cascade');
+
             $table->timestamps();
         });
     }

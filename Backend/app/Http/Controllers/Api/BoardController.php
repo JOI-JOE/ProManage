@@ -12,12 +12,17 @@ use Illuminate\Support\Facades\Log;
 
 class BoardController extends Controller
 {
-    // public function index()
-    // {
-    //     $board = Board::where('closed', 0)->get();
-    //     return response()->json($board);
-
-    // }
+    public function index()
+    {
+        $board = Board::where('closed', 0)->get();
+        return response()->json($board);
+    }
+    
+    public function getBoardDetail($id)
+    {
+        $board = Board::with('lists.cards')->findOrFail($id);
+        return response()->json($board);
+    }
 
     public function showBoardById($boardId)
     {
@@ -45,28 +50,28 @@ class BoardController extends Controller
     }
 
 
-    public function index($workspaceId)
-    {
-        try {
-            // Kiểm tra nếu workspace tồn tại
-            $workspace = Workspace::findOrFail($workspaceId);
+    // public function index($workspaceId)
+    // {
+    //     try {
+    //         // Kiểm tra nếu workspace tồn tại
+    //         $workspace = Workspace::findOrFail($workspaceId);
 
-            // Kiểm tra quyền truy cập của user
-            if ($workspace->user_id != auth()->id()) {
-                return response()->json(['error' => 'Unauthorized'], 403);
-            }
+    //         // Kiểm tra quyền truy cập của user
+    //         if ($workspace->user_id != auth()->id()) {
+    //             return response()->json(['error' => 'Unauthorized'], 403);
+    //         }
 
-            // Lấy các boards của workspace với điều kiện closed = 0
-            $boards = $workspace->boards()->where('closed', 0)->get();
+    //         // Lấy các boards của workspace với điều kiện closed = 0
+    //         $boards = $workspace->boards()->where('closed', 0)->get();
 
-            return response()->json([
-                'success' => true,
-                'data' => $boards,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
-        }
-    }
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => $boards,
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+    //     }
+    // }
 
 
     public function trash()

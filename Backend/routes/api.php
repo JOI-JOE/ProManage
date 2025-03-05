@@ -135,12 +135,13 @@ Route::prefix('lists')->group(function () {
 Route::get('/colors', [ColorController::class, 'index']);
 
 
-Route::get('/boards', action: [BoardController::class, 'index']);
+// Routes quản lý bảng
+Route::get('/boards', [BoardController::class, 'index']);
+
+Route::get('/board/{id}', [BoardController::class, 'getBoard']);
 
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
-Route::get('/board/{id}', [BoardController::class, 'getBoard']);
-Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
-// Routes quản lý bảng
+
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']);
     Route::get('{boardId}', [BoardController::class, 'show']);
@@ -154,7 +155,8 @@ Route::prefix('boards/{id}/')->group(function () {
     Route::patch('marked', [BoardController::class, 'updateIsMarked']);
     Route::patch('archive', [BoardController::class, 'updateArchive']);
     Route::patch('visibility', [BoardController::class, 'updateVisibility']);
-    Route::get('creater', [BoardController::class, 'showCreated']);
+    Route::patch('name', [BoardController::class, 'updateName']);
+    Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
 });
 
 // Routes cho thành viên bảng

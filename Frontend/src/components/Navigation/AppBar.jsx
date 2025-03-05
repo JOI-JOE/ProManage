@@ -19,7 +19,6 @@ import trelloLogo from "~/assets/trello.svg?react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import SvgIcon from "@mui/material/SvgIcon";
 import Workspace from "./Menus/Workspace";
-import Recent from "./Menus/Recent";
 import Started from "./Menus/Started";
 import Template from "./Menus/Template";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
@@ -28,6 +27,7 @@ import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import Profile from "./Menus/Profiles";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import Recent from "./Menus/Recent";
 
 const AppBar = ({ username, email }) => {
   const [searchText, setSearchText] = useState("");

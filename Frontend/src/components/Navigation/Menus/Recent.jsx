@@ -11,6 +11,8 @@ import FileCopyIcon from "@mui/icons-material/FileCopy";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useRecentBoards } from "../../../hooks/useBoard";
+import { Link } from "react-router-dom";
+
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -56,11 +58,10 @@ const Recent = () => {
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
-  
+
   const handleClose = () => {
     setAnchorEl(null);
   };
-
 
   // Lấy dữ liệu từ useRecentBoards hook
   const { data: recentBoards, isLoading, error } = useRecentBoards();
@@ -72,7 +73,6 @@ const Recent = () => {
   if (error) {
     return <Box>Error loading recent boards</Box>;
   }
-
 
   return (
     <Box>
@@ -101,9 +101,18 @@ const Recent = () => {
         {recentBoards?.data?.map((board) => (
           <MenuItem
             key={board.id}
+            component={Link}
+          to={`/b/${board.board_id}/${board.board_name}`}
             onClick={handleClose}
             disableRipple
-            sx={{ fontSize: "0.87rem", color: "secondary.main", display: "flex", flexDirection: "column", alignItems: "flex-start" ,padding: "8px 200px 10px 10px "}}
+            sx={{
+              fontSize: "0.87rem",
+              color: "secondary.main",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              padding: "8px 200px 10px 10px ",
+            }}
           >
             {/* Hiển thị thumbnail của board */}
             <img
@@ -125,8 +134,6 @@ const Recent = () => {
             </Box>
           </MenuItem>
         ))}
-        
-        
       </StyledMenu>
     </Box>
   );

@@ -264,7 +264,7 @@ class ListController extends Controller
     public function getListById($id)
     {
         // Tìm danh sách dựa trên listId
-        $list = ListBoard::find($id);
+        $list = ListBoard::with('board', 'cards')->findOrFail($id);
 
         if (!$list) {
             return response()->json(['message' => 'List not found'], 404);

@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('labels', function (Blueprint $table) {
             $table->id();
+            $table->uuid('board_id'); // UUID của card
             $table->string('title',255);
           
-            $table->foreignId('board_id')->constrained('boards');
+            $table->foreign('board_id')->references('id')->on('boards')->onUpdate('cascade')->onDelete('cascade');
+        
             $table->foreignId('color_id')->constrained('colors');
             $table->timestamps();
         });

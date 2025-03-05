@@ -8,12 +8,17 @@ use Spatie\Activitylog\Contracts\Activity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
-
+use Illuminate\Support\Str;
 class Card extends Model
 {
     use HasFactory, LogsActivity;
 
+    protected $primaryKey = 'id'; // Đặt UUID làm khóa chính
+    public $incrementing = false; // Vô hiệu hóa tự động tăng ID
+    protected $keyType = 'string'; // Định dạng khóa chính là chuỗi
+
     protected $fillable = [
+        'id',
         'title',
         'description',
         'thumbnail',
@@ -25,7 +30,17 @@ class Card extends Model
         'is_archived',
         'list_board_id',
     ];
-    
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
+            }
+        });
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
