@@ -96,9 +96,6 @@ export const useCreateCard = () => {
         );
       }
     },
-    onSettled: (data, error, variables) => {
-      // Không cần invalidate vì đã có realtime
-    },
   });
 };
 

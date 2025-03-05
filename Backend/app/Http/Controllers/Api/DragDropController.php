@@ -29,7 +29,10 @@ class DragDropController extends Controller
                 // Lấy giá trị title từ database
                 $existingCard = Card::find($card['id']);
                 if (!$existingCard) {
-                    throw new \Exception("Card not found: " . htmlspecialchars($card['id'], ENT_QUOTES, 'UTF-8'));
+                    return response()->json([
+                        'error' => 'Card not found',
+                        'card_id' => htmlspecialchars((string)$card['id'], ENT_QUOTES, 'UTF-8'),
+                    ], 404);
                 }
 
                 $cardsToUpdate->push([
