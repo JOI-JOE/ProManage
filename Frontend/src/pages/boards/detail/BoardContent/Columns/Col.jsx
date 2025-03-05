@@ -1,18 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Button, TextField, Tooltip, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import ArchiveIcon from "@mui/icons-material/Archive";
-import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import MoveUpIcon from "@mui/icons-material/MoveUp";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import AddCardIcon from "@mui/icons-material/AddCard";
-import DragHandleIcon from "@mui/icons-material/DragHandle";
 import { mapOrder } from "../../../../../../utils/sort";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -21,6 +17,7 @@ import CopyColumn from "./Col_option/CoppyColumn";
 import ConfirmDeleteDialog from "./Col_option/DeleteColumn";
 import ArchiveColumnDialog from "./Col_option/Archive";
 import Card_list from "../Cards/Card_list";
+import Card_new from "../Cards/Card_new";
 
 const StyledMenu = styled((props) => (
     <Menu
@@ -68,6 +65,16 @@ const Col = ({ column }) => {
     // State hiển thị form lưu trữ
     const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
 
+
+    // tôi muốn cập nhật giao diện trước rồi mới cập nhật database
+    const [localColumn, setLocalColumn] = useState(column || {}); // Giá trị mặc định tránh lỗi
+
+    useEffect(() => {
+        if (column) {
+            setLocalColumn(column);
+        }
+    }, [column]);
+
     //============================================================ COPY======================================================
 
     // Mở form sao chép khi nhấn vào "Copy"
@@ -112,20 +119,50 @@ const Col = ({ column }) => {
     //======================================== Thêm card mới========================================
     const [openCard, setOpenCard] = useState(false);
     const [cardName, setCardName] = useState("");
-    const addCard = () => {
+
+    const handleAddCard = async (cardName) => { // Nhận cardName từ Card_new
         if (!cardName.trim()) {
             toast.error("Nhập tên thẻ!");
             return;
         }
-        console.log("Thêm thẻ:", cardName);
-        setCardName("");
-        setOpenCard(false);
-    };
 
+        // Kiểm tra localColumn.id trước khi dùng
+        if (!localColumn?.id) {
+            toast.error("Không xác định được ID của cột!");
+            return;
+        }
+
+        // Xác định vị trí mới
+        const position = localColumn?.cards?.length
+            ? Math.max(...localColumn.cards.map(card => card.position)) + 1000
+            : 1000;
+
+        const newCard = {
+            id: Date.now(), // ID tạm thời
+            title: cardName,
+            columnId: localColumn.id,
+            position: position,
+        };
+
+        // Cập nhật danh sách thẻ mới
+        const updatedCards = [...localColumn.cards, newCard].sort((a, b) => a.position - b.position);
+
+        // Cập nhật danh sách ID theo thứ tự position
+        const updatedCardOrderIds = updatedCards.map(card => card.id);
+
+        // Cập nhật state của localColumn
+        setLocalColumn(prev => ({
+            ...prev,
+            cards: updatedCards,
+            cardOrderIds: updatedCardOrderIds, // Cập nhật thứ tự ID
+        }));
+
+        console.log(newCard)
+    };
     // Chức năng sửa tiêu đề
-    const [title, setTitle] = useState(column?.title);
+    const [title, setTitle] = useState(localColumn?.title);
     const [isEditing, setIsEditing] = useState(false);
-    const [prevTitle, setPrevTitle] = useState(column?.title); // Lưu giá trị trước đó
+    const [prevTitle, setPrevTitle] = useState(localColumn?.title); // Lưu giá trị trước đó
 
     const handleTitleClick = () => {
         setIsEditing(true);
@@ -150,7 +187,7 @@ const Col = ({ column }) => {
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: column.id, data: { ...column } });
+    } = useSortable({ id: localColumn.id, data: { ...localColumn } });
 
     const columnStyle = {
         transform: CSS.Translate.toString(transform),
@@ -170,7 +207,7 @@ const Col = ({ column }) => {
     };
 
     //Sắp xếp card
-    const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, "id");
+    const orderedCards = mapOrder(localColumn?.cards, localColumn?.cardOrderIds, "id");
 
     return (
         <div ref={setNodeRef} style={columnStyle} {...attributes}>
@@ -314,7 +351,8 @@ const Col = ({ column }) => {
                 <Card_list cards={orderedCards} />
 
                 {/* Colum Footer */}
-                <Box
+                <Card_new openCard={openCard} setOpenCard={setOpenCard} addCard={handleAddCard} />
+                {/* <Box
                     sx={{
                         height: (theme) => theme.trello.columnHeaderHeight,
                         p: 2,
@@ -398,7 +436,7 @@ const Col = ({ column }) => {
                             </Box>
                         </Box>
                     )}
-                </Box>
+                </Box> */}
             </Box>
 
             {/* Hiển thị form lưu trữ */}

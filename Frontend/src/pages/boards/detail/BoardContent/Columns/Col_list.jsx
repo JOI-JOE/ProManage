@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Box, Button, TextField } from "@mui/material";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import CloseIcon from "@mui/icons-material/Close";
@@ -6,6 +6,7 @@ import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortabl
 import { toast } from "react-toastify";
 import Col from "./Col";
 import { useCreateList } from "../../../../../hooks/useList";
+import Col_new from "./Col_new";
 
 const Col_list = ({ columns: initialColumns, boardId }) => {
     const [columns, setColumns] = useState([]);
@@ -20,7 +21,7 @@ const Col_list = ({ columns: initialColumns, boardId }) => {
 
     const toggleOpenColumn = () => setOpenColumn(!openColumn);
 
-    const addColumn = async () => {
+    const handleAddColumn = useCallback(async (columnName) => {
         if (!columnName.trim()) {
             toast.error("Nhập tên cột");
             return;
@@ -46,8 +47,7 @@ const Col_list = ({ columns: initialColumns, boardId }) => {
             console.error("Lỗi khi tạo danh sách:", error);
             toast.error("Có lỗi xảy ra khi tạo danh sách!");
         }
-    };
-
+    }, [boardId, columns, createListMutation]);
 
     return (
         <SortableContext items={columns?.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
@@ -67,87 +67,7 @@ const Col_list = ({ columns: initialColumns, boardId }) => {
                 ))}
 
                 {/* Box Add Column */}
-                {openColumn ? (
-                    <Box
-                        sx={{
-                            minWidth: "250px",
-                            maxWidth: "250px",
-                            mx: 2,
-                            p: 1,
-                            borderRadius: "6px",
-                            height: "fit-content",
-                            bgcolor: "#ffffff3d",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 1,
-                        }}
-                    >
-                        <TextField
-                            label="Enter..."
-                            type="text"
-                            size="small"
-                            variant="outlined"
-                            autoFocus
-                            value={columnName}
-                            onChange={(e) => setColumnName(e.target.value)}
-                            sx={{
-                                "& label": { color: "white" },
-                                "& input": { color: "white", fontSize: "14px" },
-                                "& label.Mui-focused": { color: "white" },
-                                "& .MuiOutlinedInput-root": {
-                                    "& fieldset": { borderColor: "white" },
-                                    "&:hover fieldset": { borderColor: "white" },
-                                    "&.Mui-focused fieldset": { borderColor: "white" },
-                                },
-                            }}
-                        />
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <Button
-                                onClick={addColumn}
-                                variant="contained"
-                                color="success"
-                                size="small"
-                                sx={{
-                                    boxShadow: "none",
-                                    border: "none",
-                                    bgcolor: "teal",
-                                }}
-                            >
-                                Add Column
-                            </Button>
-                            <CloseIcon
-                                fontSize="small"
-                                sx={{ color: "white", cursor: "pointer" }}
-                                onClick={toggleOpenColumn}
-                            />
-                        </Box>
-                    </Box>
-                ) : (
-                    <Box
-                        sx={{
-                            minWidth: "200px",
-                            maxWidth: "200px",
-                            mx: 2,
-                            borderRadius: "6px",
-                            height: "fit-content",
-                            bgcolor: "#ffffff3d",
-                        }}
-                    >
-                        <Button
-                            startIcon={<NoteAddIcon />}
-                            sx={{
-                                color: "#ffffff",
-                                width: "100%",
-                                justifyContent: "flex-start",
-                                pl: 2.5,
-                                py: 1,
-                            }}
-                            onClick={toggleOpenColumn}
-                        >
-                            Add new column
-                        </Button>
-                    </Box>
-                )}
+                <Col_new open={openColumn} setOpen={setOpenColumn} onAdd={handleAddColumn} />
             </Box>
         </SortableContext>
     );

@@ -1,7 +1,6 @@
 import React from "react";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { Navigate, Outlet } from "react-router-dom";
-import AppBar from "../Navigation/AppBar";
 
 const DefaultLayout = () => {
     const { token } = useStateContext(); // Lấy token và setUser từ context
@@ -12,7 +11,6 @@ const DefaultLayout = () => {
 
     return (
         <div>
-            {/* <AppBar/> */}
             <Outlet />
         </div>
     );

@@ -8,6 +8,8 @@ import {
 import { useEffect } from "react";
 import { createEchoInstance } from "./useRealtime";
 
+const CARDS_CACHE_KEY = "cards";
+
 export const useCardByList = (listId) => {
   const queryClient = useQueryClient();
 
@@ -99,7 +101,6 @@ export const useCreateCard = () => {
     },
   });
 };
-
 
 const updateCardPositionsGeneric = async (cards, updateFunction) => {
   if (!Array.isArray(cards) || cards.length === 0) {

@@ -29,7 +29,7 @@ class DragDropController extends Controller
                 // Lấy giá trị title từ database
                 $existingCard = Card::find($card['id']);
                 if (!$existingCard) {
-                    throw new \Exception("Card not found: " . $card['id']);
+                    throw new \Exception("Card not found: " . htmlspecialchars($card['id'], ENT_QUOTES, 'UTF-8'));
                 }
 
                 $cardsToUpdate->push([
@@ -161,7 +161,7 @@ class DragDropController extends Controller
                     );
                 } catch (\Exception $e) {
                     // Xử lý lỗi upsert
-                    throw new \Exception('Lỗi cập nhật vị trí columns: ' . $e->getMessage());
+                    throw new \Exception('Đã xảy ra lỗi khi cập nhật vị trí cột. Vui lòng thử lại sau.');
                 }
             });
 
