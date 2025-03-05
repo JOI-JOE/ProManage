@@ -20,14 +20,6 @@ class CardController extends Controller
 
     public function getCardsByList($listId)
     {
-
-
-
-        return response()->json([
-            'status' => true,
-            'data' => $cards
-        ]);
-
         try {
             $cards = Card::where('list_board_id', $listId)
                 ->where('is_archived', 0)
@@ -180,7 +172,9 @@ class CardController extends Controller
                 'end_date'   => $request->end_date,
                 'end_time'   => $request->end_time,
             ])
-            ->log($card->getCustomDescription('updated_datetime', $request->start_date, $request->end_date, $request->end_time));
+            // ->log($card->getCustomDescription('updated_datetime', $request->start_date, $request->end_date, $request->end_time));
+            ->log(description: $card->getCustomDescription(eventName: 'updated_datetime', memberName: $request->start_date));
+
 
         return response()->json([
             'message' => 'Cập nhật ngày và giờ thành công!',

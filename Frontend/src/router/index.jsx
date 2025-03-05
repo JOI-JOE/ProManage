@@ -14,11 +14,13 @@ import LoginForm from "../pages/Auth/LoginForm";
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 
-// import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import InviteHandle from "../pages/workspace/invite/InviteHandle";
 import InviteAccept from "../pages/workspace/invite/InviteAccept";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
+import GitHubAuth from "../pages/Auth/GitHubAuth";
 
 const router = createBrowserRouter([
   {
@@ -27,7 +29,7 @@ const router = createBrowserRouter([
   },
   {
     path: "invite/accept-team",
-    element: <InviteAccept />
+    element: <InviteAccept />,
   },
   {
     path: "/", // Path RIÊNG BIỆT cho GuestLayout
@@ -67,8 +69,8 @@ const router = createBrowserRouter([
         element: <Dashboard />,
         children: [
           { path: "u/:username/boards", element: <Boards /> },
-          { path: "w/:workspaceName/home", element: <Workspaces /> }
-        ]
+          { path: "w/:workspaceName/home", element: <Workspaces /> },
+        ],
       },
       {
         path: "/",
@@ -82,16 +84,14 @@ const router = createBrowserRouter([
             path: "w/:workspaceName/members",
             element: <Member />,
           },
-          // {
-          //   path: "c/:cardId/:name",
-          //   element: <CardModal />,
-          // }
+          {
+            path: "c/:cardId/:name",
+            element: <CardModal />,
+          }
         ]
       }
     ]
   }
 ]);
 
-export default router
-
-
+export default router;
