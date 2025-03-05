@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, Button, TextField } from "@mui/material";
-import NoteAddIcon from "@mui/icons-material/NoteAdd";
-import CloseIcon from "@mui/icons-material/Close";
+import { Box } from "@mui/material";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { toast } from "react-toastify";
-import Col from "./Col";
 import { useCreateList } from "../../../../../hooks/useList";
+import Col from "./Col";
 import Col_new from "./Col_new";
 
 const Col_list = ({ columns: initialColumns, boardId }) => {

@@ -520,9 +520,9 @@ const BoardContent = () => {
       const pointerIntersections = pointerWithin(args);
       if (!pointerIntersections?.length) return;
 
-      const intersections = !!pointerIntersections?.length
-        ? pointerIntersections
-        : rectIntersection(args);
+      // const intersections = !!pointerIntersections?.length
+      //   ? pointerIntersections
+      //   : rectIntersection(args);
 
       let overId = getFirstCollision(pointerIntersections, "id");
 
