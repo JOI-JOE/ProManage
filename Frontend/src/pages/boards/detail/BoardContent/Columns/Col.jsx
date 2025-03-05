@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Button, TextField, Tooltip, Typography } from "@mui/material";
+import { Box, TextField, Tooltip, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -118,7 +118,6 @@ const Col = ({ column }) => {
 
     //======================================== Thêm card mới========================================
     const [openCard, setOpenCard] = useState(false);
-    const [cardName, setCardName] = useState("");
 
     const handleAddCard = async (cardName) => { // Nhận cardName từ Card_new
         if (!cardName.trim()) {

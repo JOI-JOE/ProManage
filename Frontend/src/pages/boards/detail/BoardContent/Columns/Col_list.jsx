@@ -15,7 +15,7 @@ const Col_list = ({ columns: initialColumns, boardId }) => {
     }, [initialColumns]); // Chỉ chạy khi initialColumns thay đổi
 
     const [openColumn, setOpenColumn] = useState(false);
-    const [columnName, setColumnName] = useState("");
+    // const [columnName, setColumnName] = useState("");
 
     const toggleOpenColumn = () => setOpenColumn(!openColumn);
 

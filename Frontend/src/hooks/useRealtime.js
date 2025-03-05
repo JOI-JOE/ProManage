@@ -1,7 +1,5 @@
-import { useEffect } from "react";
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
-import { useQueryClient } from "@tanstack/react-query";
 
 export const createEchoInstance = () => {
   const PUSHER_KEY = import.meta.env.VITE_PUSHER_APP_KEY;

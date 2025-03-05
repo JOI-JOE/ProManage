@@ -12,7 +12,7 @@ import AttachmentIcon from "@mui/icons-material/Attachment";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-const C_ard = ({ card, index }) => {
+const C_ard = ({ card }) => {
     // Kéo thả
     const {
         attributes,

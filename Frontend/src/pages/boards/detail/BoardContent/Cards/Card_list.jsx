@@ -3,7 +3,6 @@ import {
     SortableContext,
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Link } from "react-router-dom";
 import C_ard from "./C_ard";
 
 const Card_list = ({ cards }) => {

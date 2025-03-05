@@ -11,7 +11,7 @@ import {
   closestCorners,
   pointerWithin,
   getFirstCollision,
-  rectIntersection,
+  // rectIntersection,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -33,7 +33,7 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 const BoardContent = () => {
   const { boardId } = useParams();
   // const { updateCardPositionsInColumns, isError } = useUpdateCardSameCol();
-  const { data: board, isLoading, error } = useLists(boardId); // Lấy dữ liệu từ hook
+  const { data: board } = useLists(boardId); // Lấy dữ liệu từ hook
 
 
   const mouseSensor = useSensor(MouseSensor, {
@@ -48,7 +48,7 @@ const BoardContent = () => {
 
   const [orderedColumns, setOrderedColumns] = useState([]);
 
-  const [activeDragItemId, setActiveDragItemId] = useState(null);
+  // const [activeDragItemId, setActiveDragItemId] = useState(null);
   const [activeDragItemType, setActiveDragItemType] = useState(null);
   const [activeDragItemData, setActiveDragItemData] = useState(null);
   const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null);
