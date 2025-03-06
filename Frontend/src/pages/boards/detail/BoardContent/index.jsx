@@ -24,6 +24,7 @@ import { mapOrder } from "../../../../../utils/sort";
 import { useLists, useUpdateColumnPosition } from "../../../../hooks/useList";
 import { useCardPositionsInColumns, useCardPositionsOutColumns } from "../../../../hooks/useCard";
 
+
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
   CARD: "ACTIVE_DRAG_ITEM_TYPE_CARD",

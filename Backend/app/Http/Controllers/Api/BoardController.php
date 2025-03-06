@@ -17,7 +17,7 @@ class BoardController extends Controller
         $board = Board::where('closed', 0)->get();
         return response()->json($board);
     }
-    
+
     public function getBoardDetail($id)
     {
         $board = Board::with('lists.cards')->findOrFail($id);
@@ -73,7 +73,26 @@ class BoardController extends Controller
     //     }
     // }
 
-
+    public function getBoardMarked()
+    {
+        try {
+            $boards = Board::where('is_marked', 1)
+            ->with('workspace:id,display_name') // Chỉ lấy id, name của workspace
+            ->get();
+    
+            return response()->json([
+                'success' => true,
+                'data' => $boards
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi lấy danh sách bảng được đánh dấu.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    
     public function trash()
     {
         $board = Board::where('closed', 1)->get();
@@ -293,25 +312,36 @@ class BoardController extends Controller
     /**
      * Update cho riêng trường is_marked 
      */
-    public function UpdateIs_marked(string $id)
+    public function updateIsMarked(string $id)
     {
         try {
             DB::beginTransaction();
+
             $board = Board::findOrFail($id);
+            if (!$board) {
+                return response()->json([
+                    'result' => false,
+                    'message' => 'Board not found'
+                ], 404);
+            }
+
             // Toggle giá trị 'is_marked'
-            $board->is_marked = $board->is_marked == 0 ? 1 : 0;
-            // Lưu bản ghi sau khi thay đổi
-            $board->save();
+            $board->update(['is_marked' => !$board->is_marked]);
+
             DB::commit();
+
             return response()->json([
                 'result' => true,
                 'message' => 'is_marked status updated successfully.',
-                'data' => $board
+                'is_marked' => $board->is_marked // Trả về trạng thái mới
             ]);
         } catch (\Throwable $th) {
-            // Rollback nếu có lỗi xảy ra
             DB::rollBack();
-            throw $th;
+            return response()->json([
+                'result' => false,
+                'message' => 'Failed to update is_marked',
+                'error' => $th->getMessage()
+            ], 500);
         }
     }
     /**

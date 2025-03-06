@@ -105,20 +105,6 @@ const AppBar = ({ username, email }) => {
           <Started />
           <Template />
 
-          <Button
-            variant="contained"
-            startIcon={<AddToPhotosIcon />}
-            sx={{
-              color: "white",
-              backgroundColor: "primary.dark",
-              fontSize: "0.75rem",
-              textTransform: "none",
-              paddingX: "12px",
-              paddingY: "0px",
-            }}
-          >
-            Create
-          </Button>
         </Box>
       </Box>
 

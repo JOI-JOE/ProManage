@@ -48,7 +48,14 @@ class WorkspaceController extends Controller
             }
 
             // Tìm workspace theo tên
-            $workspace = Workspace::where('name', $workspaceName)->first();
+            $workspace = Workspace::where('name', $workspaceName)
+            ->with('markedBoards')
+            ->first();
+            // if ($workspace) {
+            //     $markedBoards = $workspace->markedBoards(); // Lấy danh sách board có is_marked = 1
+            // } else {
+            //     $markedBoards = [];
+            // }
 
             // Nếu không tìm thấy
             if (!$workspace) {
@@ -69,6 +76,26 @@ class WorkspaceController extends Controller
             ], 500);
         }
     }
+
+
+    public function getBoardMarkedByWorkspace($workspaceName)
+    {
+      try {
+         $workspace = Workspace::where('name', $workspaceName)->first();
+        $boardMarked = $workspace->boards()->where('is_marked', 1)->get();
+        return response()->json([
+          'success' => true,
+          'data' => $boardMarked,
+        ]);
+      } catch (\Throwable $th) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Có lỗi xảy ra khi lấy danh sách board.',
+          ]);
+      }
+    }
+
+
 
     public function showWorkspaceById($workspaceId)
     {
