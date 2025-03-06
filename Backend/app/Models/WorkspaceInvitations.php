@@ -22,7 +22,7 @@ class WorkspaceInvitations extends Model
         'invitation_message',
         'invite_token',
         'accept_unconfirmed',
-        'invited_by_member_id',
+        'id_invited_by_member',
     ];
 
      protected static function boot()
@@ -42,11 +42,16 @@ class WorkspaceInvitations extends Model
 
     public function workspace()
     {
-        return $this->belongsTo(Workspace::class, 'workspace_id');
+        return $this->belongsTo(Workspace::class, 'id_workspace');
     }
 
-    public function invitedUser()
+    public function invitedMember()
     {
-        return $this->belongsTo(User::class, 'invited_member_id');
+        return $this->belongsTo(User::class, 'id_invited_member');
+    }
+
+    public function invitedBy()
+    {
+        return $this->belongsTo(User::class, 'id_invited_by_member');
     }
 }

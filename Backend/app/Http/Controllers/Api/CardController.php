@@ -13,79 +13,14 @@ use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Events\CardPositionUpdated;
+use App\Events\ColumnPositionUpdated;
+use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
 { // app/Http/Controllers/CardController.php
-
-
-
-
-
- // Cập nhật vị trí của card trong cùng 1 column hoặc giữa 2 column
- public function updateCardPosition(Request $request)
- {
-    Log::info('Dữ liệu nhận được:', $request->all());
-
-    $validated = $request->validate([
-        'id' => 'required|exists:cards,id',
-        'new_position' => 'required|integer|min:0',
-        'new_list_board_id' => 'required|exists:list_boards,id',
-    ]);
-
-    DB::beginTransaction();
-    try {
-        $card = Card::findOrFail($validated['id']);
-
-        // Nếu card di chuyển sang column khác
-        if ($card->list_board_id !== $validated['new_list_board_id']) {
-            // Giảm vị trí của các card trong column cũ
-            Card::where('list_board_id', $card->list_board_id)
-                ->where('position', '>', $card->position)
-                ->decrement('position');
-
-            // Cập nhật column mới và vị trí mới
-            $card->update([
-                'list_board_id' => $validated['new_list_board_id'],
-                'position' => $validated['new_position']
-            ]);
-        } else {
-            // Nếu card di chuyển trong cùng một column
-            if ($card->position < $validated['new_position']) {
-                // Di chuyển xuống: giảm vị trí các card từ (vị trí cũ + 1) đến vị trí mới
-                Card::where('list_board_id', $card->list_board_id)
-                    ->whereBetween('position', [$card->position + 1, $validated['new_position']])
-                    ->decrement('position');
-            } else {
-                // Di chuyển lên: tăng vị trí các card từ vị trí mới đến (vị trí cũ - 1)
-                Card::where('list_board_id', $card->list_board_id)
-                    ->whereBetween('position', [$validated['new_position'], $card->position - 1])
-                    ->increment('position');
-            }
-
-            // Cập nhật vị trí mới cho card
-            $card->update(['position' => $validated['new_position']]);
-        }
-
-        DB::commit();
-
-        return response()->json([
-            'message' => 'Cập nhật vị trí card thành công!',
-            'card' => $card
-        ], 200);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Lỗi khi cập nhật vị trí card:', ['error' => $e->getMessage()]);
-
-        return response()->json([
-            'message' => 'Có lỗi xảy ra!',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-    // lấy thẻ theo danh sách
     public function getCardsByList($listId)
     {
-
         try {
             $cards = Card::where('list_board_id', $listId)
                 ->where('is_archived', 0)
@@ -103,19 +38,28 @@ class CardController extends Controller
             ]);
         }
 
-
     }
     public function store(Request $request)
     {
-        $maxPosition = Card::where('list_board_id', $request->list_board_id)->max('position');
-
-        $card = Card::create([
-            'title' => $request->title,
-            'list_board_id' => $request->list_board_id,
-            'position' => $maxPosition ? $maxPosition + 1 : 1, // Nếu chưa có card nào thì position = 1
+        $validator = Validator::make($request->all(), [
+            'columnId' => 'required|uuid|exists:list_boards,id', // Thêm ,id vào exists rule
+            'position' => 'required|numeric',
+            'title' => 'required|string|max:255',
         ]);
 
-        return response()->json($card);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Create a new card
+        $card = Card::create([
+            'list_board_id' => $request->columnId, // Sử dụng columnId đã được validate
+            'position' => $request->position,
+            'title' => $request->title,
+        ]);
+
+
+        return response()->json($card, 201); // 201 Created
     }
     // cập nhật tên
     public function updateName($cardId, Request $request)
@@ -182,7 +126,6 @@ class CardController extends Controller
     }
 
     // thêm người dùng vào thẻ
-
     public function addMemberByEmail(Request $request, $cardId)
     {
         $user = User::where('email', $request->email)->first();
@@ -255,6 +198,7 @@ class CardController extends Controller
             ->log(
                 "{$user_name} đã xóa {$user->user_name} khỏi thẻ."
             );
+
 
         return response()->json([
             'message' => 'Đã xóa thành viên khỏi thẻ thành công',
