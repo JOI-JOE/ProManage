@@ -18,6 +18,7 @@ import ConfirmDeleteDialog from "./Col_option/DeleteColumn";
 import ArchiveColumnDialog from "./Col_option/Archive";
 import Card_list from "../Cards/Card_list";
 import Card_new from "../Cards/Card_new";
+import { useCreateCard } from "../../../../../hooks/useCard";
 
 const StyledMenu = styled((props) => (
     <Menu
@@ -65,6 +66,7 @@ const Col = ({ column }) => {
     // State hiển thị form lưu trữ
     const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
 
+    const { mutateAsync } = useCreateCard(); // Lấy mutateAsync từ hook
 
     // tôi muốn cập nhật giao diện trước rồi mới cập nhật database
     const [localColumn, setLocalColumn] = useState(column || {}); // Giá trị mặc định tránh lỗi
@@ -119,44 +121,81 @@ const Col = ({ column }) => {
     //======================================== Thêm card mới========================================
     const [openCard, setOpenCard] = useState(false);
 
-    const handleAddCard = async (cardName) => { // Nhận cardName từ Card_new
+    const handleAddCard = async (cardName) => {
         if (!cardName.trim()) {
             toast.error("Nhập tên thẻ!");
             return;
         }
 
-        // Kiểm tra localColumn.id trước khi dùng
         if (!localColumn?.id) {
             toast.error("Không xác định được ID của cột!");
             return;
         }
 
-        // Xác định vị trí mới
-        const position = localColumn?.cards?.length
-            ? Math.max(...localColumn.cards.map(card => card.position)) + 1000
-            : 1000;
+        const calculatePosition = () => {
+            if (localColumn?.cards?.length) {
+                return Math.max(...localColumn.cards.map((card) => card.position)) + 1000;
+            }
+            return 1000;
+        };
 
         const newCard = {
             id: Date.now(), // ID tạm thời
             title: cardName,
             columnId: localColumn.id,
-            position: position,
+            position: calculatePosition(),
         };
 
-        // Cập nhật danh sách thẻ mới
-        const updatedCards = [...localColumn.cards, newCard].sort((a, b) => a.position - b.position);
+        const optimisticCards = [...localColumn.cards, newCard].sort(
+            (a, b) => a.position - b.position
+        );
+        const optimisticCardOrderIds = optimisticCards.map((card) => card.id);
 
-        // Cập nhật danh sách ID theo thứ tự position
-        const updatedCardOrderIds = updatedCards.map(card => card.id);
-
-        // Cập nhật state của localColumn
-        setLocalColumn(prev => ({
+        setLocalColumn((prev) => ({
             ...prev,
-            cards: updatedCards,
-            cardOrderIds: updatedCardOrderIds, // Cập nhật thứ tự ID
+            cards: optimisticCards,
+            cardOrderIds: optimisticCardOrderIds,
         }));
 
-        console.log(newCard)
+
+        try {
+            const response = await mutateAsync({
+                title: cardName,
+                columnId: localColumn.id, // Sử dụng list_board_id thay vì columnId
+                position: newCard.position,
+            });
+
+            setLocalColumn((prev) => {
+                const updatedCards = prev.cards
+                    .map((card) => (card.id === newCard.id ? response : card))
+                    .sort((a, b) => a.position - b.position);
+                const updatedCardOrderIds = updatedCards.map((card) => card.id);
+
+                return {
+                    ...prev,
+                    cards: updatedCards,
+                    cardOrderIds: updatedCardOrderIds,
+                };
+            });
+
+            toast.success("Thêm thẻ thành công!");
+        } catch (error) {
+            console.error("Lỗi khi thêm thẻ:", error);
+            toast.error(`Thêm thẻ thất bại: ${error.message}`);
+
+            setLocalColumn((prev) => {
+                const originalCards = prev.cards
+                    .filter((card) => card.id !== newCard.id)
+                    .sort((a, b) => a.position - b.position);
+                const originalCardOrderIds = originalCards.map((card) => card.id);
+
+                return {
+                    ...prev,
+                    cards: originalCards,
+                    cardOrderIds: originalCardOrderIds,
+                };
+            });
+        }
     };
     // Chức năng sửa tiêu đề
     const [title, setTitle] = useState(localColumn?.title);

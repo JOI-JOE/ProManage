@@ -10,17 +10,19 @@ class WorkspaceMembers extends Model
     use HasFactory;
     public $incrementing = false; // Không sử dụng auto-increment
     protected $keyType = 'string'; // UUID là kiểu string
-    protected $primaryKey = ['id_workspace', 'id_member']; // Đặt khóa chính kép
-
-
+    protected $primaryKey = ['workspace_id', 'id_member']; // Đặt khóa chính kép
+    // Static properties for member types
+    public $timestamps = false;
+    public static $ADMIN = 'admin';
+    public static $NORMAL = 'normal';
     protected $fillable = [
-        'id_workspace',
-        'id_member',
+        'workspace_id',
+        'user_id',
         'member_type',
         'is_unconfirmed',
         'joined',
         'is_deactivated',
-        'id_member_referrer',
+        // 'id_member_referrer',
         'last_active',
     ];
 

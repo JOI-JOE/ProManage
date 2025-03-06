@@ -134,7 +134,7 @@ class WorkspaceInvitationsController extends Controller
             $inviteToken = Str::uuid()->toString();
 
             $invitation = WorkspaceInvitations::create([
-                'id_workspace' => $workspace->id,
+                'workspace_id' => $workspace->id,
                 'invite_token' => $inviteToken,
                 'accept_unconfirmed' => $acceptUnconfirmed,
                 'invited_by_member_id' => $invitedByMember->id,
