@@ -68,7 +68,7 @@ const SideBar = ({ workspaces, username }) => {
             </Typography>
 
             {/* Truyền workspace vào WorkspaceMenu */}
-            {workspaces.map((item) => (
+            {workspaces?.map((item) => (
                 <div key={item.id}>
                     <WorkspaceMenu workspace={item} />
                 </div>

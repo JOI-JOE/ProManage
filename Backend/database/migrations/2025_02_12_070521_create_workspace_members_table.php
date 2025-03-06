@@ -19,10 +19,10 @@ return new class extends Migration
             $table->boolean('joined')->default(false);
             $table->boolean('is_deactivated')->default(false);
             $table->timestamp('last_active')->nullable();
-        
+
             // Định nghĩa cặp khóa chính
             $table->primary(['workspace_id', 'user_id']);
-        
+
             // Khóa ngoại với UUID
             $table->foreign('workspace_id')->references('id')->on('workspaces')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

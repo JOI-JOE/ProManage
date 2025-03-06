@@ -26,7 +26,8 @@ class Board extends Model
         'workspace_id',   // ID của workspace liên quan
     ];
 
-  
+
+
     protected static function boot()
     {
         parent::boot();
@@ -36,13 +37,17 @@ class Board extends Model
             }
         });
     }
-
-        /**
+    /**
      * Mối quan hệ giữa Board và Workspace (một Board thuộc về một Workspace).
      */
     public function workspace()
     {
         return $this->belongsTo(Workspace::class,'workspace_id');  // Liên kết với model Workspace
+    }
+
+    public function listBoards()
+    {
+        return $this->hasMany(ListBoard::class, 'board_id');
     }
 
     public function creator()
@@ -58,16 +63,16 @@ class Board extends Model
     public function members()
     {
         return $this->belongsToMany(User::class, 'board_members', 'board_id', 'user_id')
-                    ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated')
-                    ->withTimestamps();
+            ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated')
+            ->withTimestamps();
     }
 
 
     public function activeMembers()
     {
         return $this->members()
-                    ->wherePivot('is_unconfirmed', false)
-                    ->wherePivot('joined', true)
-                    ->wherePivot('is_deactivated', false);
+            ->wherePivot('is_unconfirmed', false)
+            ->wherePivot('joined', true)
+            ->wherePivot('is_deactivated', false);
     }
 }
