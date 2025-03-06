@@ -33,8 +33,6 @@ export const showBoardByWorkspaceId = async (workspaceId) => {
   }
 };
 
-
-
 export const getBoardById = async (boardId) => {
   if (!boardId) {
     throw new Error("boardId không hợp lệ");
@@ -66,10 +64,11 @@ export const getRecentBoards = async () => {
   }
 };
 
-
 export const logBoardAccess = async (boardId) => {
   try {
-    const response = await authClient.post("/recent-boards", { board_id: boardId });
+    const response = await authClient.post("/recent-boards", {
+      board_id: boardId,
+    });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lưu thông tin bảng:", error);

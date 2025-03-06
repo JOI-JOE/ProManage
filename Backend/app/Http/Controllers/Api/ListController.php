@@ -22,60 +22,117 @@ class ListController extends Controller
 
     public function index($boardId)
     {
-        $lists = ListBoard::where('board_id', $boardId)
-            ->where('closed', false)
-            ->orderBy('position')
-            ->with('cards') // Lấy luôn danh sách thẻ thuộc mỗi danh sách
-            ->get();
-        return response()->json($lists);
+        $board = Board::where('id', $boardId)
+            ->with([
+                'listBoards' => function ($query) {
+                    $query->where('closed', false)
+                        ->orderBy('position')
+                        ->with(['cards' => function ($cardQuery) {
+                            $cardQuery->orderBy('position');
+                        }]);
+                }
+            ])
+            ->first();
+
+        if (!$board) {
+            return response()->json(['message' => 'Board not found'], 404);
+        }
+
+        $responseData = [
+            'id' => $board->id,
+            'title' => $board->name, // Tên bảng (board)
+            'description' => $board->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
+            'visibility' => $board->visibility, // Public hoặc Private
+            'workspaceId' => $board->workspace_id, // ID của workspace chứa board
+            'isMarked' => (bool) $board->is_marked, // Đánh dấu boolean
+            'thumbnail' => $board->thumbnail ?? null, // Ảnh thu nhỏ của board, mặc định là null nếu không có
+            'columnOrderIds' => $board->listBoards->pluck('id')->toArray(), // Thứ tự danh sách (list_boards)
+            'columns' => $board->listBoards->map(function ($list) {
+                return [
+                    'id' => $list->id,
+                    'boardId' => $list->board_id,
+                    'title' => $list->name, // Tên danh sách (list_boards)
+                    'position' => (int) $list->position, // Vị trí của danh sách, đảm bảo là số nguyên
+                    // 'colorId' => $list->color_id ?? null, // Màu sắc nếu có, mặc định là null nếu không có
+                    'cardOrderIds' => $list->cards->pluck('id')->toArray(), // Danh sách thứ tự các card
+                    'cards' => $list->cards->map(function ($card) {
+                        return [
+                            'id' => $card->id,
+                            'columnId' => $card->list_board_id, // ID danh sách mà thẻ thuộc về
+                            'title' => $card->title, // Tên thẻ
+                            // 'description' => $card->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
+                            // 'thumbnail' => $card->thumbnail ?? null, // Ảnh thu nhỏ của thẻ, mặc định là null nếu không có
+                            'position' => (int) $card->position, // Vị trí thẻ trong danh sách, đảm bảo là số nguyên
+                            // 'startDate' => $card->start_date ?? null, // Ngày bắt đầu, mặc định là null nếu không có
+                            // 'endDate' => $card->end_date ?? null, // Ngày kết thúc, mặc định là null nếu không có
+                            // 'endTime' => $card->end_time ?? null, // Thời gian kết thúc, mặc định là null nếu không có
+                            // 'isCompleted' => (bool) $card->is_completed, // Trạng thái hoàn thành
+                            // 'isArchived' => (bool) $card->is_archived, // Trạng thái lưu trữ
+                            // 'cover' => $card->cover ?? null, // Ảnh bìa nếu có, mặc định là null nếu không có
+                        ];
+                    })->toArray(),
+                ];
+            })->toArray(),
+        ];
+
+        return response()->json($responseData);
+
+        // $lists = ListBoard::where('board_id', $boardId)
+        //     ->where('closed', false)
+        //     ->orderBy('position')
+        //     ->with('cards') // Lấy luôn danh sách thẻ thuộc mỗi danh sách
+        //     ->get();
+        // return response()->json($lists);
     }
-
-
-    public function store(ListRequest $request)
+    public function store(Request $request, ListBoard $listBoard)
     {
-        try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-            ]);
+        // Validate dữ liệu từ request
+        $validated = $request->validate([
+            'newColumn' => 'required|array',
+            'newColumn.board_id' => 'required|exists:boards,id', // Đảm bảo đúng board_id
+            'newColumn.title' => 'required|string',
+            'newColumn.position' => 'nullable|integer',
+            // 'newColumn.color_id' => 'nullable|exists:colors,id',
+        ]);
 
-            $boardId = $request->route('boardId');
+        $newColumn = $validated['newColumn'];
+        $boardId = $newColumn['board_id'];
 
-            $maxPosition = ListBoard::where('board_id', $boardId)->max('position');
-            $newPosition = $maxPosition !== null ? $maxPosition + 1 : 1;
+        // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
+        $list = DB::transaction(function () use ($newColumn, $listBoard, $boardId) {
+            // Tính toán position nếu không được truyền từ frontend
+            $position = $newColumn['position'] ?? ($listBoard->where('board_id', $boardId)->max('position') + 1000);
 
+            // Tạo danh sách mới
             $list = ListBoard::create([
-                'name' => $validated['name'],
+                'name' => $newColumn['title'],
                 'closed' => false,
-                'position' => $newPosition,
+                'position' => $position,
                 'board_id' => $boardId,
-                'color_id' => $validated['color_id'] ?? null,
             ]);
 
+            // Broadcast sự kiện sau khi tạo thành công
+            broadcast(new ListCreated($list))->toOthers();
 
-            broadcast(new ListCreated($list));
+            return $list;
+        });
 
-            // Đảm bảo tất cả danh sách trong board có vị trí đúng
-            $this->normalizePositions($boardId);
+        // Lấy toàn bộ danh sách thuộc board sau khi thêm mới
+        $lists = $listBoard->where('board_id', $boardId)
+            ->orderBy('position')
+            ->get()
+            ->map(function ($list) {
+                return [
+                    'id' => $list->id,
+                    'board_id' => $list->board_id,
+                    'name' => $list->name,
+                    'position' => $list->position,
+                ];
+            });
 
-            return response()->json($list, 201);
-        } catch (\Exception $e) {
-            Log::error('Lỗi khi thêm mới danh sách: ' . $e->getMessage());
-            return response()->json(['error' => 'Đã xảy ra lỗi khi thêm mới danh sách.'], 500);
-        }
+        // Trả về response JSON với toàn bộ danh sách
+        return response()->json($lists, 201);
     }
-
-    private function normalizePositions($boardId)
-    {
-        $lists = ListBoard::where('board_id', $boardId)->orderBy('position')->get();
-
-        $position = 1;
-        foreach ($lists as $list) {
-            $list->update(['position' => $position]);
-            $position++;
-        }
-    }
-
-
 
     public function updateName(ListUpdateNameRequest $request, string $id)
     {
@@ -91,12 +148,10 @@ class ListController extends Controller
         $list->name = $validated['name'];
         $list->save();
 
-        broadcast(new ListNameUpdated($list)); 
+        broadcast(new ListNameUpdated($list));
 
         return response()->json($list);
     }
-
-
     public function updateClosed($id)
     {
         $list = ListBoard::find($id);
@@ -217,8 +272,4 @@ class ListController extends Controller
 
         return response()->json($list);
     }
-
-
-
-
 }

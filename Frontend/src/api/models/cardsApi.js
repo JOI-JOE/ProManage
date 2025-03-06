@@ -1,49 +1,36 @@
 import authClient from "../authClient";
-
+// Lấy danh sách card theo list
 export const getCardByList = async (listId) => {
-  try {
-    const response = await authClient.get(`cards/${listId}/getCardsByList`);
-    
-    if (!response.data || !response.data.data) {
-      throw new Error("Dữ liệu API trả về không hợp lệ");
-    }
-
-    // Sắp xếp danh sách card theo `position` từ nhỏ đến lớn
-    return response.data.data.sort((a, b) => a.position - b.position);
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách card:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || "Không thể lấy danh sách card");
-  }
+  const response = await authClient.get(`/cards/list/${listId}`);
+  return response.data.data;
 };
 
-// Hàm cập nhật vị trí của card khi kéo thả
-// 
+// Tạo card mới
+export const createCard = async (data) => {
+  const response = await authClient.post("/cards", data);
+  return response.data;
+};
 
-export const updateCardPositions = async ({ cardId, newListId, newPosition }) => {
+export const updateCardPositionsSameCol = async ({ cards }) => {
   try {
-    const response = await authClient.put(`/cards/update-position`, {
-      id: cardId, // Bổ sung ID của card
-      new_list_board_id: newListId, // Đúng tên tham số trên API
-      new_position: newPosition, // Đúng tên tham số trên API
+    const response = await authClient.put("/boards/update-card-same-col", {
+      cards,
     });
-
     return response.data;
   } catch (error) {
-    console.error("❌ Lỗi khi cập nhật vị trí card:", error.response?.data || error.message);
-
-    throw new Error(
-      error.response?.data?.message || "Không thể cập nhật vị trí card"
-    );
+    console.error("Error in updateCardPositions:", error);
+    throw new Error("Failed to update card positions");
   }
 };
 
-
-export const createCard = async (cardData) => {
+export const updateCardPositionsDiffCol = async ({ cards }) => {
   try {
-    const response = await authClient.post("/cards", cardData);
-    return response.data; // Trả về dữ liệu từ API
+    const response = await authClient.put("/boards/update-card-diff-col", {
+      cards,
+    });
+    return response.data;
   } catch (error) {
-    console.error("Lỗi khi tạo thẻ:", error);
-    throw error; // Ném lỗi để xử lý phía trên (nếu cần)
+    console.error("Error in updateCardPositionsDifferentColumn:", error);
+    throw new Error("Failed to update card positions across columns");
   }
 };
