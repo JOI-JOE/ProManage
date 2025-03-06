@@ -19,6 +19,8 @@ import ArchiveColumnDialog from "./Col_option/Archive";
 import Card_list from "../Cards/Card_list";
 import Card_new from "../Cards/Card_new";
 import { useCreateCard } from "../../../../../hooks/useCard";
+import { useListById } from '../../../../../hooks/useList';
+
 
 const StyledMenu = styled((props) => (
     <Menu
@@ -77,6 +79,9 @@ const Col = ({ column }) => {
         }
     }, [column]);
 
+    const { data: listDetail, isLoading, error, updateListName, updateClosed } = useListById(localColumn.id);
+
+
     //============================================================ COPY======================================================
 
     // Mở form sao chép khi nhấn vào "Copy"
@@ -112,11 +117,11 @@ const Col = ({ column }) => {
         setAnchorEl(null);
     };
 
-    // Xử lý xác nhận lưu trữ
-    const handleArchiveConfirm = () => {
-        console.log("Cột đã được lưu trữ");
-        setOpenArchiveDialog(false);
-    };
+    // // Xử lý xác nhận lưu trữ
+    // const handleArchiveConfirm = () => {
+    //     console.log("Cột đã được lưu trữ");
+    //     setOpenArchiveDialog(false);
+    // };
 
     //======================================== Thêm card mới========================================
     const [openCard, setOpenCard] = useState(false);
@@ -179,8 +184,6 @@ const Col = ({ column }) => {
                     cardOrderIds: updatedCardOrderIds,
                 };
             });
-
-            toast.success("Thêm thẻ thành công!");
         } catch (error) {
             console.error("Lỗi khi thêm thẻ:", error);
             toast.error(`Thêm thẻ thất bại: ${error.message}`);
@@ -204,20 +207,42 @@ const Col = ({ column }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [prevTitle, setPrevTitle] = useState(localColumn?.title); // Lưu giá trị trước đó
 
+
+    useEffect(() => {
+        if (listDetail) {
+            setTitle(listDetail.name);
+            setPrevTitle(listDetail.name);
+        }
+    }, [listDetail]);
+
     const handleTitleClick = () => {
         setIsEditing(true);
     };
 
-    const handleTitleUpdate = (e) => {
+    const handleTitleUpdate = async (e) => {
         if (e.type === "blur" || (e.type === "keydown" && e.key === "Enter")) {
             if (!title.trim()) {
                 setTitle(prevTitle); // Trả về giá trị trước đó nếu rỗng
             } else {
-                setPrevTitle(title); // Cập nhật giá trị trước đó nếu có thay đổi
+                // Cập nhật giá trị trước đó nếu có thay đổi
+                setPrevTitle(title);
+                await updateListName(title);
+
             }
             setIsEditing(false);
         }
     };
+
+    const handleArchiveConfirm = async () => {
+        try {
+          await updateClosed(localColumn.id);  // Gọi API lưu trữ cột
+          toast.success(`Cột "${listDetail.name}" đã được lưu trữ.`);
+        } catch (error) {
+          toast.error("Có lỗi xảy ra khi lưu trữ cột.");
+        }
+        setOpenArchiveDialog(false);  // Đóng hộp thoại
+      };
+
 
     // Kéo thả
     const {

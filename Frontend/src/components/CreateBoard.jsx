@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -15,7 +15,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
-import { useCreateBoard } from "../hooks/useBoard";
+import { useCreateBoard, useImageUnsplash } from "../hooks/useBoard";
 import { useWorkspaces } from "../hooks/useWorkspace";
 import { useColor } from "../hooks/useColor";
 
@@ -25,7 +25,7 @@ const CreateBoard = () => {
   const [openPopover, setOpenPopover] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [boardTitle, setBoardTitle] = useState("");
-  const [selectedBg, setSelectedBg] = useState(null);
+  const [selectedBg, setSelectedBg] = useState("");
   const [workspace, setWorkspace] = useState("");
   const [viewPermission, setViewPermission] = useState("");
   // const userId = localStorage.getItem("user_id"); // ID được lưu sau khi đăng nhập
@@ -33,6 +33,11 @@ const CreateBoard = () => {
   // Sử dụng hook useCreateBoard
   // Sử dụng hook useCreateBoard
   const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
+  const {
+    mutate: fetchUnsplashImages,
+    data: unsplashImages,
+    isLoading: unsplashingImages,
+  } = useImageUnsplash();
 
   // Sử dụng hook useWorkspaces
   const {
@@ -46,18 +51,30 @@ const CreateBoard = () => {
     isLoading: isLoadingColors,
     error: errorColors,
   } = useColor();
+  // Lấy danh sách màu từ API và chỉ tính toán lại khi `colors` thay đổi
+  const memoizedColors = useMemo(() => {
+    if (!colors || !Array.isArray(colors)) return [];
+    return colors.map((color) => ({
+      id: color.id,
+      hex: color.hex_code || "#1693E1", // Đảm bảo có giá trị mặc định
+    }));
+  }, [colors]);
 
   // console.log(colors);
-  
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
     setOpenPopover(true);
+    fetchUnsplashImages(); // Gọi API lấy ảnh
   };
 
   const handleClose = () => {
     setOpenPopover(false);
     setAnchorEl(null);
+  };
+
+  const handleSelectBg = (bg) => {
+    setSelectedBg(bg); // Nếu là mã màu, gán trực tiếp
   };
 
   const handleCreateBoard = () => {
@@ -140,7 +157,9 @@ const CreateBoard = () => {
             sx={{
               width: "100%",
               height: "100px",
-              background: selectedBg,
+              background: selectedBg.startsWith("#")
+                ? selectedBg
+                : `url(${selectedBg}) center/cover no-repeat`,
               borderRadius: "8px",
             }}
           />
@@ -150,30 +169,58 @@ const CreateBoard = () => {
           </Typography>
 
           {isLoadingColors ? (
-    <Typography>Đang tải màu...</Typography>
-) : errorColors ? (
-    <Typography color="error">Lỗi khi tải màu</Typography>
-) : colors && Array.isArray(colors) ? (
-    <Grid container spacing={1} mt={1}>
-        {colors.map((color, index) => (
-            <Grid item key={index}>
-                <Box
+            <Typography>Đang tải màu...</Typography>
+          ) : errorColors ? (
+            <Typography color="error">Lỗi khi tải màu</Typography>
+          ) : memoizedColors.length > 0 ? (
+            <Grid container spacing={1} mt={1}>
+              {memoizedColors.map((color) => (
+                <Grid item key={color.id}>
+                  <Box
                     sx={{
-                        width: "50px",
-                        height: "35px",
-                        backgroundColor: color.hex_code,
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        border: selectedBg === color ? "2px solid #007BFF" : "none",
+                      width: "50px",
+                      height: "35px",
+                      backgroundColor: color.hex,
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      border:
+                        selectedBg === color.hex ? "2px solid #007BFF" : "none",
                     }}
-                    onClick={() => setSelectedBg(color.hex_code)}
-                />
+                    onClick={() => handleSelectBg(color.hex)}
+                  />
+                </Grid>
+              ))}
             </Grid>
-        ))}
-    </Grid>
-) : (
-    <Typography>Không có màu nào khả dụng</Typography>
-)}
+          ) : (
+            <Typography>Không có màu nào khả dụng</Typography>
+          )}
+
+          <Typography variant="subtitle1" mt={2} fontWeight="bold">
+            Ảnh từ Unsplash
+          </Typography>
+
+          {/* Ảnh từ Unsplash */}
+          <Grid container spacing={1} mt={1}>
+            {unsplashImages?.map((image, index) => (
+              <Grid item key={index}>
+                <Box
+                  component="img"
+                  src={image.urls.small}
+                  sx={{
+                    width: "50px",
+                    height: "35px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    border:
+                      selectedBg === image.urls.small
+                        ? "2px solid #007BFF"
+                        : "none",
+                  }}
+                  onClick={() => handleSelectBg(image.urls.small)}
+                />
+              </Grid>
+            ))}
+          </Grid>
 
           <IconButton
             onClick={handleClose}
@@ -223,7 +270,7 @@ const CreateBoard = () => {
               onChange={(e) => setWorkspace(e.target.value)}
               sx={{ marginBottom: 2 }}
             >
-              {workspaces.map((ws) => (
+              {(workspaces ?? []).map((ws) => (
                 <MenuItem key={ws.id} value={ws.id}>
                   {ws.name}
                 </MenuItem>
