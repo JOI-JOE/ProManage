@@ -3,7 +3,9 @@ import {
   getInviteWorkspaceById,
   createInviteWorkspace,
   acceptInvitation,
+  cancelInviteWorkspace,
 } from "../api/models/inviteWorkspaceApi";
+import { data } from "react-router-dom";
 
 export const useAcceptInvitation = () => {
   const queryClient = useQueryClient();
@@ -52,6 +54,23 @@ export const useCreateInviteWorkspace = () => {
     },
     onError: (error) => {
       console.error("Lỗi khi tạo lời mời vào workspace:", error);
+    },
+  });
+};
+
+export const useCancelInvitationWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId }) => cancelInviteWorkspace(workspaceId),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(
+        ["inviteWorkspace", variables.workspaceId],
+        data
+      );
+    },
+    onError: (error) => {
+      console.error("Lỗi khi xóa lời mời vào workspace:", error);
     },
   });
 };

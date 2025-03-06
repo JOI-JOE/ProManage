@@ -162,7 +162,7 @@ class WorkspaceInvitationsController extends Controller
     {
         try {
             // Tìm lời mời còn hiệu lực
-            $invitation = WorkspaceInvitations::where('id_workspace', $workspaceId)
+            $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
                 ->first();
 
             if (!$invitation) {

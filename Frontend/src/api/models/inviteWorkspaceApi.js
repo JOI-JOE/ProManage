@@ -35,3 +35,15 @@ export const createInviteWorkspace = async (workspaceId) => {
     throw error;
   }
 };
+
+export const cancelInviteWorkspace = async (workspaceId) => {
+  try {
+    const response = await authClient.delete(
+      `workspaces/${workspaceId}/invitationSecret`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo lời mời vào workspace:", error);
+    throw error;
+  }
+};

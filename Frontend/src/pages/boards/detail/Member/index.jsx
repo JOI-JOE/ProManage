@@ -24,11 +24,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useParams } from "react-router-dom";
 
-import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
 import MemberItem from "./MemberItem";
 import GenerateLink from "../../../../components/GenerateLink";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
-import { useCreateInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
+import { useCancelInvitationWorkspace, useCreateInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
+import WorkspaceInfo from "../../../../components/WorkspaceInfo";
 
 const Member = () => {
   const [isFormVisible, setFormVisible] = useState(false);
@@ -42,6 +42,7 @@ const Member = () => {
     setLinkCopied(false);
     setIsLinkActive(false);
   };
+
 
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
@@ -64,6 +65,7 @@ const Member = () => {
   const members = workspace?.members || [];
 
   const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
+  const { mutate: cancelInviteLink, isLoading: isCancelingInvite } = useCancelInvitationWorkspace();
 
   const handleGenerateLink = async () => {
     if (!workspace) {
@@ -94,23 +96,15 @@ const Member = () => {
     });
   };
 
-  // Nếu đang load workspace, có thể hiển thị loading state
-  if (isLoadingWorkspace) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Typography>Đang tải dữ liệu workspace...</Typography>
-      </Box>
-    );
-  }
+  const handleDeleteLink = async () => {
+    if (!workspace?.id) {
+      throw new Error('Không tìm thấy ID của workspace');
+    }
+    return cancelInviteLink({ workspaceId: workspace.id });
+  };
 
-  // Nếu không tìm thấy workspace
-  if (!workspace) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Typography color="error">Không tìm thấy workspace</Typography>
-      </Box>
-    );
-  }
+
+
 
   return (
     <Box
@@ -135,8 +129,7 @@ const Member = () => {
           minHeight: "80px",
         }}
       >
-        {/* Nếu form chưa hiển thị, hiển thị avatar và tiêu đề */}
-        {!isFormVisible ? (
+        {isFormVisible ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Avatar
               sx={{
@@ -179,7 +172,10 @@ const Member = () => {
             </Box>
           </Box>
         ) : (
-          <WorkspaceDetailForm />
+          <WorkspaceInfo
+            workspaceInfo={workspace}
+            onCancel={toggleFormVisibility} // Truyền hàm đóng form
+          />
         )}
 
         <Button
@@ -199,6 +195,7 @@ const Member = () => {
           Mời các thành viên Không gian làm việc
         </Button>
       </Box>
+
 
       {/* Nội dung */}
       <Grid
@@ -357,7 +354,7 @@ const Member = () => {
             placeholder="Địa chỉ email hoặc tên"
             sx={{ marginBottom: "10px" }}
           />
-          <GenerateLink onGenerateLink={handleGenerateLink} />
+          <GenerateLink onGenerateLink={handleGenerateLink} onDeleteLink={handleDeleteLink} />
         </DialogContent>
       </Dialog>
     </Box>

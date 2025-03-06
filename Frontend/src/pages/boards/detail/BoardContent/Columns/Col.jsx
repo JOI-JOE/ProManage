@@ -132,9 +132,12 @@ const Col = ({ column }) => {
             return;
         }
 
+        // Đảm bảo localColumn.cards là một mảng
+        const cards = localColumn.cards || [];
+
         const calculatePosition = () => {
-            if (localColumn?.cards?.length) {
-                return Math.max(...localColumn.cards.map((card) => card.position)) + 1000;
+            if (cards.length) {
+                return Math.max(...cards.map((card) => card.position)) + 1000;
             }
             return 1000;
         };
@@ -146,7 +149,7 @@ const Col = ({ column }) => {
             position: calculatePosition(),
         };
 
-        const optimisticCards = [...localColumn.cards, newCard].sort(
+        const optimisticCards = [...cards, newCard].sort(
             (a, b) => a.position - b.position
         );
         const optimisticCardOrderIds = optimisticCards.map((card) => card.id);
@@ -156,7 +159,6 @@ const Col = ({ column }) => {
             cards: optimisticCards,
             cardOrderIds: optimisticCardOrderIds,
         }));
-
 
         try {
             const response = await mutateAsync({

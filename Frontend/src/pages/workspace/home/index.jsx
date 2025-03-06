@@ -12,9 +12,9 @@ import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
 
-import WorkspaceDetailForm from "./WorkspaceDetailForm";
 import MyBoard from "../../../components/MyBoard";
 import CreateBoard from "../../../components/CreateBoard";
+import WorkspaceInfo from "../../../components/WorkspaceInfo";
 
 const HomeWorkspace = ({ workspace }) => {
     const [isFormVisible, setFormVisible] = useState(false); // Quản lý hiển thị form
@@ -84,7 +84,7 @@ const HomeWorkspace = ({ workspace }) => {
 
             {/* Form hiển thị khi bấm Edit */}
             {isFormVisible && (
-                <WorkspaceDetailForm
+                <WorkspaceInfo
                     workspaceInfo={workspace}
                     onCancel={toggleFormVisibility} // Truyền hàm đóng form
                 />
@@ -125,7 +125,7 @@ const HomeWorkspace = ({ workspace }) => {
                 )}
 
                 {/* Tạo bảng mới */}
-             <CreateBoard/>
+                <CreateBoard />
             </List>
         </Box>
     );

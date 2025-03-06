@@ -7,11 +7,12 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-const GenerateLink = ({ onGenerateLink }) => {
+const GenerateLink = ({ onGenerateLink, onDeleteLink }) => {
     const [linkCopied, setLinkCopied] = useState(false);
     const [showCopiedMessage, setShowCopiedMessage] = useState(false);
     const [isLinkActive, setIsLinkActive] = useState(false);
     const [generatedLink, setGeneratedLink] = useState('');
+    const [deletedLink, setDeletedLink] = useState('')
 
     const handleGenerateLink = async () => {
         try {
@@ -23,6 +24,7 @@ const GenerateLink = ({ onGenerateLink }) => {
         }
     };
 
+
     const handleCopyLink = () => {
         if (generatedLink) {
             navigator.clipboard.writeText(generatedLink);
@@ -32,10 +34,17 @@ const GenerateLink = ({ onGenerateLink }) => {
         }
     };
 
-    const handleDisableLink = () => {
-        setIsLinkActive(false);
-        setLinkCopied(false);
-        setGeneratedLink('');
+
+    const handleDeleteLink = async () => {
+        try {
+            await onDeleteLink();
+            setIsLinkActive(false);
+            setLinkCopied(false);
+            setGeneratedLink('');
+        } catch (error) {
+            console.error('Lỗi khi tạo link:', error);
+        }
+
     };
 
     return (
@@ -79,7 +88,7 @@ const GenerateLink = ({ onGenerateLink }) => {
                         textDecoration: 'underline',
                         textAlign: 'right',
                     }}
-                    onClick={handleDisableLink}
+                    onClick={handleDeleteLink}
                 >
                     Tắt liên kết
                 </Typography>

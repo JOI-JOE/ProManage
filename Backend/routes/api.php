@@ -105,17 +105,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']);
         Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
     });
+
+    // Funtion kéo thả column
+    Route::put('/boards/update-column-position', [DragDropController::class, 'updateListPosition']);
+    Route::put('/boards/update-card-same-col', [DragDropController::class, 'updateCardPositionsSameColumn']);
+    Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
+
+    // Send Email
+    Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 });
 
-// Funtion kéo thả column
-Route::put('/boards/update-column-position', [DragDropController::class, 'updateListPosition']);
-Route::put('/boards/update-card-same-col', [DragDropController::class, 'updateCardPositionsSameColumn']);
-Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
-
-
-
-// Send Email
-Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 
 
 Route::get('/color', [ColorController::class, 'index']);
@@ -225,7 +224,7 @@ Route::delete('cards/{cardId}/checklists/{id}', [ChecklistController::class, 'de
 Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'index']); // lấy danh sách checkist theo card
 Route::post('/checklist/{checklistId}/item', [ChecklistItemController::class, 'store']); // thêm mới checkist theo card
 Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']); // cập nhật tên của checklistitem
-Route::put('/item/{id}/completed', [ChecklistItemController::class, 'updateStatus']);// cập nhật trạng thái hoàn thành của checklistitem
+Route::put('/item/{id}/completed', [ChecklistItemController::class, 'updateStatus']); // cập nhật trạng thái hoàn thành của checklistitem
 
 // Route::delete('/checklists/{id}', [ChecklistItemController::class, 'destroy']);// xóa checklists
 Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNotifications']);
