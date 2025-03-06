@@ -13,9 +13,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ContextProvider } from "./contexts/ContextProvider";
 
 import theme from "./theme";
-import router from "./router/index";
+// import router from "./router/index";
 
 import "../index.css";
+import router from "./router";
 
 const queryClient = new QueryClient({
   defaultOptions: {

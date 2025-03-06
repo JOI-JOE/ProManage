@@ -5,8 +5,10 @@ import { toast } from "react-toastify";
 import { useCreateList } from "../../../../../hooks/useList";
 import Col from "./Col";
 import Col_new from "./Col_new";
+import { useParams } from "react-router-dom";
 
-const Col_list = ({ columns: initialColumns, boardId }) => {
+const Col_list = ({ columns: initialColumns }) => {
+    const { boardId } = useParams();
     const [columns, setColumns] = useState([]);
     const createListMutation = useCreateList();
 
@@ -15,7 +17,7 @@ const Col_list = ({ columns: initialColumns, boardId }) => {
     }, [initialColumns]); // Chỉ chạy khi initialColumns thay đổi
 
     const [openColumn, setOpenColumn] = useState(false);
-    // const [columnName, setColumnName] = useState("");
+    const [columnName, setColumnName] = useState("");
 
     const toggleOpenColumn = () => setOpenColumn(!openColumn);
 
@@ -28,7 +30,7 @@ const Col_list = ({ columns: initialColumns, boardId }) => {
             // Tạo dữ liệu gửi lên backend
             const newColumn = {
                 id: Date.now(),
-                board_id: Number(boardId),
+                board_id: boardId,
                 title: columnName,
                 position: Array.isArray(columns) && columns.length
                     ? Math.max(...columns.map(column => column.position)) + 1000

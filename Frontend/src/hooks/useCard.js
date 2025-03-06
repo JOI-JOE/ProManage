@@ -57,42 +57,43 @@ export const useCardByList = (listId) => {
     refetchOnReconnect: false,
   });
 };
-
 export const useCreateCard = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createCard,
+    mutationFn: (newCard) => createCard(newCard),
     onMutate: async (variables) => {
-      await queryClient.cancelQueries(["cards", variables.list_id]);
+      const { list_board_id } = variables;
+      const queryKey = ["cards", list_board_id];
+      await queryClient.cancelQueries(queryKey);
 
-      const previousCards = queryClient.getQueryData([
-        "cards",
-        variables.list_id,
+      const temporaryId = Date.now();
+      const optimisticCard = {
+        id: temporaryId,
+        ...variables,
+      };
+
+      queryClient.setQueryData(queryKey, (oldCards = []) => [
+        ...oldCards,
+        optimisticCard,
       ]);
 
-      // Optimistic update
-      queryClient.setQueryData(
-        ["cards", variables.list_id],
-        (oldCards = []) => {
-          const optimisticCard = {
-            id: Date.now(), // Temporary ID
-            ...variables,
-            position: oldCards.length + 1,
-          };
-          return [...oldCards, optimisticCard].sort(
-            (a, b) => a.position - b.position
-          );
-        }
-      );
-
-      return { previousCards };
+      return { queryKey, temporaryId };
     },
-    onError: (err, variables, context) => {
-      if (context?.previousCards) {
-        queryClient.setQueryData(
-          ["cards", variables.list_id],
-          context.previousCards
+    onSuccess: (newCard, variables, context) => {
+      if (context?.queryKey) {
+        queryClient.setQueryData(context.queryKey, (oldCards = []) =>
+          oldCards.map((card) =>
+            card.id === context.temporaryId ? newCard : card
+          )
+        );
+      }
+    },
+    onError: (error, variables, context) => {
+      console.error("❌ Lỗi khi tạo thẻ:", error);
+      if (context?.queryKey) {
+        queryClient.setQueryData(context.queryKey, (oldCards = []) =>
+          oldCards.filter((card) => card.id !== context.temporaryId)
         );
       }
     },
