@@ -22,13 +22,13 @@ import "react-quill/dist/quill.snow.css";
 import MemberList from "./childComponent_CardDetail/member";
 import TaskModal from "./childComponent_CardDetail/Task";
 import LabelList from "./childComponent_CardDetail/Label";
-import AttachmentModal from "./childComponent_CardDetail/Attached";
+import AttachmentModal from "./childComponent_CardDetail/Attached.jsx";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
 
-const CardModal = () => {
-  const { name } = useParams();
+const CardModal = (card, closeDetail) => {
+  const {  cardId, name } = useParams();
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(true);
@@ -140,7 +140,17 @@ const CardModal = () => {
   };
 
   return (
-    <Dialog open={true} onClose={() => navigate(-1)} fullWidth maxWidth="md">
+    <Dialog  
+    
+    open={true}
+    onClose={closeDetail}
+    fullWidth
+    maxWidth="md"
+    BackdropProps={{
+        style: { backgroundColor: "transparent" } // Làm nền trong suốt
+    }}
+
+    >
       <DialogTitle>
         {isEditingName ? (
           <TextField
