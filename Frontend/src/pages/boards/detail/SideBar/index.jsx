@@ -46,7 +46,8 @@ const SideBar = ({ workspace }) => {
       variant="permanent"
       sx={{
         width: "19%",
-        height: "100vh",
+        height: (theme) =>
+          `calc( ${theme.trello.boardContentHeight} + ${theme.trello.boardBarHeight} )`,
         borderTop: "1px solid #ffffff",
         "& .MuiDrawer-paper": {
           boxSizing: "border-box",
