@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Events\CardPositionUpdated;
 use App\Events\ColumnPositionUpdated;
+use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
 { // app/Http/Controllers/CardController.php
@@ -39,15 +40,24 @@ class CardController extends Controller
     }
     public function store(Request $request)
     {
-        $maxPosition = Card::where('list_board_id', $request->list_board_id)->max('position');
-
-        $card = Card::create([
-            'title' => $request->title,
-            'list_board_id' => $request->list_board_id,
-            'position' => $maxPosition ? $maxPosition + 1 : 1, // Nếu chưa có card nào thì position = 1
+        $validator = Validator::make($request->all(), [
+            'columnId' => 'required|uuid|exists:list_boards,id', // Thêm ,id vào exists rule
+            'position' => 'required|numeric',
+            'title' => 'required|string|max:255',
         ]);
 
-        return response()->json($card);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Create a new card
+        $card = Card::create([
+            'list_board_id' => $request->columnId, // Sử dụng columnId đã được validate
+            'position' => $request->position,
+            'title' => $request->title,
+        ]);
+
+        return response()->json($card, 201); // 201 Created
     }
     // cập nhật tên
     public function updateName($cardId, Request $request)

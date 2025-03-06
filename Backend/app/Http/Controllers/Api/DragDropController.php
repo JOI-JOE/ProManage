@@ -19,7 +19,7 @@ class DragDropController extends Controller
             'cards' => 'required|array',
             'cards.*.id' => 'required|exists:cards,id',
             'cards.*.list_board_id' => 'required|exists:list_boards,id',
-            'cards.*.position' => 'required|integer|min:0',
+            'cards.*.position' => 'required|min:0',
         ]);
 
         $cardsToUpdate = collect();
@@ -69,7 +69,7 @@ class DragDropController extends Controller
             'cards' => 'required|array',
             'cards.*.id' => 'required|exists:cards,id',
             'cards.*.list_board_id' => 'required|exists:list_boards,id',
-            'cards.*.position' => 'required|integer|min:0',
+            'cards.*.position' => 'required|min:0',
         ]);
 
         // Khởi tạo các biến để lưu trữ dữ liệu cần cập nhật
@@ -134,7 +134,7 @@ class DragDropController extends Controller
                 'columns' => 'required|array|min:1',
                 'columns.*.id' => 'required|exists:list_boards,id',
                 'columns.*.position' => 'required|min:0',
-                'columns.*.boardId' => 'required|integer|exists:boards,id', // Đảm bảo boardId tồn tại và là số nguyên
+                'columns.*.boardId' => 'required|exists:boards,id', // Đảm bảo boardId tồn tại và là số nguyên
                 'columns.*.title' => 'required|string',
             ]);
 

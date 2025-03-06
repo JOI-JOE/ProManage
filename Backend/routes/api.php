@@ -88,7 +88,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::prefix('cards')->group(function () {
         Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
-        Route::put('/update-position', [DragDropController::class, 'updateCardPosition']);
+        // Route::put('/update-position', [DragDropController::class, 'updateCardPosition']);
         // Function tạo card
         Route::post('/', [CardController::class, 'store']);
 
