@@ -52,6 +52,7 @@ class RecentBoardController extends Controller
                 'thumbnail' => $recentBoard->board->thumbnail, // Lấy thumbnail từ bảng Board
                 'board_name' => $recentBoard->board->name,  // Lấy tên từ bảng Board
                 'board_id' => $recentBoard->board->id,  // Lấy tên từ bảng Board
+                'is_marked' => $recentBoard->board->is_marked, // Lấy is_marked từ bảng Board
                 'workspace_display_name' => $recentBoard->board->workspace->display_name, // Lấy display_name từ bảng Workspace
             ];
         });

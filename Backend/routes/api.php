@@ -59,6 +59,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('workspaces', 'index');
         Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
         Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
+        Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
+
 
         Route::post('workspaces', 'store');
         Route::delete('workspaces/{workspace}', 'destroy');
@@ -125,12 +127,7 @@ Route::prefix('lists')->group(function () {
 Route::get('/colors', [ColorController::class, 'index']);
 
 
-// Routes quản lý bảng
-Route::get('/boards', [BoardController::class, 'index']);
 
-Route::get('/board/{id}', [BoardController::class, 'getBoard']);
-
-Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']); // Lấy danh sách boards
@@ -140,6 +137,13 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::delete('{boardId}', [BoardController::class, 'destroy']); // Xóa board
 });
 
+// Routes quản lý bảng
+Route::get('/boards', [BoardController::class, 'index']);
+Route::get('/boards_marked', [BoardController::class, 'getBoardMarked']);
+
+Route::get('/board/{id}', [BoardController::class, 'getBoard']);
+
+Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 
 Route::prefix('boards/{id}/')->group(function () {
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);

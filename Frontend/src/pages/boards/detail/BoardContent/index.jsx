@@ -17,12 +17,6 @@ import {
 } from "../../../../hooks/useCard";
 import { useRecentBoardAccess } from "../../../../hooks/useBoard";
 
-// const ACTIVE_DRAG_ITEM_TYPE = {
-//   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
-//   CARD: "ACTIVE_DRAG_ITEM_TYPE_CARD",
-// };
-//  Import API cập nhật vị trí card
-
 const BoardContent = () => {
   const { boardId } = useParams();
   const queryClient = useQueryClient();

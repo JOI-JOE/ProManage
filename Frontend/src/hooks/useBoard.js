@@ -1,9 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createBoard,
   getBoardById,
+  getBoardMarked,
   getRecentBoards,
+  getUnsplashImages,
   logBoardAccess,
   showBoardByWorkspaceId,
+  toggleBoardMarked,
   updateBoardName
 } from "../api/models/boardsApi";
 
@@ -121,3 +124,71 @@ export const useUpdateBoardName = () => {
         },
     });
 };
+
+export const useToggleBoardMarked = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: toggleBoardMarked, // Gọi API toggle
+    onMutate: async (boardId) => {
+      await queryClient.cancelQueries(["boards"]); // Hủy API đang chạy
+
+      const previousData = queryClient.getQueryData(["boards"]); // Lưu dữ liệu trước đó
+
+      queryClient.setQueryData(["boards"], (oldData) => {
+        if (!oldData || !oldData.data) return oldData;
+        return {
+          ...oldData,
+          data: oldData.data.map((board) =>
+            board.id === boardId ? { ...board, is_marked: !board.is_marked } : board
+          ),
+        };
+      });
+
+      return { previousData }; // Trả dữ liệu để rollback nếu lỗi
+    },
+    onError: (err, boardId, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(["boards"], context.previousData); // Rollback nếu lỗi
+      }
+    },
+    onSuccess: (data, boardId) => {
+      queryClient.setQueryData(["boards"], (oldData) => {
+        if (!oldData || !oldData.data) return oldData;
+        return {
+          ...oldData,
+          data: oldData.data.map((board) =>
+            board.id === boardId ? { ...board, is_marked: data.is_marked } : board
+          ),
+        };
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["boards"], { refetchType: "active" }); // Làm mới danh sách
+    },
+  });
+};
+
+  
+export const useBoardMarked = () => {
+  return useQuery({
+    queryKey: ["boardMarked"],
+    queryFn: getBoardMarked,
+    staleTime: 1000 * 60 * 5, // 5 phút (Hạn chế gọi API nếu dữ liệu còn "tươi")
+    cacheTime: 1000 * 60 * 30, // 30 phút
+    refetchOnWindowFocus: false, // Không fetch lại khi đổi tab
+  });
+};
+
+export const useImageUnsplash = () => {
+  return useQuery({
+    queryKey: ["UnsplashImages"], // Key duy nhất với "recentBoards" để cache dữ liệu.
+    queryFn: getUnsplashImages, // Gọi API lấy bảng gần đây.
+    staleTime: 1000 * 60 * 5, // Dữ liệu được coi là "stale" sau 5 phút.
+    cacheTime: 1000 * 60 * 30, // Dữ liệu được giữ trong cache tối đa 30 phút.
+  });
+};
+
+
+
+
