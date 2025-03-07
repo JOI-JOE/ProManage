@@ -22,7 +22,7 @@ class WorkspaceMembersResource extends JsonResource
             'is_deactivated' => (bool) $this->is_deactivated, // Convert to boolean
             'activity_blocked' => $this->activity_blocked === null ? false : (bool) $this->activity_blocked, // Handle null and convert
             'member_type' => $this->member_type,
-            'last_active' => $this->last_active
+            // 'last_active' => , // Handle null and convert
             // 'is_unconfirmed' => $this->is_unconfirmed,
             // 'id_member_referrer' => $this->id_member_referrer,
         ];

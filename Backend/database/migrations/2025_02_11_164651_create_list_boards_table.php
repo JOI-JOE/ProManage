@@ -12,17 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('list_boards', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('name', 255);
+            $table->id();
+            $table->string('name',255);
             $table->boolean('closed')->default(false);
             $table->integer('position');
-        
-            $table->uuid('board_id');
-            $table->foreign('board_id')->references('id')->on('boards')->onDelete('cascade');
-        
-            // Nếu bảng colors vẫn dùng ID số nguyên thì giữ nguyên foreignId()
+            
+            $table->foreignId('board_id')->constrained('boards');
             $table->foreignId('color_id')->nullable()->constrained('colors');
-        
+            
+
             $table->timestamps();
         });
     }

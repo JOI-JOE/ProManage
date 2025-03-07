@@ -1,14 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createBoard,
   getBoardById,
-  getBoardMarked,
   getRecentBoards,
-  getUnsplashImages,
   logBoardAccess,
   showBoardByWorkspaceId,
   toggleBoardMarked,
   updateBoardName,
   updateBoardVisibility
+  updateBoardName
 } from "../api/models/boardsApi";
 
 /**
@@ -69,6 +68,7 @@ export const useBoardByWorkspaceId = (workspaceId) => {
 };
 
 export const useBoards = (boardId) => {
+  const queryClient = useQueryClient();
 
   const boardsQuery = useQuery({
     queryKey: ["boardLists", boardId],
@@ -91,8 +91,6 @@ export const useRecentBoards = () => {
 };
 
 export const useRecentBoardAccess = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: logBoardAccess,
     onError: (error) => {
@@ -100,7 +98,6 @@ export const useRecentBoardAccess = () => {
     },
     onSuccess: (data) => {
       console.log("Bảng đã được lưu vào danh sách gần đây:", data);
-      queryClient.invalidateQueries(["recentBoards"]);
     },
   });
 };
@@ -117,8 +114,6 @@ export const useUpdateBoardName = () => {
         mutationFn: ({ boardId, name }) => updateBoardName(boardId, name),
         onSuccess: (_, { boardId }) => {
             queryClient.invalidateQueries({ queryKey: ["board", boardId] });
-            queryClient.invalidateQueries(["boards"]);
-
         },
         onError: (error) => {
             console.error("Lỗi khi cập nhật tên bảng:", error);

@@ -40,10 +40,6 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-        'api' => [
-        'driver' => 'passport', // hoặc 'sanctum' nếu dùng Laravel Sanctum
-        'provider' => 'users',
-    ],
     ],
 
     /*

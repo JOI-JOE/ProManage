@@ -14,12 +14,13 @@ import LoginForm from "../pages/Auth/LoginForm";
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 
-// import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import InviteHandle from "../pages/workspace/invite/InviteHandle";
 import InviteAccept from "../pages/workspace/invite/InviteAccept";
-import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+import Account from "../pages/boards/detail/Account";
+import Board from "../pages/boards/detail/Board/Board";
 
 const router = createBrowserRouter([
   {
@@ -78,22 +79,27 @@ const router = createBrowserRouter([
           {
             path: "b/:boardId/:name",
             element: <BoardContent />,
-             children: [
-                { path: "c/:cardId/:name", element: <CardModal /> }, // CardModal chỉ là Dialog
-            ],
+          },
+          {
+            path: "w/:workspaceName/",
+            element: <Board />,
           },
           {
             path: "w/:workspaceName/members",
             element: <Member />,
           },
-          // {
-          //   path: "c/:cardId/:name",
-          //   element: <CardModal />,
-          // }
-        ]
-      }
-    ]
-  }
+          {
+            path: "w/:workspaceName/accounts",
+            element: <Account />,
+          },
+          {
+            path: "c/:cardId/:name",
+            element: <CardModal />,
+          },
+        ],
+      },
+    ],
+  },
 ]);
 
 export default router;

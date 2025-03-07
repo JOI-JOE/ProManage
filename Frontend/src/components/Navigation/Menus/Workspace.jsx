@@ -10,8 +10,6 @@ import ArchiveIcon from "@mui/icons-material/Archive";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { useWorkspaces } from "../../../hooks/useWorkspace";
-import { Link } from "react-router-dom";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -60,9 +58,6 @@ const Workspace = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
-
-  const { data: workspaces, isLoading, isError } = useWorkspaces();
-
   return (
     <Box>
       <Button
@@ -76,7 +71,7 @@ const Workspace = () => {
         endIcon={<KeyboardArrowDownIcon />}
         sx={{ color: "secondary.contrastText" }}
       >
-       Các Không gian làm việc
+        Workspaces
       </Button>
       
       <StyledMenu
@@ -88,37 +83,40 @@ const Workspace = () => {
         open={open}
         onClose={handleClose}
       >
-     {isLoading && <MenuItem>Đang tải...</MenuItem>}
-        {isError && <MenuItem>Lỗi tải dữ liệu</MenuItem>}
-
-        {workspaces?.map((workspace) => (
-          <MenuItem component={Link} to={`/w/${workspace.name}/home`} key={workspace.id} onClick={handleClose}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {/* Avatar chữ cái đầu */}
-              <Box
-                sx={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: "50%",
-                  bgcolor: "#00A3BF",
-                  color: "white",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: "bold",
-                  fontSize: "1rem",
-                }}
-              >
-                {workspace.display_name.charAt(0).toUpperCase()}
-              </Box>
-
-              {/* Hiển thị tên đầy đủ */}
-              {workspace.display_name}
-            </Box>
-          </MenuItem>
-        ))}
+        <MenuItem
+          onClick={handleClose}
+          disableRipple
+          sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+        >
+          <EditIcon />
+          Edit
+        </MenuItem>
+        <MenuItem
+          onClick={handleClose}
+          disableRipple
+          sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+        >
+          <FileCopyIcon />
+          Duplicate
+        </MenuItem>
+        <Divider sx={{ my: 0.5 }} />
+        <MenuItem
+          onClick={handleClose}
+          disableRipple
+          sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+        >
+          <ArchiveIcon />
+          Archive
+        </MenuItem>
+        <MenuItem
+          onClick={handleClose}
+          disableRipple
+          sx={{ fontSize: "0.85rem", color: "secondary.main" }}
+        >
+          <MoreHorizIcon />
+          More
+        </MenuItem>
       </StyledMenu>
-      
     </Box>
   );
 };

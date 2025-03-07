@@ -12,20 +12,45 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('workspace_members', function (Blueprint $table) {
-            $table->uuid('workspace_id');
-            $table->uuid('user_id');
-            $table->enum('member_type', ['admin', 'normal'])->default('normal');
-            $table->boolean('is_unconfirmed')->default(false);
-            $table->boolean('joined')->default(false);
-            $table->boolean('is_deactivated')->default(false);
+            $table->id();
+
+            // Khóa ngoại đến bảng workspaces
+            $table->foreignId('id_workspace')
+                ->constrained('workspaces')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+
+            // Khóa ngoại đến bảng users (thành viên)
+            $table->foreignId('id_member')
+                ->constrained('users')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+
+            // Loại thành viên: admin hoặc normal
+            $table->enum('member_type', ['admin', 'normal'])
+                ->default('normal'); // Mặc định là 'normal'
+
+            // Trạng thái xác nhận (confirmed/unconfirmed)
+            $table->boolean('is_unconfirmed')->default(false); // Mặc định là true (chưa xác nhận)
+
+            // Trạng thái tham gia (joined/not joined)
+            $table->boolean('joined')->default(false); // Mặc định là false (chưa tham gia)
+
+            // Trạng thái vô hiệu hóa (deactivated)
+            $table->boolean('is_deactivated')->default(value: false); // Mặc định là false (không bị vô hiệu hóa)
+
+            // Khóa ngoại đến người giới thiệu (nếu có)
+            $table->foreignId('id_member_referrer')
+                ->nullable()
+                ->constrained('users')
+                ->onUpdate('cascade')
+                ->onDelete('set null');
+
+            // Thời gian hoạt động gần nhất
             $table->timestamp('last_active')->nullable();
 
-            // Định nghĩa cặp khóa chính
-            $table->primary(['workspace_id', 'user_id']);
-
-            // Khóa ngoại với UUID
-            $table->foreign('workspace_id')->references('id')->on('workspaces')->onDelete('cascade');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            // Timestamps (created_at và updated_at)
+            $table->timestamps();
         });
     }
 
