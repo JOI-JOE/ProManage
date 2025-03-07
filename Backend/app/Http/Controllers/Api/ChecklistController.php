@@ -44,6 +44,18 @@ class ChecklistController extends Controller
             'name'=>$request->name,
             'card_id'=>$cardId,
         ]);
+        $user_name = auth()->user()?->user_name ?? 'ai đó';
+
+        activity()
+        ->causedBy(auth()->user())
+        ->performedOn($card)
+        ->event('added_checklist_item')
+        ->withProperties([
+            'card_title'   => $card->title,
+            'checklist_id' => $checklist->id,
+            'name'        => $request->name,
+        ])
+        ->log("{$user_name} đã thêm mục việc cần làm: {$request->name}");
 
         return response()->json([
             'status' => true,
@@ -92,14 +104,32 @@ class ChecklistController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function deleteChecklist($cardId, $checklistId)
     {
-        $checklist = Checklist::findOrFail($id);
+        $card = Card::findOrFail($cardId);
+        $checklist = Checklist::where('card_id', $cardId)->findOrFail($checklistId);
+        $user_name = auth()->user()?->user_name ?? 'ai đó';
+
+        // Lưu nội dung checklist trước khi xóa để ghi log
+        $checklistTitle = $checklist->name;
+
+        // Xóa checklist
         $checklist->delete();
 
+        // Ghi log lịch sử hoạt động
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($card)
+            ->event('deleted_checklist_item')
+            ->withProperties([
+                'card_title' => $card->title,
+                'title'      => $checklistTitle,
+            ])
+            ->log("{$user_name} đã xóa mục checklist: {$checklistTitle}");
+
         return response()->json([
-            'status' => true,
-            'message' => 'Xóa thành công'
+            'message' => 'Mục checklist đã được xóa thành công!',
         ]);
     }
+
 }

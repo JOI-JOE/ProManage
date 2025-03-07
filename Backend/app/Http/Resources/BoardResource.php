@@ -19,7 +19,7 @@ class BoardResource extends JsonResource
             'name' => $this->name,                 // Tên của board
             'thumbnail' => $this->thumbnail,       // Ảnh thu nhỏ của board
             // 'description' => $this->description,   // Mô tả của board
-            // 'is_marked' => $this->is_marked,       // Trạng thái đánh dấu (boolean)
+            'is_marked' => $this->is_marked,       // Trạng thái đánh dấu (boolean)
             // 'archive' => $this->archive,           // Trạng thái lưu trữ (boolean)
             'closed' => $this->closed,           // Trạng thái lưu trữ (boolean)
             // 'created_by' => $this->created_by,           // Lưu người tạo bảng 

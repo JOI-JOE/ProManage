@@ -72,6 +72,10 @@ class Workspace extends Model
     {
         return $this->hasMany(Board::class);
     }
+    public function markedBoards()
+    {
+        return $this->hasMany(Board::class)->where('is_marked', 1);
+    }
 
     public function members()
     {

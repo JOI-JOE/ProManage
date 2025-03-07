@@ -1,8 +1,8 @@
 export const generatePlaceholderCard = (column) => {
   return {
-    _id: `${column._id}-placeholder-card`,
+    id: `${column.id}-placeholder-card`,
     boardId: column.boardId,
-    columnId: column._id,
+    columnId: column.id,
     FE_PlaceholderCard: true,
   };
 };

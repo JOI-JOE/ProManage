@@ -20,6 +20,7 @@ class WorkspaceResource extends JsonResource
             'name'             => $this->name,
             'display_name'     => $this->display_name,
             'boards'           => BoardResource::collection($this->boards),
+            'markedBoards'     => BoardResource::collection($this->markedBoards),
             'desc'             => Str::limit($this->desc, 50),
             'permission_level' => $this->permission_level,
             'team_type'        => $this->team_type,

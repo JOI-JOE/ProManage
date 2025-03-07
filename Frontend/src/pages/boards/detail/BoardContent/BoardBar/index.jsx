@@ -79,7 +79,7 @@ const BoardBar = () => {
   // };
 
   const { boardId } = useParams(); // Lấy boardId từ URL
-  console.log("🔍 boardId từ useParams:", boardId);
+  // console.log("🔍 boardId từ useParams:", boardId);
 
   
   const { data, isLoading, error } = useQuery({
@@ -88,7 +88,7 @@ const BoardBar = () => {
   });
 
   const board = data?.data;
-  console.log("🔍 Dữ liệu board từ API:", board);
+  // console.log("🔍 Dữ liệu board từ API:", board);
 
   const updateBoardName = useUpdateBoardName();
 

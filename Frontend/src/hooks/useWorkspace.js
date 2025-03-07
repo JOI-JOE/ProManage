@@ -10,6 +10,7 @@ import {
   updateWorkspaceInfo,
   getWorkspaceByName,
   getWorkspaceById,
+  getBoardMarkedByWorkspace,
 } from "../api/models/workspacesApi";
 
 /**
@@ -36,6 +37,18 @@ export const useGetWorkspaceByName = (workspaceName) => {
     retry: 2, // Thử lại tối đa 2 lần nếu request thất bại
   });
 };
+
+export const useGetBoardMarkedByWorkspace = (workspaceName) => {
+  return useQuery({
+    queryKey: ["BoardMarked", workspaceName], // Key để cache dữ liệu
+    queryFn: () => getBoardMarkedByWorkspace(workspaceName),
+    enabled: !!workspaceName, // Chỉ gọi API nếu name tồn tại
+    staleTime: 1000 * 60 * 5, // Dữ liệu cache sẽ được giữ 5 phút trước khi bị xem là cũ
+    cacheTime: 1000 * 60 * 30, // Giữ dữ liệu cache trong 30 phút ngay cả khi không sử dụng
+    retry: 2, // Thử lại tối đa 2 lần nếu request thất bại
+  });
+};
+
 
 export const useGetWorkspaceById = (workspaceId) => {
   return useQuery({
