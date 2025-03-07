@@ -131,6 +131,8 @@ const BoardBar = () => {
   if (isLoading) return <p>Loading board...</p>;
   if (error) return <p>Board not found</p>;
 
+  const boardVisibility = board?.visibility || "Private"; // Default to "Private"
+
   return (
     <Box
       sx={{
@@ -174,14 +176,17 @@ const BoardBar = () => {
           <Chip label={teamName} sx={style} onClick={handleTitleClick} />
         )}
         <StarButton isStarred={isStarred} onStarClick={handleStarClick} />
+
+        {/* Show the board's visibility in the chip */}
         <Chip
           icon={<LockOpenIcon />}
-          label="Khả năng xem"
+          label={`Khả năng xem: ${boardVisibility}`} // Display the visibility status
           variant="outlined"
           clickable
           sx={style}
           onClick={handleViewPermissionsDialogOpen}
         />
+
         <Chip
           icon={<BoltIcon />}
           label="Tự động hóa"

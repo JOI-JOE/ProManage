@@ -270,8 +270,9 @@ class BoardController extends Controller
         try {
             DB::beginTransaction();
             $board = Board::findOrFail($id);
-
+            
             // Kiểm tra nếu có trường 'visibility' trong yêu cầu
+
             if ($request->has('visibility')) {
                 // Cập nhật trường 'visibility'
                 $board->visibility = $request->input('visibility');

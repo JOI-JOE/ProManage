@@ -4,7 +4,8 @@ import { createBoard,
   getRecentBoards,
   logBoardAccess,
   showBoardByWorkspaceId,
-  updateBoardName
+  updateBoardName,
+  updateBoardVisibility
 } from "../api/models/boardsApi";
 
 /**
@@ -120,4 +121,19 @@ export const useUpdateBoardName = () => {
             console.error("Lỗi khi cập nhật tên bảng:", error);
         },
     });
+};
+
+export const useUpdateBoardVisibility = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ boardId, visibility }) => updateBoardVisibility(boardId, visibility),
+    onSuccess: (data, { boardId }) => {
+      // Optionally invalidate queries to ensure data is fresh
+      queryClient.invalidateQueries(["boards", boardId]); // Refresh board data
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật visibility của bảng:", error);
+    },
+  });
 };

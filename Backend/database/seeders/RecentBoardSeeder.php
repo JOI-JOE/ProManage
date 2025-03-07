@@ -5,10 +5,11 @@ namespace Database\Seeders;
 use App\Models\Board;
 use App\Models\recentBoard;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Faker\Factory as Faker;
-
+use Illuminate\Support\Facades\DB;
 
 class RecentBoardSeeder extends Seeder
 {
@@ -17,24 +18,24 @@ class RecentBoardSeeder extends Seeder
      */
     public function run(): void
     {
-        $faker = Faker::create();
+        // Lấy danh sách user IDs và board IDs có sẵn
+        $userIds = DB::table('users')->pluck('id')->toArray();
+        $boardIds = DB::table('boards')->pluck('id')->toArray();
 
-        // Lấy tất cả người dùng và bảng có sẵn
-        $users = User::all();
-        $boards = Board::all();
-
-        foreach ($users as $user) {
-            // Lặp qua từng người dùng và tạo các bản ghi gần đây giả cho họ
-            $randomBoards = $boards->random(rand(1, 5)); // Chọn ngẫu nhiên từ 1 đến 5 bảng
-
-            foreach ($randomBoards as $board) {
-                recentBoard::create([
-                    'user_id' => $user->id,
-                    'board_id' => $board->id,
-                    'last_accessed' => $faker->dateTimeThisYear() // Thời gian truy cập ngẫu nhiên trong năm nay
-                ]);
-            }
+        // Kiểm tra nếu chưa có users hoặc boards thì không seed
+        if (empty($userIds) || empty($boardIds)) {
+            return;
         }
 
+        // Tạo 50 records cho bảng recent_boards
+        for ($i = 0; $i < 50; $i++) {
+            DB::table('recent_boards')->insert([
+                'user_id' => $userIds[array_rand($userIds)], // Chọn user ngẫu nhiên
+                'board_id' => $boardIds[array_rand($boardIds)], // Chọn board ngẫu nhiên
+                'last_accessed' => Carbon::now()->subDays(random_int(1, 30)), // Lấy thời gian truy cập trong vòng 30 ngày
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }
