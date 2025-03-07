@@ -232,34 +232,7 @@ class WorkspaceInvitationsController extends Controller
         }
     }
 
-    public function getValidateMemberInWorkspace($memberId)
-    {
-        // Tìm thành viên trong bảng workspace_members
-        $member = WorkspaceMembers::where('user_id', $memberId);
-
-        if (!$member) {
-            // Nếu không tìm thấy thành viên
-            return response()->json([
-                'success' => false,
-                'message' => 'Thành viên không tồn tại.',
-            ], 404);
-        }
-
-        // Kiểm tra xem thành viên đã tham gia workspace hay chưa
-        if ($member->joined) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Thành viên đã tham gia workspace.',
-                'data' => $member,
-            ]);
-        } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Thành viên chưa tham gia workspace.',
-                'data' => $member,
-            ]);
-        }
-    }
+ 
 }
 
     // protected $emailController;

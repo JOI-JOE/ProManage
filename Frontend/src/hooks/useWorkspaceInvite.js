@@ -5,6 +5,7 @@ import {
   acceptInvitation,
   cancelInviteWorkspace,
   getValidateInvitation,
+  getValidateMemberInWorkspace,
 } from "../api/models/inviteWorkspaceApi";
 
 export const useAcceptInvitation = () => {
@@ -40,6 +41,21 @@ export const useGetInviteWorkspace = (workspaceId) => {
   });
 };
 
+export const useGetValidateMember = (workspaceId, memberId) => {
+  return useQuery({
+    queryKey: ["workspaces", "members", workspaceId, memberId],
+    queryFn: () => getValidateMemberInWorkspace(workspaceId, memberId),
+    enabled: !!memberId && !!workspaceId, // Check both memberId and workspaceId
+    onError: (error) => {
+      console.error(
+        "Lỗi khi lấy thông tin member trong không gian làm việc",
+        error
+      );
+    },
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 10,
+  });
+};
 export const useCreateInviteWorkspace = () => {
   const queryClient = useQueryClient();
 
@@ -82,7 +98,7 @@ export const useGetValidateInvitation = (workspaceId, inviteToken) => {
     onError: (error) => {
       console.error("Lỗi khi lấy dữ liệu của workspace");
     },
-    enabled: !!workspaceId && !!inviteToken, 
+    enabled: !!workspaceId && !!inviteToken,
     retry: false,
   });
 };

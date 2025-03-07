@@ -60,12 +60,14 @@ export const cancelInviteWorkspace = async (workspaceId) => {
   }
 };
 
-export const getValidateMemberInWorkspace = async ($memberId) => {
-  try{
+export const getValidateMemberInWorkspace = async (workspaceId, memberId) => {
+  try {
     const response = await authClient.get(
-      ``
-    )
+      `/workspaces/${workspaceId}/members/${memberId}` // Update API endpoint
+    );
+    return response.data; // Trả về dữ liệu từ API
   } catch (error) {
-    console.error("Lỗi khi tìm kiếm member:", error);
+    console.error("Lỗi khi lấy thông tin thành viên:", error);
+    throw error; // Re-throw the error to be handled by useQuery
   }
-}
+};

@@ -78,7 +78,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
         Route::get('/workspaces/{workspaceId}/addMembers', 'inviteMemberToWorkspace');
-        Route::get('/workspaces/members/{memberId}', 'getValidateMemberInWorkspace');
+        Route::get('/workspaces/{workspaceId}/members/{memberId}', 'getValidateMemberInWorkspace');
     });
 
     Route::controller(BoardController::class)->group(function () {
