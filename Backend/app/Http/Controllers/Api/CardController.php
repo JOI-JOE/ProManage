@@ -24,6 +24,7 @@ class CardController extends Controller
         try {
             $cards = Card::where('list_board_id', $listId)
                 ->where('is_archived', 0)
+                ->withCount('comments') 
                 ->get();
             return response()->json([
                 'status' => true,
@@ -93,36 +94,36 @@ class CardController extends Controller
         }
     }
     // cập nhật mô tả
-    public function updateDescription($cardId, Request $request,)
+    public function updateDescription($cardId, Request $request)
     {
-        $card = Card::find($cardId);
-        $oldDescription = $card->description;
-        $userName = auth()->user()?->user_name ?? 'ai đó';
+        $card = Card::findOrFail($cardId);
+
         $request->validate([
             'description' => 'nullable|string|max:1000'
         ]);
 
-        if ($oldDescription !== $request->description) {
+        $description = $request->input('description');
 
-            $card->update([
-                'description' => $request->description
-            ]);
-
-            activity()
-                ->causedBy(auth()->user())
-                ->performedOn($card)
-                ->event('updated_description')
-                ->withProperties([
-                    'old_description' => $oldDescription,
-                    'new_description' => $card->description,
-                ])
-                ->log("{$userName} đã cập nhật mô tả thẻ.");
-
-            return response()->json([
-                'message' => 'Mô tả đã được cập nhật thành công',
-                'card' => $card
-            ]);
+        // Kiểm tra nếu description là null, rỗng, hoặc chỉ chứa <p><br></p>
+        if (is_null($description) || $description === "" || trim(strip_tags($description)) === "") {
+            $card->update(['description' => null]);
+            $message = 'Mô tả đã được xóa thành công';
+        } else {
+            // Loại bỏ các thẻ <p><br></p> nếu chỉ chứa chúng
+            $cleanDescription = trim(strip_tags($description, '<p><br>'));
+            if ($cleanDescription === "<p><br></p>" || $cleanDescription === "") {
+                $card->update(['description' => null]);
+                $message = 'Mô tả đã được xóa thành công';
+            } else {
+                $card->update(['description' => $description]);
+                $message = 'Mô tả đã được cập nhật thành công';
+            }
         }
+
+        return response()->json([
+            'message' => $message,
+            'card' => $card
+        ]);
     }
 
     // thêm người dùng vào thẻ
@@ -312,6 +313,27 @@ class CardController extends Controller
 
         return response()->json([
             'notifications' => $notifications
+        ]);
+    }
+
+    public function show($id)
+    {
+        $card = Card::with(['list.board', 'checklists.items'])->findOrFail($id);
+        return response()->json([
+            'id' => $card->id,
+            'title' => $card->title,
+            'description' => $card->description ?? '',
+            'listName' => $card->list->name ?? '', // Lấy tên danh sách chứa card
+            'boardName' => $card->list->board->name ?? '', // Lấy tên board
+            'tasks' => $card->checklists->flatMap(function ($checklist) {
+                return $checklist->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'completed' => (bool) $item->completed,
+                    ];
+                });
+            })->toArray(), // Lấy danh sách công việc từ checklists
         ]);
     }
 }

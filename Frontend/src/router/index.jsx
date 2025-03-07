@@ -79,7 +79,7 @@ const router = createBrowserRouter([
             path: "b/:boardId/:name",
             element: <BoardContent />,
              children: [
-                { path: "c/:cardId/:name", element: <CardModal /> }, // CardModal chỉ là Dialog
+                { path: "c/:cardId/:title", element: <CardModal /> }, // CardModal chỉ là Dialog
             ],
           },
           {

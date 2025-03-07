@@ -113,4 +113,16 @@ class Card extends Model
     {
         return $this->belongsToMany(Label::class, 'card_label');
     }
+
+    public function comments()
+    {
+        return $this->hasMany(CommentCard::class);  // Mỗi card có nhiều bình luận
+    }
+
+    public function checklists()
+    {
+        return $this->hasMany(CheckList::class, 'card_id');
+    }
+
+
 }
