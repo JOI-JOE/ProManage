@@ -4,8 +4,8 @@ import {
   createInviteWorkspace,
   acceptInvitation,
   cancelInviteWorkspace,
+  getValidateInvitation,
 } from "../api/models/inviteWorkspaceApi";
-import { data } from "react-router-dom";
 
 export const useAcceptInvitation = () => {
   const queryClient = useQueryClient();
@@ -72,5 +72,17 @@ export const useCancelInvitationWorkspace = () => {
     onError: (error) => {
       console.error("Lỗi khi xóa lời mời vào workspace:", error);
     },
+  });
+};
+
+export const useGetValidateInvitation = (workspaceId, inviteToken) => {
+  return useQuery({
+    queryKey: ["workspaces", workspaceId, "invitationSecret", inviteToken], // Add inviteToken to the queryKey
+    queryFn: () => getValidateInvitation(workspaceId, inviteToken),
+    onError: (error) => {
+      console.error("Lỗi khi lấy dữ liệu của workspace");
+    },
+    enabled: !!workspaceId && !!inviteToken, 
+    retry: false,
   });
 };

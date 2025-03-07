@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Button,
@@ -7,23 +7,31 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-const GenerateLink = ({ onGenerateLink, onDeleteLink }) => {
+const GenerateLink = ({ onGenerateLink, onDeleteLink, secret, workspaceId }) => {
     const [linkCopied, setLinkCopied] = useState(false);
     const [showCopiedMessage, setShowCopiedMessage] = useState(false);
     const [isLinkActive, setIsLinkActive] = useState(false);
     const [generatedLink, setGeneratedLink] = useState('');
-    const [deletedLink, setDeletedLink] = useState('')
+
+    useEffect(() => {
+        if (secret) {
+            setGeneratedLink(`http://localhost:5173/invite/${workspaceId}/${secret}`);
+            setIsLinkActive(true);
+        } else {
+            setGeneratedLink('');
+            setIsLinkActive(false);
+        }
+    }, [secret, workspaceId]); // Chỉ re-run khi secret hoặc workspaceId thay đổi
 
     const handleGenerateLink = async () => {
         try {
             const link = await onGenerateLink();
-            setGeneratedLink(link);
+            setGeneratedLink(`http://localhost:5173/invite/${workspaceId}/${link}`);
             setIsLinkActive(true);
         } catch (error) {
             console.error('Lỗi khi tạo link:', error);
         }
     };
-
 
     const handleCopyLink = () => {
         if (generatedLink) {

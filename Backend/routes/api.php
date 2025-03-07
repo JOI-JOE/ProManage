@@ -49,9 +49,8 @@ Route::middleware(['web'])->group(function () {
     });
 });
 
-
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
-Route::get('/workspaces/{workspaceId}/validate-invite/{inviteToken}', [WorkspaceInvitationsController::class, 'validateInvitation']);
+Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getValidateInvitation']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
@@ -74,14 +73,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/workspaces/{workspaceId}/{inviteToken}', 'getInvitationSecret');
 
         Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
-
         Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
-
-        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
         Route::get('/workspaces/{workspaceId}/addMembers', 'inviteMemberToWorkspace');
+        Route::get('/workspaces/members/{memberId}', 'getValidateMemberInWorkspace');
     });
 
     Route::controller(BoardController::class)->group(function () {

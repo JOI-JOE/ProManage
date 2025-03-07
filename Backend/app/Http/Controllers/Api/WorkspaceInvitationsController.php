@@ -9,6 +9,7 @@ use App\Models\WorkspaceMembers;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 
 class WorkspaceInvitationsController extends Controller
@@ -26,7 +27,7 @@ class WorkspaceInvitationsController extends Controller
                 ], 404);
             }
 
-            $invitation = WorkspaceInvitations::where('id_workspace', $workspaceId)
+            $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
                 ->where('invite_token', $inviteToken)
                 ->first();
 
@@ -38,8 +39,8 @@ class WorkspaceInvitationsController extends Controller
             }
 
             // Kiểm tra user đã là thành viên chưa
-            $isMember = WorkspaceMembers::where('id_workspace', $workspaceId)
-                ->where('id_member', $user->id)
+            $isMember = WorkspaceMembers::where('workspace_id', $workspaceId)
+                ->where('user_id', $user->id)
                 ->exists();
 
             if ($isMember) {
@@ -51,8 +52,8 @@ class WorkspaceInvitationsController extends Controller
 
             // Nếu user chưa là thành viên, thêm họ vào workspace
             WorkspaceMembers::create([
-                'id_workspace' => $workspaceId,
-                'id_member' => $user->id,
+                'workspace_id' => $workspaceId,
+                'user_id' => $user->id,
                 'member_type' => 'normal', // Hoặc loại thành viên khác tùy thuộc vào logic của bạn
                 'is_unconfirmed' => false, // Đã xác nhận
                 'joined' => true, // Ngày tham gia
@@ -74,14 +75,6 @@ class WorkspaceInvitationsController extends Controller
     public function getInvitationSecret($workspaceId)
     {
         try {
-            // Kiểm tra xem workspaceId có hợp lệ không
-            if (!is_numeric(value: $workspaceId) || $workspaceId <= 0) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Invalid workspace ID.',
-                ], 400);
-            }
-
             // Kiểm tra xem workspace có tồn tại hay không
             $workspace = Workspace::find($workspaceId);
             if (!$workspace) {
@@ -92,11 +85,11 @@ class WorkspaceInvitationsController extends Controller
             }
 
             // Lấy invitationSecret dựa trên workspaceId
-            $invitation = WorkspaceInvitations::where('id_workspace', $workspaceId)->first();
+            $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)->first();
 
             if ($invitation) {
                 return response()->json([
-                    'invitationSecret' => $invitation->secret,
+                    'invitationSecret' => $invitation->invite_token,
                     'type' => 'normal'
                 ], 200);
             } else {
@@ -115,7 +108,6 @@ class WorkspaceInvitationsController extends Controller
             ], 500);
         }
     }
-
     public function createInvitationSecret($workspaceId, $acceptUnconfirmed = false)
     {
         try {
@@ -156,69 +148,119 @@ class WorkspaceInvitationsController extends Controller
             ], 500);
         }
     }
-
     // Function tắt (hủy) liên kết lời mời
     public function cancelInvitationSecret($workspaceId)
     {
         try {
-            // Tìm lời mời còn hiệu lực
-            $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
-                ->first();
+            $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)->firstOrFail();
 
-            if (!$invitation) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Không tìm thấy lời mời hợp lệ để hủy!',
-                ], 404);
-            }
+            $invitation->delete();
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Lời mời đã bị hủy!',
-            ], 200);
+            ], Response::HTTP_OK);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không tìm thấy lời mời hợp lệ để hủy!',
+            ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Lỗi khi hủy lời mời: ' . $e->getMessage(),
-            ], 500);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-    public function validateInvitation($workspaceId, $inviteToken)
+    public function getValidateInvitation($workspaceId, $inviteToken)
     {
+        // ĐIỀU KIỆN
+        // - kiểm tra token, workspaceID có tồn tại không
+        // nếu tồn tại
+        // - kiểm tra workspaceID đó ở chế độ private hay public
+        //  -> private thì người dùng sẽ không được vào
+        //  -> public thì cho vào
+
+        // - trường hợp public thì phải hiện tên ra
+        // - kiểm tra người dùng có trong workspace đó chưa
+        //  -> nếu chưa có thì cho vào 
+        //  -> còn nếu có rồi thì theo đường dẫn mà vào
         try {
-            if (!Workspace::where('id', $workspaceId)->exists()) {
-                return response()->json([
-                    'isValid' => false,
-                    'message' => 'Workspace không tồn tại!'
-                ], 404);
-            }
-
-            // Kiểm tra lời mời có hợp lệ với token hay không
-            $invitation = WorkspaceInvitations::where('id_workspace', $workspaceId)
+            // Kiểm tra xem workspace và invitation có tồn tại không
+            $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
                 ->where('invite_token', $inviteToken)
-                ->first();
+                ->whereHas('workspace', function ($query) use ($workspaceId) {
+                    $query->where('id', $workspaceId)
+                        ->where('permission_level', 'public');
+                })
+                ->with('workspace') // Eager load mối quan hệ workspace
+                ->firstOrFail();
 
-            if (!$invitation) {
-                return response()->json([
-                    'isValid' => false,
-                    'message' => 'Lời mời không hợp lệ hoặc đã hết hạn!'
-                ], 400);
-            }
+            // Truy cập dữ liệu của workspace
+            $workspace = $invitation->workspace;
+            $inventer = $workspace->user;
+            // $memberInviter = [
+
+            // ]
+
+            $workspaceData = [
+                'displayName' => $workspace->display_name,
+                'id'          => $workspace->id,
+                'name'        => $workspace->name,
+            ];
+
+            $memberInventer = [
+                'fullName' => $inventer->full_name,
+                'id'       => $inventer->id
+            ];
 
             return response()->json([
-                'displayName' => $invitation->workspace->display_name,
-                'name' => $invitation->workspace->name,
-                'id' => $invitation->workspace->id,
-                'type' => 'normal'
+                'workspace'     => $workspaceData,
+                'memberInviter' => $memberInventer,
+                'type'      => "normal"
             ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'isValid' => false,
+                'message' => 'Workspace hoặc lời mời không tồn tại!',
+            ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'isValid' => false,
-                'error' => $e->getMessage()
+                'message' => 'Đã xảy ra lỗi khi xác thực lời mời: ' . $e->getMessage(),
             ], 500);
         }
     }
+
+    public function getValidateMemberInWorkspace($memberId)
+    {
+        // Tìm thành viên trong bảng workspace_members
+        $member = WorkspaceMembers::where('user_id', $memberId);
+
+        if (!$member) {
+            // Nếu không tìm thấy thành viên
+            return response()->json([
+                'success' => false,
+                'message' => 'Thành viên không tồn tại.',
+            ], 404);
+        }
+
+        // Kiểm tra xem thành viên đã tham gia workspace hay chưa
+        if ($member->joined) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Thành viên đã tham gia workspace.',
+                'data' => $member,
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Thành viên chưa tham gia workspace.',
+                'data' => $member,
+            ]);
+        }
+    }
+}
 
     // protected $emailController;
 
@@ -567,4 +609,3 @@ class WorkspaceInvitationsController extends Controller
     //         'message' => 'Invitation not found'
     //     ], 404);
     // }
-}

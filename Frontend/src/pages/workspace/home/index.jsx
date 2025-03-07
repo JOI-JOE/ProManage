@@ -14,7 +14,6 @@ import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
 
 import MyBoard from "../../../components/MyBoard";
 import CreateBoard from "../../../components/CreateBoard";
-import WorkspaceInfo from "../../../components/WorkspaceInfo";
 
 const HomeWorkspace = ({ workspace, markedBoards }) => {
   const [isFormVisible, setFormVisible] = useState(false); // Quản lý hiển thị form

@@ -29,8 +29,23 @@ import GenerateLink from "../../../../components/GenerateLink";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
 import { useCancelInvitationWorkspace, useCreateInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 import WorkspaceInfo from "../../../../components/WorkspaceInfo";
+import { useGetInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 
 const Member = () => {
+  const { workspaceName } = useParams();
+  // Fetch thông tin workspace dựa trên workspaceName
+  const { data: workspace, isLoading: isLoadingWorkspace, isError: isWorkspaceError, error: workspaceError } = useGetWorkspaceByName(workspaceName, {
+    enabled: !!workspaceName, // Chỉ fetch khi workspaceName tồn tại
+  });
+
+  // Sử dụng useGetInviteWorkspace trong component
+  const { data: inviteData, isLoading: isInviteLoading, refetch } = useGetInviteWorkspace(workspace?.id, {
+    enabled: !!workspace?.id,
+  });
+
+  const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
+  const { mutate: cancelInviteLink, isLoading: isCancelingInvite } = useCancelInvitationWorkspace();
+
   const [isFormVisible, setFormVisible] = useState(false);
   const [isInviteOpen, setInviteOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -42,54 +57,35 @@ const Member = () => {
     setLinkCopied(false);
     setIsLinkActive(false);
   };
-
-
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
   };
-
   const handleCloseInvite = () => {
     setInviteOpen(false);
   };
-
   const handleDisableLink = () => {
     setIsLinkActive(false);
     setLinkCopied(false);
   };
 
-  const { workspaceName } = useParams();
-  const { data: workspace, isLoading: isLoadingWorkspace } = useGetWorkspaceByName(workspaceName, {
-    enabled: !!workspaceName,
-  });
-
   const members = workspace?.members || [];
 
-  const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
-  const { mutate: cancelInviteLink, isLoading: isCancelingInvite } = useCancelInvitationWorkspace();
+  console.log(inviteData?.invitationSecret)
 
   const handleGenerateLink = async () => {
-    if (!workspace) {
-      console.error("Workspace data is not available yet");
-      throw new Error("Vui lòng đợi dữ liệu workspace được tải xong");
+    if (!workspace?.id) {
+      throw new Error('Không tìm thấy ID của workspace');
     }
-
-    if (!workspace.id) {
-      console.error("Workspace ID is undefined");
-      throw new Error("Không tìm thấy ID của workspace");
-    }
-
     return new Promise((resolve, reject) => {
       createInviteLink(
         { workspaceId: workspace.id },
         {
           onSuccess: (data) => {
-            // Tạo link mời với format: http://localhost:5173/invite/:workspaceId/:inviteToken
-            const inviteLink = `http://localhost:5173/invite/${workspace.id}/${data.secret}`;
-            resolve(inviteLink);
+            resolve(data.secret); // Trả về liên kết mới
           },
           onError: (error) => {
-            console.error("Lỗi khi tạo link mời:", error);
-            reject(error);
+            console.error('Lỗi khi tạo link mời:', error);
+            reject(error); // Trả về lỗi
           },
         }
       );
@@ -102,8 +98,6 @@ const Member = () => {
     }
     return cancelInviteLink({ workspaceId: workspace.id });
   };
-
-
 
 
   return (
@@ -354,7 +348,8 @@ const Member = () => {
             placeholder="Địa chỉ email hoặc tên"
             sx={{ marginBottom: "10px" }}
           />
-          <GenerateLink onGenerateLink={handleGenerateLink} onDeleteLink={handleDeleteLink} />
+          <GenerateLink onGenerateLink={handleGenerateLink} onDeleteLink={handleDeleteLink} secret={inviteData?.invitationSecret} workspaceId={workspace.id} />
+          {/* <GenerateLink onGenerateLink={handleGenerateLink} onDeleteLink={handleDeleteLink} id={workspace.id} /> */}
         </DialogContent>
       </Dialog>
     </Box>
