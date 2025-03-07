@@ -78,22 +78,18 @@ const router = createBrowserRouter([
           {
             path: "b/:boardId/:name",
             element: <BoardContent />,
-             children: [
-                { path: "c/:cardId/:name", element: <CardModal /> }, // CardModal chỉ là Dialog
+            children: [
+              { path: "c/:cardId/:name", element: <CardModal /> }, // CardModal chỉ là Dialog
             ],
           },
           {
             path: "w/:workspaceName/members",
             element: <Member />,
           },
-          // {
-          //   path: "c/:cardId/:name",
-          //   element: <CardModal />,
-          // }
-        ]
-      }
-    ]
-  }
+        ],
+      },
+    ],
+  },
 ]);
 
 export default router;

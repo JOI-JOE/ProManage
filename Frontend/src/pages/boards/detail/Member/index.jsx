@@ -57,13 +57,15 @@ const Member = () => {
   };
 
   const { workspaceName } = useParams();
-  const { data: workspace, isLoading: isLoadingWorkspace } = useGetWorkspaceByName(workspaceName, {
-    enabled: !!workspaceName,
-  });
+  const { data: workspace, isLoading: isLoadingWorkspace } =
+    useGetWorkspaceByName(workspaceName, {
+      enabled: !!workspaceName,
+    });
 
   const members = workspace?.members || [];
 
-  const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
+  const { mutate: createInviteLink, isLoading: isCreatingInvite } =
+    useCreateInviteWorkspace();
 
   const handleGenerateLink = async () => {
     if (!workspace) {
@@ -97,7 +99,14 @@ const Member = () => {
   // Nếu đang load workspace, có thể hiển thị loading state
   if (isLoadingWorkspace) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         <Typography>Đang tải dữ liệu workspace...</Typography>
       </Box>
     );
@@ -106,7 +115,14 @@ const Member = () => {
   // Nếu không tìm thấy workspace
   if (!workspace) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         <Typography color="error">Không tìm thấy workspace</Typography>
       </Box>
     );
@@ -117,8 +133,8 @@ const Member = () => {
       sx={{
         width: "100%",
         maxWidth: "1200px",
-        padding: "20px",
-        margin: "30px auto",
+        padding: "32px 20px 20px 20px",
+        // margin: "30px auto",
       }}
     >
       {/* Header chứa Tiêu đề và Nút Mời Thành Viên */}
@@ -206,7 +222,6 @@ const Member = () => {
         spacing={2}
         sx={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}
       >
-
         {/* Cột trái:  */}
         <Grid item xs={12} sm={3} md={2}>
           <Box sx={{ padding: "0px", width: "100%" }}>
@@ -327,7 +342,8 @@ const Member = () => {
                   key={`${member.id}-${index}`} // Kết hợp member.id và index để tạo key duy nhất
                   id="workspace-member-list"
                 >
-                  <MemberItem member={member} /> {/* Truyền dữ liệu member vào MemberItem */}
+                  <MemberItem member={member} />{" "}
+                  {/* Truyền dữ liệu member vào MemberItem */}
                 </Box>
               ))}
             </Box>

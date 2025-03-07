@@ -19,16 +19,16 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import MemberList from "./childComponent_CardDetail/member";
-import TaskModal from "./childComponent_CardDetail/Task";
-import LabelList from "./childComponent_CardDetail/Label";
+import MemberList from "./childComponent_CardDetail/member.jsx";
+import TaskModal from "./childComponent_CardDetail/Task.jsx";
+import LabelList from "./childComponent_CardDetail/Label.jsx";
 import AttachmentModal from "./childComponent_CardDetail/Attached.jsx";
-import MoveCardModal from "./childComponent_CardDetail/Move";
-import CopyCardModal from "./childComponent_CardDetail/Copy";
-import ShareModal from "./childComponent_CardDetail/Share";
+import MoveCardModal from "./childComponent_CardDetail/Move.jsx";
+import CopyCardModal from "./childComponent_CardDetail/Copy.jsx";
+import ShareModal from "./childComponent_CardDetail/Share.jsx";
 
 const CardModal = (card, closeDetail) => {
-  const {  cardId, name } = useParams();
+  const { cardId, name } = useParams();
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(true);
@@ -140,16 +140,14 @@ const CardModal = (card, closeDetail) => {
   };
 
   return (
-    <Dialog  
-    
-    open={true}
-    onClose={closeDetail}
-    fullWidth
-    maxWidth="md"
-    BackdropProps={{
-        style: { backgroundColor: "transparent" } // Làm nền trong suốt
-    }}
-
+    <Dialog
+      open={true}
+      onClose={closeDetail}
+      fullWidth
+      maxWidth="md"
+      BackdropProps={{
+        style: { backgroundColor: "transparent" }, // Làm nền trong suốt
+      }}
     >
       <DialogTitle>
         {isEditingName ? (
