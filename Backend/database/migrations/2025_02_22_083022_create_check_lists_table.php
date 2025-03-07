@@ -13,9 +13,8 @@ return new class extends Migration
     {
         Schema::create('checklists', function (Blueprint $table) {
             $table->id();
-            $table->uuid('card_id');
             $table->string('name'); // Tên checklist
-            $table->foreign('card_id')->references('id')->on('cards')->onDelete('cascade');
+            $table->foreignId('card_id')->constrained()->onDelete('cascade'); // Liên kết với thẻ
             $table->timestamps();
         });
     }

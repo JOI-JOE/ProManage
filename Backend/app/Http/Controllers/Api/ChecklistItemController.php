@@ -91,33 +91,16 @@ class ChecklistItemController extends Controller
         ]);
 
         $item = ChecklistItem::findOrFail($id);
-        $oldStatus = $item->is_completed; // Lưu trạng thái trước khi cập nhật
-        $newStatus = $validated['is_completed'];
         $item->update([
             'is_completed' => $validated['is_completed'],
         ]);
-        $user_name = auth()->user()?->user_name ?? 'ai đó';
-        $statusText = $newStatus ? 'hoàn tất' : 'chưa hoàn tất';
-        if ($oldStatus != $newStatus) {
-            activity()
-                ->causedBy(auth()->user())
-                ->performedOn($item->checklist)
-                ->event('updated_checklist_status')
-                ->withProperties([
-                    'checklist_id' => $item->checklist_id,
-                    'item_title' => $item->name,
-                    'status' => $statusText,
-                ])
-                ->log("{$user_name} đã đánh dấu '{$item->name}' là {$statusText}");
-        }
 
-
-        $completionRate = $this->calculateCompletionRate($item->checklist_id) . '%';
+        $completionRate = $this->calculateCompletionRate($item->checklist_id).'%';
 
         return response()->json([
             'status' => true,
             'message' => 'Cập nhật trạng thái thành công',
-            'data' => $item,
+            'data'=>$item,
             'completion_rate' => $completionRate // tính phần trăm
         ]);
     }
@@ -127,7 +110,7 @@ class ChecklistItemController extends Controller
      */
     public function destroy(string $id)
     {
-
+        
 
         //
     }

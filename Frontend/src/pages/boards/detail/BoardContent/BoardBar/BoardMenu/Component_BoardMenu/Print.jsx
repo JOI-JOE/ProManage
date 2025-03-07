@@ -23,19 +23,19 @@ const Print = ({ open, onClose, anchorEl }) => {
   const [showQR, setShowQR] = useState(false);
   const [qrAnchorEl, setQrAnchorEl] = useState(null);
 
-  // ✅ Hiển thị popover mã QR
+  //  Hiển thị popover mã QR
   const handleOpenQR = (event) => {
     setQrAnchorEl(event.currentTarget);
     setShowQR(true);
   };
 
-  // ✅ Đóng popover mã QR
+  //  Đóng popover mã QR
   const handleCloseQR = () => {
     setShowQR(false);
     setQrAnchorEl(null);
   };
 
-  // ✅ Xuất JSON và tải về máy
+  //  Xuất JSON và tải về máy
   const handleExportJSON = () => {
     const jsonData = { message: "Dữ liệu giả lập của Trello", link };
     const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
@@ -54,12 +54,12 @@ const Print = ({ open, onClose, anchorEl }) => {
     setTimeout(() => setShowSnackbar(false), 3000);
   };
 
-  // ✅ Kích hoạt hộp thoại in
+  //  Kích hoạt hộp thoại in
   const handlePrint = () => {
     window.print();
   };
 
-  // ✅ Tải xuống ảnh QR
+  //  Tải xuống ảnh QR
   const handleDownloadQR = () => {
     fetch(
       `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${link}`
@@ -78,7 +78,7 @@ const Print = ({ open, onClose, anchorEl }) => {
 
   return (
     <>
-      {/* ✅ Popover chính */}
+      {/* Popover chính */}
       <Popover
         open={open}
         anchorEl={anchorEl}
@@ -87,7 +87,6 @@ const Print = ({ open, onClose, anchorEl }) => {
         transformOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Paper sx={{ padding: 2, width: 300, position: "relative" }}>
-          {/* ✅ Nút đóng */}
           <IconButton
             onClick={onClose}
             sx={{ position: "absolute", top: 8, right: 8 }}
@@ -95,12 +94,10 @@ const Print = ({ open, onClose, anchorEl }) => {
             <CloseIcon />
           </IconButton>
 
-          {/* ✅ Tiêu đề */}
           <Typography variant="h6" sx={{ textAlign: "center", mb: 2 }}>
             In, xuất và chia sẻ
           </Typography>
 
-          {/* ✅ Liên kết */}
           <Typography variant="body2" sx={{ mb: 1 }}>
             Liên kết đến bảng thông tin này
           </Typography>
@@ -113,7 +110,6 @@ const Print = ({ open, onClose, anchorEl }) => {
             sx={{ mb: 2 }}
           />
 
-          {/* ✅ Mô tả quyền xem */}
           <Typography
             variant="body2"
             color="gray"
@@ -129,7 +125,6 @@ const Print = ({ open, onClose, anchorEl }) => {
             này.
           </Typography>
 
-          {/* ✅ Danh sách tùy chọn */}
           <List>
             <ListItem onClick={handlePrint} sx={{ cursor: "pointer" }}>
               <PrintIcon sx={{ mr: 1 }} />
@@ -149,7 +144,7 @@ const Print = ({ open, onClose, anchorEl }) => {
         </Paper>
       </Popover>
 
-      {/* ✅ Popover hiển thị mã QR */}
+      {/*  Popover hiển thị mã QR */}
       <Popover
         open={showQR}
         anchorEl={qrAnchorEl}
@@ -160,12 +155,11 @@ const Print = ({ open, onClose, anchorEl }) => {
         <Paper
           sx={{
             padding: 2,
-            width: 300,
+            width: 250,
             textAlign: "center",
             position: "relative",
           }}
         >
-          {/* ✅ Nút đóng (X) ở góc trên cùng bên phải */}
           <IconButton
             onClick={handleCloseQR}
             sx={{ position: "absolute", top: 8, right: 8 }}
@@ -189,7 +183,6 @@ const Print = ({ open, onClose, anchorEl }) => {
             }}
           />
 
-          {/* ✅ Nút tải xuống */}
           <Button
             variant="contained"
             color="primary"
@@ -201,7 +194,7 @@ const Print = ({ open, onClose, anchorEl }) => {
         </Paper>
       </Popover>
 
-      {/* ✅ Thông báo xuất JSON */}
+      {/* Thông báo xuất JSON */}
       <Snackbar
         open={showSnackbar}
         message="Đã tải xuống file JSON"
