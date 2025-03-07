@@ -7,7 +7,8 @@ import { createBoard,
   logBoardAccess,
   showBoardByWorkspaceId,
   toggleBoardMarked,
-  updateBoardName
+  updateBoardName,
+  updateBoardVisibility
 } from "../api/models/boardsApi";
 
 /**
@@ -186,6 +187,21 @@ export const useImageUnsplash = () => {
     queryFn: getUnsplashImages, // Gọi API lấy bảng gần đây.
     staleTime: 1000 * 60 * 5, // Dữ liệu được coi là "stale" sau 5 phút.
     cacheTime: 1000 * 60 * 30, // Dữ liệu được giữ trong cache tối đa 30 phút.
+  });
+};
+
+export const useUpdateBoardVisibility = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ boardId, visibility }) => updateBoardVisibility(boardId, visibility),
+    onSuccess: (data, { boardId }) => {
+      // Optionally invalidate queries to ensure data is fresh
+      queryClient.invalidateQueries(["boards", boardId]); // Refresh board data
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật visibility của bảng:", error);
+    },
   });
 };
 

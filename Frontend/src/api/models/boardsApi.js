@@ -118,6 +118,20 @@ export const getUnsplashImages = async () => {
   }
 };
 
+export const updateBoardVisibility = async (boardId, visibility) => {
+  if (!boardId) {
+    throw new Error("Lỗi: boardId không hợp lệ!");
+  }
+
+  try {
+    const response = await authClient.patch(`/boards/${boardId}/visibility`, { visibility });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật visibility của bảng:", error);
+    throw error;
+  }
+};
+
 
 
 
