@@ -8,31 +8,25 @@ use Illuminate\Database\Eloquent\Model;
 class WorkspaceMembers extends Model
 {
     use HasFactory;
-    public $incrementing = false; // Không sử dụng auto-increment
-    protected $keyType = 'string'; // UUID là kiểu string
-    protected $primaryKey = ['workspace_id', 'id_member']; // Đặt khóa chính kép
-    // Static properties for member types
-    public $timestamps = false;
-    public static $ADMIN = 'admin';
-    public static $NORMAL = 'normal';
+
     protected $fillable = [
-        'workspace_id',
-        'user_id',
+        'id_workspace',
+        'id_member',
         'member_type',
         'is_unconfirmed',
         'joined',
         'is_deactivated',
-        // 'id_member_referrer',
+        'id_member_referrer',
         'last_active',
     ];
 
     public function workspace()
     {
-        return $this->belongsTo(Workspace::class, 'workspace_id'); // 'workspace_id' is the foreign key
+        return $this->belongsTo(Workspace::class, 'id_workspace');
     }
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id'); // 'id_member' is the foreign key
+        return $this->belongsTo(User::class, 'id_member'); // 'id_member' is the foreign key
     }
 }

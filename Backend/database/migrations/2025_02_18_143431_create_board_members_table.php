@@ -12,35 +12,44 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('board_members', function (Blueprint $table) {
-          // Khóa chính là cặp (board_id, user_id)
-    $table->uuid('board_id');
-    $table->uuid('user_id');
-    $table->primary(['board_id', 'user_id']); // Thiết lập primary key
+            $table->id();
 
-    // Khóa ngoại
-    $table->foreign('board_id')->references('id')->on('boards')->onDelete('cascade');
-    $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            // Khóa ngoại đến bảng boards
+            $table->foreignId('board_id')
+                ->constrained('boards')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
 
-    // Loại thành viên: admin, member, viewer
-    $table->enum('role', ['admin', 'member', 'viewer'])->default('member');
+            // Khóa ngoại đến bảng users (thành viên)
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
 
-    // Trạng thái xác nhận (confirmed/unconfirmed)
-    $table->boolean('is_unconfirmed')->default(false);
+            // Loại thành viên: admin, member, viewer
+            $table->enum('role', ['admin', 'member', 'viewer'])
+                ->default('member'); // Mặc định là 'member'
 
-    // Trạng thái tham gia (joined/not joined)
-    $table->boolean('joined')->default(false);
+            // Trạng thái xác nhận (confirmed/unconfirmed)
+            $table->boolean('is_unconfirmed')->default(false); // Mặc định là false (đã xác nhận)
 
-    // Trạng thái vô hiệu hóa (deactivated)
-    $table->boolean('is_deactivated')->default(false);
+            // Trạng thái tham gia (joined/not joined)
+            $table->boolean('joined')->default(false); // Mặc định là false (chưa tham gia)
 
-    // Người giới thiệu (có thể null)
-    $table->uuid('referrer_id')->nullable();
-    $table->foreign('referrer_id')->references('id')->on('users')->onDelete('set null');
+            // Trạng thái vô hiệu hóa (deactivated)
+            $table->boolean('is_deactivated')->default(false); // Mặc định là false (không bị vô hiệu hóa)
 
-    // Thời gian hoạt động gần nhất
-    $table->timestamp('last_active')->nullable();
+            // Khóa ngoại đến người giới thiệu (nếu có)
+            $table->foreignId('referrer_id')
+                ->nullable()
+                ->constrained('users')
+                ->onUpdate('cascade')
+                ->onDelete('set null');
 
-    $table->timestamps();
+            // Thời gian hoạt động gần nhất
+            $table->timestamp('last_active')->nullable();
+
+            $table->timestamps();
         });
     }
 

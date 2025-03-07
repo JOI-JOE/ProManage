@@ -1,24 +1,28 @@
 import React from "react";
 import HomeWorkspace from "./home";
 import { useParams } from "react-router-dom";
-import { useGetWorkspaceByName, useGetBoardMarkedByWorkspace } from "../../hooks/useWorkspace";
+import { useGetWorkspaceByName } from "../../hooks/useWorkspace";
 
 const Workspaces = () => {
     const { workspaceName } = useParams();
 
-    // Lấy thông tin workspace
     const {
         data: workspace,
-        isLoading: isLoadingWorkspace,
-        isError: isErrorWorkspace,
-        error: errorWorkspace,
+        isLoading,
+        isError,
+        error,
     } = useGetWorkspaceByName(workspaceName);
 
-    console.log("workspace", workspace);
-  
-    // Xử lý lỗi
-    if (isErrorWorkspace) {
-        return <div>Lỗi: {errorWorkspace?.message || errorBoards?.message}</div>;
+    console.log(workspace);
+
+
+    if (isLoading) {
+        return <div>Đang tải thông tin workspace...</div>;
+    }
+
+    // Hiển thị lỗi nếu có lỗi xảy ra
+    if (isError) {
+        return <div>Lỗi: {error.message}</div>;
     }
 
     // Kiểm tra nếu không tìm thấy workspace
@@ -26,10 +30,10 @@ const Workspaces = () => {
         return <div>Không tìm thấy workspace.</div>;
     }
 
-    // Render HomeWorkspace với dữ liệu workspace và danh sách bảng được đánh dấu
+    // Render component HomeWorkspace với dữ liệu workspace
     return (
         <>
-            <HomeWorkspace workspace={workspace} markedBoards={workspace.markedBoards} />
+            <HomeWorkspace workspace={workspace} />
         </>
     );
 };

@@ -15,6 +15,7 @@ import {
   Box,
   Avatar,
   TextField,
+  IconButton,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
@@ -27,7 +28,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
+import DateModal from "./childComponent_CardDetail/Date";
 import ShareModal from "./childComponent_CardDetail/Share";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // Import icon
+import ListItemIcon from "@mui/material/ListItemIcon";
+import LinearProgress from "@mui/material/LinearProgress";
+import Checkbox from "@mui/material/Checkbox";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import { useCardById, useUpdateCardTitle } from "../../../../../../../../../hooks/useCard";
 import { useCreateComment, useCommentsByCard, useDeleteComment, useUpdateComment } from "../../../../../../../../../hooks/useComment";
 import { useUser } from "../../../../../../../../../hooks/useUser";
@@ -36,6 +45,7 @@ import { useUser } from "../../../../../../../../../hooks/useUser";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
+
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(true);
@@ -51,6 +61,7 @@ const CardModal = () => {
   const [isMoveCardModalOpen, setIsMoveCardModalOpen] = useState(false); // State để mở/đóng modal di chuyển
   const [isCopyCardModalOpen, setIsCopyCardModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
   const [editingCommentIndex, setEditingCommentIndex] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -59,6 +70,12 @@ const CardModal = () => {
   const [cardName, setCardName] = useState(title);
   const [previousCardName, setPreviousCardName] = useState(title);
   const queryClient = useQueryClient();
+
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [setSelectedDate] = useState(null);
+
+  const [items, setItems] = useState([]);
+  const [newItem, setNewItem] = useState(""); // State cho danh sách mục riêng biệt
 
   const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
   // const loggedInUser = {
@@ -166,6 +183,7 @@ const CardModal = () => {
     });
   };
 
+
   if (isLoadingUser) return <p>Loading...</p>;
   if (errorUser) return <p>Lỗi khi lấy dữ liệu user!</p>;
 
@@ -173,9 +191,20 @@ const CardModal = () => {
     setTasks([...tasks, { id: tasks.length + 1, name: taskName }]);
   };
 
+  /// THÊM CÔNG VIỆC
+
+  useEffect(() => {
+    const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    setTasks(savedTasks);
+    const savedItems = JSON.parse(localStorage.getItem("items")) || [];
+    setItems(savedItems);
+  }, []);
+
+
   const handleSelectLabel = (newSelectedLabels) => {
     setSelectedLabels(newSelectedLabels);
   };
+
 
   const handleEditComment = (commentId, currentText) => {
     setEditingCommentIndex(commentId);
@@ -230,18 +259,81 @@ const CardModal = () => {
     setIsEditingName(true);
   };
 
-  const handleNameChange = (event) => {
-    setCardName(event.target.value);
+  // Thêm mục mới
+  const addItem = (taskId, itemName) => {
+    if (itemName.trim() === "") return;
+    const updatedItems = [...items, { id: Date.now(), name: itemName, taskId }];
+    setItems(updatedItems);
+    localStorage.setItem("items", JSON.stringify(updatedItems));
   };
+
+  // Toggle trạng thái hoàn thành
+  const toggleItemCompletion = (id) => {
+    const updatedItems = items.map((item) =>
+      item.id === id ? { ...item, completed: !item.completed } : item
+    );
+    setItems(updatedItems);
+    localStorage.setItem("items", JSON.stringify(updatedItems)); // Lưu vào localStorage
+  };
+
+  //Xóa công việc
+  const handleDeleteTask = (taskId) => {
+    const updatedTasks = tasks.filter((task) => task.id !== taskId);
+    setTasks(updatedTasks);
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    // Xóa tất cả items liên quan đến task
+    const updatedItems = items.filter((item) => item.taskId !== taskId);
+    setItems(updatedItems);
+    localStorage.setItem("items", JSON.stringify(updatedItems));
+  };
+
+  //Thêm công việc
+  const handleAddTask = (taskName) => {
+    const newTask = { id: Date.now(), name: taskName };
+    const updatedTasks = [...tasks, newTask];
+    setTasks(updatedTasks);
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    // Cập nhật lại danh sách items, chỉ giữ những items có taskId hợp lệ
+    const validTaskIds = updatedTasks.map((task) => task.id);
+    const filteredItems = items.filter((item) =>
+      validTaskIds.includes(item.taskId)
+    );
+    setItems(filteredItems);
+    localStorage.setItem("items", JSON.stringify(filteredItems));
+  };
+
+  //Sửa tên công việc
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editedTaskName, setEditedTaskName] = useState("");
+
+  const handleEditTask = (id, name) => {
+    setEditingTaskId(id);
+    setEditedTaskName(name);
+  };
+  //Lưu tên công việc
+  const handleSaveTask = (id) => {
+    const updatedTasks = tasks.map((task) =>
+      task.id === id ? { ...task, name: editedTaskName } : task
+    );
+    setTasks(updatedTasks);
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    setEditingTaskId(null);
+  };
+
 
   const handleSave = () => {
     if (!cardName.trim()) {
       setCardName(previousCardName);
     } else if (cardName !== previousCardName) {
       updateCardTitle({ cardId: cardDetail.id, title: cardName }); // Gửi API
+
+  const handleKeyPressTask = (event, id) => {
+    if (event.key === "Enter") {
+      handleSaveTask(id);
+
     }
-    setIsEditingName(false);
   };
+
 
   const handleNameBlur = () => handleSave();
 
@@ -249,10 +341,72 @@ const CardModal = () => {
   const handleNameKeyPress = (event) => {
     if (event.key === "Enter") {
       handleSave();
+
+  //Sửa tên mục
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editedItemName, setEditedItemName] = useState("");
+  const handleEditItem = (id, name) => {
+    setEditingItemId(id);
+    setEditedItemName(name);
+  };
+
+  //Lưu tên mục
+  const handleSaveItem = (id) => {
+    const updatedItems = items.map((item) =>
+      item.id === id ? { ...item, name: editedItemName } : item
+    );
+    setItems(updatedItems);
+    localStorage.setItem("items", JSON.stringify(updatedItems));
+    setEditingItemId(null);
+  };
+
+  const handleKeyPressItem = (event, id) => {
+    if (event.key === "Enter") {
+      handleSaveItem(id);
+
     }
   };
 
+  //Xóa mục
+  const [selectedItemId, setSelectedItemId] = useState(null);
+  const handleDeleteItem = (id) => {
+    const updatedItems = items.filter((item) => item.id !== id); // Xóa chỉ item có id được chọn
+    setItems(updatedItems);
+    localStorage.setItem("items", JSON.stringify(updatedItems));
+    setMenuAnchor(null); // Đóng menu
+    setSelectedItemId(null); // Đặt lại item được chọn
+  };
+
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const handleMenuOpen = (event, id) => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedItemId(id);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+  };
+
+  const completedItems = items.filter((item) => item.completed).length;
+  const totalItems = items.length;
+
+  const completedTasks = tasks.filter((task) => task.completed).length;
+  const totalTasks = tasks.length;
+
+  console.log("totalItems:", totalItems);
+  console.log("totalTasks:", totalTasks);
+  console.log("completedItems:", completedItems);
+  console.log("completedTasks:", completedTasks);
+
+  const itemProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+
+  const [showAddItemButton, setShowAddItemButton] = useState(true);
+
+  const [taskInputs, setTaskInputs] = useState({}); // Lưu trạng thái nhập của từng task
+  const [addingItemForTask, setAddingItemForTask] = useState(null); // Task nào đang hiển thị ô nhập
+
   return (
+
     <Dialog
 
       open={true}
@@ -286,6 +440,7 @@ const CardModal = () => {
             {cardDetail?.title}
           </Typography>
         )}
+
         <Typography variant="body2" color="text.secondary">
           trong danh sách{" "}
           <span style={{ color: "#0079bf", fontWeight: "bold" }}>
@@ -293,6 +448,7 @@ const CardModal = () => {
           </span>
         </Typography>
       </DialogTitle>
+
       <DialogContent>
         <Grid container spacing={2}>
           {/* Cột trái (Nội dung chính) */}
@@ -381,48 +537,232 @@ const CardModal = () => {
               />
             )}
 
+           
+
+            {/* HIỂN THỊ DANH SÁCH VIỆC CẦN LÀM */}
             {tasks.length > 0 && (
-              <Grid item xs={8}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Công việc ({tasks.length})
-                </Typography>
-
+              <Box
+                sx={{
+                  mt: 2,
+                  p: 2,
+                }}
+              >
                 <List>
-                  {tasks.map((task) => (
-                    <ListItem key={task.id} disablePadding>
-                      <Checkbox
-                        checked={task.completed}
-                        onChange={() => handleToggleTask(task.id)}
-                      />
-                      <ListItemText
-                        primary={task.name}
-                        sx={{
-                          textDecoration: task.completed ? "line-through" : "none",
-                        }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
+                  {tasks.map((task) => {
+                    // Lọc ra các mục thuộc về task này
+                    const taskItems = items.filter(
+                      (item) => item.taskId === task.id
+                    );
+                    const completedItems = taskItems.filter(
+                      (item) => item.completed
+                    ).length;
+                    const totalItems = taskItems.length;
+                    const taskProgress =
+                      totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
-                {/* Nút "Thêm Công Việc" vẫn hiển thị */}
-                <Button
-                  variant="contained"
-                  size="small"
-                  sx={{ mt: 1, backgroundColor: "teal", fontSize: "0.7rem" }}
-                  onClick={() => setIsTaskModalOpen(true)}
-                >
-                  Thêm Công Việc
-                </Button>
-              </Grid>
+                    return (
+                      <Box
+                        key={task.id}
+                        sx={{
+                          mb: 3,
+                          p: 2,
+                        }}
+                      >
+                        {/* Hiển thị tên công việc */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          {/* <Typography variant="h6" fontWeight="bold">
+                            {task.name}
+                          </Typography> */}
+                          {editingTaskId === task.id ? (
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              size="small"
+                              value={editedTaskName}
+                              onChange={(e) =>
+                                setEditedTaskName(e.target.value)
+                              }
+                              onBlur={() => handleSaveTask(task.id)}
+                              onKeyDown={(e) => handleKeyPressTask(e, task.id)}
+                              autoFocus
+                            />
+                          ) : (
+                            <Typography
+                              variant="h6"
+                              fontWeight="bold"
+                              onClick={() => handleEditTask(task.id, task.name)}
+                              sx={{ cursor: "pointer" }}
+                            >
+                              {task.name}
+                            </Typography>
+                          )}
+
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => handleDeleteTask(task.id)}
+                          >
+                            Xóa
+                          </Button>
+                        </Box>
+
+                        {/* Thanh tiến trình riêng cho mỗi task */}
+                        <Box sx={{ mt: 2 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              mb: 1,
+                            }}
+                          >
+                            <Typography variant="body2" fontWeight="bold">
+                              {Math.round(taskProgress)}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={taskProgress}
+                            sx={{ height: 8, borderRadius: 4 }}
+                          />
+                        </Box>
+
+                        {/* Danh sách mục của công việc này */}
+                        <List sx={{ mt: 2 }}>
+                          {taskItems.map((item) => (
+                            <ListItem key={item.id}>
+                              <ListItemIcon>
+                                <Checkbox
+                                  checked={item.completed || false}
+                                  onChange={() => toggleItemCompletion(item.id)}
+                                />
+                              </ListItemIcon>
+
+                              {editingItemId === item.id ? (
+                                <TextField
+                                  fullWidth
+                                  variant="outlined"
+                                  size="small"
+                                  value={editedItemName}
+                                  onChange={(e) =>
+                                    setEditedItemName(e.target.value)
+                                  }
+                                  onBlur={() => handleSaveItem(item.id)}
+                                  onKeyDown={(e) =>
+                                    handleKeyPressItem(e, item.id)
+                                  }
+                                  autoFocus
+                                />
+                              ) : (
+                                <ListItemText
+                                  primary={item.name}
+                                  onClick={() =>
+                                    handleEditItem(item.id, item.name)
+                                  }
+                                  sx={{ cursor: "pointer" }}
+                                />
+                              )}
+
+                              <IconButton
+                                onClick={(e) => handleMenuOpen(e, item.id)}
+                              >
+                                <MoreVertIcon />
+                              </IconButton>
+                            </ListItem>
+                          ))}
+                        </List>
+
+                        {/* Menu cho từng mục */}
+                        <Menu
+                          anchorEl={menuAnchor}
+                          open={Boolean(menuAnchor)}
+                          onClose={handleMenuClose}
+                        >
+                          <MenuItem
+                            onClick={() => toggleItemCompletion(selectedItemId)}
+                          >
+                            Chuyển đổi trạng thái
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => handleDeleteItem(selectedItemId)}
+                          >
+                            Xóa
+                          </MenuItem>
+                        </Menu>
+
+                        {/* Thêm mục cho công việc này */}
+
+                        {addingItemForTask === task.id ? (
+                          <>
+                            <TextField
+                              fullWidth
+                              placeholder="Thêm một mục..."
+                              variant="outlined"
+                              size="small"
+                              sx={{ mt: 2 }}
+                              value={taskInputs[task.id] || ""}
+                              onChange={(e) =>
+                                setTaskInputs({
+                                  ...taskInputs,
+                                  [task.id]: e.target.value,
+                                })
+                              }
+                            />
+                            <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                onClick={() => {
+                                  if ((taskInputs[task.id] || "").trim() === "")
+                                    return;
+                                  addItem(task.id, taskInputs[task.id]); // Thêm vào task này
+                                  setTaskInputs({
+                                    ...taskInputs,
+                                    [task.id]: "",
+                                  }); // Reset input
+                                  setAddingItemForTask(null); // Ẩn ô nhập
+                                }}
+                              >
+                                Thêm
+                              </Button>
+                              <Button
+                                variant="text"
+                                size="small"
+                                onClick={() => setAddingItemForTask(null)}
+                              >
+                                Hủy
+                              </Button>
+                            </Box>
+                          </>
+                        ) : (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            sx={{ mt: 2 }}
+                            onClick={() => setAddingItemForTask(task.id)}
+                          >
+                            Thêm một mục
+                          </Button>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </List>
+              </Box>
             )}
 
+            {/* THÊM COMMENT */}
+            <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: "bold" }}>
+              Add Comment
 
-
-
-
-            {/* Thêm comment */}
-            <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: "bold", mb: 2 }}>
-              Hoạt động
             </Typography>
             <TextField
               fullWidth
@@ -451,8 +791,9 @@ const CardModal = () => {
             {comments.map((cmt, index) => (
               <Box
                 key={index}
-                sx={{ display: "flex", flexDirection: "column", mt: 1 }}
+                sx={{ display: "flex", alignItems: "center", mt: 1 }}
               >
+
                 <Box sx={{ display: "flex", alignItems: "center" }}>
 
                   <Avatar
@@ -535,6 +876,7 @@ const CardModal = () => {
                     </Box>
                   </Box>
                 </Box>
+
               </Box>
             ))}
           </Grid>
@@ -575,7 +917,10 @@ const CardModal = () => {
 
                 <ListItem disablePadding>
                   <ListItemButton>
-                    <ListItemText primary="Ngày" />
+                    <ListItemText
+                      primary="Ngày"
+                      onClick={() => setIsDateModalOpen(true)}
+                    />
                   </ListItemButton>
                 </ListItem>
 
@@ -677,6 +1022,7 @@ const CardModal = () => {
         shareLink="https://trello.com/c/aZDXteH6"
       />
 
+
       <Dialog
         open={isDeleteConfirmOpen}
         onClose={() => setIsDeleteConfirmOpen(false)}
@@ -691,6 +1037,13 @@ const CardModal = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <DateModal
+        open={isDateModalOpen}
+        onClose={() => setIsDateModalOpen(false)}
+        onSave={(date) => setSelectedDate(date)}
+      />
+
     </Dialog>
   );
 };

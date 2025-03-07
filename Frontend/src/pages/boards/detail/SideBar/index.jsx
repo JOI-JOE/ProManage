@@ -115,7 +115,11 @@ const SideBar = ({ workspace }) => {
 
         <Collapse in={openSettings} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            <ListItemButton sx={{ pl: 4 }}>
+            <ListItemButton
+              sx={{ pl: 4 }}
+              component={Link}
+              to={`/w/${currentWorkspace?.name}/accounts`}
+            >
               <ListItemIcon sx={{ color: "white" }}>
                 <ViewKanbanIcon />
               </ListItemIcon>

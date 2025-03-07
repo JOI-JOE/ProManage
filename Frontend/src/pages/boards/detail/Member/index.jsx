@@ -57,23 +57,18 @@ const Member = () => {
   };
 
   const { workspaceName } = useParams();
-  const { data: workspace, isLoading: isLoadingWorkspace } = useGetWorkspaceByName(workspaceName, {
+  const { data: workspace } = useGetWorkspaceByName(workspaceName, {
     enabled: !!workspaceName,
   });
 
-  const members = workspace?.members || [];
+  const members = workspace.members
 
   const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
 
   const handleGenerateLink = async () => {
-    if (!workspace) {
-      console.error("Workspace data is not available yet");
-      throw new Error("Vui lòng đợi dữ liệu workspace được tải xong");
-    }
-
-    if (!workspace.id) {
-      console.error("Workspace ID is undefined");
-      throw new Error("Không tìm thấy ID của workspace");
+    if (!workspace?.id) {
+      console.error("Workspace ID is undefined.");
+      return;
     }
 
     return new Promise((resolve, reject) => {
@@ -93,24 +88,6 @@ const Member = () => {
       );
     });
   };
-
-  // Nếu đang load workspace, có thể hiển thị loading state
-  if (isLoadingWorkspace) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Typography>Đang tải dữ liệu workspace...</Typography>
-      </Box>
-    );
-  }
-
-  // Nếu không tìm thấy workspace
-  if (!workspace) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Typography color="error">Không tìm thấy workspace</Typography>
-      </Box>
-    );
-  }
 
   return (
     <Box

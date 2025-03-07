@@ -24,7 +24,6 @@ import { useNavigate } from "react-router-dom";
 import { useLogout, useUser } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
 
-
 export default function ProfileMenu({ email }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
@@ -90,7 +89,7 @@ export default function ProfileMenu({ email }) {
         <Tooltip title="Tài khoản">
           <IconButton onClick={handleClick} size="small">
             <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
-            {email?.charAt(0)?.toUpperCase() || ""}
+              TT
             </Avatar>
           </IconButton>
         </Tooltip>
@@ -100,7 +99,7 @@ export default function ProfileMenu({ email }) {
           <Avatar
             sx={{ width: 40, height: 40, margin: "auto", bgcolor: "#00A3BF" }}
           >
-           {email?.charAt(0)?.toUpperCase() || ""}
+            TT
           </Avatar>
           <Typography
             variant="subtitle1"
