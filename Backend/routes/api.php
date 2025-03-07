@@ -49,9 +49,8 @@ Route::middleware(['web'])->group(function () {
     });
 });
 
-
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
-Route::get('/workspaces/{workspaceId}/validate-invite/{inviteToken}', [WorkspaceInvitationsController::class, 'validateInvitation']);
+Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getValidateInvitation']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
@@ -74,14 +73,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/workspaces/{workspaceId}/{inviteToken}', 'getInvitationSecret');
 
         Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
-
         Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
-
-        Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
         Route::get('/workspaces/{workspaceId}/addMembers', 'inviteMemberToWorkspace');
+        Route::get('/workspaces/{workspaceId}/members/{memberId}', 'getValidateMemberInWorkspace');
     });
 
     Route::controller(BoardController::class)->group(function () {
@@ -107,17 +104,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']);
         Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
     });
+
+    // Funtion kéo thả column
+    Route::put('/boards/update-column-position', [DragDropController::class, 'updateListPosition']);
+    Route::put('/boards/update-card-same-col', [DragDropController::class, 'updateCardPositionsSameColumn']);
+    Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
+
+    // Send Email
+    Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 });
 
-// Funtion kéo thả column
-Route::put('/boards/update-column-position', [DragDropController::class, 'updateListPosition']);
-Route::put('/boards/update-card-same-col', [DragDropController::class, 'updateCardPositionsSameColumn']);
-Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
-
-
-
-// Send Email
-Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 
 
 Route::get('/color', [ColorController::class, 'index']);
@@ -237,7 +233,7 @@ Route::delete('cards/{cardId}/checklists/{id}', [ChecklistController::class, 'de
 Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'index']); // lấy danh sách checkist theo card
 Route::post('/checklist/{checklistId}/item', [ChecklistItemController::class, 'store']); // thêm mới checkist theo card
 Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']); // cập nhật tên của checklistitem
-Route::put('/item/{id}/completed', [ChecklistItemController::class, 'updateStatus']);// cập nhật trạng thái hoàn thành của checklistitem
+Route::put('/item/{id}/completed', [ChecklistItemController::class, 'updateStatus']); // cập nhật trạng thái hoàn thành của checklistitem
 
 // Route::delete('/checklists/{id}', [ChecklistItemController::class, 'destroy']);// xóa checklists
 Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNotifications']);

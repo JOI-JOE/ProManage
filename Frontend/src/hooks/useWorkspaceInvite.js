@@ -3,6 +3,9 @@ import {
   getInviteWorkspaceById,
   createInviteWorkspace,
   acceptInvitation,
+  cancelInviteWorkspace,
+  getValidateInvitation,
+  getValidateMemberInWorkspace,
 } from "../api/models/inviteWorkspaceApi";
 
 export const useAcceptInvitation = () => {
@@ -38,6 +41,21 @@ export const useGetInviteWorkspace = (workspaceId) => {
   });
 };
 
+export const useGetValidateMember = (workspaceId, memberId) => {
+  return useQuery({
+    queryKey: ["workspaces", "members", workspaceId, memberId],
+    queryFn: () => getValidateMemberInWorkspace(workspaceId, memberId),
+    enabled: !!memberId && !!workspaceId, // Check both memberId and workspaceId
+    onError: (error) => {
+      console.error(
+        "Lỗi khi lấy thông tin member trong không gian làm việc",
+        error
+      );
+    },
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 10,
+  });
+};
 export const useCreateInviteWorkspace = () => {
   const queryClient = useQueryClient();
 
@@ -53,5 +71,34 @@ export const useCreateInviteWorkspace = () => {
     onError: (error) => {
       console.error("Lỗi khi tạo lời mời vào workspace:", error);
     },
+  });
+};
+
+export const useCancelInvitationWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId }) => cancelInviteWorkspace(workspaceId),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(
+        ["inviteWorkspace", variables.workspaceId],
+        data
+      );
+    },
+    onError: (error) => {
+      console.error("Lỗi khi xóa lời mời vào workspace:", error);
+    },
+  });
+};
+
+export const useGetValidateInvitation = (workspaceId, inviteToken) => {
+  return useQuery({
+    queryKey: ["workspaces", workspaceId, "invitationSecret", inviteToken], // Add inviteToken to the queryKey
+    queryFn: () => getValidateInvitation(workspaceId, inviteToken),
+    onError: (error) => {
+      console.error("Lỗi khi lấy dữ liệu của workspace");
+    },
+    enabled: !!workspaceId && !!inviteToken,
+    retry: false,
   });
 };

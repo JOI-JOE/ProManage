@@ -8,7 +8,6 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CloseIcon from "@mui/icons-material/Close";
 
 const MemberItem = ({ member }) => {
-    console.log(member)
     return (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
             {/* Phần thông tin thành viên */}
