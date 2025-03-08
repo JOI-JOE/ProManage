@@ -77,6 +77,7 @@ class WorkspaceController extends Controller
         }
     }
 
+
     public function getBoardMarkedByWorkspace($workspaceName)
     {
       try {
@@ -93,6 +94,7 @@ class WorkspaceController extends Controller
           ]);
       }
     }
+
 
 
     public function showWorkspaceById($workspaceId)
