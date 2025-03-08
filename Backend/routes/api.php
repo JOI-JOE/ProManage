@@ -84,9 +84,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/workspaces/{workspaceId}/addMembers', 'inviteMemberToWorkspace');
     });
 
-    Route::controller(BoardController::class)->group(function () {
-        Route::get('boards/{boardId}', 'showBoardById');
-    });
+   
 
     Route::prefix('cards')->group(function () {
         Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
@@ -125,9 +123,12 @@ Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorksp
 
 Route::prefix('lists')->group(function () {
     Route::post('/', [ListController::class, 'store']);
+    Route::delete('{id}/destroy', [ListController::class, 'destroy']);
+    Route::get('/listClosed', [ListController::class, 'getListClosed']);
     Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
     Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
     Route::get('/{boardId}', [ListController::class, 'index']);
+    
     Route::put('/reorder', [ListController::class, 'reorder']);
     Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
     Route::post('/dragging', [ListController::class, 'dragging']);
@@ -148,6 +149,8 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
 
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
+
+Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
 Route::get('/boards_marked', [BoardController::class, 'getBoardMarked']);
 
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
