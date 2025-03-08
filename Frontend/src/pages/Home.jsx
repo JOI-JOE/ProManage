@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useUser } from "../hooks/useUser";
 import { Typography, Container, Paper, Button } from "@mui/material";
+// import { useUser, loading, error } from "../contexts/userContext";
+import { useStateContext } from "../contexts/ContextProvider";
 
 const Home = () => {
-  const { data: user, isLoading, isError, error } = useUser();
+  const { user } = useStateContext // Dùng context để lấy user
   const [currentIndex, setCurrentIndex] = useState(0);
   const slides = [
     { type: "image", src: "/img/sl1.webp" },
@@ -18,7 +19,7 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Container
         sx={{
@@ -34,7 +35,7 @@ const Home = () => {
     );
   }
 
-  if (isError) {
+  if (error) {
     return (
       <Container
         sx={{

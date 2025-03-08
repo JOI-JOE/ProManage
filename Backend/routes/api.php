@@ -207,10 +207,10 @@ Route::put('/labels/{labelId}', [LabelController::class, 'updateLabel']);
 Route::middleware(['auth:sanctum'])->group(function () {
     // Lấy tất cả bình luận của card
     Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']);
-    
+
     // Thêm bình luận vào card
     Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']);
-    
+
     // Xóa bình luận
     Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']);
 

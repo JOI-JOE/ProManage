@@ -7,89 +7,57 @@ import {
   getListByBoardId,
   updateColPosition,
 } from "../api/models/listsApi";
-import { useEffect, useCallback, useMemo } from "react";
-// import { createEchoInstance } from "./useRealtime";
-
-// export const useListById = (listId) => {
-//   const queryClient = useQueryClient();
-//   const echoInstance = useMemo(() => createEchoInstance(), []);
-
-//   const listsDetail = useQuery({
-//     queryKey: ["list", listId],
-//     queryFn: () => getListDetail(listId),
-//     enabled: !!listId,
-//     staleTime: 1000 * 60 * 5,
-//     cacheTime: 1000 * 60 * 30,
-//   });
-
-//   // Mutation để cập nhật tên list
-//   const updateListNameMutation = useMutation({
-//     mutationFn: (newName) => updateListName(listId, newName),
-//     onSuccess: () => {
-//       queryClient.invalidateQueries(["list", listId]);
-//     },
-//     onError: (error) => {
-//       console.error("Lỗi khi cập nhật tên danh sách:", error);
-//     },
-//   });
-
-//   // Mutation để cập nhật trạng thái đóng/mở list
-//   const updateClosedMutation = useMutation({
-//     mutationFn: (closed) => updateClosed(listId, closed),
-//     onSuccess: () => {
-//       queryClient.invalidateQueries(["list", listId]);
-//     },
-//     onError: (error) => {
-//       console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
-//     },
-//   });
-
-//   // Xử lý realtime events
-//   useEffect(() => {
-//     if (!listId || !echoInstance) return;
-
-//     const channel = echoInstance.channel(`list.${listId}`);
-
-//     channel.listen(".list.nameUpdated", (event) => {
-//       if (event?.list?.id === listId) {
-//         queryClient.setQueryData(["list", listId], (oldData) => {
-//           if (!oldData) return oldData;
-//           return { ...oldData, name: event.list.name };
-//         });
-//       }
-//     });
-
-//     channel.listen(".list.archived", (event) => {
-//       if (event?.list?.id === listId) {
-//         queryClient.setQueryData(["list", listId], (oldData) => {
-//           if (!oldData) return oldData;
-//           return { ...oldData, closed: event.list.closed };
-//         });
-//       }
-//     });
-
-//     return () => {
-//       channel.stopListening(".list.nameUpdated");
-//       channel.stopListening(".list.archived");
-//       echoInstance.leave(`list.${listId}`);
-//     };
-//   }, [listId, echoInstance, queryClient]);
-
-//   return {
-//     ...listsDetail,
-//     updateListName: updateListNameMutation.mutate,
-//     updateClosed: updateClosedMutation.mutate,
-//   };
-// };
+import { useEffect, useMemo } from "react";
+import echoInstance from "./useRealtime";
 
 export const useLists = (boardId) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ["boardLists", boardId],
     queryFn: () => getListByBoardId(boardId),
     enabled: !!boardId,
     staleTime: 1000 * 60 * 5,
     cacheTime: 1000 * 60 * 30,
   });
+
+  useEffect(() => {
+    if (!boardId) return;
+
+    const channel = echoInstance.channel(`board.${boardId}`); // Sử dụng instance đã export
+
+    channel.listen(".list.created", (data) => {
+      queryClient.setQueryData(["boardLists", boardId], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          columns: [...oldData.columns, data.newList],
+        };
+      });
+    });
+
+    // 🔄 Khi list được cập nhật (đổi tên, vị trí, v.v.)
+    channel.listen(".list.updated", (data) => {
+      queryClient.setQueryData(["boardLists", boardId], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          columns: oldData.columns.map((list) =>
+            list.id === data.updatedList.id
+              ? { ...list, ...data.updatedList }
+              : list
+          ),
+        };
+      });
+    });
+
+    return () => {
+      channel.stopListening(".list.created");
+      channel.stopListening(".list.updated");
+    };
+  }, [boardId, queryClient]);
+
+  return query;
 };
 
 export const useCreateList = () => {
@@ -125,7 +93,6 @@ export const useUpdateColumnPosition = (columns) => {
   updateColPositionsGeneric(columns, updateColPosition);
 };
 
-
 export const useListById = (listId) => {
   // console.log('useListById called with listId:', listId); // Log kiểm tra listId
   const queryClient = useQueryClient();
@@ -138,11 +105,9 @@ export const useListById = (listId) => {
     staleTime: 1000 * 60 * 5, // Cache trong 5 phút
     cacheTime: 1000 * 60 * 30, // Giữ dữ liệu trong 30 phút ngay cả khi query bị hủy
     onSuccess: (data) => {
-      console.log('Query data:', data); // Log dữ liệu trả về từ query
-    }
+      console.log("Query data:", data); // Log dữ liệu trả về từ query
+    },
   });
-
-
 
   // Mutation để cập nhật tên list
   const updateListNameMutation = useMutation({
@@ -190,7 +155,6 @@ export const useListById = (listId) => {
   //   }
   // }, [listId, queryClient]);
 
-
   // const handleListArchived = useCallback((event) => {
   //   console.log("📡 Nhận dữ liệu từ Pusher:", event);
   //   if (event?.list?.id === listId) {
@@ -228,8 +192,6 @@ export const useListById = (listId) => {
   //   };
   // }, [listId, echoInstance, handleListUpdateName, handleListArchived]);
 
-
-
   const memoizedReturnValue = useMemo(
     () => ({
       ...listsDetail,
@@ -240,6 +202,4 @@ export const useListById = (listId) => {
   );
 
   return memoizedReturnValue;
-
-
 };

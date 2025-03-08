@@ -77,9 +77,9 @@ class BoardController extends Controller
     {
         try {
             $boards = Board::where('is_marked', 1)
-            ->with('workspace:id,display_name') // Chỉ lấy id, name của workspace
-            ->get();
-    
+                ->with('workspace:id,display_name') // Chỉ lấy id, name của workspace
+                ->get();
+
             return response()->json([
                 'success' => true,
                 'data' => $boards
@@ -92,7 +92,7 @@ class BoardController extends Controller
             ], 500);
         }
     }
-    
+
     public function trash()
     {
         $board = Board::where('closed', 1)->get();

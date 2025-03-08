@@ -6,16 +6,14 @@ import {
   useAcceptInvitation,
   useGetValidateMember,
 } from "../../../../hooks/useWorkspaceInvite";
-import { useStateContext } from "../../../../contexts/ContextProvider";
-import { use } from "react";
 
 const InviteWithToken = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { workspaceId, inviteToken } = location.state || {};
-  const { user } = useStateContext();
-
+  const { user } = useStateContext(); // Dùng context để lấy user
   console.log(user?.id);
+
 
   const { data: invitationData } = useGetValidateInvitation(workspaceId, inviteToken);
   const { mutate, isLoading, isError, error } = useAcceptInvitation();
@@ -23,6 +21,7 @@ const InviteWithToken = () => {
 
   const workspace = invitationData?.workspace;
   const inviter = invitationData?.memberInviter;
+
 
   useEffect(() => {
     if (user?.id && workspaceId && memberData?.success) {

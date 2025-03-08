@@ -10,7 +10,7 @@ import ArchiveIcon from "@mui/icons-material/Archive";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { useWorkspaces } from "../../../hooks/useWorkspace";
+import { useGetWorkspaces } from "../../../hooks/useWorkspace";
 import { Link } from "react-router-dom";
 
 const StyledMenu = styled((props) => (
@@ -61,7 +61,7 @@ const Workspace = () => {
     setAnchorEl(null);
   };
 
-  const { data: workspaces, isLoading, isError } = useWorkspaces();
+  const { data: workspaces, isLoading, isError } = useGetWorkspaces();
 
   return (
     <Box>
@@ -76,9 +76,9 @@ const Workspace = () => {
         endIcon={<KeyboardArrowDownIcon />}
         sx={{ color: "secondary.contrastText" }}
       >
-       Các Không gian làm việc
+        Các Không gian làm việc
       </Button>
-      
+
       <StyledMenu
         id="demo-customized-menu-workspace"
         MenuListProps={{
@@ -88,7 +88,7 @@ const Workspace = () => {
         open={open}
         onClose={handleClose}
       >
-     {isLoading && <MenuItem>Đang tải...</MenuItem>}
+        {isLoading && <MenuItem>Đang tải...</MenuItem>}
         {isError && <MenuItem>Lỗi tải dữ liệu</MenuItem>}
 
         {workspaces?.map((workspace) => (
@@ -118,7 +118,7 @@ const Workspace = () => {
           </MenuItem>
         ))}
       </StyledMenu>
-      
+
     </Box>
   );
 };

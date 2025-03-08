@@ -9,7 +9,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ListCreated implements ShouldBroadcastNow
+class ListUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -27,18 +27,17 @@ class ListCreated implements ShouldBroadcastNow
 
     public function broadcastAs()
     {
-        return 'list.created';
+        return 'list.updated';
     }
 
     public function broadcastWith()
     {
         return [
-            'newList' => [
+            'updatedList' => [
                 'id' => $this->list->id,
                 'boardId' => $this->list->board_id,
-                'title' => $this->list->name,
-                'position' => (int) $this->list->position,
-                'cards' => [],
+                'title' => $this->list->name, // Cập nhật tên list
+                'position' => (int) $this->list->position, // Cập nhật vị trí list
             ]
         ];
     }

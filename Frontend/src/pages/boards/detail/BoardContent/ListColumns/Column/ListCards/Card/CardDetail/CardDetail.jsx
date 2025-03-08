@@ -30,9 +30,7 @@ import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
 import { useCardById, useUpdateCardTitle } from "../../../../../../../../../hooks/useCard";
 import { useCreateComment, useCommentsByCard, useDeleteComment, useUpdateComment } from "../../../../../../../../../hooks/useComment";
-import { useUser } from "../../../../../../../../../hooks/useUser";
-
-
+import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -61,18 +59,12 @@ const CardModal = () => {
   const queryClient = useQueryClient();
 
   const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
-  // const loggedInUser = {
-  //   name: "Current User",
-  //   avatar: "https://via.placeholder.com/40",
-  // };
   const { data: comments = [] } = useCommentsByCard(cardId);
-  const { data: user, isLoadingUser, errorUser } = useUser();
+  const { user } = useStateContext(); // Dùng context để lấy user
   const { data: cardDetail, isLoading, error, updateDescriptionCard } = useCardById(cardId);
   const { mutate: updateCardTitle } = useUpdateCardTitle();
   const { mutate: removeComment } = useDeleteComment();
   const { mutate: editComment } = useUpdateComment();
-
-  // console.log(cardId);
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
 
