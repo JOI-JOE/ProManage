@@ -15,59 +15,61 @@ class CommentCardController extends Controller
     //
     public function index($cardId)
     {
+        $card = Card::find($cardId);
+        if (!$card) {
+            return response()->json(['message' => 'Card không tồn tại!'], 404);
+        }
+
         $comments = CommentCard::where('card_id', $cardId)
-            ->with('user:id,full_name') // Lấy thông tin user
-            ->orderBy('created_at', 'asc')
+            ->with('user:id,full_name')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return response()->json($comments);
     }
 
+    public function addCommentIntoCard(Request $request)
+    {
+        $rules = [
+            'card_id' => 'required|exists:cards,id',
+            'content' => 'required|string',
+        ];
 
+        $validator = Validator::make($request->all(), $rules);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Dữ liệu không hợp lệ!',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-    public function addCommentIntoCard(Request $request){
-       
+        $card = Card::find($request->card_id);
+        if (!$card) {
+            return response()->json(['message' => 'Card không tồn tại!'], 404);
+        }
 
-         // Tạo rules cho validation
-    $rules = [
-        'card_id' => 'required|exists:cards,id',
-        'content' => 'required|string',
-    ];
+        $comment = CommentCard::create([
+            'card_id' => $request->card_id,
+            'user_id' => Auth::id(), // Sử dụng Auth::id() thay vì request user_id
+            'content' => $request->content,
+        ]);
 
-    // Thực hiện validate
-    $validator = Validator::make($request->all(), $rules);
-
-    // Nếu validate thất bại, trả về lỗi
-    if ($validator->fails()) {
         return response()->json([
-            'status' => 'error',
-            'message' => 'Dữ liệu không hợp lệ!',
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    // Lưu bình luận vào database
-    $comment = CommentCard::create([
-        'card_id' => $request->card_id,
-        'user_id' => $request->user_id, // Hoặc `Auth::id()` nếu muốn lấy user đang đăng nhập
-        'content' => $request->content,
-    ]);
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Bình luận đã được thêm!',
-        'comment' => $comment
-    ], 201);
-
-
-
+            'status' => 'success',
+            'message' => 'Bình luận đã được thêm!',
+            'comment' => $comment
+        ], 201);
     }
 
     // Xóa bình luận (chỉ cho phép người tạo bình luận hoặc admin xóa)
     public function destroy($id)
     {
-        $comment = CommentCard::findOrFail($id);
+        $comment = CommentCard::find($id);
+        if (!$comment) {
+            return response()->json(['message' => 'Bình luận không tồn tại'], 404);
+        }
 
         if (Auth::id() !== $comment->user_id && Auth::user()->role !== 'admin') {
             return response()->json(['message' => 'Bạn không có quyền xóa bình luận này'], 403);
@@ -77,6 +79,37 @@ class CommentCardController extends Controller
 
         return response()->json(['message' => 'Bình luận đã bị xóa']);
     }
+
+    public function update(Request $request, $id)
+    {
+        $comment = CommentCard::find($id);
+
+        // Kiểm tra nếu bình luận không tồn tại
+        if (!$comment) {
+            return response()->json(['message' => 'Bình luận không tồn tại'], 404);
+        }
+
+        // Kiểm tra quyền sửa (chỉ cho phép chủ sở hữu hoặc admin chỉnh sửa)
+        if (Auth::id() !== $comment->user_id && Auth::user()->role !== 'admin') {
+            return response()->json(['message' => 'Bạn không có quyền chỉnh sửa bình luận này'], 403);
+        }
+
+        // Validate dữ liệu
+        $request->validate([
+            'content' => 'required|string|max:500',
+        ]);
+
+        // Cập nhật nội dung bình luận
+        $comment->update([
+            'content' => $request->content,
+        ]);
+
+        return response()->json([
+            'message' => 'Bình luận đã được cập nhật!',
+            'comment' => $comment
+        ], 200);
+    }
+
 
 
 }

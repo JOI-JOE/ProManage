@@ -17,18 +17,18 @@ import Register from "../pages/auth/Register";
 // import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
-import InviteHandle from "../pages/workspace/invite/InviteHandle";
-import InviteAccept from "../pages/workspace/invite/InviteAccept";
+import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+import InviteHandling from "../pages/workspace/invite/InviteHandling";
+import InviteWithToken from "../pages/workspace/invite/child/InviteWithToken";
+import InviteWithoutToken from "../pages/workspace/invite/child/InviteWithoutToken";
+
+const isAuthenticated = () => !!localStorage.getItem("token");
+
+const LayoutWrapper = () => {
+  return isAuthenticated() ? <DefaultLayout><Outlet /></DefaultLayout> : <GuestLayout><Outlet /></GuestLayout>;
+};
 
 const router = createBrowserRouter([
-  {
-    path: "invite/:workspaceId/:inviteToken",
-    element: <InviteHandle />,
-  },
-  {
-    path: "invite/accept-team",
-    element: <InviteAccept />,
-  },
   {
     path: "/", // Path RIÊNG BIỆT cho GuestLayout
     element: <GuestLayout />,
@@ -77,6 +77,9 @@ const router = createBrowserRouter([
           {
             path: "b/:boardId/:name",
             element: <BoardContent />,
+            children: [
+              { path: "c/:cardId/:title", element: <CardModal /> }, // CardModal chỉ là Dialog
+            ],
           },
           {
             path: "w/:workspaceName/members",
@@ -89,7 +92,21 @@ const router = createBrowserRouter([
         ]
       }
     ]
-  }
+  },
+  {
+    path: "invite/:workspaceId/:inviteToken", // Route với token và workspaceId trong URL
+    element: <InviteHandling />
+  },
+  {
+    path: "/",
+    element: <LayoutWrapper />, // Chọn layout dựa trên trạng thái đăng nhập
+    children: [
+      {
+        path: "invite/accept-team",
+        element: isAuthenticated() ? <InviteWithToken /> : <InviteWithoutToken />, // Chỉ hiển thị đúng component khi có đường dẫn
+      }
+    ],
+  },
 ]);
 
 export default router;

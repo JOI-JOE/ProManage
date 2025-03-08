@@ -12,6 +12,13 @@ const Col_new = ({ open, setOpen, onAdd }) => {
         setColumnName("");
     };
 
+    const handleKeyDown = async (event) => {
+        if (event.key === "Enter") {
+          await handleAdd(); // Gọi hàm addColumn khi nhấn Enter
+        }
+      };
+      
+
     const handleClose = () => {
         setOpen(false);
         setColumnName("");
@@ -58,6 +65,7 @@ const Col_new = ({ open, setOpen, onAdd }) => {
                         variant="outlined"
                         autoFocus
                         value={columnName}
+                        onKeyDown={handleKeyDown}
                         onChange={(e) => setColumnName(e.target.value)}
                         sx={inputStyles}
                     />

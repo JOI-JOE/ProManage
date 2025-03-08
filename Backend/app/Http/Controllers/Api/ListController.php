@@ -28,7 +28,8 @@ class ListController extends Controller
                     $query->where('closed', false)
                         ->orderBy('position')
                         ->with(['cards' => function ($cardQuery) {
-                            $cardQuery->orderBy('position');
+                            $cardQuery->orderBy('position')
+                                ->withCount('comments'); 
                         }]);
                 }
             ])
@@ -66,7 +67,7 @@ class ListController extends Controller
                             'id' => $card->id,
                             'columnId' => $card->list_board_id, // ID danh sách mà thẻ thuộc về
                             'title' => $card->title, // Tên thẻ
-                            // 'description' => $card->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
+                            'description' => $card->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
                             // 'thumbnail' => $card->thumbnail ?? null, // Ảnh thu nhỏ của thẻ, mặc định là null nếu không có
                             'position' => (int) $card->position, // Vị trí thẻ trong danh sách, đảm bảo là số nguyên
                             // 'startDate' => $card->start_date ?? null, // Ngày bắt đầu, mặc định là null nếu không có
@@ -75,6 +76,7 @@ class ListController extends Controller
                             // 'isCompleted' => (bool) $card->is_completed, // Trạng thái hoàn thành
                             // 'isArchived' => (bool) $card->is_archived, // Trạng thái lưu trữ
                             // 'cover' => $card->cover ?? null, // Ảnh bìa nếu có, mặc định là null nếu không có
+                            'comments_count' => $card->comments_count, 
                         ];
                     })->toArray(),
                 ];
