@@ -15,6 +15,7 @@ import Divider from "@mui/material/Divider";
 import CommentIcon from "@mui/icons-material/Comment";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DescriptionIcon from "@mui/icons-material/Description";
+import { useListsClosed } from "../../../../../../../hooks/useList";
 
 const initialArchivedItems = [
   { id: 1, name: "Thẻ 1", comments: 5 },
@@ -29,13 +30,32 @@ const Archived = ({ open, onClose }) => {
   const [search, setSearch] = useState("");
   const [archivedItems, setArchivedItems] = useState(initialArchivedItems);
   const [viewMode, setViewMode] = useState("cards");
+  const {
+    listsClosed,
+    isLoading,
+    error,
+    deleteMutation,
+    updateClosedMutation,
+  } = useListsClosed();
+  console.log(listsClosed);
 
-  const handleRestore = (id) => {
-    setArchivedItems(archivedItems.filter((item) => item.id !== id));
+  // Hiển thị Toast Notification
+  const handleDelete = (id) => {
+    const confirmDelete = window.confirm("Bạn có chắc muốn xóa danh sách này?");
+    if (confirmDelete) {
+      deleteMutation.mutate(id, {
+        onSuccess: () => {
+          toast.success("Xóa danh sách thành công!");
+        },
+        onError: () => {
+          toast.error("Xóa danh sách thất bại!");
+        },
+      });
+    }
   };
 
-  const handleDelete = (id) => {
-    setArchivedItems(archivedItems.filter((item) => item.id !== id));
+  const handleRestore = (id) => {
+    updateClosedMutation.mutate(id);
   };
 
   const filteredItems = archivedItems.filter((item) =>
@@ -123,7 +143,7 @@ const Archived = ({ open, onClose }) => {
           </List>
         ) : (
           <Box>
-            {filteredItems.map((item) => (
+            {listsClosed?.data?.map((item) => (
               <Box
                 key={item.id}
                 sx={{
@@ -152,6 +172,7 @@ const Archived = ({ open, onClose }) => {
                       fontSize: "0.6rem",
                       paddingLeft: 0, // Set padding left to 0
                     }}
+                    onClick={() => handleRestore(item.id)} // Gọi handleRestore khi click
                   >
                     Gửi tới bảng thông tin
                   </Button>

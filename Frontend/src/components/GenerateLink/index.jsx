@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Button,
@@ -7,16 +7,26 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-const GenerateLink = ({ onGenerateLink }) => {
+const GenerateLink = ({ onGenerateLink, onDeleteLink, secret, workspaceId }) => {
     const [linkCopied, setLinkCopied] = useState(false);
     const [showCopiedMessage, setShowCopiedMessage] = useState(false);
     const [isLinkActive, setIsLinkActive] = useState(false);
     const [generatedLink, setGeneratedLink] = useState('');
 
+    useEffect(() => {
+        if (secret) {
+            setGeneratedLink(`http://localhost:5173/invite/${workspaceId}/${secret}`);
+            setIsLinkActive(true);
+        } else {
+            setGeneratedLink('');
+            setIsLinkActive(false);
+        }
+    }, [secret, workspaceId]); // Chỉ re-run khi secret hoặc workspaceId thay đổi
+
     const handleGenerateLink = async () => {
         try {
             const link = await onGenerateLink();
-            setGeneratedLink(link);
+            setGeneratedLink(`http://localhost:5173/invite/${workspaceId}/${link}`);
             setIsLinkActive(true);
         } catch (error) {
             console.error('Lỗi khi tạo link:', error);
@@ -32,10 +42,17 @@ const GenerateLink = ({ onGenerateLink }) => {
         }
     };
 
-    const handleDisableLink = () => {
-        setIsLinkActive(false);
-        setLinkCopied(false);
-        setGeneratedLink('');
+
+    const handleDeleteLink = async () => {
+        try {
+            await onDeleteLink();
+            setIsLinkActive(false);
+            setLinkCopied(false);
+            setGeneratedLink('');
+        } catch (error) {
+            console.error('Lỗi khi tạo link:', error);
+        }
+
     };
 
     return (
@@ -79,7 +96,7 @@ const GenerateLink = ({ onGenerateLink }) => {
                         textDecoration: 'underline',
                         textAlign: 'right',
                     }}
-                    onClick={handleDisableLink}
+                    onClick={handleDeleteLink}
                 >
                     Tắt liên kết
                 </Typography>
