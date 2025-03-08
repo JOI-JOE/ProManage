@@ -23,6 +23,7 @@ import C_ard from "./Cards/C_ard";
 import { mapOrder } from "../../../../../utils/sort";
 import { useLists, useUpdateColumnPosition } from "../../../../hooks/useList";
 import { useCardPositionsInColumns, useCardPositionsOutColumns } from "../../../../hooks/useCard";
+import { useBoards, useRecentBoardAccess } from "../../../../hooks/useBoard";
 
 
 const ACTIVE_DRAG_ITEM_TYPE = {
@@ -33,6 +34,18 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 const BoardContent = () => {
   const { boardId } = useParams();
   const { data: board } = useLists(boardId); // Lấy dữ liệu từ hook
+  // const {data: boardDetail} = useBoards(boardId);
+  console.log("boardId:", boardId);
+  const { mutate: logBoardAccess } = useRecentBoardAccess();
+
+  useEffect(() => {
+    // Gọi API để lưu lại thông tin bảng khi người dùng vào trang bảng
+    if (boardId) {
+      logBoardAccess(boardId); // Lưu thông tin bảng vào danh sách gần đây
+    }
+  }, [boardId, logBoardAccess]);
+  
+  
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: { distance: 10 },
@@ -474,7 +487,7 @@ const BoardContent = () => {
 
   return (
     <>
-      <BoardBar />
+      <BoardBar/>
       <DndContext
         collisionDetection={collisionDetectionStrategy}
         sensors={sensors}
@@ -483,11 +496,20 @@ const BoardContent = () => {
         onDragEnd={handleDragEnd}
       >
         <Box
-          sx={{
-            backgroundColor: "primary.main",
-            height: (theme) => theme.trello.boardContentHeight,
-            padding: "18px 0 7px 0px",
-          }}
+         sx={(theme) => ({
+          background: board?.thumbnail
+            ? board?.thumbnail.startsWith("#")
+              ? board?.thumbnail
+              : `url(${board?.thumbnail})`
+            : "#1693E1",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          imageRendering: "auto",
+          height: theme.trello.boardContentHeight, // Đặt giá trị height từ theme
+          padding: "18px 0 7px 0px",
+        })}
+        
         >
           <Col_list columns={orderedColumns} boardId={boardId} />
           <DragOverlay dropAnimation={customDropAnimation}>

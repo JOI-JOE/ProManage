@@ -28,12 +28,14 @@ class BoardController extends Controller
     {
         try {
             // Tìm board theo ID
-            $board = Board::findOrFail($boardId);
+            $board = Board::with('creator')->findOrFail($boardId);
+            // $creator = $board->creator()->first(); // Lấy thông tin người tạo
 
             // Trả về kết quả nếu tìm thấy
             return response()->json([
                 'result' => true,
-                'data' => $board
+                'data' => $board,
+                // 'user'=> $board->creator,
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([

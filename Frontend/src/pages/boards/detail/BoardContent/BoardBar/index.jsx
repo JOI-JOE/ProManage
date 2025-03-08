@@ -87,6 +87,9 @@ const BoardBar = () => {
     queryFn: () => getBoardById(boardId),
   });
 
+  console.log("🔍 Dữ liệu board từ API:", data?.data);
+  
+
   const board = data?.data;
   // console.log("🔍 Dữ liệu board từ API:", board);
 
@@ -261,7 +264,7 @@ const BoardBar = () => {
         >
           Chia sẻ
         </Button>
-        <BoardMenu />
+        <BoardMenu board={board} />
       </Box>
 
       {/* Hộp thoại chia sẻ */}
