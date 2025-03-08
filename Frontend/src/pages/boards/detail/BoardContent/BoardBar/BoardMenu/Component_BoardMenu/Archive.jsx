@@ -30,7 +30,13 @@ const Archived = ({ open, onClose }) => {
   const [search, setSearch] = useState("");
   const [archivedItems, setArchivedItems] = useState(initialArchivedItems);
   const [viewMode, setViewMode] = useState("cards");
-  const { listsClosed, isLoading, error, deleteMutation ,updateClosedMutation } = useListsClosed();
+  const {
+    listsClosed,
+    isLoading,
+    error,
+    deleteMutation,
+    updateClosedMutation,
+  } = useListsClosed();
   console.log(listsClosed);
 
   // Hiển thị Toast Notification
@@ -47,8 +53,6 @@ const Archived = ({ open, onClose }) => {
       });
     }
   };
-
-
 
   const handleRestore = (id) => {
     updateClosedMutation.mutate(id);
