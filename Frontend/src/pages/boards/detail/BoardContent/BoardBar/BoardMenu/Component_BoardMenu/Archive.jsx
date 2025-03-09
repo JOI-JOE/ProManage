@@ -34,6 +34,7 @@ const Archived = ({ open, onClose }) => {
   const [search, setSearch] = useState("");
   const [archivedItems, setArchivedItems] = useState(initialArchivedItems);
   const [viewMode, setViewMode] = useState("cards");
+
   const { boardId } = useParams();
   // console.log(boardId);
   
@@ -46,6 +47,7 @@ const Archived = ({ open, onClose }) => {
   
   // console.log(listsClosed);
  
+
 
   // Hiển thị Toast Notification
   const handleDelete = (id) => {
@@ -61,6 +63,7 @@ const Archived = ({ open, onClose }) => {
       });
     }
   };
+
 
   const handleRestoreList = (id) => {
     updateClosedMutation.mutate(id, {
@@ -81,6 +84,7 @@ const Archived = ({ open, onClose }) => {
     if (!window.confirm("Bạn có chắc muốn xóa thẻ này?")) return;
   
     deleteCard(id)
+
   };
   
 

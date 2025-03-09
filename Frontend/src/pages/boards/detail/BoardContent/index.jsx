@@ -22,9 +22,11 @@ import { useParams } from "react-router-dom";
 import C_ard from "./Cards/C_ard";
 import { mapOrder } from "../../../../../utils/sort";
 import { useLists, useUpdateColumnPosition } from "../../../../hooks/useList";
-import { useCardPositionsInColumns, useCardPositionsOutColumns } from "../../../../hooks/useCard";
+import {
+  useCardPositionsInColumns,
+  useCardPositionsOutColumns,
+} from "../../../../hooks/useCard";
 import { useBoards, useRecentBoardAccess } from "../../../../hooks/useBoard";
-
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -44,8 +46,6 @@ const BoardContent = () => {
       logBoardAccess(boardId); // Lưu thông tin bảng vào danh sách gần đây
     }
   }, [boardId, logBoardAccess]);
-  
-  
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: { distance: 10 },
@@ -117,7 +117,9 @@ const BoardContent = () => {
         }
 
         // Cập nhật lại cardOrderIds của column hiện tại
-        nextActiveColumn.cardOrderIds = nextActiveColumn.cards.map((card) => card.id);
+        nextActiveColumn.cardOrderIds = nextActiveColumn.cards.map(
+          (card) => card.id
+        );
 
         // Tính toán vị trí mới của card trong column mới
         const overCardIndex = nextOverColumn.cards.findIndex(
@@ -128,7 +130,8 @@ const BoardContent = () => {
         if (overCardIndex >= 0) {
           const isBelowOverItem =
             active.rect.current.translated &&
-            active.rect.current.translated.top > over.rect.top + over.rect.height;
+            active.rect.current.translated.top >
+              over.rect.top + over.rect.height;
           newCardIndex = overCardIndex + (isBelowOverItem ? 1 : 0);
         } else {
           newCardIndex = nextOverColumn.cards.length;
@@ -153,7 +156,9 @@ const BoardContent = () => {
         );
 
         // Cập nhật lại cardOrderIds của column mới
-        nextOverColumn.cardOrderIds = nextOverColumn.cards.map((card) => card.id);
+        nextOverColumn.cardOrderIds = nextOverColumn.cards.map(
+          (card) => card.id
+        );
 
         // Xác định các card đã thay đổi
         const changedCardsMap = new Map();
@@ -178,7 +183,8 @@ const BoardContent = () => {
 
         // Thêm các card khác trong column mới (nếu có)
         nextOverColumn.cards.forEach((card, index) => {
-          if (card.id !== activeCardId) { // Tránh thêm lại card đang kéo
+          if (card.id !== activeCardId) {
+            // Tránh thêm lại card đang kéo
             changedCardsMap.set(card.id, {
               id: card.id,
               position: index, // Sử dụng chỉ số mảng làm position
@@ -227,11 +233,19 @@ const BoardContent = () => {
     const { id: overItemId } = over;
 
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-      const activeColumnIndex = orderedColumns.findIndex((c) => c.id === activeItemId);
-      const overColumnIndex = orderedColumns.findIndex((c) => c.id === overItemId);
+      const activeColumnIndex = orderedColumns.findIndex(
+        (c) => c.id === activeItemId
+      );
+      const overColumnIndex = orderedColumns.findIndex(
+        (c) => c.id === overItemId
+      );
       // .log("📌 Đang kéo column:", activeItemId, "➡ Column target:", overItemId);
 
-      if (activeColumnIndex !== -1 && overColumnIndex !== -1 && activeColumnIndex !== overColumnIndex) {
+      if (
+        activeColumnIndex !== -1 &&
+        overColumnIndex !== -1 &&
+        activeColumnIndex !== overColumnIndex
+      ) {
         const dndOrderedColumns = arrayMove(
           orderedColumns,
           activeColumnIndex,
@@ -244,12 +258,13 @@ const BoardContent = () => {
     }
     // Tìm column theo cardId
     const activeColumn = findColumnByCardId(activeItemId);
-    const overColumn = findColumnByCardId(overItemId) || orderedColumns.find((col) => col.id === overItemId);
+    const overColumn =
+      findColumnByCardId(overItemId) ||
+      orderedColumns.find((col) => col.id === overItemId);
 
     if (!activeColumn || !overColumn) return;
 
     if (activeColumn.id !== overColumn.id) {
-
       moveCardBetweenDifferentColumns(
         overColumn,
         overItemId,
@@ -261,7 +276,6 @@ const BoardContent = () => {
       );
     }
   };
-
 
   // Kết thúc kéo một phần tử
   const handleDragEnd = async (event) => {
@@ -291,7 +305,8 @@ const BoardContent = () => {
           activeColumn,
           activeCardId,
           activeCardData
-        ).then(async (changedCards) => { // Thêm async vào đây
+        ).then(async (changedCards) => {
+          // Thêm async vào đây
           await useCardPositionsOutColumns(changedCards); // Sử dụng await
           // console.log("Dữ liệu card thay đổi:", changedCards);
         });
@@ -330,13 +345,11 @@ const BoardContent = () => {
           position: (index + 1) * 1000, // Cập nhật position với khoảng cách 1000
         }));
 
-
         const filteredCards = updatedCards.map((card) => ({
           list_board_id: card.columnId, // Cột ID (list_board_id)
           position: card.position, // Vị trí
           id: card.id, // ID của card
         }));
-
 
         console.log("FilteredCards data:", filteredCards); // Sửa lại thành filteredCards
         // Cập nhật state local
@@ -410,7 +423,7 @@ const BoardContent = () => {
       const updatedColumns = dndOrderedColumns.map((column, index) => ({
         ...column,
         position: (index + 1) * 1000,
-        boardId
+        boardId,
       }));
 
       // Cập nhật state local
@@ -484,10 +497,9 @@ const BoardContent = () => {
     [activeDragItemType, orderedColumns]
   );
 
-
   return (
     <>
-      <BoardBar/>
+      <BoardBar />
       <DndContext
         collisionDetection={collisionDetectionStrategy}
         sensors={sensors}
@@ -496,20 +508,19 @@ const BoardContent = () => {
         onDragEnd={handleDragEnd}
       >
         <Box
-         sx={(theme) => ({
-          background: board?.thumbnail
-            ? board?.thumbnail.startsWith("#")
-              ? board?.thumbnail
-              : `url(${board?.thumbnail})`
-            : "#1693E1",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          imageRendering: "auto",
-          height: theme.trello.boardContentHeight, // Đặt giá trị height từ theme
-          padding: "18px 0 7px 0px",
-        })}
-        
+          sx={(theme) => ({
+            background: board?.thumbnail
+              ? board?.thumbnail.startsWith("#")
+                ? board?.thumbnail
+                : `url(${board?.thumbnail})`
+              : "#1693E1",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            imageRendering: "auto",
+            height: theme.trello.boardContentHeight, // Đặt giá trị height từ theme
+            padding: "18px 0 7px 0px",
+          })}
         >
           <Col_list columns={orderedColumns} boardId={boardId} />
           <DragOverlay dropAnimation={customDropAnimation}>
