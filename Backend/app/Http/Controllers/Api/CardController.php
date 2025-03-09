@@ -327,15 +327,7 @@ class CardController extends Controller
             'description' => $card->description ?? '',
             'listName' => $card->list->name ?? '', // Lấy tên danh sách chứa card
             'boardName' => $card->list->board->name ?? '', // Lấy tên board
-            'tasks' => $card->checklists->flatMap(function ($checklist) {
-                return $checklist->items->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'name' => $item->name,
-                        'completed' => (bool) $item->completed,
-                    ];
-                });
-            })->toArray(), // Lấy danh sách công việc từ checklists
+           
         ]);
     }
 
