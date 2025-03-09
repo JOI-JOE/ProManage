@@ -16,6 +16,10 @@ import CommentIcon from "@mui/icons-material/Comment";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DescriptionIcon from "@mui/icons-material/Description";
 import { useListsClosed } from "../../../../../../../hooks/useList";
+import { toast, ToastContainer } from "react-toastify";
+import { useParams } from "react-router-dom";
+import { useCardActions } from "../../../../../../../hooks/useCard";
+
 
 const initialArchivedItems = [
   { id: 1, name: "Thẻ 1", comments: 5 },
@@ -30,8 +34,18 @@ const Archived = ({ open, onClose }) => {
   const [search, setSearch] = useState("");
   const [archivedItems, setArchivedItems] = useState(initialArchivedItems);
   const [viewMode, setViewMode] = useState("cards");
-  const { listsClosed, isLoading, error, deleteMutation ,updateClosedMutation } = useListsClosed();
-  console.log(listsClosed);
+  const { boardId } = useParams();
+  // console.log(boardId);
+  
+  const { listsClosed, isLoading, error, deleteMutation ,updateClosedMutation } = useListsClosed(boardId);
+
+  const { cards, isLoadingCard, errorCard, archiveCard, deleteCard } = useCardActions(boardId);
+ 
+
+  // console.log(cardsArchivedByBoard);
+  
+  // console.log(listsClosed);
+ 
 
   // Hiển thị Toast Notification
   const handleDelete = (id) => {
@@ -48,11 +62,30 @@ const Archived = ({ open, onClose }) => {
     }
   };
 
-
-
-  const handleRestore = (id) => {
-    updateClosedMutation.mutate(id);
+  const handleRestoreList = (id) => {
+    updateClosedMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Khôi phục danh sách thành công! ✅");
+      },
+      onError: (error) => {
+        toast.error(`Lỗi: ${error.message}`);
+      },
+    });
   };
+
+  const handleRestoreCard = (id) => {
+    archiveCard(id)
+  };
+
+  const handleDeleteCard = (id) => {
+    if (!window.confirm("Bạn có chắc muốn xóa thẻ này?")) return;
+  
+    deleteCard(id)
+  };
+  
+
+
+
 
   const filteredItems = archivedItems.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
@@ -107,7 +140,7 @@ const Archived = ({ open, onClose }) => {
         {/* Hiển thị danh sách theo chế độ */}
         {viewMode === "cards" ? (
           <List>
-            {filteredItems.map((item) => (
+            {cards?.data?.map((item) => (
               <ListItem
                 key={item.id}
                 sx={{ backgroundColor: "#f0f0f0", borderRadius: 2, my: 1 }}
@@ -115,20 +148,20 @@ const Archived = ({ open, onClose }) => {
                 <ListItemText
                   primary={
                     <Typography sx={{ fontWeight: "bold", fontSize: "0.6rem" }}>
-                      {item.name}
+                      {item.title}
                     </Typography>
                   }
                   sx={{ color: "#000" }}
                 />
                 <Box display="flex" alignItems="center">
                   <IconButton
-                    onClick={() => handleDelete(item.id)}
+                   onClick={() => handleDeleteCard(item.id)}
                     sx={{ color: "red", fontSize: "16px" }}
                   >
-                    <DeleteIcon sx={{ fontSize: "16px" }} />
+                    <DeleteIcon  sx={{ fontSize: "16px" }}  />
                   </IconButton>
                   <IconButton
-                    onClick={() => handleRestore(item.id)}
+                    onClick={() => handleRestoreCard(item.id)}
                     sx={{ color: "teal", fontSize: "16px" }}
                   >
                     <RestoreIcon sx={{ fontSize: "16px" }} />
@@ -168,7 +201,7 @@ const Archived = ({ open, onClose }) => {
                       fontSize: "0.6rem",
                       paddingLeft: 0, // Set padding left to 0
                     }}
-                    onClick={() => handleRestore(item.id)} // Gọi handleRestore khi click
+                    onClick={() => handleRestoreList(item.id)} // Gọi handleRestore khi click
                   >
                     Gửi tới bảng thông tin
                   </Button>
@@ -204,6 +237,7 @@ const Archived = ({ open, onClose }) => {
           </Box>
         )}
       </Box>
+        <ToastContainer />
     </Drawer>
   );
 };

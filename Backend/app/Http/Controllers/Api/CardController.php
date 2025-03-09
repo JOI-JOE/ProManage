@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Events\CardPositionUpdated;
 use App\Events\ColumnPositionUpdated;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
@@ -335,5 +337,83 @@ class CardController extends Controller
                 });
             })->toArray(), // Lấy danh sách công việc từ checklists
         ]);
+    }
+
+
+    //// Lưu trữ , khôi phục thẻ, xóa vĩnh viễn
+    public function toggleArchive($id)
+    {
+        try {
+            // Tìm card theo ID, nếu không có sẽ ném lỗi 404
+            $card = Card::findOrFail($id);
+
+            // Chuyển đổi trạng thái lưu trữ
+            $card->is_archived = !$card->is_archived;
+            $card->save();
+
+            return response()->json([
+                'message' => 'Card archive status updated successfully',
+                'is_archived' => $card->is_archived,
+            ], 200);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Card not found',
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while updating the card',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getArchivedCardsByBoard($boardId)
+    {
+        try {
+            // Lấy danh sách ID thuộc boardId
+            $listIds = ListBoard::where('board_id', $boardId)->pluck('id');
+    
+            // Lấy các thẻ đã lưu trữ trong danh sách đó
+            $archivedCards = Card::whereIn('list_board_id', $listIds)
+                                 ->where('is_archived', 1)
+                                 ->get();
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Lấy danh sách thẻ đã lưu trữ thành công!',
+                'data' => $archivedCards
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra!'
+            ], 500);
+        }
+    }
+
+    public function delete($id)
+    {
+        try {
+            // Tìm card theo ID, nếu không có sẽ ném lỗi 404
+            $card = Card::findOrFail($id);
+
+            // Xóa card
+            $card->delete();
+
+            return response()->json([
+                'message' => 'Card deleted successfully',
+            ], 200);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Card not found',
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while deleting the card',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

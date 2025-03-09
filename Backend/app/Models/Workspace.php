@@ -58,9 +58,13 @@ class Workspace extends Model
     }
 
 
-    public function user()
+    // public function user()
+    // {
+    //     return $this->belongsTo(User::class, 'id_member_creator',);
+    // }
+    public function users()
     {
-        return $this->belongsTo(User::class, 'id_member_creator',);
+        return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id');
     }
 
     public function creator()

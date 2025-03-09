@@ -28,9 +28,10 @@ import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
-import { useCardById, useUpdateCardTitle } from "../../../../../../../../../hooks/useCard";
+import {useCardActions, useCardById, useUpdateCardTitle } from "../../../../../../../../../hooks/useCard";
 import { useCreateComment, useCommentsByCard, useDeleteComment, useUpdateComment } from "../../../../../../../../../hooks/useComment";
 import { useUser } from "../../../../../../../../../hooks/useUser";
+import { toast, ToastContainer } from "react-toastify";
 
 
 
@@ -75,6 +76,8 @@ const CardModal = () => {
   // console.log(cardId);
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
+  const { archiveCard} = useCardActions();
+  
 
   const { data: list, isLoading: listLoading, error: listError } = useQuery({
     queryKey: ["list", cardDetail?.list_board_id],
@@ -105,11 +108,15 @@ const CardModal = () => {
   }, [cardDetail?.description]);
 
 
-  if (isLoading) return <Box>Loading...</Box>;
-  if (error) return <Box>Error: {error.message}</Box>;
+  // if (isLoading) return <Box>Loading...</Box>;
+  // if (error) return <Box>Error: {error.message}</Box>;
 
-  if (listLoading) return <Box>Loading...</Box>;
-  if (listError) return <Box>Error: {error.message}</Box>;
+  // if (listLoading) return <Box>Loading...</Box>;
+  // if (listError) return <Box>Error: {error.message}</Box>;
+
+  const handleArchiveCard = (cardId) => {
+    archiveCard(cardId);
+  };
 
 
   const handleDescriptionClick = () => {
@@ -611,7 +618,7 @@ const CardModal = () => {
                 </ListItem>
 
                 <ListItem disablePadding>
-                  <ListItemButton>
+                  <ListItemButton  onClick={() => handleArchiveCard(cardId)}>
                     <ListItemText primary="Lưu trữ" />
                   </ListItemButton>
                 </ListItem>
@@ -691,7 +698,9 @@ const CardModal = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <ToastContainer />
     </Dialog>
+    
   );
 };
 
