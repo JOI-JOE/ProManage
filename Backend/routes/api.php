@@ -178,7 +178,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
-Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
+
+Route::middleware('auth:sanctum')->prefix('cards')->group(function (
     Route::get('/{listId}/getCardsByList', [CardController::class, 'getCardsByList']);
     // routes/api.php
     // Route::patch('/{cardId}/move', [CardController::class, 'moveCard']);
@@ -198,14 +199,14 @@ Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
     Route::put('/{cardId}/dates', [CardController::class, 'updateDates']); // cập nhật ngày của thẻ
     Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']); // xóa ngày
     Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']); // danh sách nhãn trong thẻ
-    Route::post('/{cardId}/labels', [LabelController::class, 'addLabelToCard']); // thêm nhãn vào thẻ
-
-    Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']); // xóa nhãn khỏi thẻ
+    Route::put('/{cardId}/labels/update-action', [LabelController::class, 'updateAddAndRemove']); // thêm và xóa nhãn khỏi thẻ
 
     Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
 });
-// cập nhật nhãn ,Vì trello sẽ không cập nhật nhãn theo thẻ
-Route::put('/labels/{labelId}', [LabelController::class, 'updateLabel']);
+Route::get('/boards/{boardId}/labels', [LabelController::class, 'getLabelsByBoard']);// hiển thị nhãn theo bảng
+Route::post('/boards/{boardId}/labels', [LabelController::class, 'createLabel']);// thêm nhãn chung
+Route::delete('/labels/{labelId}', [LabelController::class, 'deleteLabelByBoard']);//xóa nhãn
+Route::patch('/labels/{labelId}/update-name', [LabelController::class, 'updateLabelName']);
 ///Comment
 Route::middleware(['auth:sanctum'])->group(function () {
     // Lấy tất cả bình luận của card
@@ -220,7 +221,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/comments/{id}', [CommentCardController::class, 'update']);
 });
 // 📂 File đính kèm (Attachments)
-Route::prefix('/{cardId}/attachments')->group(function () {
+Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [AttachmentController::class, 'getAttachments']);
     Route::post('/upload', [AttachmentController::class, 'uploadAttachment']);
     Route::post('/uploadcover', [AttachmentController::class, 'uploadCover']);
