@@ -127,11 +127,11 @@ const CardModal = () => {
     }
   }, [cardDetail?.description]);
 
-  if (isLoading) return <Box>Loading...</Box>;
-  if (error) return <Box>Error: {error.message}</Box>;
+  // if (isLoading) return <Box>Loading...</Box>;
+  // if (error) return <Box>Error: {error.message}</Box>;
 
-  if (listLoading) return <Box>Loading...</Box>;
-  if (listError) return <Box>Error: {error.message}</Box>;
+  // if (listLoading) return <Box>Loading...</Box>;
+  // if (listError) return <Box>Error: {error.message}</Box>;
 
   const handleDescriptionClick = () => {
     setIsEditingDescription(true);

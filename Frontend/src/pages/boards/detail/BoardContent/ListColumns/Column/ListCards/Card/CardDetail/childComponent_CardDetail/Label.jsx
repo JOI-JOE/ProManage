@@ -54,6 +54,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [newLabelColor, setNewLabelColor] = useState("#000000");
+
   
   useEffect(() => {
     if (fetchedLabels) {

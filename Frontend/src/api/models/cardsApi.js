@@ -52,7 +52,6 @@ export const getCardById = async (cardId) => {
   }
 };
 
-
 export const updateDescription = async (cardId, description) => {
   try {
     const response = await authClient.patch(`/cards/${cardId}/description`, {
