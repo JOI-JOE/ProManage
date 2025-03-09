@@ -28,11 +28,22 @@ import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
-import {useCardActions, useCardById, useUpdateCardTitle } from "../../../../../../../../../hooks/useCard";
-import { useCreateComment, useCommentsByCard, useDeleteComment, useUpdateComment } from "../../../../../../../../../hooks/useComment";
-import { useUser } from "../../../../../../../../../hooks/useUser";
-import { toast, ToastContainer } from "react-toastify";
 
+import {
+  useCardActions,
+  useCardById,
+  useUpdateCardTitle,
+} from "../../../../../../../../../hooks/useCard";
+import {
+  useCreateComment,
+  useCommentsByCard,
+  useDeleteComment,
+  useUpdateComment,
+} from "../../../../../../../../../hooks/useComment";
+import { useUser } from "../../../../../../../../../hooks/useUser";
+import AddIcon from "@mui/icons-material/Add";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import { toast, ToastContainer } from "react-toastify";
 
 
 const CardModal = () => {
@@ -121,10 +132,6 @@ const CardModal = () => {
       setIsEditingDescription(true); // Tự động vào chế độ chỉnh sửa nếu không có mô tả
     }
   }, [cardDetail?.description]);
-
-
-  // if (isLoading) return <Box>Loading...</Box>;
-  // if (error) return <Box>Error: {error.message}</Box>;
 
   // if (listLoading) return <Box>Loading...</Box>;
   // if (listError) return <Box>Error: {error.message}</Box>;

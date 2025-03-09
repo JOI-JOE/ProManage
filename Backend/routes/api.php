@@ -157,6 +157,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
 
+
 Route::middleware('auth:sanctum')->prefix('cards')->group(function (
     Route::get('/{listId}/getCardsByList', [CardController::class, 'getCardsByList']);
     // routes/api.php

@@ -188,7 +188,6 @@ export const useUpdateCardTitle = () => {
   });
 };
 
-
 export const useCardActions = (boardId) => {
   const queryClient = useQueryClient();
 
@@ -231,3 +230,5 @@ export const useCardActions = (boardId) => {
     deleteCard: deleteCardMutation.mutate, // Gọi mutate trực tiếp
   };
 };
+
+
