@@ -140,6 +140,7 @@ const CardModal = () => {
     archiveCard(cardId);
   };
 
+
   const handleDescriptionClick = () => {
     setIsEditingDescription(true);
     setOriginalDescription(description);
