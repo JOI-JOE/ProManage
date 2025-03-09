@@ -18,6 +18,30 @@ export const getListByBoardId = async (boardId) => {
   }
 };
 
+export const getListClosed = async () => {
+  try {
+    const response = await authClient.get("/lists/listClosed");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy list được lưu trữ:", error);
+    throw error;
+  }
+};
+
+export const deleteList = async (id) => {
+  try {
+    const response = await authClient.delete(`/lists/${id}/destroy`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi xóa list:", error);
+    throw error;
+  }
+};
+
+
+
+
+
 export const getListDetail = async (listId) => {
   try {
     const response = await authClient.get(`/lists/${listId}/detail`);

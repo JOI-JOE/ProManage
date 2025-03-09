@@ -100,4 +100,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(WorkspaceMembers::class, 'id_member');
     }
+
+    public function comments()
+    {
+        return $this->hasMany(CommentCard::class);  // Mỗi user có thể tạo nhiều bình luận
+    }
 }

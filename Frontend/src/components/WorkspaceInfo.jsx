@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Box, TextField, Button } from "@mui/material";
-import { useUpdateInforWorkspace } from "../../../hooks/useWorkspace";
+// import { useUpdateInforWorkspace } from "../../../hooks/useWorkspace";
+import { useUpdateInforWorkspace } from "../hooks/useWorkspace";
 
 const existingShortNames = ["abc", "xyz", "test"];
 
-const WorkspaceDetailForm = ({ workspaceInfo, onCancel }) => {
+const WorkspaceInfo = ({ workspaceInfo, onCancel }) => {
   const initialFormData = {
     name: workspaceInfo ? workspaceInfo.display_name : "",
     shortName: workspaceInfo ? workspaceInfo.name : "",
@@ -131,4 +132,4 @@ const WorkspaceDetailForm = ({ workspaceInfo, onCancel }) => {
   );
 };
 
-export default WorkspaceDetailForm;
+export default WorkspaceInfo;

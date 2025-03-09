@@ -25,7 +25,7 @@ class WorkspaceInvitations extends Model
         'id_invited_by_member',
     ];
 
-     protected static function boot()
+    protected static function boot()
     {
         parent::boot();
         static::creating(function ($model) {
@@ -42,16 +42,11 @@ class WorkspaceInvitations extends Model
 
     public function workspace()
     {
-        return $this->belongsTo(Workspace::class, 'id_workspace');
+        return $this->belongsTo(Workspace::class, 'workspace_id');
     }
 
-    public function invitedMember()
-    {
-        return $this->belongsTo(User::class, 'id_invited_member');
-    }
-
-    public function invitedBy()
-    {
-        return $this->belongsTo(User::class, 'id_invited_by_member');
-    }
+    // public function invitedBy()
+    // {
+    //     return $this->belongsTo(User::class, 'id_invited_by_member');
+    // }
 }
