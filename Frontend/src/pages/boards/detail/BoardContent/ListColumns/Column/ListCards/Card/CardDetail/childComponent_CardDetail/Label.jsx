@@ -174,7 +174,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                         left: "50%",
                         transform: "translate(-50%, -50%)",
                         color: "#fff",
-                        fontSize: "0.4rem",
+                        fontSize: "0.6rem",
                         fontWeight: "bold",
                       },
                     }}

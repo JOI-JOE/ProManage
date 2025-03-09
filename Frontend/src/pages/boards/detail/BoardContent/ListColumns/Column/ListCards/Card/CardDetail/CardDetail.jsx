@@ -46,9 +46,10 @@ const CardModal = () => {
   const { cardId, title } = useParams();
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
-  const [isEditingDescription, setIsEditingDescription] = useState(true);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [originalDescription, setOriginalDescription] = useState("");
   const [comment, setComment] = useState("");
+  const [isEditingComment, setIsEditingComment] = useState(false);
   // const [setComments] = useState([]);
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -123,7 +124,7 @@ const CardModal = () => {
     } else {
       setDescription(""); // Đặt description rỗng nếu không có
       setOriginalDescription(""); // Đặt giá trị ban đầu rỗng
-      setIsEditingDescription(true); // Tự động vào chế độ chỉnh sửa nếu không có mô tả
+      setIsEditingDescription(false); // Không tự động vào chế độ chỉnh sửa nếu không có mô tả
     }
   }, [cardDetail?.description]);
 
@@ -167,21 +168,21 @@ const CardModal = () => {
   };
 
   const handleSaveComment = () => {
-    if (!comment.trim()) {
+    if (isEmptyHTML(comment)) {
       console.error("⚠️ Nội dung bình luận không được để trống!");
       return;
     }
 
     const newComment = {
-      card_id: cardId, // ID của thẻ (UUID)
-      user_id: user.id, // ID của user (UUID)
-      content: comment.trim(), // Nội dung comment
+      card_id: cardId,
+      user_id: user.id,
+      content: comment.trim(), // Có thể giữ hoặc xử lý thêm để loại bỏ thẻ rỗng
     };
 
     addComment(newComment, {
       onSuccess: () => {
-        setComment(""); // Reset input sau khi thêm thành công
-        // refetch();
+        setComment("");
+        setIsEditingComment(false);
       },
     });
   };
@@ -270,6 +271,10 @@ const CardModal = () => {
     }
   };
 
+  const handleCommentClick = () => {
+    setIsEditingComment(true);
+  };
+
   return (
     <Dialog
       open={true}
@@ -309,6 +314,7 @@ const CardModal = () => {
           </span>
         </Typography>
         {/* New section to match the provided image */}
+
         <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
           <Avatar sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}>
             PH
@@ -430,86 +436,7 @@ const CardModal = () => {
             <Typography variant="subtitle1" fontWeight="bold">
               Mô tả
             </Typography>
-            {isEditingDescription ? (
-              <>
-                <ReactQuill
-                  value={description}
-                  onChange={setDescription}
-                  placeholder="Add a more detailed description..."
-                  style={{ marginTop: "8px" }}
-                  // onKeyDown={(e) => handleKeyPress(e, document.querySelector(".ql-editor")?.__quill)}
-                  theme="snow"
-                  modules={{
-                    toolbar: [
-                      [{ header: [1, 2, false] }],
-                      ["bold", "italic", "underline", "strike"],
-                      [{ list: "ordered" }, { list: "bullet" }],
-                      ["link"],
-                      ["clean"],
-                    ],
-                  }}
-                  formats={[
-                    "header",
-                    "bold",
-                    "italic",
-                    "underline",
-                    "strike",
-                    "list",
-                    "bullet",
-                    "link",
-                  ]}
-                  sx={{
-                    "& .ql-container": {
-                      border: "1px solid #ddd",
-                      borderRadius: 4,
-                    },
-                    "& .ql-toolbar": { border: "1px solid #ddd" },
-                  }}
-                />
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 1,
-                    mt: 1,
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    size="small"
-                    sx={{
-                      backgroundColor: "teal",
-                      color: "#FFF",
-                      fontSize: "0.7rem",
-                      height: "25px",
-                      minWidth: "50px",
-                    }}
-                    onClick={handleSaveDescription}
-                  >
-                    Lưu
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    sx={{
-                      color: "#172B4D",
-                      borderColor: "#ddd",
-                      fontSize: "0.7rem",
-                      height: "25px",
-                      minWidth: "50px",
-                      "&:hover": {
-                        backgroundColor: "#E4E7EB",
-                        borderColor: "#bbb",
-                      },
-                    }}
-                    onClick={handleCancelDescription}
-                  >
-                    Hủy
-                  </Button>
-                </Box>
-              </>
-            ) : (
+            {!isEditingDescription && (
               <Typography
                 variant="body1"
                 sx={{
@@ -522,12 +449,10 @@ const CardModal = () => {
                   "& ol": {
                     // Đảm bảo định dạng danh sách có số
                     listStyleType: "decimal",
-
                     paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
                   },
                   "& ul": {
                     // Đảm bảo định dạng danh sách có số
-
                     listStyleType: "disc",
                     paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
                   },
@@ -538,9 +463,93 @@ const CardModal = () => {
                 onClick={handleDescriptionClick}
                 dangerouslySetInnerHTML={{
                   __html:
-                    description || cardDetail?.description || "No description",
+                    description ||
+                    cardDetail?.description ||
+                    "<span style='color: #a4b0be; font-size: 0.6rem;'>Thêm mô tả ...</span>",
                 }}
               />
+            )}
+            {isEditingDescription && (
+              <>
+                <ReactQuill
+                  value={description}
+                  onChange={setDescription}
+                  placeholder="Add a more detailed description..."
+                  style={{ marginTop: "8px" }}
+                  theme="snow"
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, false] }],
+                      ["bold", "italic", "underline", "strike"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link"],
+                      ["image"],
+                      ["clean"],
+                    ],
+                  }}
+                  formats={[
+                    "header",
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strike",
+                    "list",
+                    "bullet",
+                    "link",
+                    "image",
+                  ]}
+                  sx={{
+                    "& .ql-container": {
+                      border: "1px solid #ddd",
+                      borderRadius: 4,
+                    },
+                    "& .ql-toolbar": { border: "1px solid #ddd" },
+                  }}
+                />
+                {description.trim() && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1,
+                      mt: 1,
+                    }}
+                  >
+                    <Button
+                      variant="contained"
+                      size="small"
+                      sx={{
+                        backgroundColor: "teal",
+                        color: "#FFF",
+                        fontSize: "0.7rem",
+                        height: "25px",
+                        minWidth: "50px",
+                      }}
+                      onClick={handleSaveDescription}
+                    >
+                      Lưu
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        color: "#172B4D",
+                        borderColor: "#ddd",
+                        fontSize: "0.7rem",
+                        height: "25px",
+                        minWidth: "50px",
+                        "&:hover": {
+                          backgroundColor: "#E4E7EB",
+                          borderColor: "#bbb",
+                        },
+                      }}
+                      onClick={handleCancelDescription}
+                    >
+                      Hủy
+                    </Button>
+                  </Box>
+                )}
+              </>
             )}
 
             {tasks.length > 0 && (
@@ -587,128 +596,246 @@ const CardModal = () => {
             >
               Hoạt động
             </Typography>
-            <TextField
-              fullWidth
-              placeholder="Write a comment..."
-              variant="outlined"
-              size="small"
-              multiline
-              rows={1}
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              sx={{ fontSize: "0.7rem" }}
-              InputProps={{
-                style: { fontSize: "0.7rem" },
-              }}
-            />
-            <Button
-              variant="contained"
-              size="small"
-              sx={{
-                mt: 1,
-                backgroundColor: "teal",
-                fontSize: "0.7rem",
-                height: "25px",
-                minWidth: "50px",
-              }}
-              onClick={handleSaveComment}
-            >
-              Save
-            </Button>
+            {!isEditingComment && (
+              <Typography
+                variant="body1"
+                sx={{
+                  mt: 1,
+                  color: "#a4b0be",
+                  wordBreak: "break-word",
+                  whiteSpace: "pre-wrap", // Giữ định dạng dòng
+                  cursor: "pointer",
+                  fontSize: "0.6rem",
+                  // "&:hover": { backgroundColor: "#F5F6F8", borderRadius: 4 }
+                }}
+                onClick={handleCommentClick}
+              >
+                Viết bình luận...
+              </Typography>
+            )}
+            {isEditingComment && (
+              <>
+                <ReactQuill
+                  value={comment}
+                  onChange={setComment}
+                  placeholder="Write a comment..."
+                  style={{ marginTop: "8px" }}
+                  theme="snow"
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, false] }],
+                      ["bold", "italic", "underline", "strike"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link"],
+                      ["image"],
+                      ["clean"],
+                    ],
+                  }}
+                  formats={[
+                    "header",
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strike",
+                    "list",
+                    "bullet",
+                    "link",
+                    "image",
+                  ]}
+                  sx={{
+                    "& .ql-container": {
+                      border: "1px solid #ddd",
+                      borderRadius: 4,
+                    },
+                    "& .ql-toolbar": { border: "1px solid #ddd" },
+                  }}
+                />
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                    mt: 1,
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    size="small"
+                    sx={{
+                      backgroundColor: "teal",
+                      color: "#FFF",
+                      fontSize: "0.7rem",
+                      height: "25px",
+                      minWidth: "50px",
+                    }}
+                    onClick={handleSaveComment}
+                    disabled={isEmptyHTML(comment)}
+                  >
+                    Lưu
+                  </Button>
+                </Box>
+              </>
+            )}
 
             {/* Hiển thị các bình luận */}
-            {comments.map((cmt, index) => (
-              <Box
-                key={index}
-                sx={{ display: "flex", flexDirection: "column", mt: 1 }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Avatar
-                    src={cmt?.user?.avatar || ""}
-                    sx={{
-                      bgcolor: !cmt?.user?.avatar ? "pink" : "transparent",
-                      color: !cmt?.user?.avatar ? "white" : "inherit",
-                      width: 40,
-                      height: 40,
-                    }}
-                  >
-                    {!cmt?.user?.avatar &&
-                      (cmt?.user?.full_name?.charAt(0)?.toUpperCase() || "?")}
-                  </Avatar>
-                  <Box>
-                    {editingCommentIndex === cmt.id ? (
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        multiline
-                        rows={1}
-                        value={editingCommentText}
-                        onChange={(e) => setEditingCommentText(e.target.value)}
-                        sx={{ fontSize: "0.7rem" }}
-                        InputProps={{
-                          style: { fontSize: "0.7rem" },
-                        }}
-                      />
-                    ) : (
-                      <Typography
-                        variant="body2"
-                        style={{
-                          wordWrap: "break-word",
-                          whiteSpace: "pre-wrap",
-                          overflowWrap: "break-word",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        <strong>{cmt.user?.full_name || "Người dùng"}:</strong>{" "}
-                        {cmt.content}
-                      </Typography>
-                    )}
-                    <Box sx={{ display: "flex", mt: "-4px" }}>
+            {comments.map((cmt, index) => {
+              const content = cmt.content || "";
+              if (isEmptyHTML(content)) return null; // Bỏ qua nếu nội dung rỗng
+
+              return (
+                <Box
+                  key={index}
+                  sx={{ display: "flex", flexDirection: "column", mt: 1 }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Avatar
+                      src={cmt?.user?.avatar || ""}
+                      sx={{
+                        bgcolor: !cmt?.user?.avatar ? "pink" : "transparent",
+                        color: !cmt?.user?.avatar ? "white" : "inherit",
+                        width: 28,
+                        height: 28,
+                        fontSize: "0.6rem",
+                      }}
+                    >
+                      {!cmt?.user?.avatar &&
+                        (cmt?.user?.full_name?.charAt(0)?.toUpperCase() || "?")}
+                    </Avatar>
+                    <Box sx={{ ml: 1, marginTop: "8px" }}>
                       {editingCommentIndex === cmt.id ? (
-                        <Button
-                          size="small"
-                          onClick={handleSaveEditedComment}
-                          sx={{
-                            fontSize: "0.456rem",
-                            textTransform: "none",
-                          }}
-                        >
-                          Save
-                        </Button>
+                        <>
+                          {/* Sử dụng ReactQuill thay vì TextField */}
+                          <ReactQuill
+                            value={editingCommentText}
+                            onChange={setEditingCommentText}
+                            placeholder="Edit your comment..."
+                            style={{ marginTop: "8px" }}
+                            theme="snow"
+                            modules={{
+                              toolbar: [
+                                [{ header: [1, 2, false] }],
+                                ["bold", "italic", "underline", "strike"],
+                                [{ list: "ordered" }, { list: "bullet" }],
+                                ["link"],
+                                ["image"],
+                                ["clean"],
+                              ],
+                            }}
+                            formats={[
+                              "header",
+                              "bold",
+                              "italic",
+                              "underline",
+                              "strike",
+                              "list",
+                              "bullet",
+                              "link",
+                              "image",
+                            ]}
+                            sx={{
+                              "& .ql-container": {
+                                border: "1px solid #ddd",
+                                borderRadius: 4,
+                              },
+                              "& .ql-toolbar": { border: "1px solid #ddd" },
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "flex-end",
+                              gap: 1,
+                              mt: 1,
+                            }}
+                          >
+                            <Button
+                              variant="contained"
+                              size="small"
+                              sx={{
+                                backgroundColor: "teal",
+                                color: "#FFF",
+                                fontSize: "0.7rem",
+                                height: "25px",
+                                minWidth: "50px",
+                              }}
+                              onClick={handleSaveEditedComment}
+                              disabled={isEmptyHTML(editingCommentText)} // Vô hiệu hóa nếu nội dung rỗng
+                            >
+                              Lưu
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                color: "#172B4D",
+                                borderColor: "#ddd",
+                                fontSize: "0.7rem",
+                                height: "25px",
+                                minWidth: "50px",
+                                "&:hover": {
+                                  backgroundColor: "#E4E7EB",
+                                  borderColor: "#bbb",
+                                },
+                              }}
+                              onClick={() => {
+                                setEditingCommentIndex(null); // Thoát chế độ chỉnh sửa
+                                setEditingCommentText(""); // Reset nội dung chỉnh sửa
+                              }}
+                            >
+                              Hủy
+                            </Button>
+                          </Box>
+                        </>
                       ) : (
                         <>
-                          <Button
-                            size="small"
-                            onClick={() =>
-                              handleEditComment(cmt.id, cmt.content)
-                            }
-                            sx={{
-                              mr: "-8px",
-                              fontSize: "0.456rem",
-                              textTransform: "none",
+                          <Typography
+                            variant="body2"
+                            style={{
+                              wordWrap: "break-word",
+                              whiteSpace: "pre-wrap",
+                              overflowWrap: "break-word",
+                              wordBreak: "break-word",
+                              fontSize: "0.6rem",
                             }}
                           >
-                            Chỉnh sửa
-                          </Button>
-                          <Button
-                            size="small"
-                            onClick={() => handleDeleteComment(cmt.id)}
-                            sx={{
-                              ml: "-16px",
-                              fontSize: "0.456rem",
-                              textTransform: "none",
-                            }}
-                          >
-                            Xóa
-                          </Button>
+                            <strong>
+                              {cmt.user?.full_name || "Người dùng"}:
+                            </strong>{" "}
+                            {content.replace(/<\/?p>/g, "")}
+                          </Typography>
+                          <Box sx={{ display: "flex", mt: "-4px" }}>
+                            <Button
+                              size="small"
+                              onClick={() =>
+                                handleEditComment(cmt.id, cmt.content)
+                              }
+                              sx={{
+                                mr: "-8px",
+                                fontSize: "0.4rem",
+                                textTransform: "none",
+                              }}
+                            >
+                              Chỉnh sửa
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={() => handleDeleteComment(cmt.id)}
+                              sx={{
+                                ml: "-16px",
+                                fontSize: "0.4rem",
+                                textTransform: "none",
+                              }}
+                            >
+                              Xóa
+                            </Button>
+                          </Box>
                         </>
                       )}
                     </Box>
                   </Box>
                 </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Grid>
 
           {/* Cột phải (Sidebar) */}
