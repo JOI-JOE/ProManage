@@ -30,7 +30,7 @@ import Print from "./Component_BoardMenu/Print";
 import ChangeBackground from "./Component_BoardMenu/ChangeBackground/ChangeBackground";
 import LabelList from "./Component_BoardMenu/Label/Label";
 
-const BoardMenu = () => {
+const BoardMenu = ({board}) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
@@ -78,9 +78,7 @@ const BoardMenu = () => {
 
   const settingsItems = [
     { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) },
-    { text: "Thay đổi hình nền", icon: <PaletteIcon /> },
-    { text: "Nhãn", icon: <LabelIcon /> },
-
+   
     {
       text: "Thay đổi hình nền",
       icon: <PaletteIcon />,
@@ -153,7 +151,7 @@ const BoardMenu = () => {
       <Drawer anchor="right" open={menuOpen} onClose={toggleMenu(false)}>
         {drawerList}
       </Drawer>
-      <BoardDetailsDrawer open={detailsOpen} onClose={toggleDetails(false)} />
+      <BoardDetailsDrawer board={board} open={detailsOpen} onClose={toggleDetails(false)} />
       <ActivityDrawer open={activityOpen} onClose={toggleActivity(false)} />
       <Archived open={archiveOpen} onClose={toggleArchive(false)} />
       <Setting open={settingsOpen} onClose={toggleSettings(false)} />

@@ -6,9 +6,11 @@ import {
   getCardByList,
   updateCardPositionsDiffCol,
   updateCardPositionsSameCol,
-  
+  getCardById,
+  updateDescription,
+  updateCardTitle
 } from "../api/models/cardsApi";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { createEchoInstance } from "./useRealtime";
 
 const CARDS_CACHE_KEY = "cards";
@@ -122,5 +124,61 @@ export const useCardPositionsInColumns = (cards) =>
 
 export const useCardPositionsOutColumns = (cards) =>
   updateCardPositionsGeneric(cards, updateCardPositionsDiffCol);
+export const useCardById = (cardId) => {
+  const queryClient = useQueryClient();
 
-// console.log(useColors());
+  const cardDetail = useQuery({
+    queryKey: ["cards", cardId],
+    queryFn: () => getCardById(cardId),
+
+    staleTime: 1000 * 60 * 5, // 5 phút.
+    cacheTime: 1000 * 60 * 30, // 30 phút.
+    enabled: !!cardId,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['cards']);
+    }
+  });
+
+  const updateDescriptionMutation = useMutation({
+    mutationFn: (description) => updateDescription(cardId, description), // Gọi API cập nhật mô tả
+    onSuccess: (data) => {
+      console.log("Mô tả đã được cập nhật:", data);
+      //   setIsEditingDescription(false);
+      // Invalidates danh sách card của listId để refetch dữ liệu
+      //   setDescription(data.cardDetail.description); // Cập nhật state local
+
+      queryClient.invalidateQueries(["cardDetail", cardId]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật mô tả:", error);
+    },
+  });
+
+
+  const memoizedReturnValue = useMemo(
+    () => ({
+      ...cardDetail,
+      updateDescriptionCard: updateDescriptionMutation.mutate,
+
+    }),
+    [cardDetail, updateDescriptionMutation.mutate]
+  );
+
+  return memoizedReturnValue;
+}
+
+export const useUpdateCardTitle = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+      mutationFn: ({ cardId, title }) => updateCardTitle(cardId, title),
+      onSuccess: (data, variables) => {
+          // Cập nhật dữ liệu card trong cache sau khi update thành công
+          queryClient.invalidateQueries(["cards", variables.cardId]);
+      },
+      onError: (error) => {
+          console.error("Lỗi khi cập nhật tên card:", error);
+      },
+  });
+};
+

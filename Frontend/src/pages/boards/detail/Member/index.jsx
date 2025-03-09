@@ -24,13 +24,42 @@ import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useParams } from "react-router-dom";
 
-import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
 import MemberItem from "./MemberItem";
 import GenerateLink from "../../../../components/GenerateLink";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
-import { useCreateInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
+import {
+  useCancelInvitationWorkspace,
+  useCreateInviteWorkspace,
+} from "../../../../hooks/useWorkspaceInvite";
+import WorkspaceInfo from "../../../../components/WorkspaceInfo";
+import { useGetInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 
 const Member = () => {
+  const { workspaceName } = useParams();
+  // Fetch thông tin workspace dựa trên workspaceName
+  const {
+    data: workspace,
+    isLoading: isLoadingWorkspace,
+    isError: isWorkspaceError,
+    error: workspaceError,
+  } = useGetWorkspaceByName(workspaceName, {
+    enabled: !!workspaceName, // Chỉ fetch khi workspaceName tồn tại
+  });
+
+  // Sử dụng useGetInviteWorkspace trong component
+  const {
+    data: inviteData,
+    isLoading: isInviteLoading,
+    refetch,
+  } = useGetInviteWorkspace(workspace?.id, {
+    enabled: !!workspace?.id,
+  });
+
+  const { mutate: createInviteLink, isLoading: isCreatingInvite } =
+    useCreateInviteWorkspace();
+  const { mutate: cancelInviteLink, isLoading: isCancelingInvite } =
+    useCancelInvitationWorkspace();
+
   const [isFormVisible, setFormVisible] = useState(false);
   const [isInviteOpen, setInviteOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -42,83 +71,55 @@ const Member = () => {
     setLinkCopied(false);
     setIsLinkActive(false);
   };
-
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
   };
-
   const handleCloseInvite = () => {
     setInviteOpen(false);
   };
-
   const handleDisableLink = () => {
     setIsLinkActive(false);
     setLinkCopied(false);
   };
 
-  const { workspaceName } = useParams();
-  const { data: workspace, isLoading: isLoadingWorkspace } = useGetWorkspaceByName(workspaceName, {
-    enabled: !!workspaceName,
-  });
-
   const members = workspace?.members || [];
 
-  const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
+  console.log(inviteData?.invitationSecret);
 
   const handleGenerateLink = async () => {
-    if (!workspace) {
-      console.error("Workspace data is not available yet");
-      throw new Error("Vui lòng đợi dữ liệu workspace được tải xong");
-    }
-
-    if (!workspace.id) {
-      console.error("Workspace ID is undefined");
+    if (!workspace?.id) {
       throw new Error("Không tìm thấy ID của workspace");
     }
-
     return new Promise((resolve, reject) => {
       createInviteLink(
         { workspaceId: workspace.id },
         {
           onSuccess: (data) => {
-            // Tạo link mời với format: http://localhost:5173/invite/:workspaceId/:inviteToken
-            const inviteLink = `http://localhost:5173/invite/${workspace.id}/${data.secret}`;
-            resolve(inviteLink);
+            resolve(data.secret); // Trả về liên kết mới
           },
           onError: (error) => {
             console.error("Lỗi khi tạo link mời:", error);
-            reject(error);
+            reject(error); // Trả về lỗi
           },
         }
       );
     });
   };
 
-  // Nếu đang load workspace, có thể hiển thị loading state
-  if (isLoadingWorkspace) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Typography>Đang tải dữ liệu workspace...</Typography>
-      </Box>
-    );
-  }
-
-  // Nếu không tìm thấy workspace
-  if (!workspace) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Typography color="error">Không tìm thấy workspace</Typography>
-      </Box>
-    );
-  }
+  const handleDeleteLink = async () => {
+    if (!workspace?.id) {
+      throw new Error("Không tìm thấy ID của workspace");
+    }
+    return cancelInviteLink({ workspaceId: workspace.id });
+  };
 
   return (
     <Box
       sx={{
         width: "100%",
         maxWidth: "1200px",
-        padding: "20px",
-        margin: "30px auto",
+        padding: "32px 20px 20px 20px",
+        // margin: "30px auto",
       }}
     >
       {/* Header chứa Tiêu đề và Nút Mời Thành Viên */}
@@ -135,8 +136,7 @@ const Member = () => {
           minHeight: "80px",
         }}
       >
-        {/* Nếu form chưa hiển thị, hiển thị avatar và tiêu đề */}
-        {!isFormVisible ? (
+        {isFormVisible ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Avatar
               sx={{
@@ -179,7 +179,10 @@ const Member = () => {
             </Box>
           </Box>
         ) : (
-          <WorkspaceDetailForm />
+          <WorkspaceInfo
+            workspaceInfo={workspace}
+            onCancel={toggleFormVisibility} // Truyền hàm đóng form
+          />
         )}
 
         <Button
@@ -206,7 +209,6 @@ const Member = () => {
         spacing={2}
         sx={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}
       >
-
         {/* Cột trái:  */}
         <Grid item xs={12} sm={3} md={2}>
           <Box sx={{ padding: "0px", width: "100%" }}>
@@ -327,7 +329,8 @@ const Member = () => {
                   key={`${member.id}-${index}`} // Kết hợp member.id và index để tạo key duy nhất
                   id="workspace-member-list"
                 >
-                  <MemberItem member={member} /> {/* Truyền dữ liệu member vào MemberItem */}
+                  <MemberItem member={member} />{" "}
+                  {/* Truyền dữ liệu member vào MemberItem */}
                 </Box>
               ))}
             </Box>
@@ -357,7 +360,13 @@ const Member = () => {
             placeholder="Địa chỉ email hoặc tên"
             sx={{ marginBottom: "10px" }}
           />
-          <GenerateLink onGenerateLink={handleGenerateLink} />
+          <GenerateLink
+            onGenerateLink={handleGenerateLink}
+            onDeleteLink={handleDeleteLink}
+            secret={inviteData?.invitationSecret}
+            workspaceId={workspace.id}
+          />
+          {/* <GenerateLink onGenerateLink={handleGenerateLink} onDeleteLink={handleDeleteLink} id={workspace.id} /> */}
         </DialogContent>
       </Dialog>
     </Box>

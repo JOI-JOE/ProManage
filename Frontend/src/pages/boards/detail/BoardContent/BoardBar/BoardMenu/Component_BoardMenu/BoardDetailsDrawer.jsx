@@ -10,10 +10,13 @@ import ReactQuill from "react-quill";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 
-const BoardDetailsDrawer = ({ open, onClose }) => {
+const BoardDetailsDrawer = ({ board, open, onClose }) => {
   const [description, setDescription] = useState("");
   const [isEditing, setIsEditing] = useState(true);
   const [previousDescription, setPreviousDescription] = useState("");
+//  console.log('BoardDetailsDrawer:',board.creator.full_name);
+ 
+  
 
   const handleSave = () => {
     setIsEditing(false);
@@ -67,11 +70,11 @@ const BoardDetailsDrawer = ({ open, onClose }) => {
       </Typography>
 
       <Typography variant="body1" sx={{ fontWeight: "bold", marginTop: "8px" }}>
-        Phạm Thị Hồng Ngát (FPL HN)
+      {board.creator.full_name}
       </Typography>
 
       <Typography variant="body2" color="text.secondary">
-        @phamthihongngatfplhn
+      {board.creator.email}
       </Typography>
 
       <Button variant="outlined" size="small" sx={{ marginTop: "8px" }}>

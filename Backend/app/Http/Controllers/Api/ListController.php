@@ -28,7 +28,8 @@ class ListController extends Controller
                     $query->where('closed', false)
                         ->orderBy('position')
                         ->with(['cards' => function ($cardQuery) {
-                            $cardQuery->orderBy('position');
+                            $cardQuery->orderBy('position')
+                                ->withCount('comments'); 
                         }]);
                 }
             ])
@@ -46,6 +47,12 @@ class ListController extends Controller
             'workspaceId' => $board->workspace_id, // ID của workspace chứa board
             'isMarked' => (bool) $board->is_marked, // Đánh dấu boolean
             'thumbnail' => $board->thumbnail ?? null, // Ảnh thu nhỏ của board, mặc định là null nếu không có
+            'creator' => $board->creator ? [
+                'id' => $board->creator->id,
+                'name' => $board->creator->full_name, 
+                'email' => $board->creator->email, 
+                'avatar' => $board->creator->image ?? null, 
+            ] : null, // Kiểm tra nếu creator có tồn tại
             'columnOrderIds' => $board->listBoards->pluck('id')->toArray(), // Thứ tự danh sách (list_boards)
             'columns' => $board->listBoards->map(function ($list) {
                 return [
@@ -60,7 +67,7 @@ class ListController extends Controller
                             'id' => $card->id,
                             'columnId' => $card->list_board_id, // ID danh sách mà thẻ thuộc về
                             'title' => $card->title, // Tên thẻ
-                            // 'description' => $card->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
+                            'description' => $card->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
                             // 'thumbnail' => $card->thumbnail ?? null, // Ảnh thu nhỏ của thẻ, mặc định là null nếu không có
                             'position' => (int) $card->position, // Vị trí thẻ trong danh sách, đảm bảo là số nguyên
                             // 'startDate' => $card->start_date ?? null, // Ngày bắt đầu, mặc định là null nếu không có
@@ -69,6 +76,7 @@ class ListController extends Controller
                             // 'isCompleted' => (bool) $card->is_completed, // Trạng thái hoàn thành
                             // 'isArchived' => (bool) $card->is_archived, // Trạng thái lưu trữ
                             // 'cover' => $card->cover ?? null, // Ảnh bìa nếu có, mặc định là null nếu không có
+                            'comments_count' => $card->comments_count, 
                         ];
                     })->toArray(),
                 ];
@@ -77,13 +85,47 @@ class ListController extends Controller
 
         return response()->json($responseData);
 
-        // $lists = ListBoard::where('board_id', $boardId)
-        //     ->where('closed', false)
-        //     ->orderBy('position')
-        //     ->with('cards') // Lấy luôn danh sách thẻ thuộc mỗi danh sách
-        //     ->get();
-        // return response()->json($lists);
     }
+
+    public function getListClosed(){
+        try {
+            $listsClosed = ListBoard::where('closed', 1)->get();
+            return response()->json([
+                'success' => true,
+                'message' => 'Lấy thành công',
+                'data' => $listsClosed,
+                ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra',
+                  
+                ]);
+        }
+    }
+
+    public function destroy($id){
+        try {
+            $list = ListBoard::findOrFail($id);
+            if (!$list) {
+                return response()->json([
+                    'message' => 'List not found'
+                ], 404);
+            }
+            $list->delete();
+            return response()->json([
+                'message' => 'List deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete list',
+                'error' => $e->getMessage()
+            ], 500);
+            //throw $th;
+        }
+    }
+
+
     public function store(Request $request, ListBoard $listBoard)
     {
         // Validate dữ liệu từ request
