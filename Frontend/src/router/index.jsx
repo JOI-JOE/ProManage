@@ -19,6 +19,7 @@ import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import InviteHandle from "../pages/workspace/invite/InviteHandle";
 import InviteAccept from "../pages/workspace/invite/InviteAccept";
+import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 
 const router = createBrowserRouter([
   {
@@ -77,6 +78,9 @@ const router = createBrowserRouter([
           {
             path: "b/:boardId/:name",
             element: <BoardContent />,
+             children: [
+                { path: "c/:cardId/:name", element: <CardModal /> }, // CardModal chỉ là Dialog
+            ],
           },
           {
             path: "w/:workspaceName/members",

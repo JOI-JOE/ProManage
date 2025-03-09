@@ -42,7 +42,7 @@ class Board extends Model
      */
     public function workspace()
     {
-        return $this->belongsTo(Workspace::class);  // Liên kết với model Workspace
+        return $this->belongsTo(Workspace::class,'workspace_id');  // Liên kết với model Workspace
     }
 
     public function listBoards()

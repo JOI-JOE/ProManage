@@ -13,6 +13,12 @@ const Card_new = ({ openCard, setOpenCard, addCard }) => {
         setOpenCard(false);
     };
 
+    const handleKeyDown = async (event) => {
+        if (event.key === "Enter") {
+          await handleAddCard(); // Gọi hàm addColumn khi nhấn Enter
+        }
+      };
+
     return (
         <Box
             sx={{
@@ -59,6 +65,7 @@ const Card_new = ({ openCard, setOpenCard, addCard }) => {
                         variant="outlined"
                         autoFocus
                         value={cardName}
+                        onKeyDown={handleKeyDown}
                         onChange={(e) => setCardName(e.target.value)}
                         sx={{
                             "& label": { color: "teal" },

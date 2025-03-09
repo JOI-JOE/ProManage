@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Avatar, Box, Typography } from "@mui/material";
 import { useState } from "react";
 import { styled } from "@mui/material/styles";
 import Button from "@mui/material/Button";
@@ -12,7 +12,8 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useRecentBoards } from "../../../hooks/useBoard";
 import { Link } from "react-router-dom";
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faStar } from "@fortawesome/free-solid-svg-icons";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -87,7 +88,7 @@ const Recent = () => {
         endIcon={<KeyboardArrowDownIcon />}
         sx={{ color: "secondary.contrastText" }}
       >
-        Recent
+        Gần đây
       </Button>
       <StyledMenu
         id="demo-customized-menu-workspace"
@@ -98,42 +99,69 @@ const Recent = () => {
         open={open}
         onClose={handleClose}
       >
-        {recentBoards?.data?.map((board) => (
-          <MenuItem
-            key={board.id}
-            component={Link}
-          to={`/b/${board.board_id}/${board.board_name}`}
-            onClick={handleClose}
-            disableRipple
-            sx={{
-              fontSize: "0.87rem",
-              color: "secondary.main",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              padding: "8px 200px 10px 10px ",
-            }}
-          >
-            {/* Hiển thị thumbnail của board */}
-            <img
-              src={board.thumbnail} // Hiển thị thumbnail của board
-              alt={board.board_name}
-              style={{
-                width: 40,
-                height: 40,
-                marginBottom: 8,
-                borderRadius: "50%",
-                objectFit: "cover",
+        {isLoading ? (
+          <MenuItem disabled>Đang tải...</MenuItem>
+        ) : error ? (
+          <MenuItem disabled>Lỗi khi tải dữ liệu</MenuItem>
+        ) : recentBoards?.data?.length === 0 ? (
+          <MenuItem disabled>Không có bảng nào</MenuItem>
+        ) : (
+          recentBoards?.data?.map((board) => (
+            <MenuItem
+              key={board.id}
+              component={Link}
+              to={`/b/${board.board_id}/${board.board_name}`}
+              onClick={handleClose}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 15px",
+                gap: 2,
               }}
-            />
-            <Box sx={{ fontSize: "0.9rem", fontWeight: "bold" }}>
-              {board.workspace_display_name} {/* Tên workspace */}
-            </Box>
-            <Box sx={{ fontSize: "0.85rem", color: "text.secondary" }}>
-              {board.board_name} {/* Tên bảng */}
-            </Box>
-          </MenuItem>
-        ))}
+            >
+              {/* Bên trái: Avatar + Nội dung */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                  src={board.thumbnail || ""}
+                  alt={board.board_name}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "4px",
+                    background: board.thumbnail
+                      ? board.thumbnail.startsWith("#")
+                        ? board.thumbnail
+                        : `url(${board.thumbnail}) center/cover no-repeat`
+                      : "#1693E1",
+                  }}
+                >
+                  {!board.thumbnail && board.board_name.charAt(0).toUpperCase()}
+                </Avatar>
+
+                <Box>
+                  <Typography variant="body1" fontWeight={500}>
+                    {board.board_name}
+                  </Typography>
+                  <Typography variant="body2" color="gray">
+                    {board.workspace_display_name}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Khoảng trống ở giữa */}
+              <Box flexGrow={1} />
+
+              {/* Bên phải: Icon ngôi sao */}
+              {board.is_marked ? (
+                <FontAwesomeIcon
+                  icon={faStar}
+                  style={{ color: "#FFD700", fontSize: 16 }}
+                />
+              ) : null}
+            </MenuItem>
+          ))
+        )}
       </StyledMenu>
     </Box>
   );
