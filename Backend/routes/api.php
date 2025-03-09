@@ -157,49 +157,49 @@ Route::middleware('auth:sanctum')->group(function () {
 // Route cho bảng đã xóa
 Route::get('/trashes', [BoardController::class, 'trash']);
 
-
-Route::prefix('cards')->group(function () {
+Route::middleware('auth:sanctum')->prefix('cards')->group(function (
     Route::get('/{listId}/getCardsByList', [CardController::class, 'getCardsByList']);
-   
-    Route::get('/boards/{boardId}/archived', [CardController::class, 'getArchivedCardsByBoard']);
-    Route::patch('/{id}/toggle-archive', [CardController::class, 'toggleArchive']);
-    Route::delete('/{id}/delete', [CardController::class, 'delete']);
-    
-   
+    // routes/api.php
+    // Route::patch('/{cardId}/move', [CardController::class, 'moveCard']);
     Route::get('/{id}/show', [CardController::class, 'show']);
     Route::patch('/{cardID}/description', [CardController::class, 'updateDescription']);
     Route::post('/', [CardController::class, 'store']);
     Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
-  
+    // Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
+    // Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
+    // Route::get('/{boardId}', [ListController::class, 'index']); // Lấy danh sách theo board
+    // Route::put('/reorder', [ListController::class, 'reorder']); // Cập nhật vị trí kéo thả
+    // Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
+    // Route::post('/dragging', [ListController::class, 'dragging']);
     Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail'])->name('card.addMember'); // thêm thành viên vào thẻ
-    Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])
-        ->name(name: 'cards.removeMember'); // xóa thành viên ra khỏi thẻ
+    Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
     Route::put('/{cardId}/dates', [CardController::class, 'updateDates']); // cập nhật ngày của thẻ
     Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']); // xóa ngày
     Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']); // danh sách nhãn trong thẻ
-    Route::post('/{cardId}/labels', [LabelController::class, 'addLabelToCard']); // thêm nhãn vào thẻ
-
-    Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']); // xóa nhãn khỏi thẻ
+    Route::put('/{cardId}/labels/update-action', [LabelController::class, 'updateAddAndRemove']); // thêm và xóa nhãn khỏi thẻ
 
     Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
 });
-// cập nhật nhãn ,Vì trello sẽ không cập nhật nhãn theo thẻ
-Route::put('/labels/{labelId}', [LabelController::class, 'updateLabel']);
+Route::get('/boards/{boardId}/labels', [LabelController::class, 'getLabelsByBoard']);// hiển thị nhãn theo bảng
+Route::post('/boards/{boardId}/labels', [LabelController::class, 'createLabel']);// thêm nhãn chung
+Route::delete('/labels/{labelId}', [LabelController::class, 'deleteLabelByBoard']);//xóa nhãn
+Route::patch('/labels/{labelId}/update-name', [LabelController::class, 'updateLabelName']);
 ///Comment
 Route::middleware(['auth:sanctum'])->group(function () {
     // Lấy tất cả bình luận của card
     Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']);
-    
+
     // Thêm bình luận vào card
     Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']);
-    
+
     // Xóa bình luận
     Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']);
 
+    // Cập nhật bình luận
     Route::put('/comments/{id}', [CommentCardController::class, 'update']);
 });
 // 📂 File đính kèm (Attachments)
-Route::prefix('/{cardId}/attachments')->group(function () {
+Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [AttachmentController::class, 'getAttachments']);
     Route::post('/upload', [AttachmentController::class, 'uploadAttachment']);
     Route::post('/uploadcover', [AttachmentController::class, 'uploadCover']);

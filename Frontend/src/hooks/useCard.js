@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+
 import {
   createCard,
   getCardByList,
@@ -128,8 +130,6 @@ export const useCardPositionsInColumns = (cards) =>
 
 export const useCardPositionsOutColumns = (cards) =>
   updateCardPositionsGeneric(cards, updateCardPositionsDiffCol);
-
-
 export const useCardById = (cardId) => {
   const queryClient = useQueryClient();
 

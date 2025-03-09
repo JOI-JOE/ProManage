@@ -19,9 +19,9 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import MemberList from "./childComponent_CardDetail/member";
-import TaskModal from "./childComponent_CardDetail/Task";
-import LabelList from "./childComponent_CardDetail/Label";
+import MemberList from "./childComponent_CardDetail/member.jsx";
+import TaskModal from "./childComponent_CardDetail/Task.jsx";
+import LabelList from "./childComponent_CardDetail/Label.jsx";
 import AttachmentModal from "./childComponent_CardDetail/Attached.jsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import authClient from "../../../../../../../../../api/authClient";
@@ -60,6 +60,11 @@ const CardModal = () => {
   const [cardName, setCardName] = useState(title);
   const [previousCardName, setPreviousCardName] = useState(title);
   const queryClient = useQueryClient();
+  const [isFollowing, setIsFollowing] = useState(true);
+
+  const handleFollowClick = () => {
+    setIsFollowing(!isFollowing);
+  };
 
   const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
   // const loggedInUser = {
@@ -68,7 +73,12 @@ const CardModal = () => {
   // };
   const { data: comments = [] } = useCommentsByCard(cardId);
   const { data: user, isLoadingUser, errorUser } = useUser();
-  const { data: cardDetail, isLoading, error, updateDescriptionCard } = useCardById(cardId);
+  const {
+    data: cardDetail,
+    isLoading,
+    error,
+    updateDescriptionCard,
+  } = useCardById(cardId);
   const { mutate: updateCardTitle } = useUpdateCardTitle();
   const { mutate: removeComment } = useDeleteComment();
   const { mutate: editComment } = useUpdateComment();
@@ -79,12 +89,18 @@ const CardModal = () => {
   const { archiveCard} = useCardActions();
   
 
-  const { data: list, isLoading: listLoading, error: listError } = useQuery({
+  const {
+    data: list,
+    isLoading: listLoading,
+    error: listError,
+  } = useQuery({
     queryKey: ["list", cardDetail?.list_board_id],
-    queryFn: () => authClient.get(`/lists/${cardDetail?.list_board_id}/detail`).then((res) => res.data),
+    queryFn: () =>
+      authClient
+        .get(`/lists/${cardDetail?.list_board_id}/detail`)
+        .then((res) => res.data),
     enabled: !!cardDetail?.list_board_id, // Chỉ fetch khi có list_board_id
   });
-
 
   const isEmptyHTML = (html) => {
     if (!html || html.trim() === "") return true;
@@ -92,7 +108,6 @@ const CardModal = () => {
     const stripped = html.replace(/<[^>]*>/g, "").trim(); // Loại bỏ tất cả thẻ HTML
     return stripped === "" || stripped === "<br>";
   };
-
 
   useEffect(() => {
     if (cardDetail?.description) {
@@ -123,7 +138,6 @@ const CardModal = () => {
     setIsEditingDescription(true);
     setOriginalDescription(description);
   };
-
 
   const handleSaveDescription = () => {
     const descriptionToSend = isEmptyHTML(description) ? null : description;
@@ -224,12 +238,11 @@ const CardModal = () => {
         setCommentToDelete(null);
 
         queryClient.invalidateQueries(["comments", cardId]);
-
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa bình luận:", error);
         alert("Xóa bình luận thất bại! Vui lòng thử lại.");
-      }
+      },
     });
   };
   const handleNameClick = () => {
@@ -252,7 +265,6 @@ const CardModal = () => {
 
   const handleNameBlur = () => handleSave();
 
-
   const handleNameKeyPress = (event) => {
     if (event.key === "Enter") {
       handleSave();
@@ -261,7 +273,6 @@ const CardModal = () => {
 
   return (
     <Dialog
-
       open={true}
       // onClose={closeDetail}
       fullWidth
@@ -271,9 +282,8 @@ const CardModal = () => {
         "& .MuiPaper-root": {
           boxShadow: "none", // Tắt shadow
           outline: "none", // Loại bỏ viền focus
-        }
+        },
       }}
-
     >
       <DialogTitle>
         {isEditingName ? (
@@ -299,6 +309,120 @@ const CardModal = () => {
             {list?.name || "Doing"}
           </span>
         </Typography>
+        {/* New section to match the provided image */}
+        <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
+          <Avatar sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}>
+            PH
+          </Avatar>
+          <AddIcon
+            sx={{
+              fontSize: 14,
+              color: "gray",
+              cursor: "pointer",
+              mr: 1,
+              "&:hover": { color: "black" },
+            }}
+            onClick={() => setIsMemberListOpen(true)} // Thêm sự kiện onClick
+          />
+          <Button
+            variant="contained"
+            sx={{
+              bgcolor: "#D69D00",
+              mr: 1,
+              height: 25,
+              p: 0,
+              width: 36,
+              minWidth: 0,
+            }}
+            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+          ></Button>
+
+          <Button
+            variant="contained"
+            sx={{
+              bgcolor: "#D69D00",
+              mr: 1,
+              height: 25,
+              p: 0,
+              width: 36,
+              minWidth: 0,
+            }}
+            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+          ></Button>
+          <Button
+            variant="contained"
+            sx={{
+              bgcolor: "#D69D00",
+              mr: 1,
+              height: 25,
+              p: 0,
+              width: 36,
+              minWidth: 0,
+            }}
+            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+          ></Button>
+          <Button
+            variant="contained"
+            sx={{
+              bgcolor: "#D69D00",
+              mr: 1,
+              height: 25,
+              p: 0,
+              width: 36,
+              minWidth: 0,
+            }}
+            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+          ></Button>
+          <Button
+            variant="contained"
+            sx={{
+              bgcolor: "#D69D00",
+              mr: 1,
+              height: 25,
+              p: 0,
+              width: 36,
+              minWidth: 0,
+            }}
+            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+          ></Button>
+          <Button
+            variant="contained"
+            sx={{
+              bgcolor: "#D69D00",
+              mr: 1,
+              height: 25,
+              p: 0,
+              width: 36,
+              minWidth: 0,
+            }}
+            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+          ></Button>
+
+          <AddIcon
+            sx={{
+              fontSize: 14,
+              color: "gray",
+              cursor: "pointer",
+              mr: 1,
+              "&:hover": { color: "black" },
+            }}
+            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+          />
+          <Button
+            variant="outlined"
+            sx={{
+              fontSize: "0.6rem",
+              height: 25,
+              p: 1,
+              bgcolor: "teal",
+              color: "white",
+            }}
+            onClick={handleFollowClick}
+          >
+            <VisibilityIcon sx={{ fontSize: "12px", mr: 0.5 }} />
+            {isFollowing ? "Đang theo dõi" : "Theo dõi"}
+          </Button>
+        </Box>
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={2}>
@@ -325,21 +449,42 @@ const CardModal = () => {
                       ["clean"],
                     ],
                   }}
-                  formats={["header", "bold", "italic", "underline", "strike", "list", "bullet", "link"]}
+                  formats={[
+                    "header",
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strike",
+                    "list",
+                    "bullet",
+                    "link",
+                  ]}
                   sx={{
-                    "& .ql-container": { border: "1px solid #ddd", borderRadius: 4 },
-                    "& .ql-toolbar": { border: "1px solid #ddd" }
+                    "& .ql-container": {
+                      border: "1px solid #ddd",
+                      borderRadius: 4,
+                    },
+                    "& .ql-toolbar": { border: "1px solid #ddd" },
                   }}
                 />
 
-                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 1 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                    mt: 1,
+                  }}
+                >
                   <Button
                     variant="contained"
                     size="small"
                     sx={{
-                      backgroundColor: "#0079BF",
+                      backgroundColor: "teal",
                       color: "#FFF",
-                      "&:hover": { backgroundColor: "#0067A3" }
+                      fontSize: "0.7rem",
+                      height: "25px",
+                      minWidth: "50px",
                     }}
                     onClick={handleSaveDescription}
                   >
@@ -351,7 +496,13 @@ const CardModal = () => {
                     sx={{
                       color: "#172B4D",
                       borderColor: "#ddd",
-                      "&:hover": { backgroundColor: "#E4E7EB", borderColor: "#bbb" }
+                      fontSize: "0.7rem",
+                      height: "25px",
+                      minWidth: "50px",
+                      "&:hover": {
+                        backgroundColor: "#E4E7EB",
+                        borderColor: "#bbb",
+                      },
                     }}
                     onClick={handleCancelDescription}
                   >
@@ -369,22 +520,27 @@ const CardModal = () => {
                   whiteSpace: "pre-wrap", // Giữ định dạng dòng
                   cursor: "pointer",
                   // "&:hover": { backgroundColor: "#F5F6F8", borderRadius: 4 }
-                  "& ol": { // Đảm bảo định dạng danh sách có số
+                  "& ol": {
+                    // Đảm bảo định dạng danh sách có số
                     listStyleType: "decimal",
 
                     paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
                   },
-                  "& ul": { // Đảm bảo định dạng danh sách có số
+                  "& ul": {
+                    // Đảm bảo định dạng danh sách có số
 
                     listStyleType: "disc",
                     paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
                   },
                   "& li": {
                     // marginBottom: "8px", // Khoảng cách giữa các mục danh sách
-                  }
+                  },
                 }}
                 onClick={handleDescriptionClick}
-                dangerouslySetInnerHTML={{ __html: description || cardDetail?.description || "No description" }}
+                dangerouslySetInnerHTML={{
+                  __html:
+                    description || cardDetail?.description || "No description",
+                }}
               />
             )}
 
@@ -404,7 +560,9 @@ const CardModal = () => {
                       <ListItemText
                         primary={task.name}
                         sx={{
-                          textDecoration: task.completed ? "line-through" : "none",
+                          textDecoration: task.completed
+                            ? "line-through"
+                            : "none",
                         }}
                       />
                     </ListItem>
@@ -423,12 +581,11 @@ const CardModal = () => {
               </Grid>
             )}
 
-
-
-
-
             {/* Thêm comment */}
-            <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: "bold", mb: 2 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ mt: 2, fontWeight: "bold", mb: 2 }}
+            >
               Hoạt động
             </Typography>
             <TextField
@@ -448,7 +605,13 @@ const CardModal = () => {
             <Button
               variant="contained"
               size="small"
-              sx={{ mt: 1, backgroundColor: "teal", fontSize: "0.7rem" }}
+              sx={{
+                mt: 1,
+                backgroundColor: "teal",
+                fontSize: "0.7rem",
+                height: "25px",
+                minWidth: "50px",
+              }}
               onClick={handleSaveComment}
             >
               Save
@@ -461,7 +624,6 @@ const CardModal = () => {
                 sx={{ display: "flex", flexDirection: "column", mt: 1 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center" }}>
-
                   <Avatar
                     src={cmt?.user?.avatar || ""}
                     sx={{
@@ -471,7 +633,8 @@ const CardModal = () => {
                       height: 40,
                     }}
                   >
-                    {!cmt?.user?.avatar && (cmt?.user?.full_name?.charAt(0)?.toUpperCase() || "?")}
+                    {!cmt?.user?.avatar &&
+                      (cmt?.user?.full_name?.charAt(0)?.toUpperCase() || "?")}
                   </Avatar>
                   <Box>
                     {editingCommentIndex === cmt.id ? (
@@ -498,7 +661,8 @@ const CardModal = () => {
                           wordBreak: "break-word",
                         }}
                       >
-                        <strong>{cmt.user?.full_name || "Người dùng"}:</strong> {cmt.content}
+                        <strong>{cmt.user?.full_name || "Người dùng"}:</strong>{" "}
+                        {cmt.content}
                       </Typography>
                     )}
                     <Box sx={{ display: "flex", mt: "-4px" }}>
@@ -517,7 +681,9 @@ const CardModal = () => {
                         <>
                           <Button
                             size="small"
-                            onClick={() => handleEditComment(cmt.id, cmt.content)}
+                            onClick={() =>
+                              handleEditComment(cmt.id, cmt.content)
+                            }
                             sx={{
                               mr: "-8px",
                               fontSize: "0.456rem",

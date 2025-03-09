@@ -29,10 +29,10 @@ export const useCreateList = () => {
   return useMutation({
     mutationFn: createList,
     onSuccess: (newList, variables) => {
-      queryClient.setQueryData(["lists", variables.board_id], (oldLists = []) => [
-        ...oldLists,
-        newList,
-      ]);
+      queryClient.setQueryData(
+        ["lists", variables.board_id],
+        (oldLists = []) => [...oldLists, newList]
+      );
     },
     onError: (error) => {
       console.error("❌ Lỗi khi tạo danh sách:", error);
@@ -95,7 +95,9 @@ export const useListsClosed = (boardId) => {
 
       // Cập nhật danh sách listClosed ngay lập tức mà không cần gọi API lại
       queryClient.setQueryData(["listClosed"], (oldLists) =>
-        oldLists?.data ? oldLists?.data.filter((list) => list.id !== listId) : []
+        oldLists?.data
+          ? oldLists?.data.filter((list) => list.id !== listId)
+          : []
       );
 
       // Cập nhật danh sách list active (nếu có)
@@ -106,10 +108,13 @@ export const useListsClosed = (boardId) => {
     },
   });
 
-
-  
-
-  return { listsClosed, isLoading, error, deleteMutation, updateClosedMutation };
+  return {
+    listsClosed,
+    isLoading,
+    error,
+    deleteMutation,
+    updateClosedMutation,
+  };
 };
 
 // Hook lấy danh sách chi tiết theo listId
@@ -146,9 +151,12 @@ export const useListById = (listId) => {
     },
   });
 
-  return useMemo(() => ({
-    ...listsDetail,
-    updateListName: updateListNameMutation.mutate,
-    updateClosed: updateClosedMutation.mutate,
-  }), [listsDetail, updateListNameMutation.mutate, updateClosedMutation.mutate]);
+  return useMemo(
+    () => ({
+      ...listsDetail,
+      updateListName: updateListNameMutation.mutate,
+      updateClosed: updateClosedMutation.mutate,
+    }),
+    [listsDetail, updateListNameMutation.mutate, updateClosedMutation.mutate]
+  );
 };
