@@ -28,7 +28,9 @@ import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
+
 import {
+  useCardActions,
   useCardById,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
@@ -41,6 +43,8 @@ import {
 import { useUser } from "../../../../../../../../../hooks/useUser";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import { toast, ToastContainer } from "react-toastify";
+
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -93,6 +97,8 @@ const CardModal = () => {
   // console.log(cardId);
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
+  const { archiveCard} = useCardActions();
+  
 
   const {
     data: list,
@@ -127,11 +133,12 @@ const CardModal = () => {
     }
   }, [cardDetail?.description]);
 
-  if (isLoading) return <Box>Loading...</Box>;
-  if (error) return <Box>Error: {error.message}</Box>;
+  // if (listLoading) return <Box>Loading...</Box>;
+  // if (listError) return <Box>Error: {error.message}</Box>;
 
-  if (listLoading) return <Box>Loading...</Box>;
-  if (listError) return <Box>Error: {error.message}</Box>;
+  const handleArchiveCard = (cardId) => {
+    archiveCard(cardId);
+  };
 
   const handleDescriptionClick = () => {
     setIsEditingDescription(true);
@@ -783,7 +790,7 @@ const CardModal = () => {
                 </ListItem>
 
                 <ListItem disablePadding>
-                  <ListItemButton>
+                  <ListItemButton  onClick={() => handleArchiveCard(cardId)}>
                     <ListItemText primary="Lưu trữ" />
                   </ListItemButton>
                 </ListItem>
@@ -863,7 +870,9 @@ const CardModal = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <ToastContainer />
     </Dialog>
+    
   );
 };
 

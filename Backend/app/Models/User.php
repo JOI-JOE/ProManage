@@ -105,4 +105,5 @@ class User extends Authenticatable
     {
         return $this->hasMany(CommentCard::class);  // Mỗi user có thể tạo nhiều bình luận
     }
+ 
 }

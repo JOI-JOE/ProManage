@@ -17,14 +17,21 @@ export const getListByBoardId = async (boardId) => {
     return [];
   }
 };
-
-export const getListClosed = async () => {
+export const getListClosedByBoard = async (boardId) => {
   try {
-    const response = await authClient.get("/lists/listClosed");
-    return response.data;
+    if (!boardId) {
+      console.error("Lỗi: boardId không được cung cấp.");
+      return [];
+    }
+    const response = await authClient.get(`/lists/${boardId}/listClosed`);
+
+    return response.data; // Trả về danh sách columns
   } catch (error) {
-    console.error("Lỗi khi lấy list được lưu trữ:", error);
-    throw error;
+    console.error(
+      `Lỗi khi lấy danh sách các bảng đóng của board với ID: ${boardId}`,
+      error
+    );
+    return [];
   }
 };
 
@@ -37,10 +44,6 @@ export const deleteList = async (id) => {
     throw error;
   }
 };
-
-
-
-
 
 export const getListDetail = async (listId) => {
   try {
@@ -90,7 +93,6 @@ export const updateListName = async (listId, newName) => {
 export const updateClosed = async (listId) => {
   try {
     const response = await authClient.patch(`/lists/${listId}/closed`, {
-      closed: closed,
     });
     return response.data;
   } catch (error) {

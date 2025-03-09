@@ -28,8 +28,9 @@ class ListController extends Controller
                     $query->where('closed', false)
                         ->orderBy('position')
                         ->with(['cards' => function ($cardQuery) {
-                            $cardQuery->orderBy('position')
-                                ->withCount('comments'); 
+                            $cardQuery->where('is_archived', false) // Chỉ lấy card chưa bị lưu trữ
+                            ->orderBy('position')
+                            ->withCount('comments'); // Đếm số lượng comment của card
                         }]);
                 }
             ])
@@ -87,14 +88,18 @@ class ListController extends Controller
 
     }
 
-    public function getListClosed(){
+    public function getListClosed($boardId){
         try {
-            $listsClosed = ListBoard::where('closed', 1)->get();
+            // Lấy tất cả danh sách thuộc board có closed = 1
+            $listsClosed = ListBoard::where('board_id', $boardId)
+                ->where('closed', 1)
+                ->get();
+    
             return response()->json([
                 'success' => true,
-                'message' => 'Lấy thành công',
+                'message' => 'Lấy danh sách đóng thành công',
                 'data' => $listsClosed,
-                ]);
+            ]);
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,

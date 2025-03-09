@@ -6,8 +6,8 @@ import {
   createList,
   getListByBoardId,
   updateColPosition,
-  getListClosed,
   deleteList,
+  getListClosedByBoard,
 } from "../api/models/listsApi";
 import { useMemo } from "react";
 
@@ -56,16 +56,14 @@ export const useUpdateColumnPosition = () => {
 };
 
 // Hook lấy danh sách list đã đóng (archived)
-export const useListsClosed = () => {
+export const useListsClosed = (boardId) => {
   const queryClient = useQueryClient();
+  
+  const { data: listsClosed, isLoading, error } = useQuery({
+    queryKey: ["listClosed", boardId],
+    queryFn: () => getListClosedByBoard(boardId), 
+    enabled: !!boardId,
 
-  const {
-    data: listsClosed,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["listClosed"],
-    queryFn: getListClosed,
   });
 
   // Mutation để xóa list
