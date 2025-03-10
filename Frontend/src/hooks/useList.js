@@ -6,11 +6,12 @@ import {
   createList,
   getListByBoardId,
   updateColPosition,
+  deleteList,
+  getListClosedByBoard,
 } from "../api/models/listsApi";
 import { useEffect, useCallback, useMemo } from "react";
 
 import echoInstance from "./realtime/useRealtime";
-
 
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();
@@ -61,6 +62,7 @@ export const useLists = (boardId) => {
   return query;
 };
 
+// Hook tạo list mới
 export const useCreateList = () => {
   const queryClient = useQueryClient();
 
@@ -91,23 +93,88 @@ export const useCreateList = () => {
   });
 };
 
-const updateColPositionsGeneric = async (columns, updateFunction) => {
-  try {
-    return await updateFunction({ columns });
-  } catch (error) {
-    console.error("Failed to update card positions:", error);
-    throw error;
-  }
-};
-
-export const useUpdateColumnPosition = (columns) => {
-  updateColPositionsGeneric(columns, updateColPosition);
-};
-
-export const useListById = (listId) => {
-  // console.log('useListById called with listId:', listId); // Log kiểm tra listId
+// Hook cập nhật vị trí cột (column)
+export const useUpdateColumnPosition = () => {
   const queryClient = useQueryClient();
-  // const echoInstance = usePusher();
+
+  return useMutation({
+    mutationFn: (columns) => updateColPosition({ columns }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(["boardLists", variables.board_id]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật vị trí cột:", error);
+    },
+  });
+};
+
+
+// Hook lấy danh sách list đã đóng (archived)
+export const useListsClosed = (boardId) => {
+  const queryClient = useQueryClient();
+  
+  const { data: listsClosed, isLoading, error } = useQuery({
+    queryKey: ["listClosed", boardId],
+    queryFn: () => getListClosedByBoard(boardId), 
+    enabled: !!boardId,
+
+  });
+
+  // Mutation để xóa list
+  const deleteMutation = useMutation({
+    mutationFn: deleteList,
+    onMutate: async (id) => {
+      await queryClient.cancelQueries(["listClosed"]);
+      const previousLists = queryClient.getQueryData(["listClosed"]);
+
+      queryClient.setQueryData(["listClosed"], (oldLists) =>
+        oldLists?.data ? oldLists.data.filter((list) => list.id !== id) : []
+      );
+
+      return { previousLists };
+    },
+    onError: (error, _, context) => {
+      console.error("Xóa thất bại:", error);
+      queryClient.setQueryData(["listClosed"], context.previousLists);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["listClosed"]);
+    },
+  });
+
+  // Mutation để cập nhật trạng thái lưu trữ (bỏ lưu trữ)
+  const updateClosedMutation = useMutation({
+    mutationFn: (listId) => updateClosed(listId),
+    onSuccess: (data, listId) => {
+      console.log(`🔄 Cập nhật trạng thái lưu trữ cho list ${listId}`);
+
+      // Cập nhật danh sách listClosed ngay lập tức mà không cần gọi API lại
+      queryClient.setQueryData(["listClosed"], (oldLists) =>
+        oldLists?.data
+          ? oldLists?.data.filter((list) => list.id !== listId)
+          : []
+      );
+
+      // Cập nhật danh sách list active (nếu có)
+      queryClient.invalidateQueries(["list", listId]);
+    },
+    onError: (error) => {
+      console.error("❌ Lỗi khi cập nhật trạng thái lưu trữ:", error);
+    },
+  });
+
+  return {
+    listsClosed,
+    isLoading,
+    error,
+    deleteMutation,
+    updateClosedMutation,
+  };
+};
+
+// Hook lấy danh sách chi tiết theo listId
+export const useListById = (listId) => {
+  const queryClient = useQueryClient();
 
   const listsDetail = useQuery({
     queryKey: ["list", listId],
@@ -123,8 +190,7 @@ export const useListById = (listId) => {
   // Mutation để cập nhật tên list
   const updateListNameMutation = useMutation({
     mutationFn: (newName) => updateListName(listId, newName),
-    onSuccess: (data) => {
-      console.log("Danh sách đã được cập nhật:", data);
+    onSuccess: () => {
       queryClient.invalidateQueries(["list", listId]);
     },
     onError: (error) => {
@@ -134,9 +200,8 @@ export const useListById = (listId) => {
 
   // Mutation để cập nhật trạng thái đóng/mở list
   const updateClosedMutation = useMutation({
-    mutationFn: (closed) => updateClosed(listId, closed),
-    onSuccess: (data) => {
-      console.log("Trạng thái lưu trữ đã được cập nhật:", data);
+    mutationFn: () => updateClosed(listId),
+    onSuccess: () => {
       queryClient.invalidateQueries(["list", listId]);
     },
     onError: (error) => {
@@ -144,8 +209,6 @@ export const useListById = (listId) => {
     },
   });
 
-  // const handleListUpdateName = useCallback((event) => {
- =
   const memoizedReturnValue = useMemo(
     () => ({
       ...listsDetail,
@@ -154,6 +217,5 @@ export const useListById = (listId) => {
     }),
     [listsDetail, updateListNameMutation.mutate, updateClosedMutation.mutate]
   );
-
   return memoizedReturnValue;
 };
