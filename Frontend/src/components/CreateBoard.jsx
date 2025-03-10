@@ -16,7 +16,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
 import { useCreateBoard, useImageUnsplash } from "../hooks/useBoard";
-import { useWorkspaces } from "../hooks/useWorkspace";
+import { useGetWorkspaces } from "../hooks/useWorkspace";
 import { useColor } from "../hooks/useColor";
 
 // const colors = ["#E3F2FD", "#64B5F6", "#1565C0", "#283593", "#8E24AA"];
@@ -39,12 +39,12 @@ const CreateBoard = () => {
     isLoading: unsplashingImages,
   } = useImageUnsplash();
 
-  // Sử dụng hook useWorkspaces
+  // Sử dụng hook useGetWorkspaces
   const {
     data: workspaces,
     isLoading: isLoadingWorkspaces,
     error,
-  } = useWorkspaces();
+  } = useGetWorkspaces();
 
   const {
     data: colors,

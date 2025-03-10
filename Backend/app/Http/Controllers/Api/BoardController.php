@@ -103,7 +103,7 @@ class BoardController extends Controller
             ], 500);
         }
     }
-    
+
     public function trash()
     {
         $board = Board::where('closed', 1)->get();

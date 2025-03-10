@@ -25,12 +25,13 @@ import { logoutUser } from "../api/models/userApi";
  * - Nó cũng tự động quảng lý loading và error, giúp bạn dễ dàng thay đổi thường xuyên
  *
  */
+
 export const useUser = () => {
   return useQuery({
-    queryKey: ["user"], // Key duy nhất để xác định và cache dữ liệu người dùng.
-    queryFn: getUser, // Hàm gọi API để lấy dữ liệu người dùng.
-    staleTime: 1000 * 60 * 5, // Dữ liệu được coi là "stale" sau 5 phút (ms * s * m).
-    cacheTime: 1000 * 60 * 30, // Dữ liệu được giữ trong cache tối đa 30 phút.
+    queryKey: ["user"],
+    queryFn: async () => await getUser(),
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
   });
 };
 
@@ -60,11 +61,10 @@ export const useLogin = () => {
   });
 };
 
-
 /**
  * Hook useLogin để đăng nhập.
  * @returns {object} - Object chứa hàm mutate để gọi API đăng nhập và các trạng thái liên quan.
- * 
+ *
  * useMutation -> được dùng cho các thao tác thay đổi dữ liệu trên serve
  * ví dụ : tạo mới, xóa, cập nhật dữ liệu.\
  * Thao tác thay đổi trạng thái của người dùng (từ chưa đăng nhập sang đăng nhập)

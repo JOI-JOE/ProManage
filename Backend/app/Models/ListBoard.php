@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\ListCreated;
+use App\Events\ListUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -10,10 +12,9 @@ class ListBoard extends Model
 {
     use HasFactory;
     protected $table = 'list_boards';
-    protected $primaryKey = 'id'; 
+    protected $primaryKey = 'id';
     public $incrementing = false; // Vô hiệu hóa tự động tăng
     protected $keyType = 'string'; // UUID là kiểu string
-
 
     protected $fillable = [
         'name',
@@ -21,6 +22,11 @@ class ListBoard extends Model
         'position',
         'board_id',
         'color_id',
+    ];
+
+    protected $dispatchesEvents = [
+        'created' => ListCreated::class, // Khi tạo mới, phát sự kiện ListCreated
+        'updated' => ListUpdated::class, // Khi cập nhật, phát sự kiện ListUpdated
     ];
 
     protected static function boot()

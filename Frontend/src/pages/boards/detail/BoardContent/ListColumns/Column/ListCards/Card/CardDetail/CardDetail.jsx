@@ -30,6 +30,7 @@ import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
+
 import ListItemIcon from "@mui/material/ListItemIcon";
 import LinearProgress from "@mui/material/LinearProgress";
 import Checkbox from "@mui/material/Checkbox";
@@ -95,10 +96,6 @@ const CardModal = () => {
   };
 
   const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
-  // const loggedInUser = {
-  //   name: "Current User",
-  //   avatar: "https://via.placeholder.com/40",
-  // };
   const { data: comments = [] } = useCommentsByCard(cardId);
   const { data: user, isLoadingUser, errorUser } = useUser();
   const {

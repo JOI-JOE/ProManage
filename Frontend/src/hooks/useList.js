@@ -9,17 +9,57 @@ import {
   deleteList,
   getListClosedByBoard,
 } from "../api/models/listsApi";
-import { useMemo } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 
-// Hook lấy danh sách list theo BoardId
+import echoInstance from "./realtime/useRealtime";
+
 export const useLists = (boardId) => {
-  return useQuery({
-    queryKey: ["boardLists", boardId],
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["lists", boardId], // Sử dụng queryKey chung
     queryFn: () => getListByBoardId(boardId),
     enabled: !!boardId,
     staleTime: 1000 * 60 * 5,
     cacheTime: 1000 * 60 * 30,
   });
+
+  useEffect(() => {
+    if (!boardId) return;
+
+    const channel = echoInstance.channel(`board.${boardId}`);
+
+    channel.listen(".list.created", (data) => {
+      queryClient.setQueryData(["lists", boardId], (oldLists) => {
+        const listsArray = Array.isArray(oldLists) ? oldLists : []; // Đảm bảo oldLists là mảng
+
+        console.log("🚀 Trước khi cập nhật:", listsArray);
+
+        // Kiểm tra nếu list đã tồn tại (tránh thêm trùng)
+        const isExisting = listsArray.some(
+          (list) => list.id === data.newList.id
+        );
+        if (isExisting) {
+          console.log("⚠ List đã tồn tại, không thêm mới");
+          return listsArray;
+        }
+
+        // Thêm list mới vào cache
+        const updatedLists = [...listsArray, data.newList];
+        console.log("✅ Sau khi cập nhật:", updatedLists);
+        return updatedLists;
+      });
+
+      // Kích hoạt re-render bằng cách làm mới query
+      queryClient.invalidateQueries(["lists", boardId]);
+    });
+
+    return () => {
+      channel.stopListening(".list.created");
+    };
+  }, [boardId, queryClient]);
+
+  return query;
 };
 
 // Hook tạo list mới
@@ -27,15 +67,28 @@ export const useCreateList = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createList,
-    onSuccess: (newList, variables) => {
-      queryClient.setQueryData(
-        ["lists", variables.board_id],
-        (oldLists = []) => [...oldLists, newList]
-      );
+    mutationFn: (newColumn) => createList(newColumn), // Gửi API
+    onSuccess: (data, variables) => {
+      // ⚡ Cập nhật board để phản hồi UI nhanh hơn
+      queryClient.setQueryData(["board", variables.board_id], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          columns: [...oldData.columns, data], // Thêm column mới vào cache của board
+        };
+      });
+
+      // 🔥 Cập nhật danh sách lists
+      queryClient.setQueryData(["lists", variables.board_id], (oldLists) => {
+        const listsArray = Array.isArray(oldLists) ? [...oldLists] : [];
+        return [...listsArray, data]; // Thêm column vào danh sách lists
+      });
+
+      // 🛠 Ép fetch lại để đảm bảo dữ liệu chính xác
+      queryClient.invalidateQueries(["lists", variables.board_id]);
     },
     onError: (error) => {
-      console.error("❌ Lỗi khi tạo danh sách:", error);
+      console.error("❌ Lỗi khi tạo column:", error);
     },
   });
 };
@@ -54,6 +107,7 @@ export const useUpdateColumnPosition = () => {
     },
   });
 };
+
 
 // Hook lấy danh sách list đã đóng (archived)
 export const useListsClosed = (boardId) => {
@@ -125,9 +179,12 @@ export const useListById = (listId) => {
   const listsDetail = useQuery({
     queryKey: ["list", listId],
     queryFn: () => getListDetail(listId),
-    enabled: !!listId,
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 30,
+    enabled: !!listId, // Chỉ kích hoạt query khi có boardId
+    staleTime: 1000 * 60 * 5, // Cache trong 5 phút
+    cacheTime: 1000 * 60 * 30, // Giữ dữ liệu trong 30 phút ngay cả khi query bị hủy
+    onSuccess: (data) => {
+      console.log("Query data:", data); // Log dữ liệu trả về từ query
+    },
   });
 
   // Mutation để cập nhật tên list
@@ -152,7 +209,8 @@ export const useListById = (listId) => {
     },
   });
 
-  return useMemo(
+
+  const memoizedReturnValue = useMemo(
     () => ({
       ...listsDetail,
       updateListName: updateListNameMutation.mutate,
@@ -160,4 +218,5 @@ export const useListById = (listId) => {
     }),
     [listsDetail, updateListNameMutation.mutate, updateClosedMutation.mutate]
   );
+  return memoizedReturnValue;
 };
