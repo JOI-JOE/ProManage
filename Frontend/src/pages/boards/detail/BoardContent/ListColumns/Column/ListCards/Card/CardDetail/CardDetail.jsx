@@ -15,7 +15,9 @@ import {
   Box,
   Avatar,
   TextField,
-  Checkbox,
+  IconButton,
+  Chip,
+  Stack,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
@@ -29,7 +31,28 @@ import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import LinearProgress from "@mui/material/LinearProgress";
+import Checkbox from "@mui/material/Checkbox";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import NotesIcon from "@mui/icons-material/Notes";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import GroupIcon from "@mui/icons-material/Group";
+import LabelIcon from "@mui/icons-material/Label";
+import ChecklistIcon from "@mui/icons-material/Checklist";
+import EventIcon from "@mui/icons-material/Event";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import MoveUpIcon from "@mui/icons-material/MoveUp";
+import FileCopyIcon from "@mui/icons-material/FileCopy";
+import SpeakerGroupIcon from "@mui/icons-material/SpeakerGroup";
+import ArchiveIcon from "@mui/icons-material/Archive";
+import ShareIcon from "@mui/icons-material/Share";
+
 import {
+  useCardActions,
   useCardById,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
@@ -42,6 +65,18 @@ import {
 import { useUser } from "../../../../../../../../../hooks/useUser";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import { toast, ToastContainer } from "react-toastify";
+import {
+  useChecklistsByCard,
+  useDeleteCheckList,
+  useUpdateCheckList,
+} from "../../../../../../../../../hooks/useCheckList";
+import {
+  useCreateCheckListItem,
+  useDeleteCheckListItem,
+  useToggleCheckListItemStatus,
+  useUpdateCheckListItemName,
+} from "../../../../../../../../../hooks/useCheckListItem";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -71,6 +106,9 @@ const CardModal = () => {
   const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
 
+  const [items, setItems] = useState([]);
+  const [newItem, setNewItem] = useState("");
+
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing);
   };
@@ -92,22 +130,33 @@ const CardModal = () => {
   const { mutate: removeComment } = useDeleteComment();
   const { mutate: editComment } = useUpdateComment();
 
+  const { data: checklists = [], isLoadingChecklist } =
+    useChecklistsByCard(cardId);
+  const { mutate: updateCheckList } = useUpdateCheckList();
+  const { mutate: removeCheckList } = useDeleteCheckList();
+
+  const { mutate: addCheckListItem } = useCreateCheckListItem();
+  const { mutate: toggleItemStatus } = useToggleCheckListItemStatus();
+  const { mutate: updateCheckListItemName } = useUpdateCheckListItemName();
+  const { mutate: deleteItem } = useDeleteCheckListItem();
+
   // console.log(cardId);
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
+  const { archiveCard } = useCardActions();
 
-  const {
-    data: list,
-    isLoading: listLoading,
-    error: listError,
-  } = useQuery({
-    queryKey: ["list", cardDetail?.list_board_id],
-    queryFn: () =>
-      authClient
-        .get(`/lists/${cardDetail?.list_board_id}/detail`)
-        .then((res) => res.data),
-    enabled: !!cardDetail?.list_board_id, // Chỉ fetch khi có list_board_id
-  });
+  // const {
+  //   data: list,
+  //   isLoading: listLoading,
+  //   error: listError,
+  // } = useQuery({
+  //   queryKey: ["list", cardDetail?.list_board_id],
+  //   queryFn: () =>
+  //     authClient
+  //       .get(`/lists/${cardDetail?.list_board_id}/detail`)
+  //       .then((res) => res.data),
+  //   enabled: !!cardDetail?.list_board_id, // Chỉ fetch khi có list_board_id
+  // });
 
   const isEmptyHTML = (html) => {
     if (!html || html.trim() === "") return true;
@@ -129,11 +178,12 @@ const CardModal = () => {
     }
   }, [cardDetail?.description]);
 
-  if (isLoading) return <Box>Loading...</Box>;
-  if (error) return <Box>Error: {error.message}</Box>;
+  // if (listLoading) return <Box>Loading...</Box>;
+  // if (listError) return <Box>Error: {error.message}</Box>;
 
-  if (listLoading) return <Box>Loading...</Box>;
-  if (listError) return <Box>Error: {error.message}</Box>;
+  const handleArchiveCard = (cardId) => {
+    archiveCard(cardId);
+  };
 
   const handleDescriptionClick = () => {
     setIsEditingDescription(true);
@@ -191,13 +241,165 @@ const CardModal = () => {
   if (isLoadingUser) return <p>Loading...</p>;
   if (errorUser) return <p>Lỗi khi lấy dữ liệu user!</p>;
 
-  const handleAddTask = (taskName) => {
-    setTasks([...tasks, { id: tasks.length + 1, name: taskName }]);
-  };
+  /// THÊM CÔNG VIỆC
 
   const handleSelectLabel = (newSelectedLabels) => {
     setSelectedLabels(newSelectedLabels);
   };
+
+  // Thêm mục mới
+  const handleAddItem = (checklistId, itemName) => {
+    if (itemName.trim() === "") return;
+
+    addCheckListItem(
+      { checklist_id: checklistId, name: itemName }, // Gửi request API
+      {
+        onSuccess: () => {
+          console.log(`✅ Đã thêm mục: ${itemName}`);
+          setNewItem(""); // Reset input sau khi thêm thành công
+        },
+        onError: (error) => {
+          console.error("❌ Lỗi khi thêm mục checklist:", error);
+        },
+      }
+    );
+  };
+
+  const toggleItemCompletion = (id) => {
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === id ? { ...item, is_completed: !item.is_completed } : item
+      )
+    );
+
+    toggleItemStatus(id, {
+      onSuccess: () => {
+        console.log("✅ Cập nhật trạng thái thành công");
+      },
+      onError: () => {
+        console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
+        setItems((prevItems) =>
+          prevItems.map((item) =>
+            item.id === id
+              ? { ...item, is_completed: !item.is_completed }
+              : item
+          )
+        );
+      },
+    });
+  };
+
+  const handleDeleteTask = (checklistId) => {
+    removeCheckList(checklistId, {
+      onSuccess: () => {
+        console.log("✅ Checklist đã bị xóa thành công!");
+        queryClient.invalidateQueries(["checklists", cardId]);
+      },
+      onError: (error) => {
+        console.error("❌ Lỗi khi xóa checklist:", error);
+      },
+    });
+  };
+
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editedTaskName, setEditedTaskName] = useState("");
+
+  // const handleAddTask = (taskName) => {
+  //   setTasks([...tasks, { id: tasks.length + 1, name: taskName }]);
+  // };
+
+  const handleEditTask = (id, name) => {
+    setEditingTaskId(id);
+    setEditedTaskName(name);
+  };
+
+  const handleSaveTask = (id) => {
+    if (!editedTaskName.trim()) return;
+
+    updateCheckList(
+      { id, name: editedTaskName },
+      {
+        onSuccess: () => {
+          setEditingTaskId(null); // Thoát chế độ chỉnh sửa sau khi cập nhật
+        },
+        onError: (error) => {
+          console.error("❌ Lỗi khi cập nhật checklist:", error);
+        },
+      }
+    );
+  };
+
+  const handleKeyPressTask = (event, id) => {
+    if (event.key === "Enter") {
+      handleSaveTask(id);
+    }
+  };
+
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editedItemName, setEditedItemName] = useState("");
+  const handleEditItem = (id, name) => {
+    setEditingItemId(id);
+    setEditedItemName(name);
+  };
+
+  const handleSaveItem = (id) => {
+    if (!editedItemName.trim()) return;
+
+    updateCheckListItemName(
+      { itemId: id, name: editedItemName },
+      {
+        onSuccess: () => {
+          setEditingItemId(null); // Thoát chế độ chỉnh sửa sau khi cập nhật
+        },
+        onError: (error) => {
+          console.error("❌ Lỗi khi cập nhật tên checklist item:", error);
+        },
+      }
+    );
+  };
+
+  const handleKeyPressItem = (event, id) => {
+    if (event.key === "Enter") {
+      handleSaveItem(id);
+    }
+  };
+
+  const [selectedItemId, setSelectedItemId] = useState(null);
+
+  const handleDeleteItem = (id) => {
+    deleteItem(id, {
+      onSuccess: () => {
+        console.log(`✅ Xóa thành công ChecklistItem ID: ${id}`);
+        handleMenuClose();
+      },
+      onError: (error) => {
+        console.error("❌ Lỗi khi xóa:", error);
+      },
+    });
+  };
+
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const handleMenuOpen = (event, id) => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedItemId(id);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+  };
+
+  // const completedItems = items.filter((item) => item.completed).length;
+  // const totalItems = items.length;
+
+  // const completedTasks = tasks.filter((task) => task.completed).length;
+  // const totalTasks = tasks.length;
+
+  // const itemProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+
+  // const [showAddItemButton, setShowAddItemButton] = useState(true);
+
+  const [taskInputs, setTaskInputs] = useState({}); // Lưu trạng thái nhập của từng task
+  const [addingItemForTask, setAddingItemForTask] = useState(null); // Task nào đang hiển thị ô nhập
 
   const handleEditComment = (commentId, currentText) => {
     setEditingCommentIndex(commentId);
@@ -276,6 +478,35 @@ const CardModal = () => {
     setIsEditingComment(true);
   };
 
+  const [isDetailHidden, setIsDetailHidden] = useState(false);
+
+  const handleToggleDetail = () => {
+    setIsDetailHidden(!isDetailHidden);
+  };
+
+  const activities = [
+    {
+      name: "Pham Thi Hong Ngat (FPL HN)",
+      action: "đã gửi thẻ này tới bảng",
+      time: "2 giờ trước",
+    },
+    {
+      name: "Pham Thi Hong Ngat (FPL HN)",
+      action: "đã lưu trữ thẻ này",
+      time: "2 giờ trước",
+    },
+    {
+      name: "Pham Thi Hong Ngat (FPL HN)",
+      action: "đã tham gia thẻ này",
+      time: "21:39 8 thg 3, 2025",
+    },
+    {
+      name: "Pham Thi Hong Ngat (FPL HN)",
+      action: "đã thêm thẻ này vào danh sách mmm",
+      time: "22:54 7 thg 3, 2025",
+    },
+  ];
+
   return (
     <Dialog
       open={true}
@@ -311,7 +542,7 @@ const CardModal = () => {
         <Typography variant="body2" color="text.secondary">
           trong danh sách{" "}
           <span style={{ color: "#0079bf", fontWeight: "bold" }}>
-            {list?.name || "Doing"}
+            {cardDetail?.listName || "Doing"}
           </span>
         </Typography>
         {/* New section to match the provided image */}
@@ -435,6 +666,7 @@ const CardModal = () => {
           {/* Cột trái (Nội dung chính) */}
           <Grid item xs={8}>
             <Typography variant="subtitle1" fontWeight="bold">
+              <NotesIcon sx={{ fontSize: "0.8rem", mr: 1 }} />
               Mô tả
             </Typography>
             {!isEditingDescription && (
@@ -511,7 +743,7 @@ const CardModal = () => {
                   <Box
                     sx={{
                       display: "flex",
-                      justifyContent: "flex-end",
+                      justifyContent: "flex-start", // Change to flex-start
                       gap: 1,
                       mt: 1,
                     }}
@@ -553,50 +785,255 @@ const CardModal = () => {
               </>
             )}
 
-            {tasks.length > 0 && (
-              <Grid item xs={8}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Công việc ({tasks.length})
-                </Typography>
-
+            {/* HIỂN THỊ DANH SÁCH VIỆC CẦN LÀM */}
+            {checklists?.length > 0 && (
+              <Box sx={{ mt: 2 }}>
                 <List>
-                  {tasks.map((task) => (
-                    <ListItem key={task.id} disablePadding>
-                      <Checkbox
-                        checked={task.completed}
-                        onChange={() => handleToggleTask(task.id)}
-                      />
-                      <ListItemText
-                        primary={task.name}
-                        sx={{
-                          textDecoration: task.completed
-                            ? "line-through"
-                            : "none",
-                        }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
+                  {checklists.map((checklist) => {
+                    const taskItems = Array.isArray(checklist.items)
+                      ? checklist.items
+                      : [];
+                    const completedItems = taskItems.filter(
+                      (item) => item.is_completed
+                    ).length;
+                    const totalItems = taskItems.length;
+                    const taskProgress =
+                      totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
-                {/* Nút "Thêm Công Việc" vẫn hiển thị */}
-                <Button
-                  variant="contained"
-                  size="small"
-                  sx={{ mt: 1, backgroundColor: "teal", fontSize: "0.7rem" }}
-                  onClick={() => setIsTaskModalOpen(true)}
-                >
-                  Thêm Công Việc
-                </Button>
-              </Grid>
+                    return (
+                      <Box key={checklist.id} sx={{ mb: 3, p: 2 }}>
+                        {/* Hiển thị tên checklist */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          {editingTaskId === checklist.id ? (
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              size="small"
+                              value={editedTaskName}
+                              onChange={(e) =>
+                                setEditedTaskName(e.target.value)
+                              }
+                              onBlur={() => handleSaveTask(checklist.id)}
+                              onKeyDown={(e) =>
+                                handleKeyPressTask(e, checklist.id)
+                              }
+                              autoFocus
+                            />
+                          ) : (
+                            <Typography
+                              variant="h6"
+                              fontWeight="bold"
+                              onClick={() =>
+                                handleEditTask(checklist.id, checklist.name)
+                              }
+                              sx={{ cursor: "pointer" }}
+                            >
+                              {checklist.name}
+                            </Typography>
+                          )}
+
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => handleDeleteTask(checklist.id)}
+                          >
+                            Xóa
+                          </Button>
+                        </Box>
+
+                        {/* Thanh tiến trình riêng */}
+                        <Box sx={{ mt: 2 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              mb: 1,
+                            }}
+                          >
+                            <Typography variant="body2" fontWeight="bold">
+                              {Math.round(taskProgress)}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={taskProgress}
+                            sx={{
+                              height: 8,
+                              borderRadius: 4,
+                              backgroundColor: "#ddd", // Màu nền mặc định
+                              "& .MuiLinearProgress-bar": {
+                                backgroundColor:
+                                  taskProgress === 100 ? "#4CAF50" : "#0079BF", // Xanh lá khi đạt 100%
+                              },
+                            }}
+                          />
+                        </Box>
+
+                        {/* Danh sách mục trong checklist */}
+                        <List sx={{ mt: 2 }}>
+                          {taskItems.map((item) => (
+                            <ListItem key={item.id}>
+                              <ListItemIcon>
+                                <Checkbox
+                                  checked={item.is_completed || false}
+                                  onChange={() => toggleItemCompletion(item.id)}
+                                />
+                              </ListItemIcon>
+
+                              {editingItemId === item.id ? (
+                                <TextField
+                                  fullWidth
+                                  variant="outlined"
+                                  size="small"
+                                  value={editedItemName}
+                                  onChange={(e) =>
+                                    setEditedItemName(e.target.value)
+                                  }
+                                  onBlur={() => handleSaveItem(item.id)}
+                                  onKeyDown={(e) =>
+                                    handleKeyPressItem(e, item.id)
+                                  }
+                                  autoFocus
+                                />
+                              ) : (
+                                <ListItemText
+                                  primary={item.name}
+                                  onClick={() =>
+                                    handleEditItem(item.id, item.name)
+                                  }
+                                  sx={{
+                                    cursor: "pointer",
+                                    textDecoration: item.is_completed
+                                      ? "line-through"
+                                      : "none", // Gạch chữ nếu hoàn thành
+                                    color: item.is_completed
+                                      ? "black"
+                                      : "inherit", // Làm mờ chữ khi hoàn thành
+                                  }}
+                                />
+                              )}
+
+                              <IconButton
+                                onClick={(e) => handleMenuOpen(e, item.id)}
+                              >
+                                <MoreVertIcon />
+                              </IconButton>
+                            </ListItem>
+                          ))}
+                        </List>
+
+                        <Menu
+                          anchorEl={menuAnchor}
+                          open={Boolean(menuAnchor)}
+                          onClose={handleMenuClose}
+                        >
+                          <MenuItem
+                            onClick={() => toggleItemCompletion(selectedItemId)}
+                          >
+                            Chuyển đổi trạng thái
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => handleDeleteItem(selectedItemId)}
+                          >
+                            Xóa
+                          </MenuItem>
+                        </Menu>
+                        {/* Thêm mục vào checklist */}
+                        {addingItemForTask === checklist.id ? (
+                          <>
+                            <TextField
+                              fullWidth
+                              placeholder="Thêm một mục..."
+                              variant="outlined"
+                              size="small"
+                              sx={{ mt: 2 }}
+                              value={taskInputs[checklist.id] || ""}
+                              onChange={(e) =>
+                                setTaskInputs({
+                                  ...taskInputs,
+                                  [checklist.id]: e.target.value,
+                                })
+                              }
+                            />
+                            <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                onClick={() => {
+                                  if (
+                                    (taskInputs[checklist.id] || "").trim() ===
+                                    ""
+                                  )
+                                    return;
+                                  handleAddItem(
+                                    checklist.id,
+                                    taskInputs[checklist.id]
+                                  );
+                                  setTaskInputs({
+                                    ...taskInputs,
+                                    [checklist.id]: "",
+                                  });
+                                  setAddingItemForTask(null);
+                                }}
+                              >
+                                Thêm
+                              </Button>
+                              <Button
+                                variant="text"
+                                size="small"
+                                onClick={() => setAddingItemForTask(null)}
+                              >
+                                Hủy
+                              </Button>
+                            </Box>
+                          </>
+                        ) : (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            sx={{ mt: 2 }}
+                            onClick={() => setAddingItemForTask(checklist.id)}
+                          >
+                            Thêm một mục
+                          </Button>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </List>
+              </Box>
             )}
 
             {/* Thêm comment */}
-            <Typography
-              variant="subtitle1"
-              sx={{ mt: 2, fontWeight: "bold", mb: 2 }}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mt: 2,
+              }}
             >
-              Hoạt động
-            </Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                <BarChartIcon sx={{ fontSize: "0.8rem", mr: 1 }} />
+                Hoạt động
+              </Typography>
+              <Button
+                variant="text"
+                sx={{ fontSize: "0.5rem", color: "#fff", bgcolor: "teal" }}
+                onClick={handleToggleDetail}
+              >
+                {isDetailHidden ? "Hiện chi tiết" : "Ẩn chi tiết"}
+              </Button>
+            </Box>
             {!isEditingComment && (
               <Typography
                 variant="body1"
@@ -678,10 +1115,10 @@ const CardModal = () => {
               </>
             )}
 
-            {/* Hiển thị các bình luận */}
+            {/* Hiển thị các bình luận và hoạt động */}
             {comments.map((cmt, index) => {
               const content = cmt.content || "";
-              if (isEmptyHTML(content)) return null; // Bỏ qua nếu nội dung rỗng
+              if (isEmptyHTML(content)) return null;
 
               return (
                 <Box
@@ -697,175 +1134,269 @@ const CardModal = () => {
                         width: 28,
                         height: 28,
                         fontSize: "0.6rem",
+                        mt: 2, // Move the avatar down
                       }}
                     >
                       {!cmt?.user?.avatar &&
                         (cmt?.user?.full_name?.charAt(0)?.toUpperCase() || "?")}
                     </Avatar>
-                    <Box sx={{ ml: 1, marginTop: "8px" }}>
-                      {editingCommentIndex === cmt.id ? (
-                        <>
-                          {/* Sử dụng ReactQuill thay vì TextField */}
-                          <ReactQuill
-                            value={editingCommentText}
-                            onChange={setEditingCommentText}
-                            placeholder="Edit your comment..."
-                            style={{ marginTop: "8px" }}
-                            theme="snow"
-                            modules={{
-                              toolbar: [
-                                [{ header: [1, 2, false] }],
-                                ["bold", "italic", "underline", "strike"],
-                                [{ list: "ordered" }, { list: "bullet" }],
-                                ["link"],
-                                ["image"],
-                                ["clean"],
-                              ],
-                            }}
-                            formats={[
-                              "header",
-                              "bold",
-                              "italic",
-                              "underline",
-                              "strike",
-                              "list",
-                              "bullet",
-                              "link",
-                              "image",
-                            ]}
-                            sx={{
-                              "& .ql-container": {
-                                border: "1px solid #ddd",
-                                borderRadius: 4,
-                              },
-                              "& .ql-toolbar": { border: "1px solid #ddd" },
-                            }}
-                          />
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              gap: 1,
-                              mt: 1,
-                            }}
-                          >
-                            <Button
-                              variant="contained"
-                              size="small"
-                              sx={{
-                                backgroundColor: "teal",
-                                color: "#FFF",
-                                fontSize: "0.7rem",
-                                height: "25px",
-                                minWidth: "50px",
-                              }}
-                              onClick={handleSaveEditedComment}
-                              disabled={isEmptyHTML(editingCommentText)} // Vô hiệu hóa nếu nội dung rỗng
-                            >
-                              Lưu
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              sx={{
-                                color: "#172B4D",
-                                borderColor: "#ddd",
-                                fontSize: "0.7rem",
-                                height: "25px",
-                                minWidth: "50px",
-                                "&:hover": {
-                                  backgroundColor: "#E4E7EB",
-                                  borderColor: "#bbb",
-                                },
-                              }}
-                              onClick={() => {
-                                setEditingCommentIndex(null); // Thoát chế độ chỉnh sửa
-                                setEditingCommentText(""); // Reset nội dung chỉnh sửa
-                              }}
-                            >
-                              Hủy
-                            </Button>
-                          </Box>
-                        </>
-                      ) : (
-                        <>
-                          <Typography
-                            variant="body2"
-                            style={{
-                              wordWrap: "break-word",
-                              whiteSpace: "pre-wrap",
-                              overflowWrap: "break-word",
-                              wordBreak: "break-word",
-                              fontSize: "0.6rem",
-                            }}
-                          >
-                            <strong>
-                              {cmt.user?.full_name || "Người dùng"}:
-                            </strong>{" "}
-                            {content.replace(/<\/?p>/g, "")}
-                          </Typography>
-                          <Box sx={{ display: "flex", mt: "-4px" }}>
-                            <Button
-                              size="small"
-                              onClick={() =>
-                                handleEditComment(cmt.id, cmt.content)
-                              }
-                              sx={{
-                                mr: "-8px",
-                                fontSize: "0.4rem",
-                                textTransform: "none",
-                              }}
-                            >
-                              Chỉnh sửa
-                            </Button>
-                            <Button
-                              size="small"
-                              onClick={() => handleDeleteComment(cmt.id)}
-                              sx={{
-                                ml: "-16px",
-                                fontSize: "0.4rem",
-                                textTransform: "none",
-                              }}
-                            >
-                              Xóa
-                            </Button>
-                          </Box>
-                        </>
-                      )}
+                    <Box sx={{ ml: 1 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "bold", fontSize: "14px" }}
+                      >
+                        {cmt.user?.full_name || "Người dùng"}{" "}
+                        <span style={{ fontWeight: "normal" }}>
+                          {cmt.user?.username}
+                        </span>
+                        <Typography
+                          variant="body2"
+                          component="span"
+                          sx={{
+                            fontSize: "0.5rem",
+                            color: "gray",
+                            ml: 0.5,
+                            padding: "3px 0px",
+                          }}
+                        >
+                          {new Date(cmt.created_at).toLocaleTimeString()}{" "}
+                          {new Date(cmt.created_at).toLocaleDateString()}
+                        </Typography>
+                      </Typography>
                     </Box>
+                  </Box>
+                  <Box
+                    sx={{
+                      ml: 4.5,
+                      mt: -1,
+                      backgroundColor: "#f5f6fa",
+                      p: 0.7,
+                      borderRadius: "8px",
+                    }}
+                  >
+                    {editingCommentIndex === cmt.id ? (
+                      <>
+                        <ReactQuill
+                          value={editingCommentText}
+                          onChange={setEditingCommentText}
+                          placeholder="Edit your comment..."
+                          style={{ marginTop: "8px" }}
+                          theme="snow"
+                          modules={{
+                            toolbar: [
+                              [{ header: [1, 2, false] }],
+                              ["bold", "italic", "underline", "strike"],
+                              [{ list: "ordered" }, { list: "bullet" }],
+                              ["link"],
+                              ["image"],
+                              ["clean"],
+                            ],
+                          }}
+                          formats={[
+                            "header",
+                            "bold",
+                            "italic",
+                            "underline",
+                            "strike",
+                            "list",
+                            "bullet",
+                            "link",
+                            "image",
+                          ]}
+                          sx={{
+                            "& .ql-container": {
+                              border: "1px solid #ddd",
+                              borderRadius: 4,
+                            },
+                            "& .ql-toolbar": { border: "1px solid #ddd" },
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 1,
+                            mt: 1,
+                          }}
+                        >
+                          <Button
+                            variant="contained"
+                            size="small"
+                            sx={{
+                              backgroundColor: "teal",
+                              color: "#FFF",
+                              fontSize: "0.6rem",
+                              height: "25px",
+                              minWidth: "50px",
+                            }}
+                            onClick={handleSaveEditedComment}
+                            disabled={isEmptyHTML(editingCommentText)}
+                          >
+                            Lưu
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            sx={{
+                              color: "#172B4D",
+                              borderColor: "#ddd",
+                              fontSize: "0.6rem",
+                              height: "25px",
+                              minWidth: "50px",
+                              "&:hover": {
+                                backgroundColor: "#E4E7EB",
+                                borderColor: "#bbb",
+                              },
+                            }}
+                            onClick={() => {
+                              setEditingCommentIndex(null); // Thoát chế độ chỉnh sửa
+                              setEditingCommentText(""); // Reset nội dung chỉnh sửa
+                            }}
+                          >
+                            Hủy
+                          </Button>
+                        </Box>
+                      </>
+                    ) : (
+                      <>
+                        <Typography
+                          variant="body2"
+                          style={{
+                            wordWrap: "break-word",
+                            whiteSpace: "pre-wrap",
+                            overflowWrap: "break-word",
+                            wordBreak: "break-word",
+                            fontSize: "0.rem", // Change font size to 0.7rem
+                          }}
+                        >
+                          {content.replace(/<\/?p>/g, "")}
+                        </Typography>
+                        <Box sx={{ display: "flex", mt: "-4px" }}>
+                          <Button
+                            size="small"
+                            onClick={() =>
+                              handleEditComment(cmt.id, cmt.content)
+                            }
+                            sx={{
+                              width: "20px",
+                              minWidth: "20px",
+                              ml: "4px",
+                              mr: "-8px",
+                              fontSize: "0.4rem", // Smaller font size
+                              textTransform: "none",
+                              padding: "2px 4px", // Smaller padding
+                            }}
+                          >
+                            Sửa
+                          </Button>
+                          <Button
+                            size="small"
+                            onClick={() => handleDeleteComment(cmt.id)}
+                            sx={{
+                              width: "20px",
+                              minWidth: "20px",
+                              ml: "10px",
+                              fontSize: "0.4rem", // Smaller font size
+                              textTransform: "none",
+                              padding: "2px 4px", // Smaller padding
+                            }}
+                          >
+                            Xóa
+                          </Button>
+                        </Box>
+                      </>
+                    )}
                   </Box>
                 </Box>
               );
             })}
+
+            {/* Hiển thị các hoạt động */}
+            {!isDetailHidden && (
+              <Box
+                sx={{
+                  backgroundColor: "white",
+                  pt: 1,
+                  borderRadius: 2,
+                  mt: 0.5,
+                }}
+              >
+                <Stack spacing={2}>
+                  {activities.map((activity, index) => (
+                    <Box key={index} display="flex" alignItems="center">
+                      <Avatar
+                        sx={{
+                          bgcolor: "pink",
+                          width: 28,
+                          height: 28,
+                          fontSize: "0.6rem",
+                          mr: 1,
+                        }}
+                      >
+                        PH
+                      </Avatar>
+                      <Box>
+                        <Typography fontWeight="bold" color="black">
+                          {activity.name}{" "}
+                          <Typography
+                            component="span"
+                            fontWeight="normal"
+                            color="black"
+                          >
+                            {activity.action}
+                          </Typography>
+                        </Typography>
+                        <Typography fontSize="0.5rem" color="gray">
+                          {activity.time}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Stack>
+              </Box>
+            )}
           </Grid>
 
           {/* Cột phải (Sidebar) */}
           <Grid item xs={4}>
             <Box sx={{ borderLeft: "1px solid #ddd", pl: 2 }}>
-              <Typography variant="subtitle1" fontWeight="bold">
-                Add
-              </Typography>
               <List>
                 <ListItem disablePadding>
                   <ListItemButton>
+                    <ListItemIcon>
+                      <PersonAddIcon
+                        sx={{ color: "black", fontSize: "0.8rem" }}
+                      />
+                    </ListItemIcon>
                     <ListItemText primary="Tham gia" />
                   </ListItemButton>
                 </ListItem>
 
                 <ListItem disablePadding>
                   <ListItemButton onClick={() => setIsMemberListOpen(true)}>
+                    <ListItemIcon>
+                      <GroupIcon sx={{ color: "black", fontSize: "0.8rem" }} />
+                    </ListItemIcon>
                     <ListItemText primary="Thành viên" />
                   </ListItemButton>
                 </ListItem>
 
                 <ListItem disablePadding>
                   <ListItemButton onClick={() => setIsLabelListOpen(true)}>
+                    <ListItemIcon>
+                      <LabelIcon sx={{ color: "black", fontSize: "0.8rem" }} />
+                    </ListItemIcon>
                     <ListItemText primary="Nhãn" />
                   </ListItemButton>
                 </ListItem>
 
                 <ListItem disablePadding>
                   <ListItemButton>
+                    <ListItemIcon>
+                      <ChecklistIcon
+                        sx={{ color: "black", fontSize: "0.8rem" }}
+                      />
+                    </ListItemIcon>
                     <ListItemText
                       primary="Việc cần làm"
                       onClick={() => setIsTaskModalOpen(true)}
@@ -875,6 +1406,9 @@ const CardModal = () => {
 
                 <ListItem disablePadding>
                   <ListItemButton>
+                    <ListItemIcon>
+                      <EventIcon sx={{ color: "black", fontSize: "0.8rem" }} />
+                    </ListItemIcon>
                     <ListItemText primary="Ngày" />
                   </ListItemButton>
                 </ListItem>
@@ -883,6 +1417,11 @@ const CardModal = () => {
                   <ListItemButton
                     onClick={() => setIsAttachmentModalOpen(true)}
                   >
+                    <ListItemIcon>
+                      <AttachFileIcon
+                        sx={{ color: "black", fontSize: "0.8rem" }}
+                      />
+                    </ListItemIcon>
                     <ListItemText primary="Đính kèm" />
                   </ListItemButton>
                 </ListItem>
@@ -894,30 +1433,51 @@ const CardModal = () => {
               <List>
                 <ListItem disablePadding>
                   <ListItemButton onClick={() => setIsMoveCardModalOpen(true)}>
+                    <ListItemIcon>
+                      <MoveUpIcon sx={{ color: "black", fontSize: "0.8rem" }} />
+                    </ListItemIcon>
                     <ListItemText primary="Di chuyển" />
                   </ListItemButton>
                 </ListItem>
 
                 <ListItem disablePadding>
                   <ListItemButton onClick={() => setIsCopyCardModalOpen(true)}>
+                    <ListItemIcon>
+                      <FileCopyIcon
+                        sx={{ color: "black", fontSize: "0.8rem" }}
+                      />
+                    </ListItemIcon>
                     <ListItemText primary="Sao chép" />
                   </ListItemButton>
                 </ListItem>
 
                 <ListItem disablePadding>
                   <ListItemButton>
+                    <ListItemIcon>
+                      <SpeakerGroupIcon
+                        sx={{ color: "black", fontSize: "0.8rem" }}
+                      />
+                    </ListItemIcon>
                     <ListItemText primary="Tạo mẫu" />
                   </ListItemButton>
                 </ListItem>
 
                 <ListItem disablePadding>
-                  <ListItemButton>
+                  <ListItemButton onClick={() => handleArchiveCard(cardId)}>
+                    <ListItemIcon>
+                      <ArchiveIcon
+                        sx={{ color: "black", fontSize: "0.8rem" }}
+                      />
+                    </ListItemIcon>
                     <ListItemText primary="Lưu trữ" />
                   </ListItemButton>
                 </ListItem>
 
                 <ListItem disablePadding>
                   <ListItemButton onClick={() => setIsShareModalOpen(true)}>
+                    <ListItemIcon>
+                      <ShareIcon sx={{ color: "black", fontSize: "0.8rem" }} />
+                    </ListItemIcon>
                     <ListItemText primary="Chia sẻ" />
                   </ListItemButton>
                 </ListItem>
@@ -942,7 +1502,7 @@ const CardModal = () => {
       <TaskModal
         open={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
-        onSave={handleAddTask}
+        // onSave={handleAddTask}
       />
 
       {/* Component Label List */}
@@ -991,6 +1551,7 @@ const CardModal = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <ToastContainer />
     </Dialog>
   );
 };

@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+
 import {
   createCard,
   getCardByList,
@@ -6,10 +8,16 @@ import {
   updateCardPositionsSameCol,
   getCardById,
   updateDescription,
-  updateCardTitle
+  updateCardTitle,
+
+  updateArchivedCard,
+  deleteCard,
+  getCardArchivedByBoard,
+  // deleteCard,
 } from "../api/models/cardsApi";
 import { useEffect, useMemo } from "react";
 import { createEchoInstance } from "./useRealtime";
+import { toast } from "react-toastify";
 
 const CARDS_CACHE_KEY = "cards";
 
@@ -122,8 +130,6 @@ export const useCardPositionsInColumns = (cards) =>
 
 export const useCardPositionsOutColumns = (cards) =>
   updateCardPositionsGeneric(cards, updateCardPositionsDiffCol);
-
-
 export const useCardById = (cardId) => {
   const queryClient = useQueryClient();
 
@@ -181,3 +187,48 @@ export const useUpdateCardTitle = () => {
       },
   });
 };
+
+export const useCardActions = (boardId) => {
+  const queryClient = useQueryClient();
+
+  // Lấy danh sách card đã lưu trữ theo board
+  const { data: cards, isLoading, error } = useQuery({
+    queryKey: ["cardsArchivedByBoard", boardId],
+    queryFn: () => getCardArchivedByBoard(boardId),
+    enabled: !!boardId, // Chỉ fetch khi có boardId
+  });
+
+  // Mutation lưu trữ card
+  const archiveCard = useMutation({
+    mutationFn: updateArchivedCard,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["cardsArchivedByBoard"]);
+      toast.success("Đổi trạng thái thẻ thành công!");
+    },
+    onError: (error) => {
+      toast.error(`Lỗi lưu trữ: ${error.message}`);
+    },
+  });
+
+  // Mutation xóa card
+  const deleteCardMutation = useMutation({
+    mutationFn: deleteCard,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["cardsArchivedByBoard"]);
+      toast.success("Xóa thẻ thành công!");
+    },
+    onError: (error) => {
+      toast.error(`Lỗi xóa thẻ: ${error.message}`);
+    },
+  });
+
+  return {
+    cards,
+    isLoading,
+    error,
+    archiveCard: archiveCard.mutate, // Gọi mutate trực tiếp
+    deleteCard: deleteCardMutation.mutate, // Gọi mutate trực tiếp
+  };
+};
+
+

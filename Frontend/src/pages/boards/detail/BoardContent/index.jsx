@@ -18,7 +18,7 @@ import Col from "./Columns/Col";
 import Col_list from "./Columns/Col_list";
 import BoardBar from "./BoardBar/index";
 import { generatePlaceholderCard } from "../../../../../utils/formatters";
-import { useParams, Outlet } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import C_ard from "./Cards/C_ard";
 import { mapOrder } from "../../../../../utils/sort";
 import { useLists, useUpdateColumnPosition } from "../../../../hooks/useList";
@@ -534,7 +534,6 @@ const BoardContent = () => {
           </DragOverlay>
         </Box>
       </DndContext>
-      {/* <Outlet /> */}
     </>
   );
 };
