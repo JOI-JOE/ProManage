@@ -172,7 +172,7 @@ class AuthController extends Controller
                     'role' => 'member',
                     'user_name' => $githubUser->name,
                     'full_name' => $githubUser->name,
-                    'password' => bcrypt(Str::random(16)),
+                    'password' => "password",
                     'github_id' => $githubUser->id,
                     'github_avatar' => $avatarName ?? $avatarUrl,
                 ]

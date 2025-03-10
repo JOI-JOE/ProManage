@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\CheckList;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class ChecklistController extends Controller
 {
@@ -14,53 +16,69 @@ class ChecklistController extends Controller
      */
     public function index($cardId)
     {
-        $checklists = CheckList::where('card_id', $cardId)->get();
-        return response()->json([
-            'status' => true,
-            'data' => $checklists
-        ]);
+        $card = Card::find($cardId);
+        if (!$card) {
+            return response()->json(['message' => 'Card không tồn tại!'], 404);
+        }
+
+        $checklists = CheckList::with('items')->where('card_id', $cardId)->get();
+
+        return response()->json($checklists);
+
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store($cardId,Request $request)
+    public function store(Request $request)
     {
-        $card=Card::find($cardId);
-        if(!$card){
-            return response()->json([
-                'status' => false,
-                'message' => 'không tìm thấy id card',
-
-            ]);
-
-        }
-        $request->validate([
+        $rules = [
+            'card_id' => 'required|exists:cards,id',
             'name' => 'required|string',
+        ];
 
-        ]);
+        // Kiểm tra dữ liệu đầu vào
+        $validator = Validator::make($request->all(), $rules);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Dữ liệu không hợp lệ!',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Tìm thẻ (card) theo ID
+        $card = Card::find($request->card_id);
+        if (!$card) {
+            return response()->json(['message' => 'Card không tồn tại!'], 404);
+        }
+
+        // Tạo mới checklist
         $checklist = Checklist::create([
-            'name'=>$request->name,
-            'card_id'=>$cardId,
+            'card_id' => $request->card_id,
+            'name' => $request->name,
         ]);
+
+        // Ghi lại lịch sử hoạt động
         $user_name = auth()->user()?->user_name ?? 'ai đó';
 
-        activity()
-        ->causedBy(auth()->user())
-        ->performedOn($card)
-        ->event('added_checklist_item')
-        ->withProperties([
-            'card_title'   => $card->title,
-            'checklist_id' => $checklist->id,
-            'name'        => $request->name,
-        ])
-        ->log("{$user_name} đã thêm mục việc cần làm: {$request->name}");
+        // activity()
+        //     ->causedBy(auth()->user())
+        //     ->performedOn($card)
+        //     ->event('added_checklist')
+        //     ->withProperties([
+        //         'card_title' => $card->title,
+        //         'checklist_id' => $checklist->id,
+        //         'name' => $request->name,
+        //     ])
+        //     ->log("{$user_name} đã thêm checklist: {$request->name}");
 
+        // Trả về phản hồi JSON
         return response()->json([
-            'status' => true,
-            'message' => 'thêm mới thành công',
-            'data' => $checklist
+            'status' => 'success',
+            'message' => 'Checklist đã được thêm!',
+            'checklist' => $checklist
         ], 201);
     }
 
@@ -78,58 +96,90 @@ class ChecklistController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $checklist = Checklist::findOrFail($id);
-        if(!$checklist){
+        try {
+            // Tìm checklist hoặc throw exception nếu không tìm thấy
+            $checklist = Checklist::findOrFail($id);
+
+            // Validate dữ liệu đầu vào
+            $validatedData = $request->validate([
+                'name' => 'required|string',
+            ]);
+
+            // Cập nhật checklist với dữ liệu đã validate
+            $checklist->update($validatedData);
+
+            // Trả về response thành công
+            return response()->json([
+                'status' => true,
+                'message' => 'Sửa tên thành công',
+                'data' => $checklist
+            ], 200); // HTTP status code 200: OK
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // Xử lý khi không tìm thấy checklist
             return response()->json([
                 'status' => false,
-                'message' => 'không tồn tại id',
+                'message' => 'Không tồn tại checklist với ID này',
+            ], 404); // HTTP status code 404: Not Found
 
-
-            ]);
+        } catch (\Exception $e) {
+            // Xử lý các lỗi khác
+            return response()->json([
+                'status' => false,
+                'message' => 'Có lỗi xảy ra khi cập nhật checklist',
+                'error' => $e->getMessage(),
+            ], 500); // HTTP status code 500: Internal Server Error
         }
-        $request->validate([
-            'name' => 'required|string',
-
-        ]);
-
-        $checklist->update($request->all());
-
-        return response()->json([
-            'status' => true,
-            'message' => 'sửa tên thành công',
-            'data' => $checklist
-        ]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function deleteChecklist($cardId, $checklistId)
-    {
-        $card = Card::findOrFail($cardId);
-        $checklist = Checklist::where('card_id', $cardId)->findOrFail($checklistId);
-        $user_name = auth()->user()?->user_name ?? 'ai đó';
+    // public function deleteChecklist($cardId, $checklistId)
+    // {
+    //     $card = Card::findOrFail($cardId);
+    //     $checklist = Checklist::where('card_id', $cardId)->findOrFail($checklistId);
+    //     $user_name = auth()->user()?->user_name ?? 'ai đó';
 
-        // Lưu nội dung checklist trước khi xóa để ghi log
-        $checklistTitle = $checklist->name;
+    //     // Lưu nội dung checklist trước khi xóa để ghi log
+    //     $checklistTitle = $checklist->name;
 
-        // Xóa checklist
-        $checklist->delete();
+    //     // Xóa checklist
+    //     $checklist->delete();
 
-        // Ghi log lịch sử hoạt động
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($card)
-            ->event('deleted_checklist_item')
-            ->withProperties([
-                'card_title' => $card->title,
-                'title'      => $checklistTitle,
-            ])
-            ->log("{$user_name} đã xóa mục checklist: {$checklistTitle}");
+    //     // Ghi log lịch sử hoạt động
+    //     activity()
+    //         ->causedBy(auth()->user())
+    //         ->performedOn($card)
+    //         ->event('deleted_checklist_item')
+    //         ->withProperties([
+    //             'card_title' => $card->title,
+    //             'title' => $checklistTitle,
+    //         ])
+    //         ->log("{$user_name} đã xóa mục checklist: {$checklistTitle}");
 
-        return response()->json([
-            'message' => 'Mục checklist đã được xóa thành công!',
-        ]);
+    //     return response()->json([
+    //         'message' => 'Mục checklist đã được xóa thành công!',
+    //     ]);
+    // }
+
+    public function deleteChecklist($id)
+{
+    $checklist = Checklist::find($id);
+
+    if (!$checklist) {
+        return response()->json(['message' => 'Checklist không tồn tại'], 404);
     }
+
+    // Chỉ cho phép người tạo checklist hoặc admin được xóa
+    // if (Auth::id() !== $checklist->user_id && Auth::user()->role !== 'admin') {
+    //     return response()->json(['message' => 'Bạn không có quyền xóa checklist này'], 403);
+    // }
+
+    $checklist->delete();
+
+    return response()->json(['message' => 'Checklist đã bị xóa thành công']);
+}
+
 
 }
