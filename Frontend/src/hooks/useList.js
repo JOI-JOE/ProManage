@@ -11,51 +11,6 @@ import { useEffect, useCallback, useMemo } from "react";
 
 import echoInstance from "./realtime/useRealtime";
 
-// export const useLists = (boardId) => {
-//   const queryClient = useQueryClient();
-
-//   const query = useQuery({
-//     queryKey: ["lists", boardId], // Sử dụng queryKey chung
-//     queryFn: () => getListByBoardId(boardId),
-//     enabled: !!boardId,
-//     staleTime: 1000 * 60 * 5,
-//     cacheTime: 1000 * 60 * 30,
-//   });
-
-//   useEffect(() => {
-//     if (!boardId) return;
-
-//     const channel = echoInstance.channel(`board.${boardId}`);
-
-//     channel.listen(".list.created", (data) => {
-//       queryClient.setQueryData(["lists", boardId], (oldLists) => {
-//         const listsArray = Array.isArray(oldLists) ? oldLists : [];
-//         console.log("🚀 Trước khi cập nhật:", listsArray);
-
-//         // Kiểm tra nếu list đã tồn tại (tránh thêm trùng)
-//         queryClient.setQueryData(["lists", boardId], (oldLists) => {
-//           const listsArray = Array.isArray(oldLists) ? oldLists : [];
-
-//           // 🛠 Thay đổi logic kiểm tra trùng
-//           const updatedLists = listsArray.filter(
-//             (col) => col.id !== data.newList.id
-//           );
-//           return [...updatedLists, data.newList]; // Thêm mới
-//         });
-
-//         const updatedLists = [...listsArray, data.newList];
-//         console.log("✅ Sau khi cập nhật:", updatedLists);
-//         return updatedLists;
-//       });
-//     });
-
-//     return () => {
-//       channel.stopListening(".list.created");
-//     };
-//   }, [boardId, queryClient]);
-
-//   return query;
-// };
 
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();
@@ -190,64 +145,7 @@ export const useListById = (listId) => {
   });
 
   // const handleListUpdateName = useCallback((event) => {
-  //   console.log('📡 Nhận sự kiện từ Pusher:', event);
-
-  //   if (event?.list?.id === listId) {
-  //       queryClient.setQueryData(['list', listId], (oldData) => {
-  //           console.log("Old Data:", oldData);
-  //           if (oldData) {
-  //               console.log("Updating name:", event.list.name);
-  //               const newData = { ...oldData, name: event.list.name };
-  //               console.log("New Data:", newData);
-  //               queryClient.invalidateQueries(['list', listId]);
-  //               return newData;
-  //               // return newData;
-  //           } else {
-  //               console.warn('⚠️ Không tìm thấy dữ liệu cũ để cập nhật. Đang làm mới dữ liệu...');
-  //               queryClient.invalidateQueries(['list', listId]);
-  //               return oldData;
-  //           }
-  //       });
-  //   }
-  // }, [listId, queryClient]);
-
-  // const handleListArchived = useCallback((event) => {
-  //   console.log("📡 Nhận dữ liệu từ Pusher:", event);
-  //   if (event?.list?.id === listId) {
-  //       queryClient.setQueryData(["list", listId], (oldData) => {
-  //           console.log("Old Data:", oldData);
-  //           if (oldData) {
-
-  //               const newData = { ...oldData, closed: event.list.closed };
-  //               console.log("New Data:", newData);
-  //               queryClient.invalidateQueries(['list', listId]);
-  //               return newData;
-
-  //           } else {
-  //               queryClient.invalidateQueries(["list", listId]);
-  //               return oldData;
-  //           }
-  //       });
-  //   }
-  // }, [listId, queryClient]);
-
-  // useEffect(() => {
-  //   if (!listId || !echoInstance) {
-  //       console.warn("⚠️ Không có listId hoặc echoInstance chưa khởi tạo.");
-  //       return;
-  //   }
-
-  //   const channel = echoInstance.channel(`list.${listId}`);
-
-  //   channel.listen('.list.nameUpdated', handleListUpdateName);
-  //   channel.listen('.list.archived', handleListArchived);
-
-  //   return () => {
-  //       channel.stopListening('.list.nameUpdated');
-  //       channel.stopListening('.list.archived');
-  //   };
-  // }, [listId, echoInstance, handleListUpdateName, handleListArchived]);
-
+ =
   const memoizedReturnValue = useMemo(
     () => ({
       ...listsDetail,
