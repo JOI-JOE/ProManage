@@ -15,6 +15,7 @@ import {
   Box,
   Avatar,
   TextField,
+  Checkbox,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
