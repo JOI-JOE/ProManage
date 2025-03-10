@@ -63,8 +63,53 @@ class ListController extends Controller
         ];
 
         return response()->json($responseData);
+
     }
-    public function store(Request $request)
+
+    public function getListClosed($boardId){
+        try {
+            // Lấy tất cả danh sách thuộc board có closed = 1
+            $listsClosed = ListBoard::where('board_id', $boardId)
+                ->where('closed', 1)
+                ->get();
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Lấy danh sách đóng thành công',
+                'data' => $listsClosed,
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra',
+                  
+                ]);
+        }
+    }
+
+    public function destroy($id){
+        try {
+            $list = ListBoard::findOrFail($id);
+            if (!$list) {
+                return response()->json([
+                    'message' => 'List not found'
+                ], 404);
+            }
+            $list->delete();
+            return response()->json([
+                'message' => 'List deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete list',
+                'error' => $e->getMessage()
+            ], 500);
+            //throw $th;
+        }
+    }
+
+
+    public function store(Request $request, ListBoard $listBoard)
     {
         $validated = $request->validate([
             'newColumn' => 'required|array',

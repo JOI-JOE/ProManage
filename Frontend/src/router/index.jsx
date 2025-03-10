@@ -25,7 +25,15 @@ import InviteWithoutToken from "../pages/workspace/invite/child/InviteWithoutTok
 const isAuthenticated = () => !!localStorage.getItem("token");
 
 const LayoutWrapper = () => {
-  return isAuthenticated() ? <DefaultLayout><Outlet /></DefaultLayout> : <GuestLayout><Outlet /></GuestLayout>;
+  return isAuthenticated() ? (
+    <DefaultLayout>
+      <Outlet />
+    </DefaultLayout>
+  ) : (
+    <GuestLayout>
+      <Outlet />
+    </GuestLayout>
+  );
 };
 
 const router = createBrowserRouter([
@@ -89,13 +97,13 @@ const router = createBrowserRouter([
           //   path: "c/:cardId/:name",
           //   element: <CardModal />,
           // }
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
   {
     path: "invite/:workspaceId/:inviteToken", // Route với token và workspaceId trong URL
-    element: <InviteHandling />
+    element: <InviteHandling />,
   },
   {
     path: "/",
@@ -103,8 +111,12 @@ const router = createBrowserRouter([
     children: [
       {
         path: "invite/accept-team",
-        element: isAuthenticated() ? <InviteWithToken /> : <InviteWithoutToken />, // Chỉ hiển thị đúng component khi có đường dẫn
-      }
+        element: isAuthenticated() ? (
+          <InviteWithToken />
+        ) : (
+          <InviteWithoutToken />
+        ), // Chỉ hiển thị đúng component khi có đường dẫn
+      },
     ],
   },
 ]);

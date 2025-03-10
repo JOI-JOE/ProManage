@@ -14,6 +14,10 @@ const Home = () => {
     { type: "image", src: "/img/hi.webp" },
   ];
 
+  const token  = localStorage.getItem('token');
+  console.log(token);
+  
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
