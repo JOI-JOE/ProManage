@@ -4,8 +4,10 @@ import { Typography, Container, Paper, Button } from "@mui/material";
 import { useStateContext } from "../contexts/ContextProvider";
 
 const Home = () => {
-  const { user } = useStateContext // Dùng context để lấy user
+  const { user, loading, error } = useStateContext() // Dùng context để lấy user
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  console.log(user)
   const slides = [
     { type: "image", src: "/img/sl1.webp" },
     { type: "image", src: "/img/pro manage.webp" },

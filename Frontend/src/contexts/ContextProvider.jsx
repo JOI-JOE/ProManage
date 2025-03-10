@@ -55,7 +55,6 @@ export const ContextProvider = ({ children }) => {
         setToken,
     }), [user, token, setToken]);
 
-    console.log("ContextProvider Rendered");
 
     return (
         <StateContext.Provider value={value}>

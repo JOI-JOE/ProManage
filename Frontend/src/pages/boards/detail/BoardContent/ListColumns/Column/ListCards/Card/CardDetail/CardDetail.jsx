@@ -60,7 +60,7 @@ const CardModal = () => {
 
   const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
   const { data: comments = [] } = useCommentsByCard(cardId);
-  const { user } = useStateContext(); // Dùng context để lấy user
+  const { user, isLoadingUser, errorUser } = useStateContext(); // Dùng context để lấy user
   const { data: cardDetail, isLoading, error, updateDescriptionCard } = useCardById(cardId);
   const { mutate: updateCardTitle } = useUpdateCardTitle();
   const { mutate: removeComment } = useDeleteComment();

@@ -14,10 +14,10 @@ const Col_new = ({ open, setOpen, onAdd }) => {
 
     const handleKeyDown = async (event) => {
         if (event.key === "Enter") {
-          await handleAdd(); // Gọi hàm addColumn khi nhấn Enter
+            await handleAdd(); // Gọi hàm addColumn khi nhấn Enter
         }
-      };
-      
+    };
+
 
     const handleClose = () => {
         setOpen(false);

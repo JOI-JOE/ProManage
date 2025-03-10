@@ -17,6 +17,7 @@ use App\Http\Controllers\Controller;
 
 class ListController extends Controller
 {
+
     public function index($boardId)
     {
         $board = Board::with([
@@ -41,14 +42,12 @@ class ListController extends Controller
             'workspaceId' => $board->workspace_id, // ID của workspace chứa board
             'isMarked' => (bool) $board->is_marked, // Đánh dấu boolean
             'thumbnail' => $board->thumbnail ?? null, // Ảnh thu nhỏ của board, mặc định là null nếu không có
-            'columnOrderIds' => $board->listBoards->pluck('id')->toArray(), // Thứ tự danh sách (list_boards)
             'columns' => $board->listBoards->map(function ($list) {
                 return [
                     'id' => $list->id,
                     'boardId' => $list->board_id,
                     'title' => $list->name, // Tên danh sách (list_boards)
                     'position' => (int) $list->position, // Vị trí của danh sách, đảm bảo là số nguyên
-                    'cardOrderIds' => $list->cards->pluck('id')->toArray(), // Danh sách thứ tự các card
                     'cards' => $list->cards->map(function ($card) {
                         return [
                             'id' => $card->id,
@@ -65,54 +64,39 @@ class ListController extends Controller
 
         return response()->json($responseData);
     }
-    public function store(Request $request, ListBoard $listBoard)
+    public function store(Request $request)
     {
-        // Validate dữ liệu từ request
         $validated = $request->validate([
             'newColumn' => 'required|array',
-            'newColumn.board_id' => 'required|exists:boards,id', // Đảm bảo đúng board_id
+            'newColumn.board_id' => 'required|exists:boards,id',
             'newColumn.title' => 'required|string',
             'newColumn.position' => 'nullable|integer',
-            // 'newColumn.color_id' => 'nullable|exists:colors,id',
         ]);
 
         $newColumn = $validated['newColumn'];
         $boardId = $newColumn['board_id'];
 
-        // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
-        $list = DB::transaction(function () use ($newColumn, $listBoard, $boardId) {
-            // Tính toán position nếu không được truyền từ frontend
-            $position = $newColumn['position'] ?? ($listBoard->where('board_id', $boardId)->max('position') + 1000);
+        $list = DB::transaction(function () use ($newColumn, $boardId) {
+            $position = $newColumn['position'] ?? (ListBoard::where('board_id', $boardId)->max('position') + 1000);
 
-            // Tạo danh sách mới
             $list = ListBoard::create([
                 'name' => $newColumn['title'],
                 'closed' => false,
                 'position' => $position,
                 'board_id' => $boardId,
             ]);
-
-            // Broadcast sự kiện sau khi tạo thành công
-            broadcast(new ListCreated($list))->toOthers();
-
             return $list;
         });
 
-        // Lấy toàn bộ danh sách thuộc board sau khi thêm mới
-        $lists = $listBoard->where('board_id', $boardId)
-            ->orderBy('position')
-            ->get()
-            ->map(function ($list) {
-                return [
-                    'id' => $list->id,
-                    'board_id' => $list->board_id,
-                    'name' => $list->name,
-                    'position' => $list->position,
-                ];
-            });
+        // Broadcast event sau khi transaction thành công
+        broadcast(new ListCreated($list));
 
-        // Trả về response JSON với toàn bộ danh sách
-        return response()->json($lists, 201);
+        return response()->json([
+            'id'        => $list->id,
+            'title'     => $list->name,
+            'position'  => $list->position,
+            'board_id'   => $list->board_id
+        ], 201);
     }
 
     public function updateName(ListUpdateNameRequest $request, string $id)

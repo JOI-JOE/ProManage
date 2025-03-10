@@ -7,14 +7,61 @@ import {
   getListByBoardId,
   updateColPosition,
 } from "../api/models/listsApi";
-import { useEffect, useMemo } from "react";
-import echoInstance from "./useRealtime";
+import { useEffect, useCallback, useMemo } from "react";
+
+import echoInstance from "./realtime/useRealtime";
+
+// export const useLists = (boardId) => {
+//   const queryClient = useQueryClient();
+
+//   const query = useQuery({
+//     queryKey: ["lists", boardId], // Sử dụng queryKey chung
+//     queryFn: () => getListByBoardId(boardId),
+//     enabled: !!boardId,
+//     staleTime: 1000 * 60 * 5,
+//     cacheTime: 1000 * 60 * 30,
+//   });
+
+//   useEffect(() => {
+//     if (!boardId) return;
+
+//     const channel = echoInstance.channel(`board.${boardId}`);
+
+//     channel.listen(".list.created", (data) => {
+//       queryClient.setQueryData(["lists", boardId], (oldLists) => {
+//         const listsArray = Array.isArray(oldLists) ? oldLists : [];
+//         console.log("🚀 Trước khi cập nhật:", listsArray);
+
+//         // Kiểm tra nếu list đã tồn tại (tránh thêm trùng)
+//         queryClient.setQueryData(["lists", boardId], (oldLists) => {
+//           const listsArray = Array.isArray(oldLists) ? oldLists : [];
+
+//           // 🛠 Thay đổi logic kiểm tra trùng
+//           const updatedLists = listsArray.filter(
+//             (col) => col.id !== data.newList.id
+//           );
+//           return [...updatedLists, data.newList]; // Thêm mới
+//         });
+
+//         const updatedLists = [...listsArray, data.newList];
+//         console.log("✅ Sau khi cập nhật:", updatedLists);
+//         return updatedLists;
+//       });
+//     });
+
+//     return () => {
+//       channel.stopListening(".list.created");
+//     };
+//   }, [boardId, queryClient]);
+
+//   return query;
+// };
 
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ["boardLists", boardId],
+    queryKey: ["lists", boardId], // Sử dụng queryKey chung
     queryFn: () => getListByBoardId(boardId),
     enabled: !!boardId,
     staleTime: 1000 * 60 * 5,
@@ -24,36 +71,35 @@ export const useLists = (boardId) => {
   useEffect(() => {
     if (!boardId) return;
 
-    const channel = echoInstance.channel(`board.${boardId}`); // Sử dụng instance đã export
+    const channel = echoInstance.channel(`board.${boardId}`);
 
     channel.listen(".list.created", (data) => {
-      queryClient.setQueryData(["boardLists", boardId], (oldData) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          columns: [...oldData.columns, data.newList],
-        };
-      });
-    });
+      queryClient.setQueryData(["lists", boardId], (oldLists) => {
+        const listsArray = Array.isArray(oldLists) ? oldLists : []; // Đảm bảo oldLists là mảng
 
-    // 🔄 Khi list được cập nhật (đổi tên, vị trí, v.v.)
-    channel.listen(".list.updated", (data) => {
-      queryClient.setQueryData(["boardLists", boardId], (oldData) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          columns: oldData.columns.map((list) =>
-            list.id === data.updatedList.id
-              ? { ...list, ...data.updatedList }
-              : list
-          ),
-        };
+        console.log("🚀 Trước khi cập nhật:", listsArray);
+
+        // Kiểm tra nếu list đã tồn tại (tránh thêm trùng)
+        const isExisting = listsArray.some(
+          (list) => list.id === data.newList.id
+        );
+        if (isExisting) {
+          console.log("⚠ List đã tồn tại, không thêm mới");
+          return listsArray;
+        }
+
+        // Thêm list mới vào cache
+        const updatedLists = [...listsArray, data.newList];
+        console.log("✅ Sau khi cập nhật:", updatedLists);
+        return updatedLists;
       });
+
+      // Kích hoạt re-render bằng cách làm mới query
+      queryClient.invalidateQueries(["lists", boardId]);
     });
 
     return () => {
       channel.stopListening(".list.created");
-      channel.stopListening(".list.updated");
     };
   }, [boardId, queryClient]);
 
@@ -64,18 +110,28 @@ export const useCreateList = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (newColumn) => createList(newColumn), // Truyền newColumn vào createList
-    onSuccess: (newList, variables) => {
-      const { board_id } = variables;
+    mutationFn: (newColumn) => createList(newColumn), // Gửi API
+    onSuccess: (data, variables) => {
+      // ⚡ Cập nhật board để phản hồi UI nhanh hơn
+      queryClient.setQueryData(["board", variables.board_id], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          columns: [...oldData.columns, data], // Thêm column mới vào cache của board
+        };
+      });
 
-      // Cập nhật danh sách hiện tại sau khi tạo thành công
-      queryClient.setQueryData(["lists", board_id], (oldLists = []) => [
-        ...oldLists,
-        newList,
-      ]);
+      // 🔥 Cập nhật danh sách lists
+      queryClient.setQueryData(["lists", variables.board_id], (oldLists) => {
+        const listsArray = Array.isArray(oldLists) ? [...oldLists] : [];
+        return [...listsArray, data]; // Thêm column vào danh sách lists
+      });
+
+      // 🛠 Ép fetch lại để đảm bảo dữ liệu chính xác
+      queryClient.invalidateQueries(["lists", variables.board_id]);
     },
     onError: (error) => {
-      console.error("❌ Lỗi khi tạo danh sách:", error);
+      console.error("❌ Lỗi khi tạo column:", error);
     },
   });
 };

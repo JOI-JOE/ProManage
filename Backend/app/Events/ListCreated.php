@@ -8,6 +8,8 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log; // Import Log Facade
+
 
 class ListCreated implements ShouldBroadcastNow
 {
@@ -32,7 +34,7 @@ class ListCreated implements ShouldBroadcastNow
 
     public function broadcastWith()
     {
-        return [
+        $data = [
             'newList' => [
                 'id' => $this->list->id,
                 'boardId' => $this->list->board_id,
@@ -41,5 +43,8 @@ class ListCreated implements ShouldBroadcastNow
                 'cards' => [],
             ]
         ];
+        Log::info('BroadcastWith được gọi', ['data' => $data]);
+
+        return $data;
     }
 }

@@ -4,6 +4,7 @@ import { Outlet, useParams } from "react-router-dom";
 import AppBar from "../../../components/Navigation/AppBar";
 import SideBar from "./SideBar";
 import WorkspaceProvider from "../../../providers/WorkspaceProvider";
+import BoardProvider from "../../../providers/BoardProvider";
 
 const BoardDetail = () => {
   return (
@@ -12,7 +13,9 @@ const BoardDetail = () => {
         <Box sx={{ display: "flex" }}>
           <SideBar />
           <Box sx={{ width: "81%" }}>
-            <Outlet />
+            <BoardProvider>
+              <Outlet />
+            </BoardProvider>
           </Box>
         </Box>
       </Container>

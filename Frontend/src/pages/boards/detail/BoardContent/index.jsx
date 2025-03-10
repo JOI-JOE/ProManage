@@ -15,7 +15,7 @@ import {
   closestCenter,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import Col from "./Columns/Col";
 import Col_list from "./Columns/Col_list";
 import BoardBar from "./BoardBar/index";
@@ -23,8 +23,9 @@ import { generatePlaceholderCard } from "../../../../../utils/formatters";
 import { useParams, Outlet } from "react-router-dom";
 import C_ard from "./Cards/C_ard";
 import { mapOrder } from "../../../../../utils/sort";
-import { useLists, useUpdateColumnPosition } from "../../../../hooks/useList";
+import { useUpdateColumnPosition } from "../../../../hooks/useList";
 import { useCardPositionsInColumns, useCardPositionsOutColumns } from "../../../../hooks/useCard";
+import BoardContext from "../../../../contexts/BoardContext";
 
 
 const ACTIVE_DRAG_ITEM_TYPE = {
@@ -34,8 +35,9 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 
 const BoardContent = () => {
   const { boardId } = useParams();
-  const { data: board } = useLists(boardId); // Lấy dữ liệu từ hook
+  const { board } = useContext(BoardContext);
 
+  // console.log(board)
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: { distance: 10 },
   });
@@ -54,11 +56,18 @@ const BoardContent = () => {
   const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null);
 
   const lastOverId = useRef(null);
+  // const columnOrderIds = []
 
   useEffect(() => {
-    if (board?.columns && board?.columnOrderIds) {
-      setOrderedColumns(mapOrder(board.columns, board.columnOrderIds, "id"));
-    }
+    if (!board?.columns || board.columns.length === 0) return;
+
+    const columnOrderIds = board.columnOrderIds || board.columns.map(col => col.id);
+
+    setOrderedColumns(prevColumns => {
+      const newOrder = mapOrder(board.columns, columnOrderIds, "id");
+      // ✅ Chỉ cập nhật nếu thứ tự thay đổi để tránh re-render không cần thiết
+      return JSON.stringify(prevColumns) !== JSON.stringify(newOrder) ? newOrder : prevColumns;
+    });
   }, [board]);
 
   // Tìm column theo cardId
@@ -425,139 +434,7 @@ const BoardContent = () => {
     }),
   };
 
-  //Sử lý va chạm khi kéo thả
-  // const collisionDetectionStrategy = useCallback(
-  //   (args) => {
-  //     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-  //       return closestCorners({ ...args });
-  //     }
-  //     const pointerIntersections = pointerWithin(args);
-  //     if (!pointerIntersections?.length) return;
-
-  //     // const intersections = !!pointerIntersections?.length
-  //     //   ? pointerIntersections
-  //     //   : rectIntersection(args);
-
-  //     let overId = getFirstCollision(pointerIntersections, "id");
-
-  //     if (overId) {
-  //       const checkColumn = orderedColumns.find(
-  //         (column) => column.id === overId
-  //       );
-  //       if (checkColumn) {
-  //         if (checkColumn.cards.length === 0) {
-  //           // Column trống
-  //           lastOverId.current = overId;
-  //           return [{ id: overId }];
-  //         }
-
-  //         overId = closestCorners({
-  //           ...args,
-  //           droppableContainers: args.droppableContainers.filter(
-  //             (container) => {
-  //               return (
-  //                 container.id !== overId &&
-  //                 checkColumn?.cardOrderIds?.includes(container.id)
-  //               );
-  //             }
-  //           ),
-  //         })[0]?.id;
-  //       }
-  //       lastOverId.current = overId;
-  //       return [{ id: overId }];
-  //     }
-
-  //     return lastOverId.current ? [{ id: lastOverId.current }] : [];
-  //   },
-  //   [activeDragItemType, orderedColumns]
-  // );
-  // const collisionDetectionStrategy = useCallback(
-  //   (args) => {
-  //     // Xử lý kéo thả column
-  //     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-  //       return closestCorners({ ...args });
-  //     }
-
-  //     // Xử lý kéo thả card
-  //     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
-  //       // Xác định các phần tử nằm dưới con trỏ
-  //       const pointerIntersections = pointerWithin(args);
-  //       if (!pointerIntersections?.length) return;
-
-  //       // Lấy ID của phần tử đầu tiên va chạm
-  //       let overId = getFirstCollision(pointerIntersections, "id");
-
-  //       // Nếu không tìm thấy overId, sử dụng rectIntersection để tìm phần tử gần nhất
-  //       if (!overId) {
-  //         const rectIntersections = rectIntersection(args);
-  //         overId = rectIntersections[0]?.id;
-  //       }
-
-  //       // Nếu vẫn không tìm thấy overId, trả về lastOverId (nếu có)
-  //       if (!overId) {
-  //         return lastOverId.current ? [{ id: lastOverId.current }] : [];
-  //       }
-
-  //       // Kiểm tra nếu overId là một column
-  //       const checkColumn = orderedColumns.find((column) => column.id === overId);
-  //       if (checkColumn) {
-  //         // Nếu column trống, trả về column đó
-  //         if (checkColumn.cards.length === 0) {
-  //           lastOverId.current = overId;
-  //           return [{ id: overId }];
-  //         }
-
-  //         // Nếu column không trống, tìm phần tử gần nhất trong column
-  //         const intersections = rectIntersection({
-  //           ...args,
-  //           droppableContainers: args.droppableContainers.filter((container) => {
-  //             return (
-  //               container.id !== overId &&
-  //               checkColumn?.cardOrderIds?.includes(container.id)
-  //             );
-  //           }),
-  //         });
-
-  //         // Lấy phần tử đầu tiên trong danh sách intersections
-  //         if (intersections.length > 0) {
-  //           const closestIntersection = closestCorners({
-  //             ...args,
-  //             droppableContainers: intersections,
-  //           })[0];
-
-  //           if (closestIntersection) {
-  //             overId = closestIntersection.id;
-  //           }
-  //         }
-
-  //         // Kiểm tra xem card đang kéo có nằm ở phía trên card đầu tiên của column hay không
-  //         const firstCardInColumn = checkColumn.cards[0];
-  //         if (firstCardInColumn) {
-  //           const firstCardRect = document
-  //             .getElementById(firstCardInColumn.id)
-  //             ?.getBoundingClientRect();
-  //           const draggedCardRect = args.collisionRect;
-
-  //           if (draggedCardRect && firstCardRect) {
-  //             // Nếu card đang kéo nằm ở phía trên card đầu tiên
-  //             if (draggedCardRect.top < firstCardRect.top) {
-  //               overId = checkColumn.id; // Chèn vào đầu column
-  //             }
-  //           }
-  //         }
-  //       }
-
-  //       // Cập nhật lastOverId và trả về kết quả
-  //       lastOverId.current = overId;
-  //       return [{ id: overId }];
-  //     }
-
-  //     // Trường hợp mặc định (nếu có)
-  //     return [];
-  //   },
-  //   [activeDragItemType, orderedColumns]
-  // );
-
+  // //Sử lý va chạm khi kéo thả
   const collisionDetectionStrategy = useCallback(
     (args) => {
       // Xử lý kéo thả column

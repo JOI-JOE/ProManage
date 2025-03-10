@@ -7,7 +7,6 @@ const MemoizedAppBar = memo(AppBar); // Gọi memo bên ngoài component
 
 const DefaultLayout = () => {
     const { user } = useStateContext(); // Dùng context để lấy user
-    console.log(user)
     return (
         <>
             <MemoizedAppBar username={user?.user_name} email={user?.email} />

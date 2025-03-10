@@ -26,17 +26,6 @@ import WorkspaceContext from "../../../../contexts/WorkspaceContext";
 const SideBar = () => {
   const { currentWorkspace, isLoading, error } = useContext(WorkspaceContext); const [openSettings, setOpenSettings] = useState(false);
 
-  console.log(currentWorkspace)
-  // // Fetch workspace theo workspaceName từ URL
-  // const {
-  //   data: workspaceData,
-  //   isLoading: workspaceLoading,
-  //   error: workspaceError,
-  // } = useGetWorkspaceByName(workspaceName);
-
-  // // Nếu workspace được truyền từ props, ưu tiên sử dụng nó (tránh re-fetch)
-  // const currentWorkspace = workspace || workspaceData;
-
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
   };
