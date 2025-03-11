@@ -9,10 +9,15 @@ export const useCreateComment = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ card_id, user_id, content }) =>
-            createComment({ card_id, user_id, content }), // Gọi API thêm comment
-        onSuccess: (newComment, variables) => {
-            queryClient.invalidateQueries(["comments", variables.card_id]);
+        mutationFn: ({ card_id, user_id, content }) => createComment({ card_id, user_id, content }), // Gọi API thêm comment
+        onSuccess: (newComment, { card_id }) => {
+            // Cập nhật cache thủ công
+            queryClient.setQueryData(["comments", card_id], (oldData) => {
+                return [...oldData, newComment]; // Thêm comment mới vào danh sách comments
+            });
+
+            // Invalidate query để đảm bảo dữ liệu đồng bộ với server
+            queryClient.invalidateQueries({ queryKey: ["comments", card_id] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi thêm bình luận:", error);
@@ -36,14 +41,14 @@ export const useDeleteComment = () => {
 
     return useMutation({
         mutationFn: (commentId) => deleteComment(commentId), // Gọi API xóa
-        onSuccess: (_, commentId) => {
-            console.log(`✅ Xóa bình luận thành công: ${commentId}`);
+        // onSuccess: (_, commentId) => {
+        //     console.log(`✅ Xóa bình luận thành công: ${commentId}`);
 
-            // Cập nhật danh sách bình luận sau khi xóa
-            queryClient.setQueryData(["comments"], (oldComments = []) =>
-                oldComments.filter((c) => c.id !== commentId)
-            );
-        },
+        //     // Cập nhật danh sách bình luận sau khi xóa
+        //     queryClient.setQueryData(["comments"], (oldComments = []) =>
+        //         oldComments.filter((c) => c.id !== commentId)
+        //     );
+        // },
         onError: (error) => {
             console.error("❌ Lỗi khi xóa bình luận:", error);
         }
@@ -57,7 +62,7 @@ export const useUpdateComment = () => {
       mutationFn: updateComment,
       onSuccess: (_, variables) => {
         // Cập nhật danh sách bình luận sau khi sửa
-        queryClient.invalidateQueries(["comments", variables.cardId]);
+        // queryClient.invalidateQueries(["comments", variables.cardId]);
       },
       onError: (error) => {
         console.error("❌ Lỗi khi chỉnh sửa bình luận:", error);

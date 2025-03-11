@@ -17,8 +17,8 @@ export const useCreateCheckList = () => {
 
     return useMutation({
         mutationFn: ({ card_id, name }) => createCheckList({ card_id, name }), // Gọi API tạo checklist
-        onSuccess: (newCheckList, variables) => {
-            queryClient.invalidateQueries(["checklists", variables.card_id]); // Cập nhật lại danh sách checklist
+        onSuccess: (newCheckList, { card_id }) => {
+            queryClient.invalidateQueries({ queryKey: ["checklists", card_id] }); // Cập nhật lại danh sách checklist
         },
         onError: (error) => {
             console.error("❌ Lỗi khi thêm checklist:", error);
@@ -31,14 +31,13 @@ export const useUpdateCheckList = () => {
 
     return useMutation({
         mutationFn: ({ id, name }) => updateCheckList({ id, name }), // Gọi API cập nhật
-        onSuccess: (_, variables) => {
-            // Làm mới dữ liệu checklist sau khi cập nhật thành công
-            queryClient.invalidateQueries(["checklists", variables.card_id]);
+        onSuccess: (_, { card_id }) => {
+            // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật checklist:", error);
         },
-        
+
     });
 };
 
