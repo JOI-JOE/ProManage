@@ -30,7 +30,6 @@ import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
-
 import ListItemIcon from "@mui/material/ListItemIcon";
 import LinearProgress from "@mui/material/LinearProgress";
 import Checkbox from "@mui/material/Checkbox";
@@ -76,12 +75,11 @@ const CardModal = () => {
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(true);
-  const [originalDescription, setOriginalDescription] = useState("");
+  // const [originalDescription, setOriginalDescription] = useState("");
   const [comment, setComment] = useState("");
   // const [setComments] = useState([]);
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [tasks, setTasks] = useState([]);
   const [isLabelListOpen, setIsLabelListOpen] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState([]);
   const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
@@ -92,7 +90,7 @@ const CardModal = () => {
   const [editingCommentText, setEditingCommentText] = useState("");
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
-  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(null);
   const [cardName, setCardName] = useState(title);
   const [previousCardName, setPreviousCardName] = useState(title);
   const queryClient = useQueryClient();
@@ -108,6 +106,10 @@ const CardModal = () => {
   };
 
   const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
+  // const loggedInUser = {
+  //   name: "Current User",
+  //   avatar: "https://via.placeholder.com/40",
+  // };
   const { data: comments = [] } = useCommentsByCard(cardId);
   const { data: user, isLoadingUser, errorUser } = useUser();
   const {
@@ -125,6 +127,7 @@ const CardModal = () => {
   const { mutate: updateCheckList } = useUpdateCheckList();
   const { mutate: removeCheckList } = useDeleteCheckList();
 
+  // const { data: checklistItems = [] } = useCreateCheckListItem();
   const { mutate: addCheckListItem } = useCreateCheckListItem();
   const { mutate: toggleItemStatus } = useToggleCheckListItemStatus();
   const { mutate: updateCheckListItemName } = useUpdateCheckListItemName();
@@ -159,11 +162,11 @@ const CardModal = () => {
     if (cardDetail?.description) {
       const isEmpty = isEmptyHTML(cardDetail.description);
       setDescription(cardDetail.description);
-      setOriginalDescription(cardDetail.description);
+      // setOriginalDescription(cardDetail.description);
       setIsEditingDescription(isEmpty); // Nếu description rỗng, tự động vào chế độ chỉnh sửa
     } else {
       setDescription(""); // Đặt description rỗng nếu không có
-      setOriginalDescription(""); // Đặt giá trị ban đầu rỗng
+      // setOriginalDescription(""); // Đặt giá trị ban đầu rỗng
       setIsEditingDescription(true); // Tự động vào chế độ chỉnh sửa nếu không có mô tả
     }
   }, [cardDetail?.description]);
@@ -173,11 +176,12 @@ const CardModal = () => {
 
   const handleArchiveCard = (cardId) => {
     archiveCard(cardId);
+    navigate(-1);
   };
 
   const handleDescriptionClick = () => {
     setIsEditingDescription(true);
-    setOriginalDescription(description);
+    // setOriginalDescription(description);
   };
 
   const handleSaveDescription = () => {
@@ -187,7 +191,7 @@ const CardModal = () => {
   };
 
   const handleCancelDescription = () => {
-    setDescription(originalDescription); // Khôi phục giá trị ban đầu
+    // setDescription(originalDescription); // Khôi phục giá trị ban đầu
     setIsEditingDescription(false); // Thoát chế độ chỉnh sửa
   };
 
@@ -246,6 +250,7 @@ const CardModal = () => {
       {
         onSuccess: () => {
           console.log(`✅ Đã thêm mục: ${itemName}`);
+          // queryClient.invalidateQueries({ queryKey: ["checklist-items", checklistId] });
           setNewItem(""); // Reset input sau khi thêm thành công
         },
         onError: (error) => {
@@ -265,6 +270,7 @@ const CardModal = () => {
     toggleItemStatus(id, {
       onSuccess: () => {
         console.log("✅ Cập nhật trạng thái thành công");
+        queryClient.invalidateQueries({ queryKey: ["checklist-items"] });
       },
       onError: () => {
         console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
@@ -283,17 +289,20 @@ const CardModal = () => {
     removeCheckList(checklistId, {
       onSuccess: () => {
         console.log("✅ Checklist đã bị xóa thành công!");
-        queryClient.invalidateQueries(["checklists", cardId]);
+        // queryClient.invalidateQueries(["checklists", cardId]);
+        queryClient.invalidateQueries({ queryKey: ["checklists"] });
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa checklist:", error);
       },
     });
   };
+  // console.log(cardDetail.checklists[0].name);
 
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editedTaskName, setEditedTaskName] = useState("");
 
+  // const [NewUpdatedLabelName, setUpdatedLabelName] = useState("");
   // const handleAddTask = (taskName) => {
   //   setTasks([...tasks, { id: tasks.length + 1, name: taskName }]);
   // };
@@ -311,6 +320,7 @@ const CardModal = () => {
       {
         onSuccess: () => {
           setEditingTaskId(null); // Thoát chế độ chỉnh sửa sau khi cập nhật
+          queryClient.invalidateQueries({ queryKey: ["checklists", cardId] });
         },
         onError: (error) => {
           console.error("❌ Lỗi khi cập nhật checklist:", error);
@@ -327,6 +337,7 @@ const CardModal = () => {
 
   const [editingItemId, setEditingItemId] = useState(null);
   const [editedItemName, setEditedItemName] = useState("");
+
   const handleEditItem = (id, name) => {
     setEditingItemId(id);
     setEditedItemName(name);
@@ -340,6 +351,7 @@ const CardModal = () => {
       {
         onSuccess: () => {
           setEditingItemId(null); // Thoát chế độ chỉnh sửa sau khi cập nhật
+          queryClient.invalidateQueries({ queryKey: ["checklists"] });
         },
         onError: (error) => {
           console.error("❌ Lỗi khi cập nhật tên checklist item:", error);
@@ -361,6 +373,7 @@ const CardModal = () => {
       onSuccess: () => {
         console.log(`✅ Xóa thành công ChecklistItem ID: ${id}`);
         handleMenuClose();
+        // queryClient.invalidateQueries({ queryKey: ["checklists"] });
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa:", error);
@@ -408,6 +421,7 @@ const CardModal = () => {
         onSuccess: () => {
           setEditingCommentIndex(null);
           setEditingCommentText("");
+          queryClient.invalidateQueries({ queryKey: ["comments", cardId] });
         },
         onError: (error) => {
           console.error("❌ Lỗi khi chỉnh sửa bình luận:", error);
@@ -430,7 +444,8 @@ const CardModal = () => {
         setIsDeleteConfirmOpen(false);
         setCommentToDelete(null);
 
-        queryClient.invalidateQueries(["comments", cardId]);
+        // queryClient.invalidateQueries(["comments", cardId]);
+        queryClient.invalidateQueries({ queryKey: ["comments"] });
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa bình luận:", error);
@@ -1269,6 +1284,7 @@ const CardModal = () => {
                     <ListItemText primary="Lưu trữ" />
                   </ListItemButton>
                 </ListItem>
+                {/* onClick={() => navigate(-1)} */}
 
                 <ListItem disablePadding>
                   <ListItemButton onClick={() => setIsShareModalOpen(true)}>

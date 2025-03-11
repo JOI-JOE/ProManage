@@ -13,13 +13,13 @@ import { useParams } from "react-router-dom";
 const TaskModal = ({ open, onClose, onSave }) => {
   const [taskName, setTaskName] = useState("");
   const { cardId } = useParams();
-  const { mutate: addCheckList } = useCreateCheckList();
+  const createCheckListMutation = useCreateCheckList();
 
   const handleSave = () => {
     if (!taskName.trim()) return; // Kiểm tra tên checklist có dữ liệu
 
-    addCheckList(
-      { card_id: cardId, name: taskName }, // Gửi request API
+    createCheckListMutation.mutate(
+      {card_id: cardId, name: taskName }, // Gửi request API
       {
         onSuccess: () => {
           setTaskName(""); // Reset trường nhập
