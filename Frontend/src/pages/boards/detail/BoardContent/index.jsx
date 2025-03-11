@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { cloneDeep, isEmpty } from "lodash";
+import { cloneDeep, isEmpty, isEqual } from "lodash";
 import {
   DndContext,
   MouseSensor,
@@ -27,8 +27,6 @@ import { useUpdateColumnPosition } from "../../../../hooks/useList";
 import { useCardPositionsInColumns, useCardPositionsOutColumns } from "../../../../hooks/useCard";
 import BoardContext from "../../../../contexts/BoardContext";
 
-
-
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
   CARD: "ACTIVE_DRAG_ITEM_TYPE_CARD",
@@ -37,6 +35,7 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 const BoardContent = () => {
   const { boardId } = useParams();
   const { board } = useContext(BoardContext);
+  const updateColumnPosition = useUpdateColumnPosition(); // ✅ Gọi hook ngay trong body của component
 
 
   // console.log(board)
@@ -61,16 +60,14 @@ const BoardContent = () => {
   // const columnOrderIds = []
 
   useEffect(() => {
-    if (!board?.columns || board.columns.length === 0) return;
+    if (!board?.columns?.length) return;
 
     const columnOrderIds = board.columnOrderIds || board.columns.map(col => col.id);
+    const newOrder = mapOrder(board.columns, columnOrderIds, "id");
 
-    setOrderedColumns(prevColumns => {
-      const newOrder = mapOrder(board.columns, columnOrderIds, "id");
-      // ✅ Chỉ cập nhật nếu thứ tự thay đổi để tránh re-render không cần thiết
-      return JSON.stringify(prevColumns) !== JSON.stringify(newOrder) ? newOrder : prevColumns;
-    });
-  }, [board]);
+    setOrderedColumns(prevColumns => (isEqual(prevColumns, newOrder) ? prevColumns : newOrder));
+  }, [board, board?.columnOrderIds]);
+
 
   // Tìm column theo cardId
   const findColumnByCardId = (cardId) => {
@@ -131,7 +128,7 @@ const BoardContent = () => {
           const isBelowOverItem =
             active.rect.current.translated &&
             active.rect.current.translated.top >
-              over.rect.top + over.rect.height;
+            over.rect.top + over.rect.height;
           newCardIndex = overCardIndex + (isBelowOverItem ? 1 : 0);
         } else {
           newCardIndex = nextOverColumn.cards.length;
@@ -430,7 +427,7 @@ const BoardContent = () => {
       setOrderedColumns(updatedColumns);
 
       // Gọi mutation để cập nhật dữ liệu trên server
-      await useUpdateColumnPosition(updatedColumns);
+      updateColumnPosition.mutate(updatedColumns); // ✅ Dùng `.mutate()`
     }
 
     setActiveDragItemId(null);

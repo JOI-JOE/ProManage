@@ -2,38 +2,41 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\ListArchived;
-use App\Events\ListClosed;
 use App\Events\ListCreated;
-use App\Events\ListNameUpdated;
-use App\Events\ListReordered;
 use App\Http\Requests\ListUpdateNameRequest;
+use App\Jobs\BroadcastListCreated;
 use App\Models\Board;
 use App\Models\ListBoard;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Cache;
+use Pusher\Pusher;
 
 class ListController extends Controller
 {
 
     public function index($boardId)
     {
-        $board = Board::with([
-            'listBoards' => function ($query) {
-                $query->where('closed', false)
-                    ->orderBy('position')
-                    ->with(['cards' => function ($cardQuery) {
-                        $cardQuery->orderBy('position');
-                    }])
-                    ->withCount('cards'); // Đếm số thẻ trong danh sách
-            }
-        ])->find($boardId);
 
+        $cacheKey = "board_{$boardId}_with_lists";
+        $board = Cache::remember($cacheKey, 60, function () use ($boardId) {
+            return Board::with([
+                'listBoards' => function ($query) {
+                    $query->where('closed', false)
+                        ->orderBy('position')
+                        ->with(['cards' => function ($cardQuery) {
+                            $cardQuery->orderBy('position');
+                        }])
+                        ->withCount('cards');
+                }
+            ])->find($boardId);
+        });
         if (!$board) {
             return response()->json(['message' => 'Board not found'], 404);
         }
+
         $responseData = [
             'id' => $board->id,
             'title' => $board->name, // Tên bảng (board)
@@ -63,16 +66,16 @@ class ListController extends Controller
         ];
 
         return response()->json($responseData);
-
     }
 
-    public function getListClosed($boardId){
+    public function getListClosed($boardId)
+    {
         try {
             // Lấy tất cả danh sách thuộc board có closed = 1
             $listsClosed = ListBoard::where('board_id', $boardId)
                 ->where('closed', 1)
                 ->get();
-    
+
             return response()->json([
                 'success' => true,
                 'message' => 'Lấy danh sách đóng thành công',
@@ -82,12 +85,13 @@ class ListController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra',
-                  
-                ]);
+
+            ]);
         }
     }
 
-    public function destroy($id){
+    public function destroy($id)
+    {
         try {
             $list = ListBoard::findOrFail($id);
             if (!$list) {
@@ -107,9 +111,7 @@ class ListController extends Controller
             //throw $th;
         }
     }
-
-
-    public function store(Request $request, ListBoard $listBoard)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'newColumn' => 'required|array',
@@ -121,26 +123,41 @@ class ListController extends Controller
         $newColumn = $validated['newColumn'];
         $boardId = $newColumn['board_id'];
 
-        $list = DB::transaction(function () use ($newColumn, $boardId) {
-            $position = $newColumn['position'] ?? (ListBoard::where('board_id', $boardId)->max('position') + 1000);
+        // Cache vị trí lớn nhất
+        $cacheKey = "board_{$boardId}_max_position";
+        $maxPosition = Cache::get($cacheKey);
 
-            $list = ListBoard::create([
+        if (is_null($maxPosition)) {
+            $maxPosition = ListBoard::where('board_id', $boardId)
+                ->max('position') ?? 0;
+            $maxPosition += 1000;
+            Cache::put($cacheKey, $maxPosition, 60);
+        }
+
+        $position = $newColumn['position'] ?? $maxPosition;
+
+        // Transaction để đảm bảo toàn vẹn dữ liệu
+        $list = DB::transaction(function () use ($newColumn, $boardId, $position) {
+            return ListBoard::create([
                 'name' => $newColumn['title'],
                 'closed' => false,
                 'position' => $position,
                 'board_id' => $boardId,
             ]);
-            return $list;
         });
 
-        // Broadcast event sau khi transaction thành công
-        broadcast(new ListCreated($list));
+        // Cập nhật max_position trong cache
+        Cache::put($cacheKey, $list->position + 1000, 60);
+
+        // $job = dispatch(new BroadcastListCreated($list));
+        broadcast(new ListCreated($list))->toOthers(); // Gửi WebSocket ngay lập tức
+
 
         return response()->json([
             'id'        => $list->id,
             'title'     => $list->name,
             'position'  => $list->position,
-            'board_id'   => $list->board_id
+            'board_id'  => $list->board_id,
         ], 201);
     }
 
@@ -158,7 +175,6 @@ class ListController extends Controller
         $list->name = $validated['name'];
         $list->save();
 
-        broadcast(new ListNameUpdated($list));
 
         return response()->json($list);
     }
@@ -174,7 +190,7 @@ class ListController extends Controller
         $list->closed = !$list->closed;
         $list->save();
 
-        broadcast(new ListArchived($list));
+        // broadcast(new ListArchived($list));
 
         return response()->json([
             'message' => 'List archived successfully',
