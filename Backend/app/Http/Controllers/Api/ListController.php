@@ -19,46 +19,70 @@ class ListController extends Controller
 
     public function index($boardId)
     {
-
-        $cacheKey = "board_{$boardId}_with_lists";
-        $board = Cache::remember($cacheKey, 60, function () use ($boardId) {
-            return Board::with([
+        $board = Board::where('id', $boardId)
+            ->with([
                 'listBoards' => function ($query) {
                     $query->where('closed', false)
                         ->orderBy('position')
-                        ->with(['cards' => function ($cardQuery) {
-                            $cardQuery->orderBy('position');
-                        }])
-                        ->withCount('cards');
+                        ->with([
+                            'cards' => function ($cardQuery) {
+                                $cardQuery->orderBy('position')
+                                    ->withCount('comments')
+                                    ->with([
+                                        'checklists' => function ($checklistQuery) {
+                                            $checklistQuery->with('items');
+                                        }
+                                    ]);
+                            }
+                        ]);
                 }
-            ])->find($boardId);
-        });
+            ])
+            ->first();
+
         if (!$board) {
             return response()->json(['message' => 'Board not found'], 404);
         }
 
         $responseData = [
             'id' => $board->id,
-            'title' => $board->name, // Tên bảng (board)
-            'description' => $board->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
-            'visibility' => $board->visibility, // Public hoặc Private
-            'workspaceId' => $board->workspace_id, // ID của workspace chứa board
-            'isMarked' => (bool) $board->is_marked, // Đánh dấu boolean
-            'thumbnail' => $board->thumbnail ?? null, // Ảnh thu nhỏ của board, mặc định là null nếu không có
+            'title' => $board->name,
+            'description' => $board->description ?? '',
+            'visibility' => $board->visibility,
+            'workspaceId' => $board->workspace_id,
+            'isMarked' => (bool) $board->is_marked,
+            'thumbnail' => $board->thumbnail ?? null,
+            'columnOrderIds' => $board->listBoards->pluck('id')->toArray(),
             'columns' => $board->listBoards->map(function ($list) {
                 return [
                     'id' => $list->id,
                     'boardId' => $list->board_id,
-                    'title' => $list->name, // Tên danh sách (list_boards)
-                    'position' => (int) $list->position, // Vị trí của danh sách, đảm bảo là số nguyên
+                    'title' => $list->name,
+                    'position' => (int) $list->position,
+                    'cardOrderIds' => $list->cards->pluck('id')->toArray(),
                     'cards' => $list->cards->map(function ($card) {
                         return [
                             'id' => $card->id,
-                            'columnId' => $card->list_board_id, // ID danh sách mà thẻ thuộc về
-                            'title' => $card->title, // Tên thẻ
-                            'description' => $card->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
-                            'position' => (int) $card->position, // Vị trí thẻ trong danh sách, đảm bảo là số nguyên
+                            'columnId' => $card->list_board_id,
+                            'title' => $card->title,
+                            'description' => $card->description ?? '',
+                            'position' => (int) $card->position,
                             'comments_count' => $card->comments_count,
+                            'is_archived' => (bool) $card->is_archived, 
+                            'checklists' => $card->checklists->map(function ($checklist) {
+                                return [
+                                    'id' => $checklist->id,
+                                    'card_id' => $checklist->card_id,
+                                    'name' => $checklist->name,
+                                    'items' => $checklist->items->map(function ($item) {
+                                        return [
+                                            'id' => $item->id,
+                                            'checklist_id' => $item->checklist_id,
+                                            'name' => $item->name,
+                                            'is_completed' => (bool) $item->is_completed,
+                                        ];
+                                    })->toArray(),
+                                ];
+                            })->toArray(),
                         ];
                     })->toArray(),
                 ];
@@ -66,7 +90,15 @@ class ListController extends Controller
         ];
 
         return response()->json($responseData);
+
+        // $lists = ListBoard::where('board_id', $boardId)
+        //     ->where('closed', false)
+        //     ->orderBy('position')
+        //     ->with('cards') // Lấy luôn danh sách thẻ thuộc mỗi danh sách
+        //     ->get();
+        // return response()->json($lists);
     }
+
 
     public function getListClosed($boardId)
     {
