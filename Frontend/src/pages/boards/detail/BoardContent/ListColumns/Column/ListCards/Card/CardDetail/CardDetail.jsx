@@ -54,6 +54,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import { toast, ToastContainer } from "react-toastify";
 import { useChecklistsByCard, useDeleteCheckList, useUpdateCheckList } from "../../../../../../../../../hooks/useCheckList";
 import { useCreateCheckListItem, useDeleteCheckListItem, useToggleCheckListItemStatus, useUpdateCheckListItemName } from "../../../../../../../../../hooks/useCheckListItem";
+import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
 
 
 
@@ -66,6 +67,11 @@ const CardModal = () => {
   // const [originalDescription, setOriginalDescription] = useState("");
   const [comment, setComment] = useState("");
   // const [setComments] = useState([]);
+  const { data: cardLabels } = useCardLabels(cardId);
+  const [labels, setLabels] = useState([]);
+
+  
+
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isLabelListOpen, setIsLabelListOpen] = useState(false);
@@ -88,7 +94,9 @@ const CardModal = () => {
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
-  
+
+ 
+
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing);
   };
@@ -127,6 +135,13 @@ const CardModal = () => {
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
+  useEffect(() => {
+    if (cardLabels?.length) {
+      setLabels(cardLabels);
+      console.log(cardLabels);
+    }
+  }, [cardLabels]);
+  
 
 
   // const {
@@ -162,6 +177,11 @@ const CardModal = () => {
     }
   }, [cardDetail?.description]);
 
+  // if (isLoading) return <Box>Loading...</Box>;
+  // if (error) return <Box>Error: {error.message}</Box>;
+
+  // if (listLoading) return <Box>Loading...</Box>;
+  // if (listError) return <Box>Error: {error.message}</Box>;
   // if (listLoading) return <Box>Loading...</Box>;
   // if (listError) return <Box>Error: {error.message}</Box>;
 
@@ -529,79 +549,27 @@ const CardModal = () => {
             }}
             onClick={() => setIsMemberListOpen(true)} // Thêm sự kiện onClick
           />
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
+          {labels.map((label) => (
+           <Button
+           key={label.id}
+           variant="contained"
+           sx={{
+             bgcolor: label.color?.hex_code || "#ccc",
+             mr: 1,
+             height: 25,
+             p: "0px 8px", // Thêm padding ngang để không bị cắt chữ
+             minWidth: "auto", // Cho phép nút mở rộng theo chữ
+             width: "fit-content", // Tự động điều chỉnh theo nội dung
+             maxWidth: "100%", // Giới hạn tối đa để tránh tràn
+           }}
+           onClick={() => setIsLabelListOpen(true)}
+         >
+           {label.title}
+         </Button>
+         
+          ))}
 
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
+
 
           <AddIcon
             sx={{
@@ -1158,7 +1126,7 @@ const CardModal = () => {
       <TaskModal
         open={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
-        // onSave={handleAddTask}
+      // onSave={handleAddTask}
       />
 
       {/* Component Label List */}
