@@ -37,16 +37,16 @@ const Archived = ({ open, onClose }) => {
 
   const { boardId } = useParams();
   // console.log(boardId);
-  
-  const { listsClosed, isLoading, error, deleteMutation ,updateClosedMutation } = useListsClosed(boardId);
+
+  const { listsClosed, isLoading, error, deleteMutation, updateClosedMutation } = useListsClosed(boardId);
 
   const { cards, isLoadingCard, errorCard, archiveCard, deleteCard } = useCardActions(boardId);
- 
+
 
   // console.log(cardsArchivedByBoard);
-  
+
   // console.log(listsClosed);
- 
+
 
 
   // Hiển thị Toast Notification
@@ -82,11 +82,11 @@ const Archived = ({ open, onClose }) => {
 
   const handleDeleteCard = (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa thẻ này?")) return;
-  
+
     deleteCard(id)
 
   };
-  
+
 
 
 
@@ -159,10 +159,10 @@ const Archived = ({ open, onClose }) => {
                 />
                 <Box display="flex" alignItems="center">
                   <IconButton
-                   onClick={() => handleDeleteCard(item.id)}
+                    onClick={() => handleDeleteCard(item.id)}
                     sx={{ color: "red", fontSize: "16px" }}
                   >
-                    <DeleteIcon  sx={{ fontSize: "16px" }}  />
+                    <DeleteIcon sx={{ fontSize: "16px" }} />
                   </IconButton>
                   <IconButton
                     onClick={() => handleRestoreCard(item.id)}
@@ -241,7 +241,7 @@ const Archived = ({ open, onClose }) => {
           </Box>
         )}
       </Box>
-        <ToastContainer />
+      <ToastContainer />
     </Drawer>
   );
 };

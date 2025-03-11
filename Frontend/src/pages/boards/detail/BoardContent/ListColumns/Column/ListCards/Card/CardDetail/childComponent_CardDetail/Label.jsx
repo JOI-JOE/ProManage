@@ -21,10 +21,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import {  useCardLabels, useCreateLabel, useDeleteLabelByBoard, useLabels, useUpdateCardLabel, useUpdateLabelName } from "../../../../../../../../../../hooks/useLabel";
 
 
-
-
-
-
 // const initialLabels = [
 //   { id: 1, color: "#137b13", name: "Label 1" },
 //   { id: 2, color: "#b05900", name: "Label 2" },
@@ -54,15 +50,25 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [newLabelColor, setNewLabelColor] = useState("#000000");
+
   
-  useEffect(() => {
-    if (fetchedLabels) {
-      setLabels(fetchedLabels); // Cập nhật danh sách nhãn từ board
-    }
+  // useEffect(() => {
+  //   if (fetchedLabels) {
+  //     setLabels(fetchedLabels); // Cập nhật danh sách nhãn từ board
+  //   }
+  //   if (fetchedCardLabels) {
+  //     setCheckedLabels(new Set(fetchedCardLabels.map(label => label.id))); // Đánh dấu các nhãn đã được gán vào thẻ
+  //   }
+  // }, [fetchedLabels, fetchedCardLabels]);
+   useEffect(() => {
+    if (fetchedLabels) setLabels(fetchedLabels);
     if (fetchedCardLabels) {
-      setCheckedLabels(new Set(fetchedCardLabels.map(label => label.id))); // Đánh dấu các nhãn đã được gán vào thẻ
+      setCheckedLabels(new Set(fetchedCardLabels.map(label => label.id)));
     }
   }, [fetchedLabels, fetchedCardLabels]);
+
+  
+  
   
   // tạo mới
 // console.log(createLabelMutation);
@@ -85,17 +91,13 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   // sửa tên 
 
   const handleUpdateLabelName = () => {
-    if (!NewUpdatedLabelName.trim()) return;
-  
-    if (!NewUpdatedLabelName) {
-      console.error("Hook useUpdateLabelName chưa được khởi tạo!");
-      return;
-    }
-  
+    if (!NewUpdatedLabelName.trim())  alert("Tên nhãn không được để trống!");
+    
     updateLabelNameMutation.mutate(
       { labelId: editLabelId, data: { title: NewUpdatedLabelName } },
       {
         onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["labels"] });
           setLabels((prevLabels) =>
             prevLabels.map((label) =>
               label.id === editLabelId ? { ...label, title: NewUpdatedLabelName } : label
@@ -104,8 +106,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
           setIsEditingLabel(false);
           setEditLabelId(null);
           setUpdatedLabelName("");
-          queryClient.invalidateQueries(["labels", boardId]);
-          
         },
         onError: (error) => {
           console.error(error)
@@ -115,6 +115,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
     );
   };
   const handleCheckboxChange = (labelId) => {
+    
     setCheckedLabels((prev) => {
       const updated = new Set(prev);
       
@@ -123,21 +124,46 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       } else {
         updated.add(labelId);
       }
+      
+     
       // Gọi API với giá trị mới thay vì `checkedLabels`
       updateLabelMutation.mutate(
         { cardId, labelId, action: updated.has(labelId) ? "add" : "remove" },
         {
           onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["labels"] });
+          
+              queryClient.invalidateQueries(["labels", cardId]);
+          
+           
+
+
+            
+            
           },
+          onError: (error) => {
+            console.error("❌ Lỗi mutation:", error);
+          }
         }
+        
       );
   
-      return new Set(updated); 
+    
+  
+      return new Set(updated);
+    
     });
   };
   const handleDeleteLabel = ( labelId) => {
-    deleteLabelMutation.mutate({  labelId });
+    deleteLabelMutation.mutate(
+      {  labelId },
+      {
+        onSuccess:()=>{
+          queryClient.invalidateQueries({ queryKey: ["labels"] });
+        }
+      }
+
+    );
+    fetchedLabels();
 };
   
   // Xử lý khi đang tải hoặc lỗi
@@ -155,7 +181,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
 
   
 const handleEditLabel = (id, title) => {
-    console.log(id,title);
     setEditLabelId(id);
     setIsEditingLabel(true);
     setUpdatedLabelName("");

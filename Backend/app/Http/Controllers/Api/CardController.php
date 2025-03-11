@@ -4,6 +4,7 @@ namespace App\Http\Controllers\api;
 
 use App\Events\ActivityEvent;
 use App\Events\CardCreate;
+use App\Events\CardCreated;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\ListBoard;
@@ -17,6 +18,7 @@ use App\Events\CardPositionUpdated;
 use App\Events\ColumnPositionUpdated;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
@@ -26,7 +28,7 @@ class CardController extends Controller
         try {
             $cards = Card::where('list_board_id', $listId)
                 ->where('is_archived', 0)
-                ->withCount('comments') 
+                ->withCount('comments')
                 ->get();
             return response()->json([
                 'status' => true,
@@ -40,12 +42,12 @@ class CardController extends Controller
                 // 'data'=>$cards
             ]);
         }
-
     }
     public function store(Request $request)
     {
+        // 📌 Validate request
         $validator = Validator::make($request->all(), [
-            'columnId' => 'required|uuid|exists:list_boards,id', // Thêm ,id vào exists rule
+            'columnId' => 'required|uuid|exists:list_boards,id',
             'position' => 'required|numeric',
             'title' => 'required|string|max:255',
         ]);
@@ -54,15 +56,19 @@ class CardController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Create a new card
-        $card = Card::create([
-            'list_board_id' => $request->columnId, // Sử dụng columnId đã được validate
-            'position' => $request->position,
-            'title' => $request->title,
-        ]);
+        // 📌 Tạo card mới
+        $card = Cache::remember("card_{$request->columnId}_{$request->title}", 10, function () use ($request) {
+            return Card::create([
+                'list_board_id' => $request->columnId,
+                'position' => $request->position,
+                'title' => $request->title,
+            ]);
+        });
 
+        // 📌 Broadcast event để cập nhật realtime
+        broadcast(new CardCreated($card))->toOthers();
 
-        return response()->json($card, 201); // 201 Created
+        return response()->json($card, 201);
     }
     // cập nhật tên
     public function updateName($cardId, Request $request)
@@ -327,7 +333,7 @@ class CardController extends Controller
             'description' => $card->description ?? '',
             'listName' => $card->list->name ?? '', // Lấy tên danh sách chứa card
             'boardName' => $card->list->board->name ?? '', // Lấy tên board
-           
+
         ]);
     }
 
@@ -347,7 +353,6 @@ class CardController extends Controller
                 'message' => 'Card archive status updated successfully',
                 'is_archived' => $card->is_archived,
             ], 200);
-
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'message' => 'Card not found',
@@ -365,12 +370,12 @@ class CardController extends Controller
         try {
             // Lấy danh sách ID thuộc boardId
             $listIds = ListBoard::where('board_id', $boardId)->pluck('id');
-    
+
             // Lấy các thẻ đã lưu trữ trong danh sách đó
             $archivedCards = Card::whereIn('list_board_id', $listIds)
-                                 ->where('is_archived', 1)
-                                 ->get();
-    
+                ->where('is_archived', 1)
+                ->get();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Lấy danh sách thẻ đã lưu trữ thành công!',
@@ -396,7 +401,6 @@ class CardController extends Controller
             return response()->json([
                 'message' => 'Card deleted successfully',
             ], 200);
-
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'message' => 'Card not found',

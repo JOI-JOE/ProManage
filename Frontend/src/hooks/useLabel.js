@@ -33,30 +33,31 @@ export const useUpdateCardLabel = () => {
         mutationFn: ({ cardId, labelId, action }) => updateCardLabel(cardId, labelId, action),
 
         onSuccess: (_, { cardId, labelId, action, boardId }) => {
-            
             queryClient.setQueryData(["cards", cardId], (oldData) => {
                 if (!oldData) return oldData;
                 return {
                     ...oldData,
                     labels: action === "add"
-                        ? [...oldData.labels, labelId] // Thêm label nếu action là "add"
-                        : oldData.labels.filter(id => id !== labelId) // Xóa label nếu action là "remove"
+                        ? [...(oldData.labels || []), labelId] // Đảm bảo oldData.labels là mảng hợp lệ
+                        : (oldData.labels || []).filter(id => id !== labelId) // Tránh lỗi undefined
                 };
+            });
+
+            queryClient.setQueryData(["cardLabels", cardId], (oldLabels) => {
+                if (!oldLabels) return oldLabels;
+                return action === "add"
+                    ? [...(oldLabels || []), { id: labelId, checked: true }] // Đảm bảo oldLabels là mảng hợp lệ
+                    : (oldLabels || []).filter(label => label.id !== labelId);
             });
         },
     });
 };
+
 export const useUpdateLabelName = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: ({  labelId, data }) => updateLabelName(labelId, data), // 🟢 Gọi hàm updateLabel
-
-        onSuccess: (_, { boardId }) => {
-            queryClient.invalidateQueries({ queryKey: ["labels", boardId] }); // 🟢 Cập nhật lại danh sách nhãn sau khi cập nhật thành công
-            
-        },
-
         onError: (error) => {
             console.error("Lỗi khi cập nhật tên nhãn:", error.response?.data || error.message);
         },
@@ -64,6 +65,7 @@ export const useUpdateLabelName = () => {
 };
 
 export const useCardLabels = (cardId) => {
+    const queryClient = useQueryClient();
     return useQuery({
         queryKey: ["cardLabels", cardId],
         queryFn: () => getLabelsByCard(cardId),
@@ -75,9 +77,6 @@ export const useDeleteLabelByBoard = () => {
 
     return useMutation({
         mutationFn: ({ labelId }) => deleteLabelByBoard(labelId), // Xóa label chỉ cần labelId
-        onSuccess: (_, { boardId }) => {
-            queryClient.invalidateQueries(["labels", boardId]); // Chỉ cập nhật labels của board đó
-        },
         onError: (error) => {
             console.error("Lỗi khi xóa nhãn:", error);
         },

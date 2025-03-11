@@ -8,7 +8,7 @@ import C_ard from "./C_ard";
 const Card_list = ({ cards }) => {
     return (
         <SortableContext
-            items={cards?.map((c) => c.id)}
+            items={cards?.filter((c) => !c.is_archived).map((c) => c.id)} // Chỉ lấy ID của card không archived
             strategy={verticalListSortingStrategy}
         >
             <Box
@@ -40,11 +40,13 @@ const Card_list = ({ cards }) => {
                     },
                 }}
             >
-                {cards?.map((card) => (
-                    <div key={`card-id-${card.id}`}>
-                        <C_ard key={card.id} card={card} />
-                    </div>
-                ))}
+                {cards
+                    ?.filter((card) => !card.is_archived) // Chỉ hiển thị card không archived
+                    .map((card) => (
+                        <div key={`card-id-${card.id}`}>
+                            <C_ard key={card.id} card={card} />
+                        </div>
+                    ))}
             </Box>
 
         </SortableContext >

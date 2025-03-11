@@ -1,5 +1,17 @@
 import authClient from "../authClient";
 
+
+export const getChecklistItemsByCheckList = async (checklist_id) => {
+
+    try {
+        const response = await authClient.get(`/checklist/${checklist_id}/item`);
+        return response.data; // Trả về dữ liệu từ API
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách checklist:", error);
+        throw error;
+    }
+};
+
 export const createCheckListItem = async ({ checklist_id, name }) => {
     try {
         const response = await authClient.post(`/checklist-items`, {

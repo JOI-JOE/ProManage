@@ -2,60 +2,87 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\ListArchived;
-use App\Events\ListClosed;
 use App\Events\ListCreated;
-use App\Events\ListNameUpdated;
-use App\Events\ListReordered;
 use App\Http\Requests\ListUpdateNameRequest;
+use App\Jobs\BroadcastListCreated;
 use App\Models\Board;
 use App\Models\ListBoard;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Cache;
+use Pusher\Pusher;
 
 class ListController extends Controller
 {
 
     public function index($boardId)
     {
-        $board = Board::with([
-            'listBoards' => function ($query) {
-                $query->where('closed', false)
-                    ->orderBy('position')
-                    ->with(['cards' => function ($cardQuery) {
-                        $cardQuery->orderBy('position');
-                    }])
-                    ->withCount('cards'); // Đếm số thẻ trong danh sách
-            }
-        ])->find($boardId);
+        $board = Board::where('id', $boardId)
+            ->with([
+                'listBoards' => function ($query) {
+                    $query->where('closed', false)
+                        ->orderBy('position')
+                        ->with([
+                            'cards' => function ($cardQuery) {
+                                $cardQuery->orderBy('position')
+                                    ->withCount('comments')
+                                    ->with([
+                                        'checklists' => function ($checklistQuery) {
+                                            $checklistQuery->with('items');
+                                        }
+                                    ]);
+                            }
+                        ]);
+                }
+            ])
+            ->first();
 
         if (!$board) {
             return response()->json(['message' => 'Board not found'], 404);
         }
+
         $responseData = [
             'id' => $board->id,
-            'title' => $board->name, // Tên bảng (board)
-            'description' => $board->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
-            'visibility' => $board->visibility, // Public hoặc Private
-            'workspaceId' => $board->workspace_id, // ID của workspace chứa board
-            'isMarked' => (bool) $board->is_marked, // Đánh dấu boolean
-            'thumbnail' => $board->thumbnail ?? null, // Ảnh thu nhỏ của board, mặc định là null nếu không có
+            'title' => $board->name,
+            'description' => $board->description ?? '',
+            'visibility' => $board->visibility,
+            'workspaceId' => $board->workspace_id,
+            'isMarked' => (bool) $board->is_marked,
+            'thumbnail' => $board->thumbnail ?? null,
+            'columnOrderIds' => $board->listBoards->pluck('id')->toArray(),
             'columns' => $board->listBoards->map(function ($list) {
                 return [
                     'id' => $list->id,
                     'boardId' => $list->board_id,
-                    'title' => $list->name, // Tên danh sách (list_boards)
-                    'position' => (int) $list->position, // Vị trí của danh sách, đảm bảo là số nguyên
+                    'title' => $list->name,
+                    'position' => (int) $list->position,
+                    'cardOrderIds' => $list->cards->pluck('id')->toArray(),
                     'cards' => $list->cards->map(function ($card) {
                         return [
                             'id' => $card->id,
-                            'columnId' => $card->list_board_id, // ID danh sách mà thẻ thuộc về
-                            'title' => $card->title, // Tên thẻ
-                            'description' => $card->description ?? '', // Mô tả, mặc định là chuỗi rỗng nếu không có
-                            'position' => (int) $card->position, // Vị trí thẻ trong danh sách, đảm bảo là số nguyên
+                            'columnId' => $card->list_board_id,
+                            'title' => $card->title,
+                            'description' => $card->description ?? '',
+                            'position' => (int) $card->position,
                             'comments_count' => $card->comments_count,
+                            'is_archived' => (bool) $card->is_archived, 
+                            'checklists' => $card->checklists->map(function ($checklist) {
+                                return [
+                                    'id' => $checklist->id,
+                                    'card_id' => $checklist->card_id,
+                                    'name' => $checklist->name,
+                                    'items' => $checklist->items->map(function ($item) {
+                                        return [
+                                            'id' => $item->id,
+                                            'checklist_id' => $item->checklist_id,
+                                            'name' => $item->name,
+                                            'is_completed' => (bool) $item->is_completed,
+                                        ];
+                                    })->toArray(),
+                                ];
+                            })->toArray(),
                         ];
                     })->toArray(),
                 ];
@@ -64,15 +91,23 @@ class ListController extends Controller
 
         return response()->json($responseData);
 
+        // $lists = ListBoard::where('board_id', $boardId)
+        //     ->where('closed', false)
+        //     ->orderBy('position')
+        //     ->with('cards') // Lấy luôn danh sách thẻ thuộc mỗi danh sách
+        //     ->get();
+        // return response()->json($lists);
     }
 
-    public function getListClosed($boardId){
+
+    public function getListClosed($boardId)
+    {
         try {
             // Lấy tất cả danh sách thuộc board có closed = 1
             $listsClosed = ListBoard::where('board_id', $boardId)
                 ->where('closed', 1)
                 ->get();
-    
+
             return response()->json([
                 'success' => true,
                 'message' => 'Lấy danh sách đóng thành công',
@@ -82,12 +117,13 @@ class ListController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra',
-                  
-                ]);
+
+            ]);
         }
     }
 
-    public function destroy($id){
+    public function destroy($id)
+    {
         try {
             $list = ListBoard::findOrFail($id);
             if (!$list) {
@@ -107,9 +143,7 @@ class ListController extends Controller
             //throw $th;
         }
     }
-
-
-    public function store(Request $request, ListBoard $listBoard)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'newColumn' => 'required|array',
@@ -121,26 +155,41 @@ class ListController extends Controller
         $newColumn = $validated['newColumn'];
         $boardId = $newColumn['board_id'];
 
-        $list = DB::transaction(function () use ($newColumn, $boardId) {
-            $position = $newColumn['position'] ?? (ListBoard::where('board_id', $boardId)->max('position') + 1000);
+        // Cache vị trí lớn nhất
+        $cacheKey = "board_{$boardId}_max_position";
+        $maxPosition = Cache::get($cacheKey);
 
-            $list = ListBoard::create([
+        if (is_null($maxPosition)) {
+            $maxPosition = ListBoard::where('board_id', $boardId)
+                ->max('position') ?? 0;
+            $maxPosition += 1000;
+            Cache::put($cacheKey, $maxPosition, 60);
+        }
+
+        $position = $newColumn['position'] ?? $maxPosition;
+
+        // Transaction để đảm bảo toàn vẹn dữ liệu
+        $list = DB::transaction(function () use ($newColumn, $boardId, $position) {
+            return ListBoard::create([
                 'name' => $newColumn['title'],
                 'closed' => false,
                 'position' => $position,
                 'board_id' => $boardId,
             ]);
-            return $list;
         });
 
-        // Broadcast event sau khi transaction thành công
-        broadcast(new ListCreated($list));
+        // Cập nhật max_position trong cache
+        Cache::put($cacheKey, $list->position + 1000, 60);
+
+        // $job = dispatch(new BroadcastListCreated($list));
+        broadcast(new ListCreated($list))->toOthers(); // Gửi WebSocket ngay lập tức
+
 
         return response()->json([
             'id'        => $list->id,
             'title'     => $list->name,
             'position'  => $list->position,
-            'board_id'   => $list->board_id
+            'board_id'  => $list->board_id,
         ], 201);
     }
 
@@ -158,7 +207,6 @@ class ListController extends Controller
         $list->name = $validated['name'];
         $list->save();
 
-        broadcast(new ListNameUpdated($list));
 
         return response()->json($list);
     }
@@ -174,7 +222,7 @@ class ListController extends Controller
         $list->closed = !$list->closed;
         $list->save();
 
-        broadcast(new ListArchived($list));
+        // broadcast(new ListArchived($list));
 
         return response()->json([
             'message' => 'List archived successfully',
