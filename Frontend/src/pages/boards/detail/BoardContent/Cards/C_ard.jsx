@@ -6,6 +6,7 @@ import {
     CardMedia,
     Typography,
     Dialog,
+    Box
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams, Outlet } from "react-router-dom";
@@ -14,16 +15,16 @@ import CommentIcon from "@mui/icons-material/Comment";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-// import CardDetail from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+import DescriptionIcon from '@mui/icons-material/Description';
 import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 
 
 const C_ard = ({ card }) => {
-    // Kéo thả
+
     const [open, setOpen] = useState(false); // State mở/đóng Dialog
     const navigate = useNavigate(); // Điều hướng URL
     const location = useLocation(); // Lấy URL hiện tại
-    const { cardId } = useParams(); 
+    const { cardId } = useParams();
 
     const handleOpen = () => {
         setOpen(true);
@@ -37,6 +38,7 @@ const C_ard = ({ card }) => {
     const handleClose = () => {
         setOpen(false);
         navigate(-1); // Quay lại trang trước (tốt hơn)
+        // navigate(location.state?.background || `/boards/${boardId}/board`);
     };
 
     useEffect(() => {
@@ -46,7 +48,7 @@ const C_ard = ({ card }) => {
             setOpen(false); // Đảm bảo tắt khi không có cardId trong URL
         }
     }, [cardId, card.id]);
-    
+
     const {
         attributes,
         listeners,
@@ -66,8 +68,9 @@ const C_ard = ({ card }) => {
     const showCardActions = () => {
         return (
             !!card?.memberIds?.length ||
-            !!card?.comments?.length ||
-            !!card?.attachments?.length
+            !!card?.comments_count ||
+            !!card?.attachments?.length ||
+            !!card?.description
         );
     };
     return (
@@ -92,7 +95,12 @@ const C_ard = ({ card }) => {
                 </CardContent>
 
                 {showCardActions() && (
-                    <CardActions sx={{ p: "0 4px 8px 4px" }}>
+                    <CardActions sx={{
+                        p: "0 4px 8px 15px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px", // Điều chỉnh khoảng cách giữa các icon
+                    }}>
                         {!!card?.memberIds?.length && (
                             <Button
                                 size="small"
@@ -103,14 +111,22 @@ const C_ard = ({ card }) => {
                             </Button>
                         )}
 
-                        {!!card?.comments?.length && (
-                            <Button
-                                size="small"
-                                startIcon={<CommentIcon />}
-                                sx={{ fontSize: "0.65rem", color: "primary.dark" }}
-                            >
-                                {card?.comments?.length}
-                            </Button>
+
+                        {!!card?.description && (
+                            <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                <DescriptionIcon sx={{ fontSize: 16, color: "primary.dark" }} />
+                            </Box>
+                        )}
+
+
+
+                        {!!card?.comments_count && (
+                            <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                <CommentIcon sx={{ fontSize: 16, color: "primary.dark" }} />
+                                <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "primary.dark" }}>
+                                    {card?.comments_count}
+                                </Typography>
+                            </Box>
                         )}
 
                         {!!card?.attachments?.length && (

@@ -18,6 +18,6 @@ class CheckList extends Model
 
     public function items()
     {
-        return $this->hasMany(ChecklistItem::class);
+        return $this->hasMany(ChecklistItem::class, 'checklist_id');
     }
 }

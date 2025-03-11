@@ -1,18 +1,17 @@
-import React from "react";
+import React, { memo } from "react";
+import { Outlet } from "react-router-dom";
+import AppBar from "../Navigation/AppBar";
 import { useStateContext } from "../../contexts/ContextProvider";
-import { Navigate, Outlet } from "react-router-dom";
+
+const MemoizedAppBar = memo(AppBar); // Gọi memo bên ngoài component
 
 const DefaultLayout = () => {
-    const { token } = useStateContext(); // Lấy token và setUser từ context
-
-    if (!token) {
-        return <Navigate to="/login" />;
-    }
-
+    const { user } = useStateContext(); // Dùng context để lấy user
     return (
-        <div>
+        <>
+            <MemoizedAppBar username={user?.user_name} email={user?.email} />
             <Outlet />
-        </div>
+        </>
     );
 };
 

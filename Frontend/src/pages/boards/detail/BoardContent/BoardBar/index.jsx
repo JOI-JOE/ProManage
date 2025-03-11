@@ -87,6 +87,9 @@ const BoardBar = () => {
     queryFn: () => getBoardById(boardId),
   });
 
+  // console.log("🔍 Dữ liệu board từ API:", data?.data);
+  
+
   const board = data?.data;
   // console.log("🔍 Dữ liệu board từ API:", board);
 
@@ -175,9 +178,7 @@ const BoardBar = () => {
         ) : (
           <Chip label={teamName} sx={style} onClick={handleTitleClick} />
         )}
-        <StarButton isStarred={isStarred} onStarClick={handleStarClick} />
-
-        {/* Show the board's visibility in the chip */}
+        {/* <StarButton isStarred={isStarred} onStarClick={handleStarClick} /> */}
         <Chip
           icon={<LockOpenIcon />}
           label={`Khả năng xem: ${boardVisibility}`} // Display the visibility status
@@ -266,7 +267,7 @@ const BoardBar = () => {
         >
           Chia sẻ
         </Button>
-        <BoardMenu />
+        <BoardMenu board={board} />
       </Box>
 
       {/* Hộp thoại chia sẻ */}

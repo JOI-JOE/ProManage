@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\MeResource;
 use App\Models\Board;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
@@ -28,12 +29,14 @@ class BoardController extends Controller
     {
         try {
             // Tìm board theo ID
-            $board = Board::findOrFail($boardId);
+            $board = Board::with('creator')->findOrFail($boardId);
+            // $creator = $board->creator()->first(); // Lấy thông tin người tạo
 
             // Trả về kết quả nếu tìm thấy
             return response()->json([
                 'result' => true,
-                'data' => $board
+                'data' => $board,
+                // 'user'=> $board->creator,
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
@@ -76,14 +79,22 @@ class BoardController extends Controller
     public function getBoardMarked()
     {
         try {
-            $boards = Board::where('is_marked', 1)
-            ->with('workspace:id,display_name') // Chỉ lấy id, name của workspace
-            ->get();
-    
-            return response()->json([
-                'success' => true,
-                'data' => $boards
-            ], 200);
+            $user = Auth::user()->id;
+            if(!$user){
+                return 'Cho cái sanctum vào !!!!!';
+            }
+       
+        $boards = Board::where('is_marked', 1)
+        ->whereHas('workspace.users', function ($query) use ($user) {
+            $query->where('user_id', $user); // Kiểm tra user có trong workspace không
+        })
+        ->with('workspace:id,display_name') // Lấy thông tin workspace
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'data' => $boards,
+    ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -92,7 +103,7 @@ class BoardController extends Controller
             ], 500);
         }
     }
-    
+
     public function trash()
     {
         $board = Board::where('closed', 1)->get();

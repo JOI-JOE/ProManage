@@ -9,17 +9,17 @@ import {
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import MyBoard from "../../../components/MyBoard";
 import MyWorkspace from "../../../components/MyWorkspace";
-import { useWorkspaces } from "../../../hooks/useWorkspace";
+import { useGetWorkspaces } from "../../../hooks/useWorkspace";
 import WorkspaceShare from "../../../components/WorkspaceShare";
 import { useRecentBoards } from "../../../hooks/useBoard";
 import { Link } from "react-router-dom";
 
 const HomeBoard = () => {
 
-    const { data: workspaces, isLoading, isError } = useWorkspaces();
+    const { data: workspaces, isLoading, isError } = useGetWorkspaces();
     // const { data: recentBoard } = useRecentBoards();
     // console.log(recentBoard);
-    
+
     if (isLoading) return <p>Đang tải workspaces...</p>;
     if (isError) return <p>Lỗi khi tải workspaces!</p>;
 

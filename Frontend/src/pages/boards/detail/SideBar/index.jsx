@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useContext, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Box,
   Drawer,
@@ -21,26 +21,14 @@ import AddIcon from "@mui/icons-material/Add";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
-import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
+import WorkspaceContext from "../../../../contexts/WorkspaceContext";
 
-const SideBar = ({ workspace }) => {
-  const [openSettings, setOpenSettings] = useState(false);
-  const { workspaceName } = useParams();
-
-  // Fetch workspace theo workspaceName từ URL
-  const {
-    data: workspaceData,
-    isLoading: workspaceLoading,
-    error: workspaceError,
-  } = useGetWorkspaceByName(workspaceName);
-
-  // Nếu workspace được truyền từ props, ưu tiên sử dụng nó (tránh re-fetch)
-  const currentWorkspace = workspace || workspaceData;
+const SideBar = () => {
+  const { currentWorkspace, isLoading, error } = useContext(WorkspaceContext); const [openSettings, setOpenSettings] = useState(false);
 
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
   };
-
   return (
     <Drawer
       variant="permanent"

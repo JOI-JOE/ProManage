@@ -5,41 +5,46 @@ namespace App\Events;
 use App\Models\ListBoard;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log; // Import Log Facade
 
-class ListCreated implements ShouldBroadcast
+
+class ListCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $list;
 
-    // Khởi tạo event với thông tin list
     public function __construct(ListBoard $list)
     {
         $this->list = $list;
     }
 
-    // Chỉ định channel để phát sự kiện
     public function broadcastOn()
     {
-        return new Channel('board.' . $this->list->board_id); 
+        return new Channel('board.' . $this->list->board_id);
     }
 
-    // Đặt tên sự kiện
     public function broadcastAs()
     {
         return 'list.created';
     }
 
-    // Dữ liệu sẽ được phát đi
     public function broadcastWith()
     {
-        return [
-            'newList' => $this->list,
+        $data = [
+            'newList' => [
+                'id' => $this->list->id,
+                'boardId' => $this->list->board_id,
+                'title' => $this->list->name,
+                'position' => (int) $this->list->position,
+                'cards' => [],
+            ]
         ];
+        Log::info('BroadcastWith được gọi', ['data' => $data]);
+
+        return $data;
     }
 }

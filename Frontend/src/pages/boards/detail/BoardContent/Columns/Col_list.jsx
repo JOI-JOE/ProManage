@@ -1,56 +1,63 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
-import { toast } from "react-toastify";
-import { useCreateList } from "../../../../../hooks/useList";
+import { v4 as uuidv4 } from "uuid";
 import Col from "./Col";
 import Col_new from "./Col_new";
-import { useParams } from "react-router-dom";
+import { useCreateList } from "../../../../../hooks/useList";
+import { useBoard } from "../../../../../contexts/BoardContext";
 
-const Col_list = ({ columns: initialColumns }) => {
-    const { boardId } = useParams();
-    const [columns, setColumns] = useState([]);
+const Col_list = ({ columns, boardId }) => {
     const createListMutation = useCreateList();
-
-    useEffect(() => {
-        setColumns(initialColumns); // Cập nhật columns khi API trả về dữ liệu mới
-    }, [initialColumns]); // Chỉ chạy khi initialColumns thay đổi
-
     const [openColumn, setOpenColumn] = useState(false);
     const [columnName, setColumnName] = useState("");
+    const { board, updateColumns } = useBoard();
+    const [localColumns, setLocalColumns] = useState(columns || []);
+
+    useEffect(() => {
+        setLocalColumns(columns || []);
+    }, [columns]);
 
     const toggleOpenColumn = () => setOpenColumn(!openColumn);
 
-    const handleAddColumn = useCallback(async (columnName) => {
-        if (!columnName.trim()) {
-            toast.error("Nhập tên cột");
-            return;
-        }
-        try {
-            // Tạo dữ liệu gửi lên backend
-            const newColumn = {
-                id: Date.now(),
-                board_id: boardId,
-                title: columnName,
-                position: Array.isArray(columns) && columns.length
-                    ? Math.max(...columns.map(column => column.position)) + 1000
-                    : 1000,
-            };
+    const handleAddColumn = async (columnName) => {
+        if (!columnName.trim()) return;
 
-            setColumns((prevColumns) => [...prevColumns, newColumn]);
-            setColumnName("");
-            toggleOpenColumn();
-            await createListMutation.mutateAsync({ newColumn });
-            // toast.success("Tạo danh sách thành công!");
+        // 🆕 Tạo ID tạm thời cho cột mới
+        const tempId = `temp-${uuidv4()}`;
+        const newColumn = {
+            id: tempId, // Dùng id thay vì `dcs`
+            board_id: boardId,
+            title: columnName,
+            position: localColumns.length
+                ? Math.max(...localColumns.map((col) => col.position)) + 1000
+                : 1000,
+        };
+
+        // 🔥 Cập nhật UI ngay lập tức
+        setLocalColumns((prev) => [...prev, newColumn]);
+        setColumnName("");
+        setOpenColumn(false);
+
+        try {
+            const createdCol = await createListMutation.mutateAsync({ newColumn });
+
+            setLocalColumns((prev) =>
+                prev.map((col) => (col.id === tempId ? createdCol : col))
+            );
 
         } catch (error) {
-            console.error("Lỗi khi tạo danh sách:", error);
-            toast.error("Có lỗi xảy ra khi tạo danh sách!");
+            console.error("Lỗi khi tạo column:", error);
+            // ❌ Rollback nếu API thất bại
+            setLocalColumns((prev) => prev.filter((col) => col.id !== tempId));
         }
-    }, [boardId, columns, createListMutation]);
+    };
+
+    console.log(board)
+
 
     return (
-        <SortableContext items={columns?.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
+        <SortableContext items={localColumns.map(c => c.id) || []} strategy={horizontalListSortingStrategy}>
             <Box
                 sx={{
                     bgcolor: "inherit",
@@ -62,7 +69,8 @@ const Col_list = ({ columns: initialColumns }) => {
                     "&::-webkit-scrollbar-track": { m: 2 },
                 }}
             >
-                {columns?.map((column) => (
+                {/* Render các cột */}
+                {localColumns.map(column => (
                     <Col key={column.id} column={column} />
                 ))}
 

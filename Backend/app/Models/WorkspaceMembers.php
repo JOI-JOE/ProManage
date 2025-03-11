@@ -26,6 +26,18 @@ class WorkspaceMembers extends Model
         'last_active',
     ];
 
+    // Phương thức kiểm tra thành viên có đang hoạt động không
+    public function isActive()
+    {
+        return !$this->is_deactivated && $this->joined;
+    }
+
+    // Phương thức kiểm tra thành viên có phải là admin không
+    public function isAdmin()
+    {
+        return $this->member_type === 'admin';
+    }
+
     public function workspace()
     {
         return $this->belongsTo(Workspace::class, 'workspace_id'); // 'workspace_id' is the foreign key
