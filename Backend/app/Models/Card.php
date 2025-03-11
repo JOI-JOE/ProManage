@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Str;
+
 class Card extends Model
 {
     use HasFactory;
@@ -52,6 +53,11 @@ class Card extends Model
             //getCustomDescription là hàm mô tả thông tin hoạt động
             ->useLogName('card') // model card
             ->dontSubmitEmptyLogs(); //Ngăn chặn việc ghi log nếu không có sự thay đổi dữ liệu thực sự
+    }
+
+    public function listBoard()
+    {
+        return $this->belongsTo(ListBoard::class, 'list_board_id');
     }
 
     // /**
@@ -123,6 +129,4 @@ class Card extends Model
     {
         return $this->hasMany(CheckList::class, 'card_id');
     }
-
-
 }

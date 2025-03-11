@@ -1,7 +1,7 @@
 import authClient from "../authClient";
 // Lấy danh sách card theo list
 export const getCardByList = async (listId) => {
-  const response = await authClient.get(`/cards/list/${listId}`);
+  const response = await authClient.get(`/cards/${listId}/getCardsByList`);
   return response.data.data;
 };
 
@@ -38,7 +38,7 @@ export const updateCardPositionsDiffCol = async ({ cards }) => {
 export const getCardById = async (cardId) => {
   try {
     const response = await authClient.get(`/cards/${cardId}/show`);
-    console.log("API response:", response); // Kiểm tra toàn bộ response
+    // console.log("API response:", response); // Kiểm tra toàn bộ response
     if (response.data) {
       return response.data;
     
@@ -51,7 +51,6 @@ export const getCardById = async (cardId) => {
     throw error;
   }
 };
-
 
 export const updateDescription = async (cardId, description) => {
   try {

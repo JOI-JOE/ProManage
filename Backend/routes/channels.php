@@ -2,6 +2,9 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
+use App\Models\Board;
+use App\Models\Card;
+use App\Models\ListBoard;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,22 +17,16 @@ use Illuminate\Support\Facades\Broadcast;
 |
 */
 
-Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
-});
 
+// Channel cho các sự kiện liên quan đến Board
 Broadcast::channel('board.{boardId}', function ($user, $boardId) {
-    return true;
+    return Board::find($boardId) !== null; // Kiểm tra xem Board có tồn tại không
 });
 
-Broadcast::channel('list.{listId}', function ($user, $listId) {
-    return true; // Hoặc thêm logic kiểm tra quyền truy cập
+Broadcast::channel('board.{boardId}.list.{listId}', function ($user, $boardId, $listId) {
+    return Board::find($boardId) !== null && ListBoard::find($listId) !== null; // Kiểm tra xem Board và List có tồn tại không
 });
 
-Broadcast::channel('board.{boardId}', function ($user, $boardId) {
-    return true; // Hoặc thêm logic kiểm tra quyền truy cập
-});
-
-Broadcast::channel('cards-channel', function () {
-    return true;
+Broadcast::channel('board.{boardId}.card.{cardId}', function ($user, $boardId, $cardId) {
+    return Board::find($boardId) !== null && Card::find($cardId) !== null; // Kiểm tra xem Board và Card có tồn tại không
 });

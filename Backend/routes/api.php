@@ -81,6 +81,30 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/workspaces/{workspaceId}/members/{memberId}', 'getValidateMemberInWorkspace');
     });
 
+    Route::controller(BoardController::class)->group(function () {
+        Route::get('boards/{boardId}', 'showBoardById');
+    });
+
+    Route::prefix('cards')->group(function () {
+        Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
+        // Route::put('/update-position', [DragDropController::class, 'updateCardPosition']);
+        // Function tạo card
+        Route::post('/', [CardController::class, 'store']);
+
+        Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
+        Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);
+        Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail']);
+        Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])
+            ->name('cards.removeMember');
+
+        Route::put('/{cardId}/dates', [CardController::class, 'updateDates']);
+        Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']);
+        Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']);
+        Route::post('/{cardId}/labels', [LabelController::class, 'addLabelToCard']);
+        Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']);
+        Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
+    });
+
     // Funtion kéo thả column
     Route::put('/boards/update-column-position', [DragDropController::class, 'updateListPosition']);
     Route::put('/boards/update-card-same-col', [DragDropController::class, 'updateCardPositionsSameColumn']);
@@ -96,23 +120,17 @@ Route::get('/color', [ColorController::class, 'index']);
 Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
 
 Route::prefix('lists')->group(function () {
+    Route::get('/{boardId}', [ListController::class, 'index']);
     Route::post('/', [ListController::class, 'store']);
     Route::delete('{id}/destroy', [ListController::class, 'destroy']);
     Route::get('/{boardId}/listClosed', [ListController::class, 'getListClosed']);
     Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
     Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
-    Route::get('/{boardId}', [ListController::class, 'index']);
-    
-    Route::put('/reorder', [ListController::class, 'reorder']);
     Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
-    Route::post('/dragging', [ListController::class, 'dragging']);
     Route::get('/{id}/detail', [ListController::class, 'getListById']);
 });
 
 Route::get('/colors', [ColorController::class, 'index']);
-
-
-
 
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']);
@@ -124,11 +142,11 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
 
+
 Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
 Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
 
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
-
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 
 Route::prefix('boards/{id}/')->group(function () {

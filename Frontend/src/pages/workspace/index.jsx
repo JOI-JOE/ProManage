@@ -1,7 +1,7 @@
 import React from "react";
 import HomeWorkspace from "./home";
 import { useParams } from "react-router-dom";
-import { useGetWorkspaceByName, useGetBoardMarkedByWorkspace } from "../../hooks/useWorkspace";
+import { useGetWorkspaceByName } from "../../hooks/useWorkspace";
 
 const Workspaces = () => {
     const { workspaceName } = useParams();
@@ -15,7 +15,7 @@ const Workspaces = () => {
     } = useGetWorkspaceByName(workspaceName);
 
     console.log("workspace", workspace);
-  
+
     // Xử lý lỗi
     if (isErrorWorkspace) {
         return <div>Lỗi: {errorWorkspace?.message || errorBoards?.message}</div>;

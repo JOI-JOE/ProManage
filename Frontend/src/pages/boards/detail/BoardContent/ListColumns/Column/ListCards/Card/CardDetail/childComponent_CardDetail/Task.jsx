@@ -13,12 +13,12 @@ import { useParams } from "react-router-dom";
 const TaskModal = ({ open, onClose, onSave }) => {
   const [taskName, setTaskName] = useState("");
   const { cardId } = useParams();
-  const { mutate: addCheckList } = useCreateCheckList();
+  const createCheckListMutation = useCreateCheckList();
 
   const handleSave = () => {
     if (!taskName.trim()) return; // Kiểm tra tên checklist có dữ liệu
 
-    addCheckList(
+    createCheckListMutation.mutate(
       {card_id: cardId, name: taskName }, // Gửi request API
       {
         onSuccess: () => {
@@ -31,7 +31,11 @@ const TaskModal = ({ open, onClose, onSave }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Thêm việc cần làm</DialogTitle>
+      <DialogTitle
+        sx={{ textAlign: "center", fontSize: "17px", fontWeight: "bold" }}
+      >
+        Thêm việc cần làm
+      </DialogTitle>
       <DialogContent>
         <TextField
           fullWidth

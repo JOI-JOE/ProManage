@@ -360,12 +360,8 @@ const Member = () => {
             placeholder="Địa chỉ email hoặc tên"
             sx={{ marginBottom: "10px" }}
           />
-          <GenerateLink
-            onGenerateLink={handleGenerateLink}
-            onDeleteLink={handleDeleteLink}
-            secret={inviteData?.invitationSecret}
-            workspaceId={workspace.id}
-          />
+          <GenerateLink onGenerateLink={handleGenerateLink} onDeleteLink={handleDeleteLink} secret={inviteData?.invitationSecret} workspaceId={workspace?.id} />
+
           {/* <GenerateLink onGenerateLink={handleGenerateLink} onDeleteLink={handleDeleteLink} id={workspace.id} /> */}
         </DialogContent>
       </Dialog>

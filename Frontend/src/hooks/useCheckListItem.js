@@ -1,17 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName } from "../api/models/checkListItemsApi";
+import { getChecklistItemsByCheckList, createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName } from "../api/models/checkListItemsApi";
+
+
+// export const useChecklistsItemByCheckList = (checkListId) => {
+//     return useQuery({
+//         queryKey: ["checklist-items", checkListId],
+//         queryFn: () => getChecklistItemsByCheckList(checkListId), // Gọi API lấy danh sách comment
+//         enabled: !!checkListId, // Chỉ gọi API nếu có cardId
+//         staleTime: 1000 * 60 * 5, // Cache trong 5 phút
+//         cacheTime: 1000 * 60 * 30, // Giữ cache trong 30 phút
+//     });
+// };
 
 export const useCreateCheckListItem = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ checklist_id, name }) =>
-            createCheckListItem({ checklist_id, name }), // Gọi API thêm checklist item
-        onSuccess: (newItem, variables) => {
-            console.log("✅ Thêm mục checklist thành công:", newItem);
+        mutationFn: ({ checklist_id, name }) => createCheckListItem({ checklist_id, name }), // Gọi API thêm checklist item
+        onSuccess: (newItem, checklist_id ) => {
+            // console.log("✅ Thêm mục checklist thành công:", newItem);
 
-            // Cập nhật danh sách CheckListItem
-            queryClient.invalidateQueries(["checklist-items", variables.checklist_id]);
+            console.log(checklist_id);
+            // // Cập nhật danh sách CheckListItem
+            queryClient.invalidateQueries({ queryKey: ["checklists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi thêm mục checklist:", error);
@@ -28,14 +39,14 @@ export const useToggleCheckListItemStatus = () => {
         onSuccess: (_, itemId) => {
             console.log(`✅ Trạng thái item ${itemId} đã được cập nhật.`);
 
-            // Cập nhật lại danh sách checklist sau khi thay đổi trạng thái
-            queryClient.invalidateQueries(["checklist-items"]);
+            queryClient.invalidateQueries({ queryKey: ["checklists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật trạng thái:", error);
         },
     });
 };
+
 
 export const useUpdateCheckListItemName = () => {
     const queryClient = useQueryClient();
@@ -46,15 +57,15 @@ export const useUpdateCheckListItemName = () => {
             console.log(`✅ Cập nhật tên checklist item thành công: ${variables.itemId}`);
 
             // Cập nhật danh sách checklist ngay lập tức
-            queryClient.invalidateQueries(["checklist-items", variables.checklist_id]);
+            // queryClient.invalidateQueries({ queryKey: ["checklists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật tên checklist item:", error);
         },
-        onSettled: () => {
-            // Đảm bảo dữ liệu được đồng bộ sau khi xóa
-            queryClient.invalidateQueries(["checklist-items"]);
-        },
+        // onSettled: () => {
+        //     // Đảm bảo dữ liệu được đồng bộ sau khi xóa
+        //     queryClient.invalidateQueries(["checklist-items"]);
+        // },
     });
 };
 
@@ -84,7 +95,18 @@ export const useDeleteCheckListItem = () => {
         },
         onSettled: () => {
             // Đảm bảo dữ liệu được đồng bộ sau khi xóa
-            queryClient.invalidateQueries(["checklist-items"]);
+            queryClient.invalidateQueries({ queryKey: ["checklists"] });
         },
     });
 };
+
+// export const useDeleteCheckListItem = () => {
+//     const queryClient = useQueryClient();
+
+//     return useMutation({
+//         mutationFn: ({ id }) => deleteCheckListItem(id), // Xóa label chỉ cần labelId
+//         onError: (error) => {
+//             // console.error("Lỗi khi xóa nhãn:", error);
+//         },
+//     });
+// };

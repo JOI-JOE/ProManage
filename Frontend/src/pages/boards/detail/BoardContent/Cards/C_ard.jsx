@@ -13,20 +13,15 @@ import { useNavigate, useLocation, useParams, Outlet } from "react-router-dom";
 import GroupIcon from "@mui/icons-material/Group";
 import CommentIcon from "@mui/icons-material/Comment";
 import AttachmentIcon from "@mui/icons-material/Attachment";
+import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined"; // Icon checklist
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import DescriptionIcon from '@mui/icons-material/Description';
-// import CardDetail from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 
 
 const C_ard = ({ card }) => {
 
-    useEffect(() => {
-        console.log("🔍 Card hiện tại:", card);
-    }, [card]);
-
-    // Kéo thả
     const [open, setOpen] = useState(false); // State mở/đóng Dialog
     const navigate = useNavigate(); // Điều hướng URL
     const location = useLocation(); // Lấy URL hiện tại
@@ -72,13 +67,20 @@ const C_ard = ({ card }) => {
     };
 
     const showCardActions = () => {
+
         return (
             !!card?.memberIds?.length ||
             !!card?.comments_count ||
             !!card?.attachments?.length ||
-            !!card?.description
+            !!card?.description ||
+            !!card?.checklists?.some(checklist => checklist.items.length > 0)
+
         );
     };
+
+    const allChecklistsCompleted = card?.checklists?.every((checklist) =>
+        checklist.items.every((item) => item.is_completed)
+    );
     return (
         <>
             <Card  // Sử dụng index làm key (không khuyến khích nếu thứ tự thay đổi)
@@ -134,7 +136,41 @@ const C_ard = ({ card }) => {
                                 </Typography>
                             </Box>
                         )}
-                        
+
+
+                        {!!card?.checklists?.some((checklist) => checklist.items.length > 0) && (
+                            <Box sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                backgroundColor: allChecklistsCompleted ? "primary.dark" : "transparent", // Màu nền xanh khi hoàn thành
+                                color: allChecklistsCompleted ? "white" : "primary.dark", // Màu chữ trắng khi hoàn thành
+                                padding: "4px 8px", // Thêm padding để làm nổi bật
+                                borderRadius: "4px", // Bo góc
+                            }}>
+                                <CheckBoxOutlinedIcon
+                                    sx={{
+                                        fontSize: 16,
+                                        // color: allChecklistsCompleted ? "success.main" : "primary.dark", // Đổi màu khi hoàn thành
+                                    }}
+                                />
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontSize: "0.75rem",
+                                        // color: allChecklistsCompleted ? "success.main" : "primary.dark", // Đổi màu khi hoàn thành
+                                    }}
+                                >
+                                    {card?.checklists.reduce(
+                                        (total, checklist) => total + checklist.items.filter((item) => item.is_completed).length,
+                                        0
+                                    )}
+                                    /
+                                    {card?.checklists.reduce((total, checklist) => total + checklist.items.length, 0)}
+                                </Typography>
+                            </Box>
+                        )}
+
                         {!!card?.attachments?.length && (
                             <Button
                                 size="small"
