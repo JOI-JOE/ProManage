@@ -21,10 +21,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import {  useCardLabels, useCreateLabel, useDeleteLabelByBoard, useLabels, useUpdateCardLabel, useUpdateLabelName } from "../../../../../../../../../../hooks/useLabel";
 
 
-
-
-
-
 // const initialLabels = [
 //   { id: 1, color: "#137b13", name: "Label 1" },
 //   { id: 2, color: "#b05900", name: "Label 2" },

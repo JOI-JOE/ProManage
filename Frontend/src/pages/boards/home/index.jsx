@@ -6,20 +6,13 @@ import {
     ListItem,
     Button,
 } from "@mui/material";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import MyBoard from "../../../components/MyBoard";
 import MyWorkspace from "../../../components/MyWorkspace";
-import { useWorkspaces } from "../../../hooks/useWorkspace";
-import WorkspaceShare from "../../../components/WorkspaceShare";
-import { useRecentBoards } from "../../../hooks/useBoard";
-import { Link } from "react-router-dom";
+import { useGetWorkspaces } from "../../../hooks/useWorkspace";
 
 const HomeBoard = () => {
 
-    const { data: workspaces, isLoading, isError } = useWorkspaces();
-    // const { data: recentBoard } = useRecentBoards();
-    // console.log(recentBoard);
-    
+    const { data: workspaces, isLoading, isError } = useGetWorkspaces();
+
     if (isLoading) return <p>Đang tải workspaces...</p>;
     if (isError) return <p>Lỗi khi tải workspaces!</p>;
 
@@ -32,25 +25,6 @@ const HomeBoard = () => {
                 marginTop: "25px",
             }}
         >
-            {/* Đã xem gần đây */}
-            {/* <Box sx={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
-                <AccessTimeIcon sx={{ marginRight: "8px" }} />
-                <Typography variant="h6">Đã xem gần đây</Typography>
-            </Box> */}
-
-            {/* <List sx={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-
-                {recentBoard?.data?.map((board) => (
-                    <ListItem  sx={{ width: "auto", padding: 0 }}>
-                        <MyBoard key={board.id}
-                    component={Link}
-                    to={`/b/${board.id}/${board.name}`} board={board} id={`recent-board-${board.id}`} />
-                    </ListItem>
-                ))}
-            </List> */}
-
-
-            {/* Các không gian làm việc của bạn */}
             <Typography
                 variant="h6"
                 sx={{

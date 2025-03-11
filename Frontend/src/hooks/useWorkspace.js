@@ -1,9 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-// import {
-//   getWorkspacesAll,
-//   getWorkspaceByDisplayName,
-//   createWorkspace,
-// } from "../api/workspacesApi"; // Import các hàm API
 import {
   getWorkspacesAll,
   createWorkspace,
@@ -17,7 +12,7 @@ import {
  * Custom hook để lấy danh sách workspaces mà user tham gia.
  * @returns {object} - Kết quả từ useQuery (data, isLoading, isError, ...)
  */
-export const useWorkspaces = () => {
+export const useGetWorkspaces = () => {
   return useQuery({
     queryKey: ["workspaces"], // Key để cache dữ liệu
     queryFn: getWorkspacesAll,
@@ -48,7 +43,6 @@ export const useGetBoardMarkedByWorkspace = (workspaceName) => {
     retry: 2, // Thử lại tối đa 2 lần nếu request thất bại
   });
 };
-
 
 export const useGetWorkspaceById = (workspaceId) => {
   return useQuery({

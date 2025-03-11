@@ -18,10 +18,9 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
-import { ListItemIcon } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-import { useLogout, useUser } from "../../../hooks/useUser";
+import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
 
 
@@ -90,7 +89,7 @@ export default function ProfileMenu({ email }) {
         <Tooltip title="Tài khoản">
           <IconButton onClick={handleClick} size="small">
             <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
-            {email?.charAt(0)?.toUpperCase() || ""}
+              {email?.charAt(0)?.toUpperCase() || ""}
             </Avatar>
           </IconButton>
         </Tooltip>
@@ -100,7 +99,7 @@ export default function ProfileMenu({ email }) {
           <Avatar
             sx={{ width: 40, height: 40, margin: "auto", bgcolor: "#00A3BF" }}
           >
-           {email?.charAt(0)?.toUpperCase() || ""}
+            {email?.charAt(0)?.toUpperCase() || ""}
           </Avatar>
           <Typography
             variant="subtitle1"

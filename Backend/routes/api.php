@@ -120,22 +120,17 @@ Route::get('/color', [ColorController::class, 'index']);
 Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
 
 Route::prefix('lists')->group(function () {
+    Route::get('/{boardId}', [ListController::class, 'index']);
     Route::post('/', [ListController::class, 'store']);
     Route::delete('{id}/destroy', [ListController::class, 'destroy']);
     Route::get('/{boardId}/listClosed', [ListController::class, 'getListClosed']);
     Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
     Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
-    Route::get('/{boardId}', [ListController::class, 'index']);
-    Route::put('/reorder', [ListController::class, 'reorder']);
     Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
-    Route::post('/dragging', [ListController::class, 'dragging']);
     Route::get('/{id}/detail', [ListController::class, 'getListById']);
 });
 
 Route::get('/colors', [ColorController::class, 'index']);
-
-
-
 
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']);
@@ -147,11 +142,11 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
 
+
 Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
 Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
 
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
-
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 
 Route::prefix('boards/{id}/')->group(function () {

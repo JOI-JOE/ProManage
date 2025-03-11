@@ -16,17 +16,11 @@ import AttachmentIcon from "@mui/icons-material/Attachment";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import DescriptionIcon from '@mui/icons-material/Description';
-// import CardDetail from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 
 
 const C_ard = ({ card }) => {
 
-    useEffect(() => {
-        console.log("🔍 Card hiện tại:", card);
-    }, [card]);
-
-    // Kéo thả
     const [open, setOpen] = useState(false); // State mở/đóng Dialog
     const navigate = useNavigate(); // Điều hướng URL
     const location = useLocation(); // Lấy URL hiện tại
@@ -134,7 +128,7 @@ const C_ard = ({ card }) => {
                                 </Typography>
                             </Box>
                         )}
-                        
+
                         {!!card?.attachments?.length && (
                             <Button
                                 size="small"
