@@ -15,7 +15,7 @@ class ListCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $list;
+public $list;
 
     public function __construct(ListBoard $list)
     {
@@ -43,8 +43,6 @@ class ListCreated implements ShouldBroadcastNow
                 'cards' => [],
             ]
         ];
-        Log::info('BroadcastWith được gọi', ['data' => $data]);
-
         return $data;
     }
 }

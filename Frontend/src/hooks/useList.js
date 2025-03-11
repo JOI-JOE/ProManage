@@ -9,19 +9,18 @@ import {
   deleteList,
   getListClosedByBoard,
 } from "../api/models/listsApi";
-import { useEffect, useCallback, useMemo } from "react";
-
+import { useEffect } from "react";
 import echoInstance from "./realtime/useRealtime";
 
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ["lists", boardId], // Sử dụng queryKey chung
+    queryKey: ["lists", boardId],
     queryFn: () => getListByBoardId(boardId),
     enabled: !!boardId,
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 30,
+    staleTime: 0, // ⚠ Luôn lấy dữ liệu mới từ API
+    cacheTime: 1000 * 60 * 30, // 30 phút
   });
 
   useEffect(() => {
@@ -29,95 +28,186 @@ export const useLists = (boardId) => {
 
     const channel = echoInstance.channel(`board.${boardId}`);
 
+    // 📡 Khi có danh sách (list) mới được tạo
     channel.listen(".list.created", (data) => {
-      queryClient.setQueryData(["lists", boardId], (oldLists) => {
-        const listsArray = Array.isArray(oldLists) ? oldLists : []; // Đảm bảo oldLists là mảng
+      console.log("📡 Nhận event từ Pusher: list.created", data);
 
-        console.log("🚀 Trước khi cập nhật:", listsArray);
+      queryClient.setQueryData(["lists", boardId], (oldBoard) => {
+        if (!oldBoard) return { columns: [data.newList] };
 
-        // Kiểm tra nếu list đã tồn tại (tránh thêm trùng)
-        const isExisting = listsArray.some(
-          (list) => list.id === data.newList.id
-        );
-        if (isExisting) {
-          console.log("⚠ List đã tồn tại, không thêm mới");
-          return listsArray;
-        }
+        const listsArray = Array.isArray(oldBoard.columns)
+          ? [...oldBoard.columns]
+          : [];
 
-        // Thêm list mới vào cache
-        const updatedLists = [...listsArray, data.newList];
-        console.log("✅ Sau khi cập nhật:", updatedLists);
-        return updatedLists;
+        if (listsArray.some((list) => list.id === data.newList.id))
+          return oldBoard;
+
+        return { ...oldBoard, columns: [...listsArray, data.newList] };
       });
+    });
 
-      // Kích hoạt re-render bằng cách làm mới query
-      queryClient.invalidateQueries(["lists", boardId]);
+    // 📡 Khi danh sách được cập nhật
+    channel.listen(".list.updated", (data) => {
+      console.log("📡 Nhận event từ Pusher: list.updated", data);
+
+      queryClient.setQueryData(["lists", boardId], (oldBoard) => {
+        if (!oldBoard) return oldBoard;
+
+        const listsArray = Array.isArray(oldBoard.columns)
+          ? [...oldBoard.columns]
+          : [];
+
+        const updatedLists = listsArray
+          .map((list) =>
+            list.id === data.updatedList.id
+              ? { ...list, ...data.updatedList }
+              : list
+          )
+          .sort((a, b) => a.position - b.position);
+
+        return { ...oldBoard, columns: updatedLists };
+      });
+    });
+
+    // 📡 Khi có card mới được tạo
+    channel.listen(".card.created", (data) => {
+      console.log("📡 Nhận event từ Pusher: card.created", data);
+
+      queryClient.setQueryData(["lists", boardId], (oldBoard) => {
+        if (!oldBoard) return oldBoard;
+
+        const listsArray = Array.isArray(oldBoard.columns)
+          ? [...oldBoard.columns]
+          : [];
+
+        return {
+          ...oldBoard,
+          columns: listsArray.map((list) =>
+            list.id === data.columnId
+              ? { ...list, cards: [...(list.cards || []), data] }
+              : list
+          ),
+        };
+      });
+    });
+
+    // 📡 Khi card được cập nhật
+    channel.listen(".card.updated", (data) => {
+      console.log("📡 Nhận event từ Pusher: card.updated", data);
+
+      queryClient.setQueryData(["lists", boardId], (oldBoard) => {
+        if (!oldBoard) return oldBoard;
+
+        const listsArray = Array.isArray(oldBoard.columns)
+          ? [...oldBoard.columns]
+          : [];
+
+        return {
+          ...oldBoard,
+          columns: listsArray.map((list) =>
+            list.id === data.columnId
+              ? {
+                  ...list,
+                  cards: (list.cards || []).map((card) =>
+                    card.id === data.id ? { ...card, ...data } : card
+                  ),
+                }
+              : list
+          ),
+        };
+      });
     });
 
     return () => {
       channel.stopListening(".list.created");
+      channel.stopListening(".list.updated");
+      channel.stopListening(".card.created");
+      channel.stopListening(".card.updated");
     };
   }, [boardId, queryClient]);
 
   return query;
 };
 
-// Hook tạo list mới
 export const useCreateList = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (newColumn) => createList(newColumn), // Gửi API
-    onSuccess: (data, variables) => {
-      // ⚡ Cập nhật board để phản hồi UI nhanh hơn
-      queryClient.setQueryData(["board", variables.board_id], (oldData) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          columns: [...oldData.columns, data], // Thêm column mới vào cache của board
-        };
-      });
-
-      // 🔥 Cập nhật danh sách lists
-      queryClient.setQueryData(["lists", variables.board_id], (oldLists) => {
-        const listsArray = Array.isArray(oldLists) ? [...oldLists] : [];
-        return [...listsArray, data]; // Thêm column vào danh sách lists
-      });
-
-      // 🛠 Ép fetch lại để đảm bảo dữ liệu chính xác
-      queryClient.invalidateQueries(["lists", variables.board_id]);
-    },
+    mutationFn: createList,
     onError: (error) => {
-      console.error("❌ Lỗi khi tạo column:", error);
+      console.error("❌ Lỗi khi tạo list:", error);
     },
   });
 };
 
-// Hook cập nhật vị trí cột (column)
 export const useUpdateColumnPosition = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (columns) => updateColPosition({ columns }),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries(["boardLists", variables.board_id]);
+
+    onMutate: async (columns) => {
+      await queryClient.cancelQueries(["lists", columns.board_id]);
+
+      const previousLists = queryClient.getQueryData([
+        "lists",
+        columns.board_id,
+      ]);
+
+      queryClient.setQueryData(["lists", columns.board_id], (oldLists) => {
+        const listsArray = Array.isArray(oldLists) ? oldLists : [];
+        return listsArray.map((list) => {
+          const updatedColumn = columns.find((col) => col.id === list.id);
+          return updatedColumn ? { ...list, ...updatedColumn } : list;
+        });
+      });
+
+      return { previousLists };
     },
-    onError: (error) => {
+
+    onError: (error, variables, context) => {
       console.error("Lỗi khi cập nhật vị trí cột:", error);
+      if (context?.previousLists) {
+        queryClient.setQueryData(
+          ["lists", variables.board_id],
+          context.previousLists
+        );
+      }
+    },
+
+    onSuccess: (data, variables) => {
+      // Kiểm tra nếu data là một mảng trước khi sử dụng .find()
+      if (Array.isArray(data)) {
+        queryClient.setQueryData(["lists", variables.board_id], (oldLists) => {
+          const listsArray = Array.isArray(oldLists) ? oldLists : [];
+          return listsArray.map((list) => {
+            const updatedColumn = data.find((col) => col.id === list.id);
+            return updatedColumn ? { ...list, ...updatedColumn } : list;
+          });
+        });
+      } else {
+        console.warn("Dữ liệu trả về không phải là một mảng:", data);
+      }
+    },
+
+    onSettled: (data, error, variables) => {
+      // queryClient.invalidateQueries({
+      //   queryKey: ["lists", variables.board_id],
+      //   refetchType: "inactive", // Chỉ refetch nếu query đang không được dùng
+      // });
     },
   });
 };
 
-
 // Hook lấy danh sách list đã đóng (archived)
 export const useListsClosed = (boardId) => {
   const queryClient = useQueryClient();
-  
-  const { data: listsClosed, isLoading, error } = useQuery({
+  const {
+    data: listsClosed,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["listClosed", boardId],
-    queryFn: () => getListClosedByBoard(boardId), 
+    queryFn: () => getListClosedByBoard(boardId),
     enabled: !!boardId,
-
   });
 
   // Mutation để xóa list
@@ -170,53 +260,4 @@ export const useListsClosed = (boardId) => {
     deleteMutation,
     updateClosedMutation,
   };
-};
-
-// Hook lấy danh sách chi tiết theo listId
-export const useListById = (listId) => {
-  const queryClient = useQueryClient();
-
-  const listsDetail = useQuery({
-    queryKey: ["list", listId],
-    queryFn: () => getListDetail(listId),
-    enabled: !!listId, // Chỉ kích hoạt query khi có boardId
-    staleTime: 1000 * 60 * 5, // Cache trong 5 phút
-    cacheTime: 1000 * 60 * 30, // Giữ dữ liệu trong 30 phút ngay cả khi query bị hủy
-    onSuccess: (data) => {
-      console.log("Query data:", data); // Log dữ liệu trả về từ query
-    },
-  });
-
-  // Mutation để cập nhật tên list
-  const updateListNameMutation = useMutation({
-    mutationFn: (newName) => updateListName(listId, newName),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["list", listId]);
-    },
-    onError: (error) => {
-      console.error("Lỗi khi cập nhật tên danh sách:", error);
-    },
-  });
-
-  // Mutation để cập nhật trạng thái đóng/mở list
-  const updateClosedMutation = useMutation({
-    mutationFn: () => updateClosed(listId),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["list", listId]);
-    },
-    onError: (error) => {
-      console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
-    },
-  });
-
-
-  const memoizedReturnValue = useMemo(
-    () => ({
-      ...listsDetail,
-      updateListName: updateListNameMutation.mutate,
-      updateClosed: updateClosedMutation.mutate,
-    }),
-    [listsDetail, updateListNameMutation.mutate, updateClosedMutation.mutate]
-  );
-  return memoizedReturnValue;
 };

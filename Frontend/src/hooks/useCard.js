@@ -1,8 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
 import {
   createCard,
-  getCardByList,
   updateCardPositionsDiffCol,
   updateCardPositionsSameCol,
   getCardById,
@@ -11,53 +9,15 @@ import {
   updateArchivedCard,
   deleteCard,
   getCardArchivedByBoard,
-  // deleteCard,
 } from "../api/models/cardsApi";
 import { useMemo } from "react";
-
 import { toast } from "react-toastify";
 
-const CARDS_CACHE_KEY = "cards";
-
 export const useCreateCard = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (newCard) => createCard(newCard),
-    onMutate: async (variables) => {
-      const { list_board_id } = variables;
-      const queryKey = ["cards", list_board_id];
-      await queryClient.cancelQueries(queryKey);
-
-      const temporaryId = Date.now();
-      const optimisticCard = {
-        id: temporaryId,
-        ...variables,
-      };
-
-      queryClient.setQueryData(queryKey, (oldCards = []) => [
-        ...oldCards,
-        optimisticCard,
-      ]);
-
-      return { queryKey, temporaryId };
-    },
-    onSuccess: (newCard, variables, context) => {
-      if (context?.queryKey) {
-        queryClient.setQueryData(context.queryKey, (oldCards = []) =>
-          oldCards.map((card) =>
-            card.id === context.temporaryId ? newCard : card
-          )
-        );
-      }
-    },
-    onError: (error, variables, context) => {
+    mutationFn: createCard,
+    onError: (error) => {
       console.error("❌ Lỗi khi tạo thẻ:", error);
-      if (context?.queryKey) {
-        queryClient.setQueryData(context.queryKey, (oldCards = []) =>
-          oldCards.filter((card) => card.id !== context.temporaryId)
-        );
-      }
     },
   });
 };
