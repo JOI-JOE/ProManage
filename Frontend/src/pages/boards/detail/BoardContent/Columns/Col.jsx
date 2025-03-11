@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, TextField, Tooltip, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
@@ -18,6 +18,7 @@ import ConfirmDeleteDialog from "./Col_option/DeleteColumn";
 import ArchiveColumnDialog from "./Col_option/Archive";
 import Card_list from "../Cards/Card_list";
 import Card_new from "../Cards/Card_new";
+import { v4 as uuidv4 } from "uuid";
 import { useCreateCard } from "../../../../../hooks/useCard";
 
 const StyledMenu = styled((props) => (
@@ -59,16 +60,51 @@ const StyledMenu = styled((props) => (
 }));
 
 const Col = ({ column }) => {
+
     const [openCopyDialog, setOpenCopyDialog] = useState(false);
+
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
     const [openCard, setOpenCard] = useState(false);
+
     const [title, setTitle] = useState(column?.title);
     const [isEditing, setIsEditing] = useState(false);
     const [prevTitle, setPrevTitle] = useState(column?.title);
     const [anchorEl, setAnchorEl] = useState(null);
 
-    const { mutateAsync } = useCreateCard();
+    const createCardMutation = useCreateCard();
+    const [cardName, setCardName] = useState("");
+    const [localCards, setLocalCards] = useState(column?.cards || []);
+
+    useEffect(() => {
+        setLocalCards(column?.cards || []); // Chỉ theo dõi sự thay đổi của cards
+    }, [column?.cards]);
+
+    //======================================== Thêm card mới========================================
+    const handleAddCard = async (cardName) => {
+        if (!cardName.trim()) return;
+
+        const tempId = `temp-${uuidv4()}`;
+        const newCard = {
+            id: tempId, // ID tạm thời
+            title: cardName,
+            columnId: column.id,
+            position: localCards.length
+                ? Math.max(...localCards.map((ca) => ca.position)) + 1000
+                : 1000,
+        };
+
+        setLocalCards((prev = []) => [...prev, newCard]); // 🔥 Đảm bảo prev luôn là mảng
+        setCardName("");
+
+        try {
+            await createCardMutation.mutateAsync(newCard);
+        } catch (error) {
+            console.error("Lỗi khi thêm thẻ:", error);
+            setLocalCards((prev = []) => prev.filter((card) => card.id !== tempId)); // Rollback nếu lỗi
+        }
+    };
+
 
     const {
         attributes,
@@ -126,58 +162,6 @@ const Col = ({ column }) => {
         setOpenArchiveDialog(false);
     };
 
-    //======================================== Thêm card mới========================================
-    const handleAddCard = async (cardName) => {
-        if (!cardName.trim()) {
-            toast.error("Nhập tên thẻ!");
-            return;
-        }
-
-        if (!column?.id) {
-            toast.error("Không xác định được ID của cột!");
-            return;
-        }
-
-        const cards = column.cards || [];
-
-        const calculatePosition = () => {
-            if (cards.length) {
-                return Math.max(...cards.map((card) => card.position)) + 1000;
-            }
-            return 1000;
-        };
-
-        const newCard = {
-            id: Date.now(), // ID tạm thời
-            title: cardName,
-            columnId: column.id,
-            position: calculatePosition(),
-        };
-
-        const optimisticCards = [...cards, newCard].sort(
-            (a, b) => a.position - b.position
-        );
-
-        try {
-            const response = await mutateAsync({
-                title: cardName,
-                columnId: column.id,
-                position: newCard.position,
-            });
-
-            // Cập nhật lại state với dữ liệu từ API
-            const updatedCards = optimisticCards.map((card) =>
-                card.id === newCard.id ? response : card
-            );
-
-            // Gọi hàm cập nhật từ context để cập nhật board
-            // updateListName(column.id, { cards: updatedCards });
-        } catch (error) {
-            console.error("Lỗi khi thêm thẻ:", error);
-            toast.error(`Thêm thẻ thất bại: ${error.message}`);
-        }
-    };
-
     //======================================== Sửa tiêu đề========================================
     const handleTitleClick = () => {
         setIsEditing(true);
@@ -205,12 +189,12 @@ const Col = ({ column }) => {
     };
 
     //======================================== Render========================================
-    const cardOrderIds = useMemo(() => column?.cards?.map(card => card.id) || [], [column?.cards]);
+    const cardOrderIds = useMemo(() => localCards.map(card => card.id) || [], [localCards]);
 
     const orderedCards = useMemo(() => {
-        if (!column?.cards || !cardOrderIds.length) return [];
-        return mapOrder(column.cards, cardOrderIds, "id");
-    }, [column?.cards, cardOrderIds]);
+        if (!localCards.length || !cardOrderIds.length) return [];
+        return mapOrder(localCards, cardOrderIds, "id");
+    }, [localCards, cardOrderIds]);
 
     return (
         <div ref={setNodeRef} style={columnStyle} {...attributes}>

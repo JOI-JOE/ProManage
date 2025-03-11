@@ -5,13 +5,11 @@ import { v4 as uuidv4 } from "uuid";
 import Col from "./Col";
 import Col_new from "./Col_new";
 import { useCreateList } from "../../../../../hooks/useList";
-import { useBoard } from "../../../../../contexts/BoardContext";
 
 const Col_list = ({ columns, boardId }) => {
-    const createListMutation = useCreateList();
     const [openColumn, setOpenColumn] = useState(false);
     const [columnName, setColumnName] = useState("");
-    const { board, updateColumns } = useBoard();
+    const createListMutation = useCreateList();
     const [localColumns, setLocalColumns] = useState(columns || []);
 
     useEffect(() => {
@@ -34,27 +32,17 @@ const Col_list = ({ columns, boardId }) => {
                 : 1000,
         };
 
-        // 🔥 Cập nhật UI ngay lập tức
         setLocalColumns((prev) => [...prev, newColumn]);
         setColumnName("");
         setOpenColumn(false);
 
         try {
-            const createdCol = await createListMutation.mutateAsync({ newColumn });
-
-            setLocalColumns((prev) =>
-                prev.map((col) => (col.id === tempId ? createdCol : col))
-            );
-
+            await createListMutation.mutateAsync({ newColumn });
         } catch (error) {
             console.error("Lỗi khi tạo column:", error);
-            // ❌ Rollback nếu API thất bại
             setLocalColumns((prev) => prev.filter((col) => col.id !== tempId));
         }
     };
-
-    console.log(board)
-
 
     return (
         <SortableContext items={localColumns.map(c => c.id) || []} strategy={horizontalListSortingStrategy}>
