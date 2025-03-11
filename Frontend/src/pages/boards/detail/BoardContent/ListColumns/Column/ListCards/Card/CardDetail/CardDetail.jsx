@@ -37,6 +37,7 @@ import Checkbox from "@mui/material/Checkbox";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import { FaPaperclip, FaLink, FaEllipsisV } from "react-icons/fa";
 
 import {
   useCardActions,
@@ -53,11 +54,22 @@ import { useUser } from "../../../../../../../../../hooks/useUser";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { toast, ToastContainer } from "react-toastify";
-import { useChecklistsByCard, useDeleteCheckList, useUpdateCheckList } from "../../../../../../../../../hooks/useCheckList";
-import { useCreateCheckListItem, useDeleteCheckListItem, useToggleCheckListItemStatus, useUpdateCheckListItemName } from "../../../../../../../../../hooks/useCheckListItem";
-
-
-
+import {
+  useChecklistsByCard,
+  useDeleteCheckList,
+  useUpdateCheckList,
+} from "../../../../../../../../../hooks/useCheckList";
+import {
+  useCreateCheckListItem,
+  useDeleteCheckListItem,
+  useToggleCheckListItemStatus,
+  useUpdateCheckListItemName,
+} from "../../../../../../../../../hooks/useCheckListItem";
+import DateModal from "./childComponent_CardDetail/Date";
+import { ArrowDropDownIcon } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -85,12 +97,12 @@ const CardModal = () => {
   const [previousCardName, setPreviousCardName] = useState(title);
   const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
-
-
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [setSelectedDate] = useState(null);
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
-  
+
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing);
   };
@@ -108,8 +120,8 @@ const CardModal = () => {
   const { mutate: removeComment } = useDeleteComment();
   const { mutate: editComment } = useUpdateComment();
 
-
-  const { data: checklists = [], isLoadingChecklist } = useChecklistsByCard(cardId);
+  const { data: checklists = [], isLoadingChecklist } =
+    useChecklistsByCard(cardId);
   const { mutate: updateCheckList } = useUpdateCheckList();
   const { mutate: removeCheckList } = useDeleteCheckList();
 
@@ -122,7 +134,6 @@ const CardModal = () => {
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
-
 
   // const {
   //   data: list,
@@ -163,7 +174,6 @@ const CardModal = () => {
   const handleArchiveCard = (cardId) => {
     archiveCard(cardId);
   };
-
 
   const handleDescriptionClick = () => {
     setIsEditingDescription(true);
@@ -223,7 +233,6 @@ const CardModal = () => {
 
   /// THÊM CÔNG VIỆC
 
-
   const handleSelectLabel = (newSelectedLabels) => {
     setSelectedLabels(newSelectedLabels);
   };
@@ -261,7 +270,9 @@ const CardModal = () => {
         console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
         setItems((prevItems) =>
           prevItems.map((item) =>
-            item.id === id ? { ...item, is_completed: !item.is_completed } : item
+            item.id === id
+              ? { ...item, is_completed: !item.is_completed }
+              : item
           )
         );
       },
@@ -280,14 +291,12 @@ const CardModal = () => {
     });
   };
 
-
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editedTaskName, setEditedTaskName] = useState("");
 
   // const handleAddTask = (taskName) => {
   //   setTasks([...tasks, { id: tasks.length + 1, name: taskName }]);
   // };
-
 
   const handleEditTask = (id, name) => {
     setEditingTaskId(id);
@@ -302,11 +311,10 @@ const CardModal = () => {
       {
         onSuccess: () => {
           setEditingTaskId(null); // Thoát chế độ chỉnh sửa sau khi cập nhật
-
         },
         onError: (error) => {
           console.error("❌ Lỗi khi cập nhật checklist:", error);
-        }
+        },
       }
     );
   };
@@ -335,7 +343,7 @@ const CardModal = () => {
         },
         onError: (error) => {
           console.error("❌ Lỗi khi cập nhật tên checklist item:", error);
-        }
+        },
       }
     );
   };
@@ -353,14 +361,12 @@ const CardModal = () => {
       onSuccess: () => {
         console.log(`✅ Xóa thành công ChecklistItem ID: ${id}`);
         handleMenuClose();
-
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa:", error);
       },
     });
   };
-
 
   const [menuAnchor, setMenuAnchor] = useState(null);
   const handleMenuOpen = (event, id) => {
@@ -380,13 +386,10 @@ const CardModal = () => {
 
   // const itemProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
-
   // const [showAddItemButton, setShowAddItemButton] = useState(true);
 
   const [taskInputs, setTaskInputs] = useState({}); // Lưu trạng thái nhập của từng task
   const [addingItemForTask, setAddingItemForTask] = useState(null); // Task nào đang hiển thị ô nhập
-
-
 
   const handleEditComment = (commentId, currentText) => {
     setEditingCommentIndex(commentId);
@@ -459,6 +462,37 @@ const CardModal = () => {
     if (event.key === "Enter") {
       handleSave();
     }
+  };
+
+  //NGÀY
+  const [dateInfo, setDateInfo] = useState(null);
+  const [openDateModal, setOpenDateModal] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const handleSaveDate = (data) => {
+    setDateInfo(data); // Lưu dữ liệu từ DateModal.jsx
+    setOpenDateModal(false); // Đóng modal sau khi lưu
+  };
+
+  const isNearDeadline = () => {
+    if (!dateInfo?.endDate) return false;
+    const now = dayjs();
+    const end = dayjs(dateInfo.endDate);
+    return end.diff(now, "hour") < 2 && end.isAfter(now);
+  };
+
+  const isOverdue = () => {
+    if (!dateInfo?.endDate) return false;
+    const now = dayjs();
+    return dayjs(dateInfo.endDate).isBefore(now);
+  };
+
+  //ĐÍNH KÈM
+  const [links, setLinks] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const addLink = (newLink) => {
+    setLinks([...links, newLink]);
   };
 
   return (
@@ -614,6 +648,48 @@ const CardModal = () => {
           </Button>
         </Box>
       </DialogTitle>
+      {/* NGÀY */}
+      {dateInfo && (
+        <>
+          <Typography sx={{ fontWeight: "bold", mb: 0, ml: 3 }}>
+            Ngày
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+
+              ml: 3,
+              p: 1,
+            }}
+            onClick={openDateModal}
+          >
+            <CalendarTodayIcon />
+            {dateInfo.startDate !== "Không có" && (
+              <Typography>{dateInfo.startDate.split(" ")[0]} -</Typography>
+            )}
+            <Typography>{dateInfo.endDate.split(" ")[1]}</Typography>
+            <Typography>{dateInfo.endDate.split(" ")[0]}</Typography>
+            {/* Kiểm tra trạng thái deadline */}
+            {isOverdue() && (
+              <Chip
+                label="Quá hạn"
+                color="error"
+                sx={{ fontSize: 12, height: 22 }}
+              />
+            )}
+            {isNearDeadline() && (
+              <Chip
+                label="Sắp hết hạn"
+                color="warning"
+                sx={{ fontSize: 12, height: 22 }}
+              />
+            )}
+            <ArrowDropDownIcon />
+          </Box>
+        </>
+      )}
       <DialogContent>
         <Grid container spacing={2}>
           {/* Cột trái (Nội dung chính) */}
@@ -734,42 +810,81 @@ const CardModal = () => {
               />
             )}
 
+            {/* ĐÍNH KÈM */}
+
             {/* HIỂN THỊ DANH SÁCH VIỆC CẦN LÀM */}
             {checklists?.length > 0 && (
               <Box sx={{ mt: 2 }}>
                 <List>
                   {checklists.map((checklist) => {
-                    const taskItems = Array.isArray(checklist.items) ? checklist.items : [];
-                    const completedItems = taskItems.filter((item) => item.is_completed).length;
+                    const taskItems = Array.isArray(checklist.items)
+                      ? checklist.items
+                      : [];
+                    const completedItems = taskItems.filter(
+                      (item) => item.is_completed
+                    ).length;
                     const totalItems = taskItems.length;
-                    const taskProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
-
+                    const taskProgress =
+                      totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
                     return (
                       <Box key={checklist.id} sx={{ mb: 3, p: 2 }}>
                         {/* Hiển thị tên checklist */}
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          {editingTaskId === checklist.id ? (
-                            <TextField
-                              fullWidth
-                              variant="outlined"
-                              size="small"
-                              value={editedTaskName}
-                              onChange={(e) => setEditedTaskName(e.target.value)}
-                              onBlur={() => handleSaveTask(checklist.id)}
-                              onKeyDown={(e) => handleKeyPressTask(e, checklist.id)}
-                              autoFocus
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                              flexGrow: 1,
+                            }}
+                          >
+                            <CheckBoxIcon
+                              sx={{
+                                width: "30px",
+                                height: "30px",
+                                color: "gray",
+                                flexShrink: 0, // Giữ icon luôn cố định, không bị đẩy đi
+                              }}
                             />
-                          ) : (
-                            <Typography
-                              variant="h6"
-                              fontWeight="bold"
-                              onClick={() => handleEditTask(checklist.id, checklist.name)}
-                              sx={{ cursor: "pointer" }}
-                            >
-                              {checklist.name}
-                            </Typography>
-                          )}
+                            {editingTaskId === checklist.id ? (
+                              <TextField
+                                fullWidth
+                                variant="outlined"
+                                size="small"
+                                value={editedTaskName}
+                                onChange={(e) =>
+                                  setEditedTaskName(e.target.value)
+                                }
+                                onBlur={() => handleSaveTask(checklist.id)}
+                                onKeyDown={(e) =>
+                                  handleKeyPressTask(e, checklist.id)
+                                }
+                                autoFocus
+                                sx={{
+                                  flexGrow: 1, // Giúp input co giãn nhưng không đẩy icon đi
+                                }}
+                              />
+                            ) : (
+                              <Typography
+                                variant="h6"
+                                fontWeight="bold"
+                                onClick={() =>
+                                  handleEditTask(checklist.id, checklist.name)
+                                }
+                                sx={{ cursor: "pointer", flexGrow: 1 }}
+                              >
+                                {checklist.name}
+                              </Typography>
+                            )}
+                          </Box>
 
                           <Button
                             variant="outlined"
@@ -783,20 +898,30 @@ const CardModal = () => {
 
                         {/* Thanh tiến trình riêng */}
                         <Box sx={{ mt: 2 }}>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              mb: 1,
+                            }}
+                          >
                             <Typography variant="body2" fontWeight="bold">
                               {Math.round(taskProgress)}%
                             </Typography>
                           </Box>
-                          <LinearProgress variant="determinate" value={taskProgress}
+                          <LinearProgress
+                            variant="determinate"
+                            value={taskProgress}
                             sx={{
                               height: 8,
                               borderRadius: 4,
                               backgroundColor: "#ddd", // Màu nền mặc định
                               "& .MuiLinearProgress-bar": {
-                                backgroundColor: taskProgress === 100 ? "#4CAF50" : "#0079BF", // Xanh lá khi đạt 100%
+                                backgroundColor:
+                                  taskProgress === 100 ? "#4CAF50" : "#0079BF", // Xanh lá khi đạt 100%
                               },
-                            }} />
+                            }}
+                          />
                         </Box>
 
                         {/* Danh sách mục trong checklist */}
@@ -816,24 +941,36 @@ const CardModal = () => {
                                   variant="outlined"
                                   size="small"
                                   value={editedItemName}
-                                  onChange={(e) => setEditedItemName(e.target.value)}
+                                  onChange={(e) =>
+                                    setEditedItemName(e.target.value)
+                                  }
                                   onBlur={() => handleSaveItem(item.id)}
-                                  onKeyDown={(e) => handleKeyPressItem(e, item.id)}
+                                  onKeyDown={(e) =>
+                                    handleKeyPressItem(e, item.id)
+                                  }
                                   autoFocus
                                 />
                               ) : (
                                 <ListItemText
                                   primary={item.name}
-                                  onClick={() => handleEditItem(item.id, item.name)}
+                                  onClick={() =>
+                                    handleEditItem(item.id, item.name)
+                                  }
                                   sx={{
                                     cursor: "pointer",
-                                    textDecoration: item.is_completed ? "line-through" : "none", // Gạch chữ nếu hoàn thành
-                                    color: item.is_completed ? "black" : "inherit", // Làm mờ chữ khi hoàn thành
+                                    textDecoration: item.is_completed
+                                      ? "line-through"
+                                      : "none", // Gạch chữ nếu hoàn thành
+                                    color: item.is_completed
+                                      ? "black"
+                                      : "inherit", // Làm mờ chữ khi hoàn thành
                                   }}
                                 />
                               )}
 
-                              <IconButton onClick={(e) => handleMenuOpen(e, item.id)}>
+                              <IconButton
+                                onClick={(e) => handleMenuOpen(e, item.id)}
+                              >
                                 <MoreVertIcon />
                               </IconButton>
                             </ListItem>
@@ -867,7 +1004,10 @@ const CardModal = () => {
                               sx={{ mt: 2 }}
                               value={taskInputs[checklist.id] || ""}
                               onChange={(e) =>
-                                setTaskInputs({ ...taskInputs, [checklist.id]: e.target.value })
+                                setTaskInputs({
+                                  ...taskInputs,
+                                  [checklist.id]: e.target.value,
+                                })
                               }
                             />
                             <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
@@ -876,15 +1016,29 @@ const CardModal = () => {
                                 color="primary"
                                 size="small"
                                 onClick={() => {
-                                  if ((taskInputs[checklist.id] || "").trim() === "") return;
-                                  handleAddItem(checklist.id, taskInputs[checklist.id]);
-                                  setTaskInputs({ ...taskInputs, [checklist.id]: "" });
+                                  if (
+                                    (taskInputs[checklist.id] || "").trim() ===
+                                    ""
+                                  )
+                                    return;
+                                  handleAddItem(
+                                    checklist.id,
+                                    taskInputs[checklist.id]
+                                  );
+                                  setTaskInputs({
+                                    ...taskInputs,
+                                    [checklist.id]: "",
+                                  });
                                   setAddingItemForTask(null);
                                 }}
                               >
                                 Thêm
                               </Button>
-                              <Button variant="text" size="small" onClick={() => setAddingItemForTask(null)}>
+                              <Button
+                                variant="text"
+                                size="small"
+                                onClick={() => setAddingItemForTask(null)}
+                              >
                                 Hủy
                               </Button>
                             </Box>
@@ -894,7 +1048,7 @@ const CardModal = () => {
                             variant="contained"
                             color="primary"
                             size="small"
-                            sx={{ mt: 2 }}
+                            sx={{ mt: 2, bgcolor: "teal" }}
                             onClick={() => setAddingItemForTask(checklist.id)}
                           >
                             Thêm một mục
@@ -906,8 +1060,6 @@ const CardModal = () => {
                 </List>
               </Box>
             )}
-
-
             {/* Thêm comment */}
             <Typography
               variant="subtitle1"
@@ -943,7 +1095,6 @@ const CardModal = () => {
             >
               Save
             </Button>
-
             {/* Hiển thị các bình luận */}
             {comments.map((cmt, index) => (
               <Box
@@ -1075,7 +1226,10 @@ const CardModal = () => {
 
                 <ListItem disablePadding>
                   <ListItemButton>
-                    <ListItemText primary="Ngày" />
+                    <ListItemText
+                      primary="Ngày"
+                      onClick={() => setIsDateModalOpen(true)}
+                    />
                   </ListItemButton>
                 </ListItem>
 
@@ -1157,6 +1311,7 @@ const CardModal = () => {
       <AttachmentModal
         open={isAttachmentModalOpen}
         onClose={() => setIsAttachmentModalOpen(false)}
+        addLink={addLink}
       />
 
       {/* Component Move Card Modal */}
@@ -1176,6 +1331,12 @@ const CardModal = () => {
         onClose={() => setIsShareModalOpen(false)}
         shareLink="https://trello.com/c/aZDXteH6"
       />
+      <DateModal
+        open={isDateModalOpen}
+        onClose={() => setIsDateModalOpen(false)}
+        onSave={handleSaveDate}
+        initialData={dateInfo}
+      />
 
       <Dialog
         open={isDeleteConfirmOpen}
@@ -1193,7 +1354,6 @@ const CardModal = () => {
       </Dialog>
       <ToastContainer />
     </Dialog>
-
   );
 };
 

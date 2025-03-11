@@ -19,7 +19,7 @@ const TaskModal = ({ open, onClose, onSave }) => {
     if (!taskName.trim()) return; // Kiểm tra tên checklist có dữ liệu
 
     addCheckList(
-      {card_id: cardId, name: taskName }, // Gửi request API
+      { card_id: cardId, name: taskName }, // Gửi request API
       {
         onSuccess: () => {
           setTaskName(""); // Reset trường nhập
@@ -31,7 +31,11 @@ const TaskModal = ({ open, onClose, onSave }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Thêm việc cần làm</DialogTitle>
+      <DialogTitle
+        sx={{ textAlign: "center", fontSize: "17px", fontWeight: "bold" }}
+      >
+        Thêm việc cần làm
+      </DialogTitle>
       <DialogContent>
         <TextField
           fullWidth

@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-
 import {
   createCard,
   getCardByList,
@@ -14,8 +13,8 @@ import {
   getCardArchivedByBoard,
   // deleteCard,
 } from "../api/models/cardsApi";
-import { useEffect, useMemo } from "react";
-import { createEchoInstance } from "./useRealtime";
+import { useMemo } from "react";
+
 import { toast } from "react-toastify";
 
 const CARDS_CACHE_KEY = "cards";
@@ -143,7 +142,11 @@ export const useCardActions = (boardId) => {
   const queryClient = useQueryClient();
 
   // Lấy danh sách card đã lưu trữ theo board
-  const { data: cards, isLoading, error } = useQuery({
+  const {
+    data: cards,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["cardsArchivedByBoard", boardId],
     queryFn: () => getCardArchivedByBoard(boardId),
     enabled: !!boardId, // Chỉ fetch khi có boardId
@@ -181,5 +184,3 @@ export const useCardActions = (boardId) => {
     deleteCard: deleteCardMutation.mutate, // Gọi mutate trực tiếp
   };
 };
-
-

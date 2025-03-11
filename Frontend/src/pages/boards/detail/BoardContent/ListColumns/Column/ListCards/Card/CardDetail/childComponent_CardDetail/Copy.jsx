@@ -38,7 +38,11 @@ const CopyCardModal = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Sao chép thẻ</DialogTitle>
+      <DialogTitle
+        sx={{ textAlign: "center", fontSize: "17px", fontWeight: "bold" }}
+      >
+        Sao chép thẻ
+      </DialogTitle>
       <DialogContent>
         <TextField
           placeholder="Nhập tên thẻ"
