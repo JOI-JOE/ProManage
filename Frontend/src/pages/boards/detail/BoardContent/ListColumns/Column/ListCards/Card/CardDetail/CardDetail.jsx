@@ -30,6 +30,7 @@ import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
+import DateModal from "./childComponent_CardDetail/Date";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import LinearProgress from "@mui/material/LinearProgress";
 import Checkbox from "@mui/material/Checkbox";
@@ -37,7 +38,11 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { FaPaperclip, FaLink, FaEllipsisV } from "react-icons/fa";
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import dayjs from 'dayjs';
 
+// ArrowDropDownIcon
 import {
   useCardActions,
   useCardById,
@@ -65,6 +70,7 @@ import {
   useUpdateCheckListItemName,
 } from "../../../../../../../../../hooks/useCheckListItem";
 import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
+import { ArrowDropDownIcon } from "@mui/x-date-pickers";
 
 const CardModal = () => {
   const { cardId, title } = useParams();

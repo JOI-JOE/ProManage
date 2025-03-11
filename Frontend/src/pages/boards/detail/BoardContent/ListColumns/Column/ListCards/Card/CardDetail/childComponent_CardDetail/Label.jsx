@@ -142,7 +142,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
         {
           onSuccess: () => {
           
-              queryClient.invalidateQueries(["labels", cardId]);
+              // queryClient.invalidateQueries(["labels", cardId]);
           
            
 
