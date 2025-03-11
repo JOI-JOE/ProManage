@@ -31,7 +31,11 @@ const TaskModal = ({ open, onClose, onSave }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Thêm việc cần làm</DialogTitle>
+      <DialogTitle
+        sx={{ textAlign: "center", fontSize: "17px", fontWeight: "bold" }}
+      >
+        Thêm việc cần làm
+      </DialogTitle>
       <DialogContent>
         <TextField
           fullWidth

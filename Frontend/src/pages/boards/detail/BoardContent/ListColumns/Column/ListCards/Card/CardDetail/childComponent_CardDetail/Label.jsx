@@ -18,8 +18,14 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
-import {  useCardLabels, useCreateLabel, useDeleteLabelByBoard, useLabels, useUpdateCardLabel, useUpdateLabelName } from "../../../../../../../../../../hooks/useLabel";
-
+import {
+  useCardLabels,
+  useCreateLabel,
+  useDeleteLabelByBoard,
+  useLabels,
+  useUpdateCardLabel,
+  useUpdateLabelName,
+} from "../../../../../../../../../../hooks/useLabel";
 
 // const initialLabels = [
 //   { id: 1, color: "#137b13", name: "Label 1" },
@@ -35,7 +41,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const { cardId } = useParams();
   const queryClient = useQueryClient();
   const { data: fetchedLabels } = useLabels(boardId);
-  const { data: fetchedCardLabels } = useCardLabels(cardId); 
+  const { data: fetchedCardLabels } = useCardLabels(cardId);
   // Cập nhật labels khi fetchedLabels thay đổi
   const createLabelMutation = useCreateLabel();
   const updateLabelMutation = useUpdateCardLabel();
@@ -71,24 +77,27 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   
   
   // tạo mới
-// console.log(createLabelMutation);
-// console.log("updateLabelNameMutation:", updateLabelNameMutation);
-// console.log("updateLabelNameMutation.mutate:", updateLabelNameMutation?.mutate);
+  // console.log(createLabelMutation);
+  // console.log("updateLabelNameMutation:", updateLabelNameMutation);
+  // console.log("updateLabelNameMutation.mutate:", updateLabelNameMutation?.mutate);
 
   const handleCreateLabel = () => {
     if (!newLabelName.trim()) {
       alert("Tên nhãn không được để trống!");
       return;
     }
-    createLabelMutation.mutate({ boardId, data: { title: newLabelName, color: newLabelColor } }, {
-      onSuccess: () => {
-        setIsCreatingLabel(false);
-        setNewLabelName("");
-        setNewLabelColor("#000000");
+    createLabelMutation.mutate(
+      { boardId, data: { title: newLabelName, color: newLabelColor } },
+      {
+        onSuccess: () => {
+          setIsCreatingLabel(false);
+          setNewLabelName("");
+          setNewLabelColor("#000000");
+        },
       }
-    });
+    );
   };
-  // sửa tên 
+  // sửa tên
 
   const handleUpdateLabelName = () => {
     if (!NewUpdatedLabelName.trim())  alert("Tên nhãn không được để trống!");
@@ -100,16 +109,17 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
           queryClient.invalidateQueries({ queryKey: ["labels"] });
           setLabels((prevLabels) =>
             prevLabels.map((label) =>
-              label.id === editLabelId ? { ...label, title: NewUpdatedLabelName } : label
+              label.id === editLabelId
+                ? { ...label, title: NewUpdatedLabelName }
+                : label
             )
-          )
+          );
           setIsEditingLabel(false);
           setEditLabelId(null);
           setUpdatedLabelName("");
         },
         onError: (error) => {
-          console.error(error)
-          
+          console.error(error);
         },
       }
     );
@@ -118,7 +128,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
     
     setCheckedLabels((prev) => {
       const updated = new Set(prev);
-      
+
       if (updated.has(labelId)) {
         updated.delete(labelId);
       } else {
@@ -203,11 +213,11 @@ const handleEditLabel = (id, title) => {
   // };
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
-        e.preventDefault(); // Ngăn chặn reload
-        handleUpdateLabelName(); // Cập nhật tên nhãn
-        setIsEditingLabel(false); // Thoát chế độ chỉnh sửa
+      e.preventDefault(); // Ngăn chặn reload
+      handleUpdateLabelName(); // Cập nhật tên nhãn
+      setIsEditingLabel(false); // Thoát chế độ chỉnh sửa
     }
-};
+  };
 
   // const handleCreateLabel = () => {
   //   const newLabel = {
@@ -229,11 +239,12 @@ const handleEditLabel = (id, title) => {
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle
         sx={{
-          fontSize: "1rem",
           fontWeight: "bold",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          textAlign: "center",
+          fontSize: "17px",
         }}
       >
         Nhãn
@@ -321,7 +332,7 @@ const handleEditLabel = (id, title) => {
                       },
                     }}
                   >
-                    {isEditingLabel && editLabelId === label.id ?  (
+                    {isEditingLabel && editLabelId === label.id ? (
                       <TextField
                         value={NewUpdatedLabelName}
                         onChange={(e) => setUpdatedLabelName(e.target.value)}
@@ -338,18 +349,19 @@ const handleEditLabel = (id, title) => {
                           },
                         }}
                       />
-                    ): null}
+                    ) : null}
                     <IconButton
                       size="small"
-                      onClick={() => {    handleEditLabel(label.id, label.title)
-                    }}
+                      onClick={() => {
+                        handleEditLabel(label.id, label.title);
+                      }}
                       sx={{ width: 24, height: 24 }}
                     >
                       <EditIcon sx={{ fontSize: 12, color: "#fff" }} />
                     </IconButton>
                   </Box>
                 }
-              // sx={{ width: "100%" }}
+                // sx={{ width: "100%" }}
               />
               <IconButton
                 size="small"
@@ -415,4 +427,3 @@ const handleEditLabel = (id, title) => {
 };
 
 export default LabelList;
-
