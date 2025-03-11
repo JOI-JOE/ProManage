@@ -119,11 +119,12 @@ const DateModal = ({ open, onClose, onSave, initialData }) => {
               setStartDate(e.target.checked ? dayjs() : null);
             }}
           />
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
             <DatePicker
               disabled={!isStartDateChecked}
               value={startDate}
               onChange={(newDate) => setStartDate(newDate)}
+              format="DD/MM/YYYY" // Định dạng ngày/tháng/năm
             />
           </LocalizationProvider>
         </Box>
@@ -131,27 +132,29 @@ const DateModal = ({ open, onClose, onSave, initialData }) => {
 
       {/* Ngày kết thúc */}
       <Box sx={{ paddingX: 1, mb: 0.5 }}>
-        <Typography sx={{ fontWeight: "bold" }}>Ngày kết thúc</Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <Checkbox
-            size="small"
-            checked={isEndDateChecked}
-            onChange={(e) => setIsEndDateChecked(e.target.checked)}
+      <Typography sx={{ fontWeight: "bold" }}>Ngày kết thúc</Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Checkbox
+          size="small"
+          checked={isEndDateChecked}
+          onChange={(e) => setIsEndDateChecked(e.target.checked)}
+        />
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+          <DatePicker
+            disabled={!isEndDateChecked}
+            value={endDate}
+            onChange={(newDate) => setEndDate(newDate)}
+            format="DD/MM/YYYY" // Hiển thị ngày/tháng/năm
           />
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker
-              disabled={!isEndDateChecked}
-              value={endDate}
-              onChange={(newDate) => setEndDate(newDate)}
-            />
-            <TimePicker
-              disabled={!isEndDateChecked}
-              value={endTime}
-              onChange={(newTime) => setEndTime(newTime)}
-            />
-          </LocalizationProvider>
-        </Box>
+          <TimePicker
+            disabled={!isEndDateChecked}
+            value={endTime}
+            onChange={(newTime) => setEndTime(newTime)}
+            format="HH:mm" // Định dạng giờ:phút
+          />
+        </LocalizationProvider>
       </Box>
+    </Box>
 
       {/* Nhắc nhở */}
       <Box sx={{ paddingX: 1, mb: 3, pt: 2 }}>
