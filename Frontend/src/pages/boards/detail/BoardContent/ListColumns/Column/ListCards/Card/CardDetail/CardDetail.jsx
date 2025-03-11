@@ -50,7 +50,7 @@ import FileCopyIcon from "@mui/icons-material/FileCopy";
 import SpeakerGroupIcon from "@mui/icons-material/SpeakerGroup";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import ShareIcon from "@mui/icons-material/Share";
-
+import CollectionsIcon from "@mui/icons-material/Collections";
 import {
   useCardActions,
   useCardById,
@@ -77,6 +77,7 @@ import {
   useToggleCheckListItemStatus,
   useUpdateCheckListItemName,
 } from "../../../../../../../../../hooks/useCheckListItem";
+import CoverPhoto from "./childComponent_CardDetail/CoverPhoto";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -108,6 +109,21 @@ const CardModal = () => {
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
+
+  const [coverImage, setCoverImage] = useState(
+    "https://i.pinimg.com/736x/49/43/7a/49437a99d17db363a6b2c6ffe7902fba.jpg"
+  );
+  const [coverColor, setCoverColor] = useState(null);
+
+  const handleCoverImageChange = (newImage) => {
+    setCoverImage(newImage);
+    setCoverColor(null); // Reset color when an image is selected
+  };
+
+  const handleCoverColorChange = (newColor) => {
+    setCoverColor(newColor);
+    setCoverImage(null); // Reset image when a color is selected
+  };
 
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing);
@@ -507,6 +523,8 @@ const CardModal = () => {
     },
   ];
 
+  const [isCoverPhotoOpen, setIsCoverPhotoOpen] = useState(false);
+
   return (
     <Dialog
       open={true}
@@ -518,232 +536,629 @@ const CardModal = () => {
         "& .MuiPaper-root": {
           boxShadow: "none", // Tắt shadow
           outline: "none", // Loại bỏ viền focus
+          overflow: "hidden", // Hide overflow to move scrollbar outside
         },
       }}
     >
-      <DialogTitle>
-        {isEditingName ? (
-          <TextField
-            value={cardName}
-            onChange={handleNameChange}
-            onBlur={handleNameBlur}
-            onKeyPress={handleNameKeyPress}
-            autoFocus
-            fullWidth
-            InputProps={{
-              style: { height: "30px" },
-            }}
-          />
-        ) : (
-          <Typography variant="h6" fontWeight="bold" onClick={handleNameClick}>
-            {cardDetail?.title}
-          </Typography>
-        )}
-        <Typography variant="body2" color="text.secondary">
-          trong danh sách{" "}
-          <span style={{ color: "#0079bf", fontWeight: "bold" }}>
-            {cardDetail?.listName || "Doing"}
-          </span>
-        </Typography>
-        {/* New section to match the provided image */}
-
-        <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-          <Avatar sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}>
-            PH
-          </Avatar>
-          <AddIcon
+      <Box
+        sx={{
+          height: "100%",
+          overflowY: "auto", // Add scrollbar to outer container
+          "&::-webkit-scrollbar": {
+            width: "5px", // Adjust the width of the scrollbar
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#888", // Color of the scrollbar thumb
+            borderRadius: "4px", // Rounded corners for the scrollbar thumb
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: "#555", // Color of the scrollbar thumb on hover
+          },
+        }}
+      >
+        <DialogTitle>
+          {/* New image section */}
+          <Box
             sx={{
-              fontSize: 14,
-              color: "gray",
-              cursor: "pointer",
-              mr: 1,
-              "&:hover": { color: "black" },
+              width: "100%",
+              height: "150px",
+              mb: 2,
+              backgroundColor: coverColor || "transparent",
             }}
-            onClick={() => setIsMemberListOpen(true)} // Thêm sự kiện onClick
-          />
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-
-          <AddIcon
-            sx={{
-              fontSize: 14,
-              color: "gray",
-              cursor: "pointer",
-              mr: 1,
-              "&:hover": { color: "black" },
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          />
-          <Button
-            variant="outlined"
-            sx={{
-              fontSize: "0.6rem",
-              height: 25,
-              p: 1,
-              bgcolor: "teal",
-              color: "white",
-            }}
-            onClick={handleFollowClick}
           >
-            <VisibilityIcon sx={{ fontSize: "12px", mr: 0.5 }} />
-            {isFollowing ? "Đang theo dõi" : "Theo dõi"}
-          </Button>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Grid container spacing={2}>
-          {/* Cột trái (Nội dung chính) */}
-          <Grid item xs={8}>
-            <Typography variant="subtitle1" fontWeight="bold">
-              <NotesIcon sx={{ fontSize: "0.8rem", mr: 1 }} />
-              Mô tả
-            </Typography>
-            {!isEditingDescription && (
-              <Typography
-                variant="body1"
-                sx={{
-                  mt: 1,
-                  color: "#172B4D",
-                  wordBreak: "break-word",
-                  whiteSpace: "pre-wrap", // Giữ định dạng dòng
-                  cursor: "pointer",
-                  // "&:hover": { backgroundColor: "#F5F6F8", borderRadius: 4 }
-                  "& ol": {
-                    // Đảm bảo định dạng danh sách có số
-                    listStyleType: "decimal",
-                    paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
-                  },
-                  "& ul": {
-                    // Đảm bảo định dạng danh sách có số
-                    listStyleType: "disc",
-                    paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
-                  },
-                  "& li": {
-                    // marginBottom: "8px", // Khoảng cách giữa các mục danh sách
-                  },
-                }}
-                onClick={handleDescriptionClick}
-                dangerouslySetInnerHTML={{
-                  __html:
-                    description ||
-                    cardDetail?.description ||
-                    "<span style='color: #a4b0be; font-size: 0.6rem;'>Thêm mô tả ...</span>",
-                }}
+            {coverImage && (
+              <img
+                src={coverImage} // Use the dynamic cover image
+                alt="Card Cover"
+                style={{ width: "100%", height: "150px" }}
               />
             )}
-            {isEditingDescription && (
-              <>
-                <ReactQuill
-                  value={description}
-                  onChange={setDescription}
-                  placeholder="Add a more detailed description..."
-                  style={{ marginTop: "8px" }}
-                  theme="snow"
-                  modules={{
-                    toolbar: [
-                      [{ header: [1, 2, false] }],
-                      ["bold", "italic", "underline", "strike"],
-                      [{ list: "ordered" }, { list: "bullet" }],
-                      ["link"],
-                      ["image"],
-                      ["clean"],
-                    ],
-                  }}
-                  formats={[
-                    "header",
-                    "bold",
-                    "italic",
-                    "underline",
-                    "strike",
-                    "list",
-                    "bullet",
-                    "link",
-                    "image",
-                  ]}
+          </Box>
+          {isEditingName ? (
+            <TextField
+              value={cardName}
+              onChange={handleNameChange}
+              onBlur={handleNameBlur}
+              onKeyPress={handleNameKeyPress}
+              autoFocus
+              fullWidth
+              InputProps={{
+                style: { height: "30px" },
+              }}
+            />
+          ) : (
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              onClick={handleNameClick}
+            >
+              {cardDetail?.title}
+            </Typography>
+          )}
+          <Typography variant="body2" color="text.secondary">
+            trong danh sách{" "}
+            <span style={{ color: "#0079bf", fontWeight: "bold" }}>
+              {cardDetail?.listName || "Doing"}
+            </span>
+          </Typography>
+          {/* New section to match the provided image */}
+
+          <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
+            <Avatar
+              sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
+            >
+              PH
+            </Avatar>
+            <AddIcon
+              sx={{
+                fontSize: 14,
+                color: "gray",
+                cursor: "pointer",
+                mr: 1,
+                "&:hover": { color: "black" },
+              }}
+              onClick={() => setIsMemberListOpen(true)} // Thêm sự kiện onClick
+            />
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+
+            <AddIcon
+              sx={{
+                fontSize: 14,
+                color: "gray",
+                cursor: "pointer",
+                mr: 1,
+                "&:hover": { color: "black" },
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            />
+            <Button
+              variant="outlined"
+              sx={{
+                fontSize: "0.6rem",
+                height: 25,
+                p: 1,
+                bgcolor: "teal",
+                color: "white",
+              }}
+              onClick={handleFollowClick}
+            >
+              <VisibilityIcon sx={{ fontSize: "12px", mr: 0.5 }} />
+              {isFollowing ? "Đang theo dõi" : "Theo dõi"}
+            </Button>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2}>
+            {/* Cột trái (Nội dung chính) */}
+            <Grid item xs={8}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                <NotesIcon sx={{ fontSize: "0.8rem", mr: 1 }} />
+                Mô tả
+              </Typography>
+              {!isEditingDescription && (
+                <Typography
+                  variant="body1"
                   sx={{
-                    "& .ql-container": {
-                      border: "1px solid #ddd",
-                      borderRadius: 4,
+                    mt: 1,
+                    color: "#172B4D",
+                    wordBreak: "break-word",
+                    whiteSpace: "pre-wrap", // Giữ định dạng dòng
+                    cursor: "pointer",
+                    // "&:hover": { backgroundColor: "#F5F6F8", borderRadius: 4 }
+                    "& ol": {
+                      // Đảm bảo định dạng danh sách có số
+                      listStyleType: "decimal",
+                      paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
                     },
-                    "& .ql-toolbar": { border: "1px solid #ddd" },
+                    "& ul": {
+                      // Đảm bảo định dạng danh sách có số
+                      listStyleType: "disc",
+                      paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
+                    },
+                    "& li": {
+                      // marginBottom: "8px", // Khoảng cách giữa các mục danh sách
+                    },
+                  }}
+                  onClick={handleDescriptionClick}
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      description ||
+                      cardDetail?.description ||
+                      "<span style='color: #a4b0be; font-size: 0.6rem;'>Thêm mô tả ...</span>",
                   }}
                 />
-                {description.trim() && (
+              )}
+              {isEditingDescription && (
+                <>
+                  <ReactQuill
+                    value={description}
+                    onChange={setDescription}
+                    placeholder="Add a more detailed description..."
+                    style={{ marginTop: "8px" }}
+                    theme="snow"
+                    modules={{
+                      toolbar: [
+                        [{ header: [1, 2, false] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ list: "ordered" }, { list: "bullet" }],
+                        ["link"],
+                        ["image"],
+                        ["clean"],
+                      ],
+                    }}
+                    formats={[
+                      "header",
+                      "bold",
+                      "italic",
+                      "underline",
+                      "strike",
+                      "list",
+                      "bullet",
+                      "link",
+                      "image",
+                    ]}
+                    sx={{
+                      "& .ql-container": {
+                        border: "1px solid #ddd",
+                        borderRadius: 4,
+                      },
+                      "& .ql-toolbar": { border: "1px solid #ddd" },
+                    }}
+                  />
+                  {description.trim() && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "flex-start", // Change to flex-start
+                        gap: 1,
+                        mt: 1,
+                      }}
+                    >
+                      <Button
+                        variant="contained"
+                        size="small"
+                        sx={{
+                          backgroundColor: "teal",
+                          color: "#FFF",
+                          fontSize: "0.7rem",
+                          height: "25px",
+                          minWidth: "50px",
+                        }}
+                        onClick={handleSaveDescription}
+                      >
+                        Lưu
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        sx={{
+                          color: "#172B4D",
+                          borderColor: "#ddd",
+                          fontSize: "0.7rem",
+                          height: "25px",
+                          minWidth: "50px",
+                          "&:hover": {
+                            backgroundColor: "#E4E7EB",
+                            borderColor: "#bbb",
+                          },
+                        }}
+                        onClick={handleCancelDescription}
+                      >
+                        Hủy
+                      </Button>
+                    </Box>
+                  )}
+                </>
+              )}
+
+              {/* HIỂN THỊ DANH SÁCH VIỆC CẦN LÀM */}
+              {checklists?.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <List>
+                    {checklists.map((checklist) => {
+                      const taskItems = Array.isArray(checklist.items)
+                        ? checklist.items
+                        : [];
+                      const completedItems = taskItems.filter(
+                        (item) => item.is_completed
+                      ).length;
+                      const totalItems = taskItems.length;
+                      const taskProgress =
+                        totalItems > 0
+                          ? (completedItems / totalItems) * 100
+                          : 0;
+
+                      return (
+                        <Box key={checklist.id} sx={{ mb: 3, p: 2 }}>
+                          {/* Hiển thị tên checklist */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            {editingTaskId === checklist.id ? (
+                              <TextField
+                                fullWidth
+                                variant="outlined"
+                                size="small"
+                                value={editedTaskName}
+                                onChange={(e) =>
+                                  setEditedTaskName(e.target.value)
+                                }
+                                onBlur={() => handleSaveTask(checklist.id)}
+                                onKeyDown={(e) =>
+                                  handleKeyPressTask(e, checklist.id)
+                                }
+                                autoFocus
+                              />
+                            ) : (
+                              <Typography
+                                variant="h6"
+                                fontWeight="bold"
+                                onClick={() =>
+                                  handleEditTask(checklist.id, checklist.name)
+                                }
+                                sx={{ cursor: "pointer" }}
+                              >
+                                {checklist.name}
+                              </Typography>
+                            )}
+
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              size="small"
+                              onClick={() => handleDeleteTask(checklist.id)}
+                            >
+                              Xóa
+                            </Button>
+                          </Box>
+
+                          {/* Thanh tiến trình riêng */}
+                          <Box sx={{ mt: 2 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                mb: 1,
+                              }}
+                            >
+                              <Typography variant="body2" fontWeight="bold">
+                                {Math.round(taskProgress)}%
+                              </Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={taskProgress}
+                              sx={{
+                                height: 8,
+                                borderRadius: 4,
+                                backgroundColor: "#ddd", // Màu nền mặc định
+                                "& .MuiLinearProgress-bar": {
+                                  backgroundColor:
+                                    taskProgress === 100
+                                      ? "#4CAF50"
+                                      : "#0079BF", // Xanh lá khi đạt 100%
+                                },
+                              }}
+                            />
+                          </Box>
+
+                          {/* Danh sách mục trong checklist */}
+                          <List sx={{ mt: 2 }}>
+                            {taskItems.map((item) => (
+                              <ListItem key={item.id}>
+                                <ListItemIcon>
+                                  <Checkbox
+                                    checked={item.is_completed || false}
+                                    onChange={() =>
+                                      toggleItemCompletion(item.id)
+                                    }
+                                  />
+                                </ListItemIcon>
+
+                                {editingItemId === item.id ? (
+                                  <TextField
+                                    fullWidth
+                                    variant="outlined"
+                                    size="small"
+                                    value={editedItemName}
+                                    onChange={(e) =>
+                                      setEditedItemName(e.target.value)
+                                    }
+                                    onBlur={() => handleSaveItem(item.id)}
+                                    onKeyDown={(e) =>
+                                      handleKeyPressItem(e, item.id)
+                                    }
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <ListItemText
+                                    primary={item.name}
+                                    onClick={() =>
+                                      handleEditItem(item.id, item.name)
+                                    }
+                                    sx={{
+                                      cursor: "pointer",
+                                      textDecoration: item.is_completed
+                                        ? "line-through"
+                                        : "none", // Gạch chữ nếu hoàn thành
+                                      color: item.is_completed
+                                        ? "black"
+                                        : "inherit", // Làm mờ chữ khi hoàn thành
+                                    }}
+                                  />
+                                )}
+
+                                <IconButton
+                                  onClick={(e) => handleMenuOpen(e, item.id)}
+                                >
+                                  <MoreVertIcon />
+                                </IconButton>
+                              </ListItem>
+                            ))}
+                          </List>
+
+                          <Menu
+                            anchorEl={menuAnchor}
+                            open={Boolean(menuAnchor)}
+                            onClose={handleMenuClose}
+                          >
+                            <MenuItem
+                              onClick={() =>
+                                toggleItemCompletion(selectedItemId)
+                              }
+                            >
+                              Chuyển đổi trạng thái
+                            </MenuItem>
+                            <MenuItem
+                              onClick={() => handleDeleteItem(selectedItemId)}
+                            >
+                              Xóa
+                            </MenuItem>
+                          </Menu>
+                          {/* Thêm mục vào checklist */}
+                          {addingItemForTask === checklist.id ? (
+                            <>
+                              <TextField
+                                fullWidth
+                                placeholder="Thêm một mục..."
+                                variant="outlined"
+                                size="small"
+                                sx={{ mt: 2 }}
+                                value={taskInputs[checklist.id] || ""}
+                                onChange={(e) =>
+                                  setTaskInputs({
+                                    ...taskInputs,
+                                    [checklist.id]: e.target.value,
+                                  })
+                                }
+                              />
+                              <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+                                <Button
+                                  variant="contained"
+                                  color="primary"
+                                  size="small"
+                                  onClick={() => {
+                                    if (
+                                      (
+                                        taskInputs[checklist.id] || ""
+                                      ).trim() === ""
+                                    )
+                                      return;
+                                    handleAddItem(
+                                      checklist.id,
+                                      taskInputs[checklist.id]
+                                    );
+                                    setTaskInputs({
+                                      ...taskInputs,
+                                      [checklist.id]: "",
+                                    });
+                                    setAddingItemForTask(null);
+                                  }}
+                                >
+                                  Thêm
+                                </Button>
+                                <Button
+                                  variant="text"
+                                  size="small"
+                                  onClick={() => setAddingItemForTask(null)}
+                                >
+                                  Hủy
+                                </Button>
+                              </Box>
+                            </>
+                          ) : (
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              size="small"
+                              sx={{ mt: 2 }}
+                              onClick={() => setAddingItemForTask(checklist.id)}
+                            >
+                              Thêm một mục
+                            </Button>
+                          )}
+                        </Box>
+                      );
+                    })}
+                  </List>
+                </Box>
+              )}
+
+              {/* Thêm comment */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mt: 2,
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                  <BarChartIcon sx={{ fontSize: "0.8rem", mr: 1 }} />
+                  Hoạt động
+                </Typography>
+                <Button
+                  variant="text"
+                  sx={{ fontSize: "0.5rem", color: "#fff", bgcolor: "teal" }}
+                  onClick={handleToggleDetail}
+                >
+                  {isDetailHidden ? "Hiện chi tiết" : "Ẩn chi tiết"}
+                </Button>
+              </Box>
+              {!isEditingComment && (
+                <Typography
+                  variant="body1"
+                  sx={{
+                    mt: 1,
+                    color: "#a4b0be",
+                    wordBreak: "break-word",
+                    whiteSpace: "pre-wrap", // Giữ định dạng dòng
+                    cursor: "pointer",
+                    fontSize: "0.6rem",
+                    // "&:hover": { backgroundColor: "#F5F6F8", borderRadius: 4 }
+                  }}
+                  onClick={handleCommentClick}
+                >
+                  Viết bình luận...
+                </Typography>
+              )}
+              {isEditingComment && (
+                <>
+                  <ReactQuill
+                    value={comment}
+                    onChange={setComment}
+                    placeholder="Write a comment..."
+                    style={{ marginTop: "8px" }}
+                    theme="snow"
+                    modules={{
+                      toolbar: [
+                        [{ header: [1, 2, false] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ list: "ordered" }, { list: "bullet" }],
+                        ["link"],
+                        ["image"],
+                        ["clean"],
+                      ],
+                    }}
+                    formats={[
+                      "header",
+                      "bold",
+                      "italic",
+                      "underline",
+                      "strike",
+                      "list",
+                      "bullet",
+                      "link",
+                      "image",
+                    ]}
+                    sx={{
+                      "& .ql-container": {
+                        border: "1px solid #ddd",
+                        borderRadius: 4,
+                      },
+                      "& .ql-toolbar": { border: "1px solid #ddd" },
+                    }}
+                  />
                   <Box
                     sx={{
                       display: "flex",
-                      justifyContent: "flex-start", // Change to flex-start
+                      justifyContent: "flex-end",
                       gap: 1,
                       mt: 1,
                     }}
@@ -758,800 +1173,487 @@ const CardModal = () => {
                         height: "25px",
                         minWidth: "50px",
                       }}
-                      onClick={handleSaveDescription}
+                      onClick={handleSaveComment}
+                      disabled={isEmptyHTML(comment)}
                     >
                       Lưu
                     </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      sx={{
-                        color: "#172B4D",
-                        borderColor: "#ddd",
-                        fontSize: "0.7rem",
-                        height: "25px",
-                        minWidth: "50px",
-                        "&:hover": {
-                          backgroundColor: "#E4E7EB",
-                          borderColor: "#bbb",
-                        },
-                      }}
-                      onClick={handleCancelDescription}
-                    >
-                      Hủy
-                    </Button>
                   </Box>
-                )}
-              </>
-            )}
+                </>
+              )}
 
-            {/* HIỂN THỊ DANH SÁCH VIỆC CẦN LÀM */}
-            {checklists?.length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                <List>
-                  {checklists.map((checklist) => {
-                    const taskItems = Array.isArray(checklist.items)
-                      ? checklist.items
-                      : [];
-                    const completedItems = taskItems.filter(
-                      (item) => item.is_completed
-                    ).length;
-                    const totalItems = taskItems.length;
-                    const taskProgress =
-                      totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+              {/* Hiển thị các bình luận và hoạt động */}
+              {comments.map((cmt, index) => {
+                const content = cmt.content || "";
+                if (isEmptyHTML(content)) return null;
 
-                    return (
-                      <Box key={checklist.id} sx={{ mb: 3, p: 2 }}>
-                        {/* Hiển thị tên checklist */}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          {editingTaskId === checklist.id ? (
-                            <TextField
-                              fullWidth
-                              variant="outlined"
-                              size="small"
-                              value={editedTaskName}
-                              onChange={(e) =>
-                                setEditedTaskName(e.target.value)
-                              }
-                              onBlur={() => handleSaveTask(checklist.id)}
-                              onKeyDown={(e) =>
-                                handleKeyPressTask(e, checklist.id)
-                              }
-                              autoFocus
-                            />
-                          ) : (
-                            <Typography
-                              variant="h6"
-                              fontWeight="bold"
-                              onClick={() =>
-                                handleEditTask(checklist.id, checklist.name)
-                              }
-                              sx={{ cursor: "pointer" }}
-                            >
-                              {checklist.name}
-                            </Typography>
-                          )}
-
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            size="small"
-                            onClick={() => handleDeleteTask(checklist.id)}
-                          >
-                            Xóa
-                          </Button>
-                        </Box>
-
-                        {/* Thanh tiến trình riêng */}
-                        <Box sx={{ mt: 2 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              mb: 1,
-                            }}
-                          >
-                            <Typography variant="body2" fontWeight="bold">
-                              {Math.round(taskProgress)}%
-                            </Typography>
-                          </Box>
-                          <LinearProgress
-                            variant="determinate"
-                            value={taskProgress}
-                            sx={{
-                              height: 8,
-                              borderRadius: 4,
-                              backgroundColor: "#ddd", // Màu nền mặc định
-                              "& .MuiLinearProgress-bar": {
-                                backgroundColor:
-                                  taskProgress === 100 ? "#4CAF50" : "#0079BF", // Xanh lá khi đạt 100%
-                              },
-                            }}
-                          />
-                        </Box>
-
-                        {/* Danh sách mục trong checklist */}
-                        <List sx={{ mt: 2 }}>
-                          {taskItems.map((item) => (
-                            <ListItem key={item.id}>
-                              <ListItemIcon>
-                                <Checkbox
-                                  checked={item.is_completed || false}
-                                  onChange={() => toggleItemCompletion(item.id)}
-                                />
-                              </ListItemIcon>
-
-                              {editingItemId === item.id ? (
-                                <TextField
-                                  fullWidth
-                                  variant="outlined"
-                                  size="small"
-                                  value={editedItemName}
-                                  onChange={(e) =>
-                                    setEditedItemName(e.target.value)
-                                  }
-                                  onBlur={() => handleSaveItem(item.id)}
-                                  onKeyDown={(e) =>
-                                    handleKeyPressItem(e, item.id)
-                                  }
-                                  autoFocus
-                                />
-                              ) : (
-                                <ListItemText
-                                  primary={item.name}
-                                  onClick={() =>
-                                    handleEditItem(item.id, item.name)
-                                  }
-                                  sx={{
-                                    cursor: "pointer",
-                                    textDecoration: item.is_completed
-                                      ? "line-through"
-                                      : "none", // Gạch chữ nếu hoàn thành
-                                    color: item.is_completed
-                                      ? "black"
-                                      : "inherit", // Làm mờ chữ khi hoàn thành
-                                  }}
-                                />
-                              )}
-
-                              <IconButton
-                                onClick={(e) => handleMenuOpen(e, item.id)}
-                              >
-                                <MoreVertIcon />
-                              </IconButton>
-                            </ListItem>
-                          ))}
-                        </List>
-
-                        <Menu
-                          anchorEl={menuAnchor}
-                          open={Boolean(menuAnchor)}
-                          onClose={handleMenuClose}
-                        >
-                          <MenuItem
-                            onClick={() => toggleItemCompletion(selectedItemId)}
-                          >
-                            Chuyển đổi trạng thái
-                          </MenuItem>
-                          <MenuItem
-                            onClick={() => handleDeleteItem(selectedItemId)}
-                          >
-                            Xóa
-                          </MenuItem>
-                        </Menu>
-                        {/* Thêm mục vào checklist */}
-                        {addingItemForTask === checklist.id ? (
-                          <>
-                            <TextField
-                              fullWidth
-                              placeholder="Thêm một mục..."
-                              variant="outlined"
-                              size="small"
-                              sx={{ mt: 2 }}
-                              value={taskInputs[checklist.id] || ""}
-                              onChange={(e) =>
-                                setTaskInputs({
-                                  ...taskInputs,
-                                  [checklist.id]: e.target.value,
-                                })
-                              }
-                            />
-                            <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
-                              <Button
-                                variant="contained"
-                                color="primary"
-                                size="small"
-                                onClick={() => {
-                                  if (
-                                    (taskInputs[checklist.id] || "").trim() ===
-                                    ""
-                                  )
-                                    return;
-                                  handleAddItem(
-                                    checklist.id,
-                                    taskInputs[checklist.id]
-                                  );
-                                  setTaskInputs({
-                                    ...taskInputs,
-                                    [checklist.id]: "",
-                                  });
-                                  setAddingItemForTask(null);
-                                }}
-                              >
-                                Thêm
-                              </Button>
-                              <Button
-                                variant="text"
-                                size="small"
-                                onClick={() => setAddingItemForTask(null)}
-                              >
-                                Hủy
-                              </Button>
-                            </Box>
-                          </>
-                        ) : (
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            sx={{ mt: 2 }}
-                            onClick={() => setAddingItemForTask(checklist.id)}
-                          >
-                            Thêm một mục
-                          </Button>
-                        )}
-                      </Box>
-                    );
-                  })}
-                </List>
-              </Box>
-            )}
-
-            {/* Thêm comment */}
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mt: 2,
-              }}
-            >
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                <BarChartIcon sx={{ fontSize: "0.8rem", mr: 1 }} />
-                Hoạt động
-              </Typography>
-              <Button
-                variant="text"
-                sx={{ fontSize: "0.5rem", color: "#fff", bgcolor: "teal" }}
-                onClick={handleToggleDetail}
-              >
-                {isDetailHidden ? "Hiện chi tiết" : "Ẩn chi tiết"}
-              </Button>
-            </Box>
-            {!isEditingComment && (
-              <Typography
-                variant="body1"
-                sx={{
-                  mt: 1,
-                  color: "#a4b0be",
-                  wordBreak: "break-word",
-                  whiteSpace: "pre-wrap", // Giữ định dạng dòng
-                  cursor: "pointer",
-                  fontSize: "0.6rem",
-                  // "&:hover": { backgroundColor: "#F5F6F8", borderRadius: 4 }
-                }}
-                onClick={handleCommentClick}
-              >
-                Viết bình luận...
-              </Typography>
-            )}
-            {isEditingComment && (
-              <>
-                <ReactQuill
-                  value={comment}
-                  onChange={setComment}
-                  placeholder="Write a comment..."
-                  style={{ marginTop: "8px" }}
-                  theme="snow"
-                  modules={{
-                    toolbar: [
-                      [{ header: [1, 2, false] }],
-                      ["bold", "italic", "underline", "strike"],
-                      [{ list: "ordered" }, { list: "bullet" }],
-                      ["link"],
-                      ["image"],
-                      ["clean"],
-                    ],
-                  }}
-                  formats={[
-                    "header",
-                    "bold",
-                    "italic",
-                    "underline",
-                    "strike",
-                    "list",
-                    "bullet",
-                    "link",
-                    "image",
-                  ]}
-                  sx={{
-                    "& .ql-container": {
-                      border: "1px solid #ddd",
-                      borderRadius: 4,
-                    },
-                    "& .ql-toolbar": { border: "1px solid #ddd" },
-                  }}
-                />
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 1,
-                    mt: 1,
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    size="small"
-                    sx={{
-                      backgroundColor: "teal",
-                      color: "#FFF",
-                      fontSize: "0.7rem",
-                      height: "25px",
-                      minWidth: "50px",
-                    }}
-                    onClick={handleSaveComment}
-                    disabled={isEmptyHTML(comment)}
-                  >
-                    Lưu
-                  </Button>
-                </Box>
-              </>
-            )}
-
-            {/* Hiển thị các bình luận và hoạt động */}
-            {comments.map((cmt, index) => {
-              const content = cmt.content || "";
-              if (isEmptyHTML(content)) return null;
-
-              return (
-                <Box
-                  key={index}
-                  sx={{ display: "flex", flexDirection: "column", mt: 1 }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Avatar
-                      src={cmt?.user?.avatar || ""}
-                      sx={{
-                        bgcolor: !cmt?.user?.avatar ? "pink" : "transparent",
-                        color: !cmt?.user?.avatar ? "white" : "inherit",
-                        width: 28,
-                        height: 28,
-                        fontSize: "0.6rem",
-                        mt: 2, // Move the avatar down
-                      }}
-                    >
-                      {!cmt?.user?.avatar &&
-                        (cmt?.user?.full_name?.charAt(0)?.toUpperCase() || "?")}
-                    </Avatar>
-                    <Box sx={{ ml: 1 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{ fontWeight: "bold", fontSize: "14px" }}
-                      >
-                        {cmt.user?.full_name || "Người dùng"}{" "}
-                        <span style={{ fontWeight: "normal" }}>
-                          {cmt.user?.username}
-                        </span>
-                        <Typography
-                          variant="body2"
-                          component="span"
-                          sx={{
-                            fontSize: "0.5rem",
-                            color: "gray",
-                            ml: 0.5,
-                            padding: "3px 0px",
-                          }}
-                        >
-                          {new Date(cmt.created_at).toLocaleTimeString()}{" "}
-                          {new Date(cmt.created_at).toLocaleDateString()}
-                        </Typography>
-                      </Typography>
-                    </Box>
-                  </Box>
+                return (
                   <Box
-                    sx={{
-                      ml: 4.5,
-                      mt: -1,
-                      backgroundColor: "#f5f6fa",
-                      p: 0.7,
-                      borderRadius: "8px",
-                    }}
+                    key={index}
+                    sx={{ display: "flex", flexDirection: "column", mt: 1 }}
                   >
-                    {editingCommentIndex === cmt.id ? (
-                      <>
-                        <ReactQuill
-                          value={editingCommentText}
-                          onChange={setEditingCommentText}
-                          placeholder="Edit your comment..."
-                          style={{ marginTop: "8px" }}
-                          theme="snow"
-                          modules={{
-                            toolbar: [
-                              [{ header: [1, 2, false] }],
-                              ["bold", "italic", "underline", "strike"],
-                              [{ list: "ordered" }, { list: "bullet" }],
-                              ["link"],
-                              ["image"],
-                              ["clean"],
-                            ],
-                          }}
-                          formats={[
-                            "header",
-                            "bold",
-                            "italic",
-                            "underline",
-                            "strike",
-                            "list",
-                            "bullet",
-                            "link",
-                            "image",
-                          ]}
-                          sx={{
-                            "& .ql-container": {
-                              border: "1px solid #ddd",
-                              borderRadius: 4,
-                            },
-                            "& .ql-toolbar": { border: "1px solid #ddd" },
-                          }}
-                        />
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                            gap: 1,
-                            mt: 1,
-                          }}
-                        >
-                          <Button
-                            variant="contained"
-                            size="small"
-                            sx={{
-                              backgroundColor: "teal",
-                              color: "#FFF",
-                              fontSize: "0.6rem",
-                              height: "25px",
-                              minWidth: "50px",
-                            }}
-                            onClick={handleSaveEditedComment}
-                            disabled={isEmptyHTML(editingCommentText)}
-                          >
-                            Lưu
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            sx={{
-                              color: "#172B4D",
-                              borderColor: "#ddd",
-                              fontSize: "0.6rem",
-                              height: "25px",
-                              minWidth: "50px",
-                              "&:hover": {
-                                backgroundColor: "#E4E7EB",
-                                borderColor: "#bbb",
-                              },
-                            }}
-                            onClick={() => {
-                              setEditingCommentIndex(null); // Thoát chế độ chỉnh sửa
-                              setEditingCommentText(""); // Reset nội dung chỉnh sửa
-                            }}
-                          >
-                            Hủy
-                          </Button>
-                        </Box>
-                      </>
-                    ) : (
-                      <>
-                        <Typography
-                          variant="body2"
-                          style={{
-                            wordWrap: "break-word",
-                            whiteSpace: "pre-wrap",
-                            overflowWrap: "break-word",
-                            wordBreak: "break-word",
-                            fontSize: "0.rem", // Change font size to 0.7rem
-                          }}
-                        >
-                          {content.replace(/<\/?p>/g, "")}
-                        </Typography>
-                        <Box sx={{ display: "flex", mt: "-4px" }}>
-                          <Button
-                            size="small"
-                            onClick={() =>
-                              handleEditComment(cmt.id, cmt.content)
-                            }
-                            sx={{
-                              width: "20px",
-                              minWidth: "20px",
-                              ml: "4px",
-                              mr: "-8px",
-                              fontSize: "0.4rem", // Smaller font size
-                              textTransform: "none",
-                              padding: "2px 4px", // Smaller padding
-                            }}
-                          >
-                            Sửa
-                          </Button>
-                          <Button
-                            size="small"
-                            onClick={() => handleDeleteComment(cmt.id)}
-                            sx={{
-                              width: "20px",
-                              minWidth: "20px",
-                              ml: "10px",
-                              fontSize: "0.4rem", // Smaller font size
-                              textTransform: "none",
-                              padding: "2px 4px", // Smaller padding
-                            }}
-                          >
-                            Xóa
-                          </Button>
-                        </Box>
-                      </>
-                    )}
-                  </Box>
-                </Box>
-              );
-            })}
-
-            {/* Hiển thị các hoạt động */}
-            {!isDetailHidden && (
-              <Box
-                sx={{
-                  backgroundColor: "white",
-                  pt: 1,
-                  borderRadius: 2,
-                  mt: 0.5,
-                }}
-              >
-                <Stack spacing={2}>
-                  {activities.map((activity, index) => (
-                    <Box key={index} display="flex" alignItems="center">
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
                       <Avatar
+                        src={cmt?.user?.avatar || ""}
                         sx={{
-                          bgcolor: "pink",
+                          bgcolor: !cmt?.user?.avatar ? "pink" : "transparent",
+                          color: !cmt?.user?.avatar ? "white" : "inherit",
                           width: 28,
                           height: 28,
                           fontSize: "0.6rem",
-                          mr: 1,
+                          mt: 2, // Move the avatar down
                         }}
                       >
-                        PH
+                        {!cmt?.user?.avatar &&
+                          (cmt?.user?.full_name?.charAt(0)?.toUpperCase() ||
+                            "?")}
                       </Avatar>
-                      <Box>
-                        <Typography fontWeight="bold" color="black">
-                          {activity.name}{" "}
+                      <Box sx={{ ml: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: "bold", fontSize: "14px" }}
+                        >
+                          {cmt.user?.full_name || "Người dùng"}{" "}
+                          <span style={{ fontWeight: "normal" }}>
+                            {cmt.user?.username}
+                          </span>
                           <Typography
+                            variant="body2"
                             component="span"
-                            fontWeight="normal"
-                            color="black"
+                            sx={{
+                              fontSize: "0.5rem",
+                              color: "gray",
+                              ml: 0.5,
+                              padding: "3px 0px",
+                            }}
                           >
-                            {activity.action}
+                            {new Date(cmt.created_at).toLocaleTimeString()}{" "}
+                            {new Date(cmt.created_at).toLocaleDateString()}
                           </Typography>
-                        </Typography>
-                        <Typography fontSize="0.5rem" color="gray">
-                          {activity.time}
                         </Typography>
                       </Box>
                     </Box>
-                  ))}
-                </Stack>
+                    <Box
+                      sx={{
+                        ml: 4.5,
+                        mt: -1,
+                        backgroundColor: "#f5f6fa",
+                        p: 0.7,
+                        borderRadius: "8px",
+                      }}
+                    >
+                      {editingCommentIndex === cmt.id ? (
+                        <>
+                          <ReactQuill
+                            value={editingCommentText}
+                            onChange={setEditingCommentText}
+                            placeholder="Edit your comment..."
+                            style={{ marginTop: "8px" }}
+                            theme="snow"
+                            modules={{
+                              toolbar: [
+                                [{ header: [1, 2, false] }],
+                                ["bold", "italic", "underline", "strike"],
+                                [{ list: "ordered" }, { list: "bullet" }],
+                                ["link"],
+                                ["image"],
+                                ["clean"],
+                              ],
+                            }}
+                            formats={[
+                              "header",
+                              "bold",
+                              "italic",
+                              "underline",
+                              "strike",
+                              "list",
+                              "bullet",
+                              "link",
+                              "image",
+                            ]}
+                            sx={{
+                              "& .ql-container": {
+                                border: "1px solid #ddd",
+                                borderRadius: 4,
+                              },
+                              "& .ql-toolbar": { border: "1px solid #ddd" },
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "flex-end",
+                              gap: 1,
+                              mt: 1,
+                            }}
+                          >
+                            <Button
+                              variant="contained"
+                              size="small"
+                              sx={{
+                                backgroundColor: "teal",
+                                color: "#FFF",
+                                fontSize: "0.6rem",
+                                height: "25px",
+                                minWidth: "50px",
+                              }}
+                              onClick={handleSaveEditedComment}
+                              disabled={isEmptyHTML(editingCommentText)}
+                            >
+                              Lưu
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                color: "#172B4D",
+                                borderColor: "#ddd",
+                                fontSize: "0.6rem",
+                                height: "25px",
+                                minWidth: "50px",
+                                "&:hover": {
+                                  backgroundColor: "#E4E7EB",
+                                  borderColor: "#bbb",
+                                },
+                              }}
+                              onClick={() => {
+                                setEditingCommentIndex(null); // Thoát chế độ chỉnh sửa
+                                setEditingCommentText(""); // Reset nội dung chỉnh sửa
+                              }}
+                            >
+                              Hủy
+                            </Button>
+                          </Box>
+                        </>
+                      ) : (
+                        <>
+                          <Typography
+                            variant="body2"
+                            style={{
+                              wordWrap: "break-word",
+                              whiteSpace: "pre-wrap",
+                              overflowWrap: "break-word",
+                              wordBreak: "break-word",
+                              fontSize: "0.rem", // Change font size to 0.7rem
+                            }}
+                          >
+                            {content.replace(/<\/?p>/g, "")}
+                          </Typography>
+                          <Box sx={{ display: "flex", mt: "-4px" }}>
+                            <Button
+                              size="small"
+                              onClick={() =>
+                                handleEditComment(cmt.id, cmt.content)
+                              }
+                              sx={{
+                                width: "20px",
+                                minWidth: "20px",
+                                ml: "4px",
+                                mr: "-8px",
+                                fontSize: "0.4rem", // Smaller font size
+                                textTransform: "none",
+                                padding: "2px 4px", // Smaller padding
+                              }}
+                            >
+                              Sửa
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={() => handleDeleteComment(cmt.id)}
+                              sx={{
+                                width: "20px",
+                                minWidth: "20px",
+                                ml: "10px",
+                                fontSize: "0.4rem", // Smaller font size
+                                textTransform: "none",
+                                padding: "2px 4px", // Smaller padding
+                              }}
+                            >
+                              Xóa
+                            </Button>
+                          </Box>
+                        </>
+                      )}
+                    </Box>
+                  </Box>
+                );
+              })}
+
+              {/* Hiển thị các hoạt động */}
+              {!isDetailHidden && (
+                <Box
+                  sx={{
+                    backgroundColor: "white",
+                    pt: 1,
+                    borderRadius: 2,
+                    mt: 0.5,
+                  }}
+                >
+                  <Stack spacing={2}>
+                    {activities.map((activity, index) => (
+                      <Box key={index} display="flex" alignItems="center">
+                        <Avatar
+                          sx={{
+                            bgcolor: "pink",
+                            width: 28,
+                            height: 28,
+                            fontSize: "0.6rem",
+                            mr: 1,
+                          }}
+                        >
+                          PH
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight="bold" color="black">
+                            {activity.name}{" "}
+                            <Typography
+                              component="span"
+                              fontWeight="normal"
+                              color="black"
+                            >
+                              {activity.action}
+                            </Typography>
+                          </Typography>
+                          <Typography fontSize="0.5rem" color="gray">
+                            {activity.time}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+            </Grid>
+
+            {/* Cột phải (Sidebar) */}
+            <Grid item xs={4}>
+              <Box sx={{ borderLeft: "1px solid #ddd", pl: 2 }}>
+                <List>
+                  <ListItem disablePadding>
+                    <ListItemButton>
+                      <ListItemIcon>
+                        <PersonAddIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Tham gia" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={() => setIsMemberListOpen(true)}>
+                      <ListItemIcon>
+                        <GroupIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Thành viên" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={() => setIsLabelListOpen(true)}>
+                      <ListItemIcon>
+                        <LabelIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Nhãn" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton>
+                      <ListItemIcon>
+                        <ChecklistIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Việc cần làm"
+                        onClick={() => setIsTaskModalOpen(true)}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton>
+                      <ListItemIcon>
+                        <EventIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Ngày" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      onClick={() => setIsAttachmentModalOpen(true)}
+                    >
+                      <ListItemIcon>
+                        <AttachFileIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Đính kèm" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={() => setIsCoverPhotoOpen(true)}>
+                      <ListItemIcon>
+                        <CollectionsIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Ảnh bìa" />
+                    </ListItemButton>
+                  </ListItem>
+                </List>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Thao tác
+                </Typography>
+                <List>
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      onClick={() => setIsMoveCardModalOpen(true)}
+                    >
+                      <ListItemIcon>
+                        <MoveUpIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Di chuyển" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      onClick={() => setIsCopyCardModalOpen(true)}
+                    >
+                      <ListItemIcon>
+                        <FileCopyIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Sao chép" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton>
+                      <ListItemIcon>
+                        <SpeakerGroupIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Tạo mẫu" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={() => handleArchiveCard(cardId)}>
+                      <ListItemIcon>
+                        <ArchiveIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Lưu trữ" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={() => setIsShareModalOpen(true)}>
+                      <ListItemIcon>
+                        <ShareIcon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText primary="Chia sẻ" />
+                    </ListItemButton>
+                  </ListItem>
+                </List>
               </Box>
-            )}
+            </Grid>
           </Grid>
-
-          {/* Cột phải (Sidebar) */}
-          <Grid item xs={4}>
-            <Box sx={{ borderLeft: "1px solid #ddd", pl: 2 }}>
-              <List>
-                <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemIcon>
-                      <PersonAddIcon
-                        sx={{ color: "black", fontSize: "0.8rem" }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText primary="Tham gia" />
-                  </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding>
-                  <ListItemButton onClick={() => setIsMemberListOpen(true)}>
-                    <ListItemIcon>
-                      <GroupIcon sx={{ color: "black", fontSize: "0.8rem" }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Thành viên" />
-                  </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding>
-                  <ListItemButton onClick={() => setIsLabelListOpen(true)}>
-                    <ListItemIcon>
-                      <LabelIcon sx={{ color: "black", fontSize: "0.8rem" }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Nhãn" />
-                  </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemIcon>
-                      <ChecklistIcon
-                        sx={{ color: "black", fontSize: "0.8rem" }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Việc cần làm"
-                      onClick={() => setIsTaskModalOpen(true)}
-                    />
-                  </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemIcon>
-                      <EventIcon sx={{ color: "black", fontSize: "0.8rem" }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Ngày" />
-                  </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding>
-                  <ListItemButton
-                    onClick={() => setIsAttachmentModalOpen(true)}
-                  >
-                    <ListItemIcon>
-                      <AttachFileIcon
-                        sx={{ color: "black", fontSize: "0.8rem" }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText primary="Đính kèm" />
-                  </ListItemButton>
-                </ListItem>
-              </List>
-              <Divider sx={{ my: 1 }} />
-              <Typography variant="subtitle1" fontWeight="bold">
-                Thao tác
-              </Typography>
-              <List>
-                <ListItem disablePadding>
-                  <ListItemButton onClick={() => setIsMoveCardModalOpen(true)}>
-                    <ListItemIcon>
-                      <MoveUpIcon sx={{ color: "black", fontSize: "0.8rem" }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Di chuyển" />
-                  </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding>
-                  <ListItemButton onClick={() => setIsCopyCardModalOpen(true)}>
-                    <ListItemIcon>
-                      <FileCopyIcon
-                        sx={{ color: "black", fontSize: "0.8rem" }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText primary="Sao chép" />
-                  </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding>
-                  <ListItemButton>
-                    <ListItemIcon>
-                      <SpeakerGroupIcon
-                        sx={{ color: "black", fontSize: "0.8rem" }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText primary="Tạo mẫu" />
-                  </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding>
-                  <ListItemButton onClick={() => handleArchiveCard(cardId)}>
-                    <ListItemIcon>
-                      <ArchiveIcon
-                        sx={{ color: "black", fontSize: "0.8rem" }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText primary="Lưu trữ" />
-                  </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding>
-                  <ListItemButton onClick={() => setIsShareModalOpen(true)}>
-                    <ListItemIcon>
-                      <ShareIcon sx={{ color: "black", fontSize: "0.8rem" }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Chia sẻ" />
-                  </ListItemButton>
-                </ListItem>
-              </List>
-            </Box>
-          </Grid>
-        </Grid>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={() => navigate(-1)}>Close</Button>
-      </DialogActions>
-
-      {/* Component Member List */}
-      <MemberList
-        open={isMemberListOpen}
-        onClose={() => setIsMemberListOpen(false)}
-        members={members}
-      />
-
-      {/* Component Task Modal */}
-      <TaskModal
-        open={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        // onSave={handleAddTask}
-      />
-
-      {/* Component Label List */}
-      <LabelList
-        open={isLabelListOpen}
-        onClose={() => setIsLabelListOpen(false)}
-        selectedLabels={selectedLabels}
-        onSelectLabel={handleSelectLabel}
-      />
-
-      {/* Component Attachment Modal */}
-      <AttachmentModal
-        open={isAttachmentModalOpen}
-        onClose={() => setIsAttachmentModalOpen(false)}
-      />
-
-      {/* Component Move Card Modal */}
-      <MoveCardModal
-        open={isMoveCardModalOpen}
-        onClose={() => setIsMoveCardModalOpen(false)}
-      />
-
-      {/* Component CopyCardModal */}
-      <CopyCardModal
-        open={isCopyCardModalOpen}
-        onClose={() => setIsCopyCardModalOpen(false)}
-      />
-
-      <ShareModal
-        open={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        shareLink="https://trello.com/c/aZDXteH6"
-      />
-
-      <Dialog
-        open={isDeleteConfirmOpen}
-        onClose={() => setIsDeleteConfirmOpen(false)}
-      >
-        <DialogContent>
-          <Typography>Bạn có chắc muốn xoá bình luận này không?</Typography>
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={() => setIsDeleteConfirmOpen(false)}>Hủy</Button>
-          <Button onClick={confirmDeleteComment} color="error">
-            Xóa
-          </Button>
+          <Button onClick={() => navigate(-1)}>Close</Button>
         </DialogActions>
-      </Dialog>
-      <ToastContainer />
+
+        {/* Component Member List */}
+        <MemberList
+          open={isMemberListOpen}
+          onClose={() => setIsMemberListOpen(false)}
+          members={members}
+        />
+
+        {/* Component Task Modal */}
+        <TaskModal
+          open={isTaskModalOpen}
+          onClose={() => setIsTaskModalOpen(false)}
+          // onSave={handleAddTask}
+        />
+
+        {/* Component Label List */}
+        <LabelList
+          open={isLabelListOpen}
+          onClose={() => setIsLabelListOpen(false)}
+          selectedLabels={selectedLabels}
+          onSelectLabel={handleSelectLabel}
+        />
+
+        {/* Component Attachment Modal */}
+        <AttachmentModal
+          open={isAttachmentModalOpen}
+          onClose={() => setIsAttachmentModalOpen(false)}
+        />
+
+        {/* Component Move Card Modal */}
+        <MoveCardModal
+          open={isMoveCardModalOpen}
+          onClose={() => setIsMoveCardModalOpen(false)}
+        />
+
+        {/* Component CopyCardModal */}
+        <CopyCardModal
+          open={isCopyCardModalOpen}
+          onClose={() => setIsCopyCardModalOpen(false)}
+        />
+
+        <ShareModal
+          open={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          shareLink="https://trello.com/c/aZDXteH6"
+        />
+
+        <CoverPhoto
+          open={isCoverPhotoOpen}
+          handleClose={() => setIsCoverPhotoOpen(false)}
+          onCoverImageChange={handleCoverImageChange} // Pass the handler to CoverPhoto
+          onCoverColorChange={handleCoverColorChange} // Pass the handler to CoverPhoto
+        />
+
+        <Dialog
+          open={isDeleteConfirmOpen}
+          onClose={() => setIsDeleteConfirmOpen(false)}
+        >
+          <DialogContent>
+            <Typography>Bạn có chắc muốn xoá bình luận này không?</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsDeleteConfirmOpen(false)}>Hủy</Button>
+            <Button onClick={confirmDeleteComment} color="error">
+              Xóa
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <ToastContainer />
+      </Box>{" "}
+      {/* Move the Box here to wrap the entire content */}
     </Dialog>
   );
 };
