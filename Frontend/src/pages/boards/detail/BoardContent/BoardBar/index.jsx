@@ -94,7 +94,6 @@ const BoardBar = () => {
   // console.log("🔍 Dữ liệu board từ API:", board);
 
   const updateBoardName = useUpdateBoardName();
-
   const [editTitle, setEditTitle] = useState(false);
   const [teamName, setTeamName] = useState("");
 

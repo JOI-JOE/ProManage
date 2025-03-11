@@ -38,7 +38,7 @@ export const updateCardPositionsDiffCol = async ({ cards }) => {
 export const getCardById = async (cardId) => {
   try {
     const response = await authClient.get(`/cards/${cardId}/show`);
-    console.log("API response:", response); // Kiểm tra toàn bộ response
+    // console.log("API response:", response); // Kiểm tra toàn bộ response
     if (response.data) {
       return response.data;
     

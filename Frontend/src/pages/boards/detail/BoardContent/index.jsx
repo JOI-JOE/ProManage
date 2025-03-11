@@ -37,7 +37,7 @@ const BoardContent = () => {
   const { boardId } = useParams();
   const { data: board } = useLists(boardId); // Lấy dữ liệu từ hook
   // const {data: boardDetail} = useBoards(boardId);
-  console.log("boardId:", boardId);
+  // console.log("boardId:", boardId);
   const { mutate: logBoardAccess } = useRecentBoardAccess();
 
   useEffect(() => {

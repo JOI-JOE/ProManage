@@ -98,7 +98,7 @@ export const useRecentBoardAccess = () => {
       console.error("Lỗi khi ghi nhận bảng:", error);
     },
     onSuccess: (data) => {
-      console.log("Bảng đã được lưu vào danh sách gần đây:", data);
+      // console.log("Bảng đã được lưu vào danh sách gần đây:", data);
       queryClient.invalidateQueries(["recentBoards"]);
     },
   });
