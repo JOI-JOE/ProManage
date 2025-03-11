@@ -20,7 +20,7 @@ class LabelController extends Controller
         try {
 
             $card = Card::findOrFail($cardId);
-            $labels = $card->labels()->get(['id', 'title', 'color_id']);
+            $labels = $card->labels()->with('color')->get(['id', 'title', 'color_id']);
             return response()->json([
                 'message' => 'lấy nhãn thành công',
                 'status' => true,

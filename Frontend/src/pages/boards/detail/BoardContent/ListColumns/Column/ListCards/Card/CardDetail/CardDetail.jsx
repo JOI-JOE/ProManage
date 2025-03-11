@@ -64,11 +64,7 @@ import {
   useToggleCheckListItemStatus,
   useUpdateCheckListItemName,
 } from "../../../../../../../../../hooks/useCheckListItem";
-import DateModal from "./childComponent_CardDetail/Date";
-import { ArrowDropDownIcon } from "@mui/x-date-pickers";
-import dayjs from "dayjs";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -78,6 +74,9 @@ const CardModal = () => {
   // const [originalDescription, setOriginalDescription] = useState("");
   const [comment, setComment] = useState("");
   // const [setComments] = useState([]);
+  const { data: cardLabels } = useCardLabels(cardId);
+  const [labels, setLabels] = useState([]);
+
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isLabelListOpen, setIsLabelListOpen] = useState(false);
@@ -137,6 +136,12 @@ const CardModal = () => {
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
+  useEffect(() => {
+    if (cardLabels?.length) {
+      setLabels(cardLabels);
+      console.log(cardLabels);
+    }
+  }, [cardLabels]);
 
   // const {
   //   data: list,
@@ -171,6 +176,11 @@ const CardModal = () => {
     }
   }, [cardDetail?.description]);
 
+  // if (isLoading) return <Box>Loading...</Box>;
+  // if (error) return <Box>Error: {error.message}</Box>;
+
+  // if (listLoading) return <Box>Loading...</Box>;
+  // if (listError) return <Box>Error: {error.message}</Box>;
   // if (listLoading) return <Box>Loading...</Box>;
   // if (listError) return <Box>Error: {error.message}</Box>;
 
@@ -563,79 +573,24 @@ const CardModal = () => {
             }}
             onClick={() => setIsMemberListOpen(true)} // Thêm sự kiện onClick
           />
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "#D69D00",
-              mr: 1,
-              height: 25,
-              p: 0,
-              width: 36,
-              minWidth: 0,
-            }}
-            onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
-          ></Button>
+          {labels.map((label) => (
+            <Button
+              key={label.id}
+              variant="contained"
+              sx={{
+                bgcolor: label.color?.hex_code || "#ccc",
+                mr: 1,
+                height: 25,
+                p: "0px 8px", // Thêm padding ngang để không bị cắt chữ
+                minWidth: "auto", // Cho phép nút mở rộng theo chữ
+                width: "fit-content", // Tự động điều chỉnh theo nội dung
+                maxWidth: "100%", // Giới hạn tối đa để tránh tràn
+              }}
+              onClick={() => setIsLabelListOpen(true)}
+            >
+              {label.title}
+            </Button>
+          ))}
 
           <AddIcon
             sx={{
