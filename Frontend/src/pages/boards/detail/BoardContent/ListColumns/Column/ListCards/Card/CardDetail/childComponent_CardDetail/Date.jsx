@@ -119,11 +119,12 @@ const DateModal = ({ open, onClose, onSave, initialData }) => {
               setStartDate(e.target.checked ? dayjs() : null);
             }}
           />
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
             <DatePicker
               disabled={!isStartDateChecked}
               value={startDate}
               onChange={(newDate) => setStartDate(newDate)}
+              format="DD/MM/YYYY" // Định dạng ngày/tháng/năm
             />
           </LocalizationProvider>
         </Box>
@@ -138,16 +139,18 @@ const DateModal = ({ open, onClose, onSave, initialData }) => {
             checked={isEndDateChecked}
             onChange={(e) => setIsEndDateChecked(e.target.checked)}
           />
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
             <DatePicker
               disabled={!isEndDateChecked}
               value={endDate}
               onChange={(newDate) => setEndDate(newDate)}
+              format="DD/MM/YYYY" // Hiển thị ngày/tháng/năm
             />
             <TimePicker
               disabled={!isEndDateChecked}
               value={endTime}
               onChange={(newTime) => setEndTime(newTime)}
+              format="HH:mm" // Định dạng giờ:phút
             />
           </LocalizationProvider>
         </Box>

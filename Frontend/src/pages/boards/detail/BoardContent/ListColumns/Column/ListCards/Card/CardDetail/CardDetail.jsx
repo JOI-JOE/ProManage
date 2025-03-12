@@ -36,7 +36,6 @@ import Checkbox from "@mui/material/Checkbox";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import { FaPaperclip, FaLink, FaEllipsisV } from "react-icons/fa";
 
 import {
   useCardActions,
@@ -65,6 +64,13 @@ import {
   useUpdateCheckListItemName,
 } from "../../../../../../../../../hooks/useCheckListItem";
 import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
+import DateModal from "./childComponent_CardDetail/Date.jsx";
+import { ArrowDropDownIcon } from "@mui/x-date-pickers";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import dayjs from "dayjs";
+import LinkIcon from "@mui/icons-material/Link";
+import AttachmentIcon from "@mui/icons-material/Attachment";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -513,11 +519,11 @@ const CardModal = () => {
   };
 
   //ĐÍNH KÈM
-  const [links, setLinks] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const addLink = (newLink) => {
-    setLinks([...links, newLink]);
+  const [attachments, setAttachments] = useState([]); // Lưu file/link đính kèm
+
+  const handleAddAttachment = (newAttachment) => {
+    setAttachments([...attachments, newAttachment]);
   };
 
   return (
@@ -656,7 +662,7 @@ const CardModal = () => {
                 sx={{ fontSize: 12, height: 22 }}
               />
             )}
-            <ArrowDropDownIcon />
+            <ArrowDropDownIcon onClick={() => setIsDateModalOpen(true)} />
           </Box>
         </>
       )}
@@ -781,6 +787,74 @@ const CardModal = () => {
             )}
 
             {/* ĐÍNH KÈM */}
+            <Box sx={{ mt: "30px", pl: "5" }}>
+              {attachments.length > 0 && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    mb: "10px",
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                    <AttachmentIcon />
+                    Các tập tin đính kèm
+                  </Typography>
+                  <Button
+                    // sx={{ border: "1px solid #F2F2F4" }}
+                    // variant="contained"
+                    onClick={() => setIsAttachmentModalOpen(true)}
+                  >
+                    Thêm
+                  </Button>
+                </Box>
+              )}
+
+              {attachments.length > 0 && (
+                <List>
+                  <Typography
+                    variant="h3"
+                    sx={{ fontSize: "10px", ml: "20px", mb: "10px" }}
+                  >
+                    Liên kết
+                  </Typography>
+                  {attachments.map((file) => (
+                    <ListItem
+                      key={file.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        borderRadius: "8px", // Bo góc rõ hơn
+                        padding: "10px", // Tạo khoảng cách giữa viền và nội dung
+                        height: "30px",
+                        width: "100%", // Không bị tràn, tự động co theo container
+                        maxWidth: "550px", // Giữ giới hạn chiều rộng
+                        backgroundColor: "#F2F2F4",
+                      }}
+                    >
+                      <LinkIcon sx={{ mr: 1 }} />
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          flexGrow: 1,
+                          color: "#5795EC",
+                          fontSize: "15px",
+                        }}
+                      >
+                        {file.name}
+                      </a>
+                      <IconButton>
+                        <MoreVertIcon />
+                      </IconButton>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </Box>
 
             {/* HIỂN THỊ DANH SÁCH VIỆC CẦN LÀM */}
             {checklists?.length > 0 && (
@@ -895,9 +969,12 @@ const CardModal = () => {
                         </Box>
 
                         {/* Danh sách mục trong checklist */}
-                        <List sx={{ mt: 2 }}>
+                        <List sx={{ mt: 0 }}>
                           {taskItems.map((item) => (
-                            <ListItem key={item.id}>
+                            <ListItem
+                              key={item.id}
+                              sx={{ py: 0, my: 0, minHeight: "10px" }}
+                            >
                               <ListItemIcon>
                                 <Checkbox
                                   checked={item.is_completed || false}
@@ -1018,7 +1095,7 @@ const CardModal = () => {
                             variant="contained"
                             color="primary"
                             size="small"
-                            sx={{ mt: 2, bgcolor: "teal" }}
+                            sx={{ mb: 7, bgcolor: "teal" }}
                             onClick={() => setAddingItemForTask(checklist.id)}
                           >
                             Thêm một mục
@@ -1282,7 +1359,7 @@ const CardModal = () => {
       <AttachmentModal
         open={isAttachmentModalOpen}
         onClose={() => setIsAttachmentModalOpen(false)}
-        addLink={addLink}
+        onAddAttachment={handleAddAttachment}
       />
 
       {/* Component Move Card Modal */}
