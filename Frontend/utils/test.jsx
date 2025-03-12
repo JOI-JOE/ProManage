@@ -31,7 +31,6 @@ import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
-import DateModal from "./childComponent_CardDetail/Date";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import LinearProgress from "@mui/material/LinearProgress";
 import Checkbox from "@mui/material/Checkbox";
@@ -79,7 +78,6 @@ import {
   useUpdateCheckListItemName,
 } from "../../../../../../../../../hooks/useCheckListItem";
 import CoverPhoto from "./childComponent_CardDetail/CoverPhoto";
-import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -90,9 +88,6 @@ const CardModal = () => {
   const [comment, setComment] = useState("");
   const [isEditingComment, setIsEditingComment] = useState(false);
   // const [setComments] = useState([]);
-  const { data: cardLabels = [] } = useCardLabels(cardId);
-  const [labels, setLabels] = useState([]);
-
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [tasks, setTasks] = useState([]);
@@ -111,7 +106,6 @@ const CardModal = () => {
   const [previousCardName, setPreviousCardName] = useState(title);
   const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
-  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
@@ -166,13 +160,6 @@ const CardModal = () => {
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
-  useEffect(() => {
-    if (JSON.stringify(labels) !== JSON.stringify(cardLabels)) {
-      setLabels(cardLabels);
-    }
-  }, [cardLabels, labels]);
-
-  // console.log(cardLabels);
 
   // const {
   //   data: list,
@@ -469,9 +456,7 @@ const CardModal = () => {
         setIsDeleteConfirmOpen(false);
         setCommentToDelete(null);
 
-        // queryClient.invalidateQueries(["comments", cardId]);
-        queryClient.invalidateQueries({ queryKey: ["comments"] });
-        queryClient.invalidateQueries({ queryKey: ["lists"] });
+        queryClient.invalidateQueries(["comments", cardId]);
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa bình luận:", error);
@@ -503,29 +488,6 @@ const CardModal = () => {
     if (event.key === "Enter") {
       handleSave();
     }
-  };
-
-  //NGÀY
-  const [dateInfo, setDateInfo] = useState(null);
-  const [openDateModal, setOpenDateModal] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  const handleSaveDate = (data) => {
-    setDateInfo(data); // Lưu dữ liệu từ DateModal.jsx
-    setOpenDateModal(false); // Đóng modal sau khi lưu
-  };
-
-  const isNearDeadline = () => {
-    if (!dateInfo?.endDate) return false;
-    const now = dayjs();
-    const end = dayjs(dateInfo.endDate);
-    return end.diff(now, "hour") < 2 && end.isAfter(now);
-  };
-
-  const isOverdue = () => {
-    if (!dateInfo?.endDate) return false;
-    const now = dayjs();
-    return dayjs(dateInfo.endDate).isBefore(now);
   };
 
   const handleCommentClick = () => {
@@ -640,6 +602,7 @@ const CardModal = () => {
             </span>
           </Typography>
           {/* New section to match the provided image */}
+
           <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
             <Avatar
               sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
@@ -656,24 +619,79 @@ const CardModal = () => {
               }}
               onClick={() => setIsMemberListOpen(true)} // Thêm sự kiện onClick
             />
-            {labels?.map((label) => (
-              <Button
-                key={label.id}
-                variant="contained"
-                sx={{
-                  bgcolor: label.color?.hex_code || "#ccc",
-                  mr: 1,
-                  height: 25,
-                  p: "0px 8px", // Thêm padding ngang để không bị cắt chữ
-                  minWidth: "auto", // Cho phép nút mở rộng theo chữ
-                  width: "fit-content", // Tự động điều chỉnh theo nội dung
-                  maxWidth: "100%", // Giới hạn tối đa để tránh tràn
-                }}
-                onClick={() => setIsLabelListOpen(true)}
-              >
-                {label.title}
-              </Button>
-            ))}
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
 
             <AddIcon
               sx={{
@@ -701,49 +719,6 @@ const CardModal = () => {
             </Button>
           </Box>
         </DialogTitle>
-
-        {/* NGÀY */}
-        {dateInfo && (
-          <>
-            <Typography sx={{ fontWeight: "bold", mb: 0, ml: 3 }}>
-              Ngày
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-
-                ml: 3,
-                p: 1,
-              }}
-              onClick={openDateModal}
-            >
-              <CalendarTodayIcon />
-              {dateInfo.startDate !== "Không có" && (
-                <Typography>{dateInfo.startDate.split(" ")[0]} -</Typography>
-              )}
-              <Typography>{dateInfo.endDate.split(" ")[1]}</Typography>
-              <Typography>{dateInfo.endDate.split(" ")[0]}</Typography>
-              {/* Kiểm tra trạng thái deadline */}
-              {isOverdue() && (
-                <Chip
-                  label="Quá hạn"
-                  color="error"
-                  sx={{ fontSize: 12, height: 22 }}
-                />
-              )}
-              {isNearDeadline() && (
-                <Chip
-                  label="Sắp hết hạn"
-                  color="warning"
-                  sx={{ fontSize: 12, height: 22 }}
-                />
-              )}
-              <ArrowDropDownIcon />
-            </Box>
-          </>
-        )}
         <DialogContent>
           <Grid container spacing={2}>
             {/* Cột trái (Nội dung chính) */}
@@ -1508,10 +1483,7 @@ const CardModal = () => {
                           sx={{ color: "black", fontSize: "0.8rem" }}
                         />
                       </ListItemIcon>
-                      <ListItemText
-                        primary="Ngày"
-                        onClick={() => setIsDateModalOpen(true)}
-                      />
+                      <ListItemText primary="Ngày" />
                     </ListItemButton>
                   </ListItem>
 
@@ -1539,9 +1511,7 @@ const CardModal = () => {
                     </ListItemButton>
                   </ListItem>
                 </List>
-
                 <Divider sx={{ my: 1 }} />
-
                 <Typography variant="subtitle1" fontWeight="bold">
                   Thao tác
                 </Typography>
@@ -1667,13 +1637,6 @@ const CardModal = () => {
           onCoverColorChange={handleCoverColorChange} // Pass the handler to CoverPhoto
         />
 
-        <DateModal
-          open={isDateModalOpen}
-          onClose={() => setIsDateModalOpen(false)}
-          onSave={handleSaveDate}
-          initialData={dateInfo}
-        />
-
         <Dialog
           open={isDeleteConfirmOpen}
           onClose={() => setIsDeleteConfirmOpen(false)}
@@ -1688,7 +1651,6 @@ const CardModal = () => {
             </Button>
           </DialogActions>
         </Dialog>
-
         <ToastContainer />
       </Box>{" "}
       {/* Move the Box here to wrap the entire content */}
