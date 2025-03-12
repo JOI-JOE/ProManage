@@ -33,22 +33,27 @@ export const useUpdateCardLabel = () => {
         mutationFn: ({ cardId, labelId, action }) => updateCardLabel(cardId, labelId, action),
 
         onSuccess: (_, { cardId, labelId, action, boardId }) => {
-            queryClient.setQueryData(["cards", cardId], (oldData) => {
-                if (!oldData) return oldData;
-                return {
-                    ...oldData,
-                    labels: action === "add"
-                        ? [...(oldData.labels || []), labelId] // Đảm bảo oldData.labels là mảng hợp lệ
-                        : (oldData.labels || []).filter(id => id !== labelId) // Tránh lỗi undefined
-                };
-            });
+         
+            // queryClient.setQueryData(["cards", cardId], (oldData) => {
+            //     if (!oldData) return oldData;
+            //     return {
+            //         ...oldData,
+            //         labels: action === "add"
+            //             ? [...(oldData.labels || []), labelId] // Đảm bảo oldData.labels là mảng hợp lệ
+            //             : (oldData.labels || []).filter(id => id !== labelId) // Tránh lỗi undefined
+            //     };
+            // });
 
-            queryClient.setQueryData(["cardLabels", cardId], (oldLabels) => {
-                if (!oldLabels) return oldLabels;
-                return action === "add"
-                    ? [...(oldLabels || []), { id: labelId, checked: true }] // Đảm bảo oldLabels là mảng hợp lệ
-                    : (oldLabels || []).filter(label => label.id !== labelId);
-            });
+            // queryClient.setQueryData(["cardLabels", cardId], (oldLabels) => {
+            //     if (!oldLabels) return oldLabels;
+            //     return action === "add"
+            //         ? [...(oldLabels || []), { id: labelId, checked: true }] // Đảm bảo oldLabels là mảng hợp lệ
+            //         : (oldLabels || []).filter(label => label.id !== labelId);
+            // });
+
+            // queryClient.invalidateQueries({ queryKey: ["labels"]});
+            queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
     });
 };

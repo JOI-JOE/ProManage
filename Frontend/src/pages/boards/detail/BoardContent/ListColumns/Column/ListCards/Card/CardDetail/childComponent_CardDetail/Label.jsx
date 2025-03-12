@@ -107,6 +107,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["labels"] });
+          queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
           setLabels((prevLabels) =>
             prevLabels.map((label) =>
               label.id === editLabelId
@@ -142,7 +143,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
         {
           onSuccess: () => {
           
-              queryClient.invalidateQueries(["labels", cardId]);
+              // queryClient.invalidateQueries(["labels", cardId]);
           
            
 
@@ -169,11 +170,12 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       {
         onSuccess:()=>{
           queryClient.invalidateQueries({ queryKey: ["labels"] });
+          queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
         }
       }
 
     );
-    fetchedLabels();
+    // fetchedLabels();
 };
   
   // Xử lý khi đang tải hoặc lỗi
@@ -327,7 +329,7 @@ const handleEditLabel = (id, title) => {
                         left: "50%",
                         transform: "translate(-50%, -50%)",
                         color: "#fff",
-                        fontSize: "0.4rem",
+                        fontSize: "0.6rem",
                         fontWeight: "bold",
                       },
                     }}

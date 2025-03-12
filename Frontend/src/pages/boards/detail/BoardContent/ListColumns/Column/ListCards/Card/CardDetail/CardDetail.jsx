@@ -624,6 +624,7 @@ const CardModal = () => {
           </Button>
         </Box>
       </DialogTitle>
+      
       {/* NGÀY */}
       {dateInfo && (
         <>
@@ -802,7 +803,6 @@ const CardModal = () => {
                     Các tập tin đính kèm
                   </Typography>
                   <Button
-                    // sx={{ border: "1px solid #F2F2F4" }}
                     // variant="contained"
                     onClick={() => setIsAttachmentModalOpen(true)}
                   >
@@ -825,13 +825,13 @@ const CardModal = () => {
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "space-between",
-                        borderRadius: "8px", // Bo góc rõ hơn
-                        padding: "10px", // Tạo khoảng cách giữa viền và nội dung
-                        height: "30px",
-                        width: "100%", // Không bị tràn, tự động co theo container
-                        maxWidth: "550px", // Giữ giới hạn chiều rộng
                         backgroundColor: "#F2F2F4",
+                        borderRadius: "5px",
+                        height: "30px",
+                        mb: "10px",
+                        ml: "20px",
+                        width: "530px",
+                        border: "2px solid #F2F2F4",
                       }}
                     >
                       <LinkIcon sx={{ mr: 1 }} />
@@ -969,12 +969,9 @@ const CardModal = () => {
                         </Box>
 
                         {/* Danh sách mục trong checklist */}
-                        <List sx={{ mt: 0 }}>
+                        <List sx={{ mt: 2 }}>
                           {taskItems.map((item) => (
-                            <ListItem
-                              key={item.id}
-                              sx={{ py: 0, my: 0, minHeight: "10px" }}
-                            >
+                            <ListItem key={item.id}>
                               <ListItemIcon>
                                 <Checkbox
                                   checked={item.is_completed || false}
@@ -1095,7 +1092,7 @@ const CardModal = () => {
                             variant="contained"
                             color="primary"
                             size="small"
-                            sx={{ mb: 7, bgcolor: "teal" }}
+                            sx={{ mt: 2, bgcolor: "teal" }}
                             onClick={() => setAddingItemForTask(checklist.id)}
                           >
                             Thêm một mục

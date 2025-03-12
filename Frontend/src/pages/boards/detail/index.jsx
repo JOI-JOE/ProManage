@@ -9,7 +9,7 @@ import BoardProvider from "../../../providers/BoardProvider";
 const BoardDetail = () => {
   return (
     <WorkspaceProvider>
-      <Container disableGutters maxWidth={false} sx={{ height: "100vh" }}>
+      <Container disableGutters maxWidth={false}>
         <Box sx={{ display: "flex" }}>
           <SideBar />
           <Box sx={{ width: "81%" }}>
