@@ -80,7 +80,7 @@ const CardModal = () => {
   // const [originalDescription, setOriginalDescription] = useState("");
   const [comment, setComment] = useState("");
   // const [setComments] = useState([]);
-  const { data: cardLabels } = useCardLabels(cardId);
+  const { data: cardLabels = [] } = useCardLabels(cardId);
   const [labels, setLabels] = useState([]);
 
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
@@ -143,11 +143,12 @@ const CardModal = () => {
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
   useEffect(() => {
-    if (cardLabels?.length) {
+    if (JSON.stringify(labels) !== JSON.stringify(cardLabels)) {
       setLabels(cardLabels);
-      console.log(cardLabels);
     }
-  }, [cardLabels]);
+  }, [cardLabels, labels]); 
+  
+  // console.log(cardLabels); 
 
   // const {
   //   data: list,
@@ -462,6 +463,7 @@ const CardModal = () => {
 
         // queryClient.invalidateQueries(["comments", cardId]);
         queryClient.invalidateQueries({ queryKey: ["comments"] });
+        queryClient.invalidateQueries({ queryKey: ["lists"] });
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa bình luận:", error);
@@ -579,7 +581,7 @@ const CardModal = () => {
             }}
             onClick={() => setIsMemberListOpen(true)} // Thêm sự kiện onClick
           />
-          {labels.map((label) => (
+          {labels?.map((label) => (
             <Button
               key={label.id}
               variant="contained"
@@ -1245,7 +1247,7 @@ const CardModal = () => {
                     <ListItemText primary="Lưu trữ" />
                   </ListItemButton>
                 </ListItem>
-                {/* onClick={() => navigate(-1)} */}
+
 
                 <ListItem disablePadding>
                   <ListItemButton onClick={() => setIsShareModalOpen(true)}>

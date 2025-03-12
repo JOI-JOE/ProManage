@@ -6,7 +6,8 @@ import {
     CardMedia,
     Typography,
     Dialog,
-    Box
+    Box,
+    Tooltip
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams, Outlet } from "react-router-dom";
@@ -21,7 +22,8 @@ import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetai
 
 
 const C_ard = ({ card }) => {
-
+    console.log(card.labels);
+    console.log(card.checklists);
     const [open, setOpen] = useState(false); // State mở/đóng Dialog
     const navigate = useNavigate(); // Điều hướng URL
     const location = useLocation(); // Lấy URL hiện tại
@@ -38,8 +40,8 @@ const C_ard = ({ card }) => {
 
     const handleClose = () => {
         setOpen(false);
-        navigate(-1); // Quay lại trang trước (tốt hơn)
-        // navigate(location.state?.background || `/boards/${boardId}/board`);
+        // navigate(-1); // Quay lại trang trước (tốt hơn)
+        navigate(location.state?.background || `/boards/${boardId}/board`);
     };
 
     useEffect(() => {
@@ -98,7 +100,44 @@ const C_ard = ({ card }) => {
             >
                 {card?.cover && <CardMedia sx={{ height: 140 }} image={card?.cover} />}
 
+                {/* {card?.labels?.length > 0 && (
+                    <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap", mt: 1 }}>
+                        {card.labels.map((label, index) => (
+                            <Box
+                                key={index}
+                                sx={{
+                                    backgroundColor: label.color,
+                                    padding: "2px 8px",
+                                    borderRadius: "4px",
+                                    fontSize: "0.65rem",
+                                    color: "white",
+                                }}
+                            >
+                                {label.text}
+                            </Box>
+                        ))}
+                    </Box>
+                )} */}
+
+               
                 <CardContent sx={{ p: 1.5, "&:last-child": { p: 1.5 } }}>
+                {card?.labels?.length > 0 && (
+                    <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap", mb: 1 }}>
+                        {card.labels.map((label, index) => (
+                            <Tooltip key={index} title={label.text || 'No text'}> {/* Hiển thị text khi di chuột qua */}
+                                <Box
+                                    sx={{
+                                        backgroundColor: label.color.hex_code,
+                                        height: "8px",
+                                        width: "40px",
+                                        borderRadius: "4px",
+                                    }}
+                                />
+                            </Tooltip>
+                        ))}
+                    </Box>
+                )}
+
                     <Typography sx={{ fontSize: "0.7rem" }}>{card?.title}</Typography>
                 </CardContent>
 

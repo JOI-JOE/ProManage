@@ -18,6 +18,7 @@ export const useCreateComment = () => {
 
             // Invalidate query để đảm bảo dữ liệu đồng bộ với server
             queryClient.invalidateQueries({ queryKey: ["comments", card_id] });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi thêm bình luận:", error);

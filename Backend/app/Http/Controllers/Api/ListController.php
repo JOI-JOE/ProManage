@@ -31,7 +31,8 @@ class ListController extends Controller
                                     ->with([
                                         'checklists' => function ($checklistQuery) {
                                             $checklistQuery->with('items');
-                                        }
+                                        },
+                                        'labels' // Thêm mối quan hệ labels
                                     ]);
                             }
                         ]);
@@ -67,7 +68,7 @@ class ListController extends Controller
                             'description' => $card->description ?? '',
                             'position' => (int) $card->position,
                             'comments_count' => $card->comments_count,
-                            'is_archived' => (bool) $card->is_archived, 
+                            'is_archived' => (bool) $card->is_archived,
                             'checklists' => $card->checklists->map(function ($checklist) {
                                 return [
                                     'id' => $checklist->id,
@@ -83,6 +84,14 @@ class ListController extends Controller
                                     })->toArray(),
                                 ];
                             })->toArray(),
+                            'labels' => $card->labels->map(function ($label) {
+                                return [
+                                    'id' => $label->id,
+                                    'card_id' => $label->card_id,
+                                    'color' => $label->color,
+                                    'text' => $label->text,
+                                ];
+                            })->toArray(), // Thêm thông tin về labels
                         ];
                     })->toArray(),
                 ];
@@ -90,13 +99,6 @@ class ListController extends Controller
         ];
 
         return response()->json($responseData);
-
-        // $lists = ListBoard::where('board_id', $boardId)
-        //     ->where('closed', false)
-        //     ->orderBy('position')
-        //     ->with('cards') // Lấy luôn danh sách thẻ thuộc mỗi danh sách
-        //     ->get();
-        // return response()->json($lists);
     }
 
 
@@ -186,10 +188,10 @@ class ListController extends Controller
 
 
         return response()->json([
-            'id'        => $list->id,
-            'title'     => $list->name,
-            'position'  => $list->position,
-            'board_id'  => $list->board_id,
+            'id' => $list->id,
+            'title' => $list->name,
+            'position' => $list->position,
+            'board_id' => $list->board_id,
         ], 201);
     }
 
