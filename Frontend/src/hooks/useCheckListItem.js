@@ -23,6 +23,7 @@ export const useCreateCheckListItem = () => {
             console.log(checklist_id);
             // // Cập nhật danh sách CheckListItem
             queryClient.invalidateQueries({ queryKey: ["checklists"] });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi thêm mục checklist:", error);
@@ -40,6 +41,7 @@ export const useToggleCheckListItemStatus = () => {
             console.log(`✅ Trạng thái item ${itemId} đã được cập nhật.`);
 
             queryClient.invalidateQueries({ queryKey: ["checklists"] });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật trạng thái:", error);
@@ -80,6 +82,7 @@ export const useDeleteCheckListItem = () => {
 
             // Lấy dữ liệu cũ
             const previousItems = queryClient.getQueryData(["checklist-items"]);
+            
 
             // Cập nhật danh sách ngay lập tức mà không cần reload trang
             queryClient.setQueryData(["checklist-items"], (oldItems = []) =>
@@ -96,6 +99,7 @@ export const useDeleteCheckListItem = () => {
         onSettled: () => {
             // Đảm bảo dữ liệu được đồng bộ sau khi xóa
             queryClient.invalidateQueries({ queryKey: ["checklists"] });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
     });
 };

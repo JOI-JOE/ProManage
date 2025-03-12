@@ -44,15 +44,16 @@ export const useUpdateCardLabel = () => {
             //     };
             // });
 
-            queryClient.setQueryData(["cardLabels", cardId], (oldLabels) => {
-                if (!oldLabels) return oldLabels;
-                return action === "add"
-                    ? [...(oldLabels || []), { id: labelId, checked: true }] // Đảm bảo oldLabels là mảng hợp lệ
-                    : (oldLabels || []).filter(label => label.id !== labelId);
-            });
+            // queryClient.setQueryData(["cardLabels", cardId], (oldLabels) => {
+            //     if (!oldLabels) return oldLabels;
+            //     return action === "add"
+            //         ? [...(oldLabels || []), { id: labelId, checked: true }] // Đảm bảo oldLabels là mảng hợp lệ
+            //         : (oldLabels || []).filter(label => label.id !== labelId);
+            // });
 
-            queryClient.invalidateQueries({ queryKey: ["labels", cardId]});
-            queryClient.invalidateQueries({ queryKey: ["cardLabels"] });
+            // queryClient.invalidateQueries({ queryKey: ["labels"]});
+            queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
     });
 };

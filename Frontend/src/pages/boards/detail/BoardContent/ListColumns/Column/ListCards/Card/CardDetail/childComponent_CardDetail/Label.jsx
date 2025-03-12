@@ -107,6 +107,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["labels"] });
+          queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
           setLabels((prevLabels) =>
             prevLabels.map((label) =>
               label.id === editLabelId
@@ -169,11 +170,12 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       {
         onSuccess:()=>{
           queryClient.invalidateQueries({ queryKey: ["labels"] });
+          queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
         }
       }
 
     );
-    fetchedLabels();
+    // fetchedLabels();
 };
   
   // Xử lý khi đang tải hoặc lỗi
