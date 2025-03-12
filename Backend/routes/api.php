@@ -221,10 +221,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 // 📂 File đính kèm (Attachments)
 Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [AttachmentController::class, 'getAttachments']);
+    Route::patch('/{attachmentId}/update-name', [AttachmentController::class, 'updateNameFileAttachment']);
     Route::post('/upload', [AttachmentController::class, 'uploadAttachment']);
     Route::post('/uploadcover', [AttachmentController::class, 'uploadCover']);
-    Route::delete('/{attachmentId}', [AttachmentController::class, 'deleteAttachment']);
+  
+    Route::delete('/{attachmentId}/delete', [AttachmentController::class, 'deleteAttachment']);
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']);
+
 })->middleware('auth:sanctum');
 // checklists
 // Route::middleware('auth:sanctum')->group(function () {

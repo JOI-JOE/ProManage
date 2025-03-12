@@ -117,7 +117,7 @@ class Card extends Model
     }
     public function labels()
     {
-        return $this->belongsToMany(Label::class, 'card_label');
+        return $this->belongsToMany(Label::class, 'card_label', 'card_id', 'label_id');
     }
 
     public function comments()

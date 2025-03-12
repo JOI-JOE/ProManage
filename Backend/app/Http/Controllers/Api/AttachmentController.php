@@ -7,6 +7,7 @@ use App\Models\Attachment;
 use App\Models\Card;
 use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class AttachmentController extends Controller
@@ -26,48 +27,75 @@ class AttachmentController extends Controller
     // Upload file đính kèm
     public function uploadAttachment(Request $request, $cardId)
     {
+        Log::info('📥 Dữ liệu nhận từ frontend:', $request->all());
+
+        // Validate dữ liệu nhận từ frontend
         $request->validate([
-            'file' => 'required|file|max:10240', // Giới hạn 10MB
+            'file' => 'nullable|file', // Giới hạn 10MB
+            'path_url' => 'nullable|url', // Kiểm tra định dạng URL hợp lệ
+            'file_name_defaut' => 'nullable|string', // Tên hiển thị của link
         ]);
 
-        $file = $request->file('file');
-        $fileNameDefault = $file->getClientOriginalName();
-        $fileName = time() . '_' . $fileNameDefault;
-        $path = $file->storeAs('attachments', $fileName, 'public');
+        if ($request->hasFile('file')) {
+            // Xử lý khi tải file lên
+            $file = $request->file('file');
+            $fileNameDefaut = $file->getClientOriginalName();
+            $fileName = time() . '_' . $fileNameDefaut;
+            $path = $file->storeAs('attachments', $fileName, 'public');
 
-        $attachment = Attachment::create([
-            'path_url' => $path,
-            'file_name_defaut' => $fileNameDefault,
-            'file_name' => $fileName,
-            'is_cover' => false,
-            'card_id' => $cardId,
+            $attachment = Attachment::create([
+                'path_url' => asset("storage/{$path}"),
+                'file_name_defaut' => $fileNameDefaut,
+                'file_name' => $fileName,
+                'is_cover' => false,
+                'card_id' => $cardId,
+            ]);
+        } elseif ($request->has('path_url')) {
+            // Xử lý khi lưu link
+            $fileNameDefaut = $request->file_name_defaut ?? parse_url($request->path_url, PHP_URL_HOST);
+            $attachment = Attachment::create([
+                'path_url' => $request->path_url,
+                'file_name_defaut' => $fileNameDefaut,
+                'file_name' => $fileNameDefaut,
+                'is_cover' => false,
+                'card_id' => $cardId,
+            ]);
+        } else {
+            return response()->json(['message' => 'Vui lòng cung cấp file hoặc link hợp lệ'], 400);
+        }
+
+        return response()->json([
+            'message' => 'Đính kèm đã được tải lên thành công!',
+            'status' => true,
+            'data' => $attachment,
         ]);
+
+        // Ghi log hoạt động
         $user_name = auth()->user()?->user_name ?? 'ai đó';
-
         $card = Card::findOrFail($cardId);
         activity()
             ->causedBy(auth()->user())
             ->performedOn($card)
             ->event('uploaded_attachment')
             ->withProperties([
-                'file_name' => $fileNameDefault,
-                'file_path' => $path,
+                'file_name' => $attachment->file_name_defaut,
+                'file_path' => $attachment->path_url,
             ])
-            ->log("{$user_name} đã tải lên tệp đính kèm '{$fileNameDefault}' trong thẻ '{$card->title}'");
-             // Lấy tất cả người dùng liên quan đến thẻ, trừ người dùng đang đăng nhập
-             $users = $card->users()->where('id', '!=', auth()->id())->get();
+            ->log("{$user_name} đã tải lên tệp đính kèm '{$attachment->file_name_defaut}' trong thẻ '{$card->title}'");
 
-             // Gửi thông báo cho tất cả người dùng trừ người dùng đang đăng nhập
-             foreach ($users as $user) {
-                 $user->notify(new CardNotification('uploaded_attachment', $card, [], $user_name));
-             }
+        // Gửi thông báo
+        $users = $card->users()->where('id', '!=', auth()->id())->get();
+        foreach ($users as $user) {
+            $user->notify(new CardNotification('uploaded_attachment', $card, [], $user_name));
+        }
 
         return response()->json([
-            'message' => 'Tệp đã được tải lên thành công!',
+            'message' => 'Đính kèm đã được tải lên thành công!',
             'status' => true,
             'data' => $attachment,
         ]);
     }
+
 
     // Xóa file đính kèm
     public function deleteAttachment($cardId, $attachmentId)
@@ -151,4 +179,41 @@ class AttachmentController extends Controller
             'data' => $attachment
         ]);
     }
+
+    public function updateNameFileAttachment(Request $request, $cardId, $attachmentId)
+    {
+        try {
+            // Ghi log để kiểm tra dữ liệu nhận được
+            Log::info('Request update file name:', ['cardId' => $cardId, 'attachmentId' => $attachmentId, 'data' => $request->all()]);
+    
+            // Kiểm tra đầu vào hợp lệ
+            $validatedData = $request->validate([
+                'file_name_defaut' => 'required|string|max:255',
+            ]);
+    
+            // Tìm attachment theo ID và kiểm tra có thuộc card không
+            $attachment = Attachment::where('id', $attachmentId)
+                                    ->where('card_id', $cardId)
+                                    ->first();
+    
+            if (!$attachment) {
+                return response()->json(['error' => 'Tệp đính kèm không tồn tại hoặc không thuộc thẻ này'], 404);
+            }
+    
+            // Cập nhật tên file
+            $attachment->file_name_defaut = $validatedData['file_name_defaut'];
+            $attachment->save();
+    
+            return response()->json([
+                'message' => 'Cập nhật tên tệp thành công',
+                'attachment' => $attachment
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => 'Dữ liệu không hợp lệ', 'messages' => $e->errors()], 400);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi cập nhật tên file:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Lỗi khi cập nhật tên tệp'], 500);
+        }
+    }
+    
 }

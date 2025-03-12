@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -16,18 +16,21 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
 import { useCreateBoard, useImageUnsplash } from "../hooks/useBoard";
-import { useGetWorkspaces } from "../hooks/useWorkspace";
+
 import { useColor } from "../hooks/useColor";
+import useColorStore, { useFetchColors } from "../store/colorStore";
+import { useGetWorkspaces } from "../hooks/useWorkspace";
 
 // const colors = ["#E3F2FD", "#64B5F6", "#1565C0", "#283593", "#8E24AA"];
 
-const CreateBoard = () => {
+const CreateBoard = React.memo(() => {
   const [openPopover, setOpenPopover] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [boardTitle, setBoardTitle] = useState("");
   const [selectedBg, setSelectedBg] = useState("");
   const [workspace, setWorkspace] = useState("");
   const [viewPermission, setViewPermission] = useState("");
+  // const [colorList, setColorList] = useState([]); // State lưu danh sách màu
   // const userId = localStorage.getItem("user_id"); // ID được lưu sau khi đăng nhập
 
   // Sử dụng hook useCreateBoard
@@ -39,28 +42,13 @@ const CreateBoard = () => {
     isLoading: unsplashingImages,
   } = useImageUnsplash();
 
-  // Sử dụng hook useGetWorkspaces
-  const {
-    data: workspaces,
-    isLoading: isLoadingWorkspaces,
-    error,
-  } = useGetWorkspaces();
+  // Sử dụng hook useWorkspaces
+  const { data: workspaces, isLoading: isLoadingWorkspaces, error } = useGetWorkspaces();
+  const memoizedWorkspaces = useMemo(() => workspaces ?? [], [workspaces]);
 
-  const {
-    data: colors,
-    isLoading: isLoadingColors,
-    error: errorColors,
-  } = useColor();
-  // Lấy danh sách màu từ API và chỉ tính toán lại khi `colors` thay đổi
-  const memoizedColors = useMemo(() => {
-    if (!colors || !Array.isArray(colors)) return [];
-    return colors.map((color) => ({
-      id: color.id,
-      hex: color.hex_code || "#1693E1", // Đảm bảo có giá trị mặc định
-    }));
-  }, [colors]);
-
-  // console.log(colors);
+  // 🟢 Fetch màu chỉ 1 lần khi component mount
+  const { isLoading, errorColor } = useFetchColors();
+  const colors = useColorStore((state) => state.colors);
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -77,8 +65,8 @@ const CreateBoard = () => {
     setSelectedBg(bg); // Nếu là mã màu, gán trực tiếp
   };
 
-  const handleCreateBoard = () => {
-    if (boardTitle.trim() === "") {
+  const handleCreateBoard = useCallback(() => {
+    if (!boardTitle.trim()) {
       alert("Vui lòng nhập tiêu đề bảng!");
       return;
     }
@@ -102,7 +90,7 @@ const CreateBoard = () => {
     });
 
     console.log("📩 Dữ liệu gửi lên API:", boardData);
-  };
+  }, [boardTitle, selectedBg, workspace, viewPermission, createBoard, handleClose]);
 
   return (
     <div>
@@ -168,13 +156,11 @@ const CreateBoard = () => {
             Phông nền
           </Typography>
 
-          {isLoadingColors ? (
-            <Typography>Đang tải màu...</Typography>
-          ) : errorColors ? (
-            <Typography color="error">Lỗi khi tải màu</Typography>
-          ) : memoizedColors.length > 0 ? (
+         
+         
+         {colors.length > 0 ? (
             <Grid container spacing={1} mt={1}>
-              {memoizedColors.map((color) => (
+              {colors.map((color) => (
                 <Grid item key={color.id}>
                   <Box
                     sx={{
@@ -249,16 +235,7 @@ const CreateBoard = () => {
           <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
             Không gian làm việc
           </Typography>
-          {/* <Select
-                        fullWidth
-                        value={workspace}
-                        onChange={(e) => setWorkspace(e.target.value)}
-                        sx={{ marginBottom: 2 }}
-                    >
-                        <MenuItem value="workspace1">Workspace 1</MenuItem>
-                        <MenuItem value="workspace2">Workspace 2</MenuItem>
-                    </Select> */}
-
+       
           {isLoadingWorkspaces ? (
             <Typography>Đang tải...</Typography>
           ) : error ? (
@@ -270,7 +247,7 @@ const CreateBoard = () => {
               onChange={(e) => setWorkspace(e.target.value)}
               sx={{ marginBottom: 2 }}
             >
-              {(workspaces ?? []).map((ws) => (
+              {(memoizedWorkspaces ?? []).map((ws) => (
                 <MenuItem key={ws.id} value={ws.id}>
                   {ws.name}
                 </MenuItem>
@@ -316,6 +293,6 @@ const CreateBoard = () => {
       </Popover>
     </div>
   );
-};
+});
 
 export default CreateBoard;
