@@ -59,7 +59,7 @@ export const useUpdateCheckListItemName = () => {
             console.log(`✅ Cập nhật tên checklist item thành công: ${variables.itemId}`);
 
             // Cập nhật danh sách checklist ngay lập tức
-            // queryClient.invalidateQueries({ queryKey: ["checklists"] });
+            queryClient.invalidateQueries({ queryKey: ["checklists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật tên checklist item:", error);
