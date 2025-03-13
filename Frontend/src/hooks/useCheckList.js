@@ -33,6 +33,7 @@ export const useUpdateCheckList = () => {
         mutationFn: ({ id, name }) => updateCheckList({ id, name }), // Gọi API cập nhật
         onSuccess: (_, { card_id }) => {
             // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] });
+            queryClient.invalidateQueries({ queryKey: ["checklists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật checklist:", error);

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CardCommentAdded;
+use App\Events\CommentDeleted;
+use App\Events\CommentUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\CommentCard;
@@ -56,6 +59,9 @@ class CommentCardController extends Controller
             'content' => $request->content,
         ]);
 
+        // $comment = CommentCard::with('user')->find($newComment->id);
+        broadcast(new CardCommentAdded($comment))->toOthers();
+
         return response()->json([
             'status' => 'success',
             'message' => 'Bình luận đã được thêm!',
@@ -75,8 +81,11 @@ class CommentCardController extends Controller
             return response()->json(['message' => 'Bạn không có quyền xóa bình luận này'], 403);
         }
 
+        $cardId = $comment->card_id; // Lưu lại cardId trước khi xóa
+        $commentId = $comment->id;
         $comment->delete();
 
+        broadcast(new CommentDeleted($commentId, $cardId))->toOthers();
         return response()->json(['message' => 'Bình luận đã bị xóa']);
     }
 
@@ -103,6 +112,8 @@ class CommentCardController extends Controller
         $comment->update([
             'content' => $request->content,
         ]);
+
+        broadcast(new CommentUpdated($comment))->toOthers();
 
         return response()->json([
             'message' => 'Bình luận đã được cập nhật!',
