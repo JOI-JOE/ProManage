@@ -12,7 +12,14 @@ import {
 const ShareModal = ({ open, onClose, shareLink }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ fontSize: "1rem", textAlign: "center", pb: 1 }}>
+      <DialogTitle
+        sx={{
+          fontSize: "17px",
+          textAlign: "center",
+          pb: 1,
+          fontWeight: "bold",
+        }}
+      >
         Chia sẻ
       </DialogTitle>
       <DialogContent

@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  createBoard,
+import { createBoard,
   getBoardById,
   getBoardMarked,
   getRecentBoards,
@@ -11,6 +10,7 @@ import {
   updateBoardName,
   updateBoardVisibility
 } from "../api/models/boardsApi";
+import { useCallback } from "react";
 
 /**
  * Hook useBoard để tạo bảng mới.
@@ -69,7 +69,8 @@ export const useBoardByWorkspaceId = (workspaceId) => {
   });
 };
 
-export const useGetBoardById = (boardId) => {
+export const useBoards = (boardId) => {
+
   const boardsQuery = useQuery({
     queryKey: ["boardLists", boardId],
     queryFn: () => getBoardById(boardId),
@@ -99,79 +100,95 @@ export const useRecentBoardAccess = () => {
       console.error("Lỗi khi ghi nhận bảng:", error);
     },
     onSuccess: (data) => {
-      // console.log("Bảng đã được lưu vào danh sách gần đây:", data);
+      console.log("Bảng đã được lưu vào danh sách gần đây:", data);
       queryClient.invalidateQueries(["recentBoards"]);
     },
   });
 };
+
 
 /**
  * Hook để cập nhật tên bảng
  * @returns {object} - Object chứa mutate để gọi API cập nhật tên bảng
  */
 export const useUpdateBoardName = () => {
-  const queryClient = useQueryClient();
+    const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({ boardId, name }) => updateBoardName(boardId, name),
-    onSuccess: (_, { boardId }) => {
-      queryClient.invalidateQueries({ queryKey: ["board", boardId] });
-      queryClient.invalidateQueries(["boards"]);
-    },
-    onError: (error) => {
-      console.error("Lỗi khi cập nhật tên bảng:", error);
-    },
-  });
+    return useMutation({
+        mutationFn: ({ boardId, name }) => updateBoardName(boardId, name),
+        onSuccess: (_, { boardId }) => {
+            queryClient.invalidateQueries({ queryKey: ["board", boardId] });
+            queryClient.invalidateQueries(["boards"]);
+
+        },
+        onError: (error) => {
+            console.error("Lỗi khi cập nhật tên bảng:", error);
+        },
+    });
 };
 
 export const useToggleBoardMarked = () => {
   const queryClient = useQueryClient();
 
+  // Định nghĩa mutationFn bằng useCallback để tránh tạo lại khi component re-render
+  const mutationFn = useCallback(async (boardId) => {
+    return toggleBoardMarked(boardId);
+  }, []);
+
   return useMutation({
-    mutationFn: toggleBoardMarked, // Gọi API toggle
-    onMutate: async (boardId) => {
-      await queryClient.cancelQueries(["boards"]); // Hủy API đang chạy
+    mutationFn,
+    onMutate: useCallback(
+      async (boardId) => {
+        await queryClient.cancelQueries(["boardMarked"]); // Hủy API đang chạy
 
-      const previousData = queryClient.getQueryData(["boards"]); // Lưu dữ liệu trước đó
+        const previousData = queryClient.getQueryData(["boardMarked"]); // Lưu dữ liệu trước đó
 
-      queryClient.setQueryData(["boards"], (oldData) => {
-        if (!oldData || !oldData.data) return oldData;
-        return {
-          ...oldData,
-          data: oldData.data.map((board) =>
-            board.id === boardId
-              ? { ...board, is_marked: !board.is_marked }
-              : board
-          ),
-        };
-      });
+        queryClient.setQueryData(["boardMarked"], (oldData) => {
+          if (!oldData || !oldData.data) return oldData;
+          return {
+            ...oldData,
+            data: oldData.data.map((board) =>
+              board.id === boardId ? { ...board, is_marked: !board.is_marked } : board
+            ),
+          };
+        });
 
-      return { previousData }; // Trả dữ liệu để rollback nếu lỗi
-    },
-    onError: (err, boardId, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(["boards"], context.previousData); // Rollback nếu lỗi
-      }
-    },
-    onSuccess: (data, boardId) => {
-      queryClient.setQueryData(["boards"], (oldData) => {
-        if (!oldData || !oldData.data) return oldData;
-        return {
-          ...oldData,
-          data: oldData.data.map((board) =>
-            board.id === boardId
-              ? { ...board, is_marked: data.is_marked }
-              : board
-          ),
-        };
-      });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries(["boards"], { refetchType: "active" }); // Làm mới danh sách
-    },
+        return { previousData }; // Trả dữ liệu để rollback nếu lỗi
+      },
+      [queryClient]
+    ),
+
+    onError: useCallback(
+      (err, boardId, context) => {
+        if (context?.previousData) {
+          queryClient.setQueryData(["boardMarked"], context.previousData); // Rollback nếu lỗi
+        }
+      },
+      [queryClient]
+    ),
+
+    onSuccess: useCallback(
+      (data, boardId) => {
+        queryClient.setQueryData(["boardMarked"], (oldData) => {
+          if (!oldData || !oldData.data) return oldData;
+          return {
+            ...oldData,
+            data: oldData.data.map((board) =>
+              board.id === boardId ? { ...board, is_marked: data.is_marked } : board
+            ),
+          };
+        });
+      },
+      [queryClient]
+    ),
+
+    onSettled: useCallback(() => {
+      queryClient.invalidateQueries(["boardMarked"], { refetchType: "none" }); // Làm mới danh sách
+    }, [queryClient]),
   });
 };
 
+  
 export const useBoardMarked = () => {
   return useQuery({
     queryKey: ["boardMarked"],

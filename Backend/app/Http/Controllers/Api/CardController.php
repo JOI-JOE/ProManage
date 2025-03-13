@@ -5,6 +5,8 @@ namespace App\Http\Controllers\api;
 use App\Events\ActivityEvent;
 use App\Events\CardCreate;
 use App\Events\CardCreated;
+use App\Events\CardDescriptionUpdated;
+use App\Events\CardNameUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\ListBoard;
@@ -75,30 +77,22 @@ class CardController extends Controller
     {
         $card = Card::find($cardId);
         $oldTitle = $card->title;
+
         $request->validate([
             'title' => 'required'
         ]);
+
         if ($oldTitle !== $request->title) {
             $card->update([
                 'title' => $request->title
             ]);
-            $userName = auth()->user()?->user_name ?? 'ai đó';
 
-            activity()
-                ->causedBy(auth()->user())
-                ->performedOn($card)
-                ->event('updated_name')
-                ->withProperties([
-                    'old_title' => $oldTitle,
-                    'new_title' => $card->title,
-                ])
-                ->log("{$userName} đã cập nhật tên thẻ từ '{$oldTitle}' thành '{$card->title}'.");
-            return response()->json(
-                [
-                    'status' => true,
-                    'data' => $card,
-                ]
-            );
+            broadcast(new CardNameUpdated($card, $oldTitle))->toOthers();
+
+            return response()->json([
+                'status' => true,
+                'data' => $card,
+            ]);
         }
     }
     // cập nhật mô tả
@@ -127,6 +121,8 @@ class CardController extends Controller
                 $message = 'Mô tả đã được cập nhật thành công';
             }
         }
+
+        broadcast(new CardDescriptionUpdated($card))->toOthers();
 
         return response()->json([
             'message' => $message,
@@ -178,7 +174,7 @@ class CardController extends Controller
         return response()->json(['message' => 'Người dùng đã có trong thẻ'], 400);
     }
     // thành viên khỏi card
-    public function removeMember($cardId,  $userID)
+    public function removeMember($cardId, $userID)
     {
         $card = Card::find($cardId);
         $user = User::find($userID);
@@ -226,8 +222,8 @@ class CardController extends Controller
         // Validate các trường nhập
         $request->validate([
             'start_date' => 'nullable|date_format:Y-m-d',
-            'end_date'   => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
-            'end_time'   => 'nullable|date_format:H:i',
+            'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
+            'end_time' => 'nullable|date_format:H:i',
         ]);
 
         // Kiểm tra sự thay đổi của ngày kết thúc và giờ kết thúc
@@ -303,9 +299,11 @@ class CardController extends Controller
     // lấy lịch sử hoạt động
     public function getCardHistory($cardId)
     {
-        $card = Card::with(['activities' => function ($query) {
-            $query->orderByDesc('created_at'); // Sắp xếp bản ghi mới nhất lên đầu
-        }])->find($cardId);
+        $card = Card::with([
+            'activities' => function ($query) {
+                $query->orderByDesc('created_at'); // Sắp xếp bản ghi mới nhất lên đầu
+            }
+        ])->find($cardId);
 
         if (!$card) {
             return response()->json(['message' => 'Card không tồn tại'], 404);

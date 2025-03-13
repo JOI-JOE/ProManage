@@ -21,7 +21,9 @@ const MemberList = ({ open, onClose, members = [] }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>
+      <DialogTitle
+        sx={{ textAlign: "center", fontSize: "17px", fontWeight: "bold" }}
+      >
         Thành viên
         <IconButton
           aria-label="close"
