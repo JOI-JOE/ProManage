@@ -52,6 +52,7 @@ import SpeakerGroupIcon from "@mui/icons-material/SpeakerGroup";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import ShareIcon from "@mui/icons-material/Share";
 import CollectionsIcon from "@mui/icons-material/Collections";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   useCardActions,
   useCardById,
@@ -117,18 +118,24 @@ const CardModal = () => {
   const [newItem, setNewItem] = useState("");
 
   const [coverImage, setCoverImage] = useState(
-    "https://i.pinimg.com/736x/49/43/7a/49437a99d17db363a6b2c6ffe7902fba.jpg"
+    localStorage.getItem(`coverImage-${cardId}`) || null
   );
-  const [coverColor, setCoverColor] = useState(null);
+  const [coverColor, setCoverColor] = useState(
+    localStorage.getItem(`coverColor-${cardId}`) || null
+  );
 
   const handleCoverImageChange = (newImage) => {
     setCoverImage(newImage);
     setCoverColor(null); // Reset color when an image is selected
+    localStorage.setItem(`coverImage-${cardId}`, newImage);
+    localStorage.removeItem(`coverColor-${cardId}`);
   };
 
   const handleCoverColorChange = (newColor) => {
     setCoverColor(newColor);
     setCoverImage(null); // Reset image when a color is selected
+    localStorage.setItem(`coverColor-${cardId}`, newColor);
+    localStorage.removeItem(`coverImage-${cardId}`);
   };
 
   const handleFollowClick = () => {
@@ -596,22 +603,24 @@ const CardModal = () => {
       >
         <DialogTitle>
           {/* New image section */}
-          <Box
-            sx={{
-              width: "100%",
-              height: "150px",
-              mb: 2,
-              backgroundColor: coverColor || "transparent",
-            }}
-          >
-            {coverImage && (
-              <img
-                src={coverImage} // Use the dynamic cover image
-                alt="Card Cover"
-                style={{ width: "100%", height: "150px" }}
-              />
-            )}
-          </Box>
+          {(coverImage || coverColor) && (
+            <Box
+              sx={{
+                width: "100%",
+                height: "150px",
+                mb: 2,
+                backgroundColor: coverColor || "transparent",
+              }}
+            >
+              {coverImage && (
+                <img
+                  src={coverImage} // Use the dynamic cover image
+                  alt="Card Cover"
+                  style={{ width: "100%", height: "150px" }}
+                />
+              )}
+            </Box>
+          )}
           {isEditingName ? (
             <TextField
               value={cardName}
@@ -640,7 +649,14 @@ const CardModal = () => {
             </span>
           </Typography>
           {/* New section to match the provided image */}
-          <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              mt: 2,
+              flexWrap: "wrap", // Allow wrapping to the next line
+            }}
+          >
             <Avatar
               sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
             >
@@ -663,11 +679,15 @@ const CardModal = () => {
                 sx={{
                   bgcolor: label.color?.hex_code || "#ccc",
                   mr: 1,
+                  mt: 1,
+                  mb: 1, // Add margin bottom to separate rows
                   height: 25,
                   p: "0px 8px", // Thêm padding ngang để không bị cắt chữ
                   minWidth: "auto", // Cho phép nút mở rộng theo chữ
                   width: "fit-content", // Tự động điều chỉnh theo nội dung
                   maxWidth: "100%", // Giới hạn tối đa để tránh tràn
+                  whiteSpace: "normal", // Cho phép xuống dòng
+                  wordBreak: "break-word", // Tự động xuống dòng khi quá dài
                 }}
                 onClick={() => setIsLabelListOpen(true)}
               >
@@ -700,6 +720,22 @@ const CardModal = () => {
               {isFollowing ? "Đang theo dõi" : "Theo dõi"}
             </Button>
           </Box>
+          <IconButton
+            aria-label="close"
+            onClick={() => navigate(-1)}
+            sx={{
+              position: "absolute",
+              right: -3,
+              top: 8,
+              color: "black",
+            }}
+          >
+            <CloseIcon
+              sx={{
+                fontSize: "14px",
+              }}
+            />
+          </IconButton>
         </DialogTitle>
 
         {/* NGÀY */}
@@ -1609,10 +1645,6 @@ const CardModal = () => {
             </Grid>
           </Grid>
         </DialogContent>
-
-        <DialogActions>
-          <Button onClick={() => navigate(-1)}>Close</Button>
-        </DialogActions>
 
         {/* Component Member List */}
         <MemberList
