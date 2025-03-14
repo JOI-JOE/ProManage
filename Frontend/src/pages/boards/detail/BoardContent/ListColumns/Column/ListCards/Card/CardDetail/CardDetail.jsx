@@ -81,6 +81,9 @@ import {
 } from "../../../../../../../../../hooks/useCheckListItem";
 import CoverPhoto from "./childComponent_CardDetail/CoverPhoto";
 import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
+import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
+import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
+import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -113,6 +116,7 @@ const CardModal = () => {
   const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  // const [activity, setActivity] = useState("");
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
@@ -148,7 +152,6 @@ const CardModal = () => {
   //   avatar: "https://via.placeholder.com/40",
   // };
   const { data: comments = [] } = useCommentsByCard(cardId);
-  const { data: user, isLoadingUser, errorUser } = useUser();
   const {
     data: cardDetail,
     isLoading,
@@ -169,7 +172,23 @@ const CardModal = () => {
   const { mutate: updateCheckListItemName } = useUpdateCheckListItemName();
   const { mutate: deleteItem } = useDeleteCheckListItem();
 
-  // console.log(cardId);
+
+  const { data: activities = [], isLoadingActivity, errorActivity } = useActivityByCardId(cardId);
+  const { user } = useStateContext();
+
+
+  const mergedData = [...comments, ...activities].sort(
+    (a, b) => new Date(a.created_at) - new Date(b.created_at)
+  );
+
+  // console.log(user);
+  if (isLoadingActivity) return <Typography>Đang tải hoạt động...</Typography>;
+  if (errorActivity) return <Typography color="red">Lỗi khi tải dữ liệu!</Typography>;
+
+
+
+
+  // console.log(activities);
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
@@ -274,8 +293,8 @@ const CardModal = () => {
     });
   };
 
-  if (isLoadingUser) return <p>Loading...</p>;
-  if (errorUser) return <p>Lỗi khi lấy dữ liệu user!</p>;
+  // if (isLoadingUser) return <p>Loading...</p>;
+  // if (errorUser) return <p>Lỗi khi lấy dữ liệu user!</p>;
 
   /// THÊM CÔNG VIỆC
 
@@ -311,6 +330,8 @@ const CardModal = () => {
     toggleItemStatus(id, {
       onSuccess: () => {
         console.log("✅ Cập nhật trạng thái thành công");
+        // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
+        // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
       },
       onError: () => {
         console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
@@ -329,7 +350,9 @@ const CardModal = () => {
     removeCheckList(checklistId, {
       onSuccess: () => {
         console.log("✅ Checklist đã bị xóa thành công!");
-        queryClient.invalidateQueries(["checklists", cardId]);
+        // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
+        // // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] }); // Cập nhật lại danh sách checklist
+        // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa checklist:", error);
@@ -545,28 +568,28 @@ const CardModal = () => {
     setIsDetailHidden(!isDetailHidden);
   };
 
-  const activities = [
-    {
-      name: "Pham Thi Hong Ngat (FPL HN)",
-      action: "đã gửi thẻ này tới bảng",
-      time: "2 giờ trước",
-    },
-    {
-      name: "Pham Thi Hong Ngat (FPL HN)",
-      action: "đã lưu trữ thẻ này",
-      time: "2 giờ trước",
-    },
-    {
-      name: "Pham Thi Hong Ngat (FPL HN)",
-      action: "đã tham gia thẻ này",
-      time: "21:39 8 thg 3, 2025",
-    },
-    {
-      name: "Pham Thi Hong Ngat (FPL HN)",
-      action: "đã thêm thẻ này vào danh sách mmm",
-      time: "22:54 7 thg 3, 2025",
-    },
-  ];
+  // const activities = [
+  //   {
+  //     name: "Pham Thi Hong Ngat (FPL HN)",
+  //     action: "đã gửi thẻ này tới bảng",
+  //     time: "2 giờ trước",
+  //   },
+  //   {
+  //     name: "Pham Thi Hong Ngat (FPL HN)",
+  //     action: "đã lưu trữ thẻ này",
+  //     time: "2 giờ trước",
+  //   },
+  //   {
+  //     name: "Pham Thi Hong Ngat (FPL HN)",
+  //     action: "đã tham gia thẻ này",
+  //     time: "21:39 8 thg 3, 2025",
+  //   },
+  //   {
+  //     name: "Pham Thi Hong Ngat (FPL HN)",
+  //     action: "đã thêm thẻ này vào danh sách mmm",
+  //     time: "22:54 7 thg 3, 2025",
+  //   },
+  // ];
 
   const [isCoverPhotoOpen, setIsCoverPhotoOpen] = useState(false);
 
@@ -1243,6 +1266,9 @@ const CardModal = () => {
                 </>
               )}
 
+              
+
+
               {/* Hiển thị các bình luận và hoạt động */}
               {comments.map((cmt, index) => {
                 const content = cmt.content || "";
@@ -1288,8 +1314,9 @@ const CardModal = () => {
                               padding: "3px 0px",
                             }}
                           >
-                            {new Date(cmt.created_at).toLocaleTimeString()}{" "}
-                            {new Date(cmt.created_at).toLocaleDateString()}
+                            {/* {new Date(cmt.created_at).toLocaleTimeString()}{" "}
+                            {new Date(cmt.created_at).toLocaleDateString()} */}
+                            {formatTime(cmt.created_at)}
                           </Typography>
                         </Typography>
                       </Box>
@@ -1451,36 +1478,62 @@ const CardModal = () => {
                   }}
                 >
                   <Stack spacing={2}>
-                    {activities.map((activity, index) => (
-                      <Box key={index} display="flex" alignItems="center">
-                        <Avatar
-                          sx={{
-                            bgcolor: "pink",
-                            width: 28,
-                            height: 28,
-                            fontSize: "0.6rem",
-                            mr: 1,
-                          }}
-                        >
-                          PH
-                        </Avatar>
-                        <Box>
-                          <Typography fontWeight="bold" color="black">
-                            {activity.name}{" "}
-                            <Typography
-                              component="span"
-                              fontWeight="normal"
-                              color="black"
-                            >
-                              {activity.action}
-                            </Typography>
-                          </Typography>
-                          <Typography fontSize="0.5rem" color="gray">
-                            {activity.time}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    ))}
+                    {activities.length > 0 ? (
+                      activities.map((activity, index) => {
+
+                        const description = activity.description;
+                        const keyword = "đã"; // Từ khóa để xác định phần còn lại của chuỗi
+                        const keywordIndex = description.indexOf(keyword);
+
+                        if (keywordIndex === -1) {
+                          return null; // Nếu không tìm thấy "đã", bỏ qua activity này
+                        }
+                        // Lấy tên người thực hiện hành động (trước từ "đã")
+                        const userName = description.substring(0, keywordIndex).trim();
+
+                        // Lấy phần còn lại của mô tả
+                        const actionText = description.substring(keywordIndex).trim();
+
+                        const namePattern = /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
+                        const affectedUsers = actionText.match(namePattern) || [];
+                        // Kiểm tra nếu activity có username giống user hiện tại thì in đậm
+
+                        return (
+                          <Box key={index} display="flex" alignItems="center" mb={1}>
+                            <Avatar sx={{ bgcolor: "pink", width: 28, height: 28, mt: 2, fontSize: "0.6rem", }}>
+                              {userName.charAt(0)}
+                            </Avatar>
+                            <Box>
+                              <Typography>
+                                <Typography
+                                  component="span"
+                                  fontWeight={"bold"}
+                                >
+                                  {userName}
+                                </Typography>{" "}
+                                {affectedUsers.length > 0 ? (
+                                  actionText.split(affectedUsers[0]).map((part, i) => (
+                                    <React.Fragment key={i}>
+                                      {i > 0 && <Typography component="span" fontWeight="bold"> {affectedUsers[0]}</Typography>}
+                                      {part}
+                                    </React.Fragment>
+                                  ))
+                                ) : (
+                                  <Typography component="span" fontWeight="normal">
+                                    {actionText}
+                                  </Typography>
+                                )}
+                              </Typography>
+                              <Typography fontSize="0.8rem" color="gray">
+                                {formatTime(activity.created_at)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        );
+                      })
+                    ) : (
+                      <Typography color="gray">Không có hoạt động nào</Typography>
+                    )}
                   </Stack>
                 </Box>
               )}
@@ -1657,7 +1710,7 @@ const CardModal = () => {
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-          // onSave={handleAddTask}
+        // onSave={handleAddTask}
         />
 
         {/* Component Label List */}

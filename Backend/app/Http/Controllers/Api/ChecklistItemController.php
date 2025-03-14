@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ChecklistItemCreated;
+use App\Events\ChecklistItemDeleted;
+use App\Events\ChecklistItemToggle;
+use App\Events\ChecklistItemUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\CheckList;
 use App\Models\ChecklistItem;
@@ -36,6 +40,9 @@ class ChecklistItemController extends Controller
         // Tạo mới CheckListItem
         $checklistItem = ChecklistItem::create($validatedData);
 
+        \Log::info("🚀 Gọi broadcast ChecklistItemCreated");
+        broadcast(new ChecklistItemCreated($checklistItem))->toOthers();
+
         return response()->json([
             'status' => true,
             'message' => 'Thêm mục checklist thành công!',
@@ -62,6 +69,8 @@ class ChecklistItemController extends Controller
         $item = ChecklistItem::findOrFail($id);
         $item->update(['name' => $validated['name']]);
 
+        broadcast(new ChecklistItemUpdated($item))->toOthers();
+
         // Trả về phản hồi JSON
         return response()->json([
             'status' => true,
@@ -87,6 +96,17 @@ class ChecklistItemController extends Controller
             // Tìm item hoặc trả về lỗi nếu không tồn tại
             $item = ChecklistItem::findOrFail($id);
 
+            $checklist = $item->checklist;
+            if (!$checklist) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Checklist không tồn tại',
+                ], 404);
+            }
+
+            // Lấy card từ checklist
+            $card = $checklist->card;
+
             // Đảo ngược trạng thái hiện tại (false -> true, true -> false)
             $newStatus = !$item->is_completed;
             $item->update([
@@ -94,29 +114,31 @@ class ChecklistItemController extends Controller
             ]);
 
             // Lấy thông tin user
-            $user_name = auth()->user()?->user_name ?? 'ai đó';
+            $user_name = auth()->user()?->full_name ?? 'ai đó';
             $statusText = $newStatus ? 'hoàn tất' : 'chưa hoàn tất';
 
             // Ghi log nếu trạng thái thay đổi
-            // activity()
-            //     ->causedBy(auth()->user())
-            //     ->performedOn($item->checklist)
-            //     ->event('updated_checklist_status')
-            //     ->withProperties([
-            //         'checklist_id' => $item->checklist_id,
-            //         'item_title' => $item->name,
-            //         'status' => $statusText,
-            //     ])
-            //     ->log("{$user_name} đã đánh dấu '{$item->name}' là {$statusText}");
+            $activity=  activity()
+                ->causedBy(auth()->user())
+                ->performedOn($card)
+                ->event('updated_checklist_status')
+                ->withProperties([
+                    'checklist_id' => $item->checklist_id,
+                    'item_title' => $item->name,
+                    'status' => $statusText,
+                ])
+                ->log("{$user_name} đã đánh dấu {$item->name} là {$statusText} ở thẻ này");
 
             // Tính phần trăm hoàn thành của checklist chứa item này
-            $completionRate = $this->calculateCompletionRate($item->checklist_id) . '%';
+            // $completionRate = $this->calculateCompletionRate($item->checklist_id) . '%';
+
+            broadcast(new ChecklistItemToggle($item, $card->id, $activity));
 
             return response()->json([
                 'status' => true,
                 'message' => 'Cập nhật trạng thái thành công',
                 'data' => $item,
-                'completion_rate' => $completionRate,
+                // 'completion_rate' => $completionRate,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -135,9 +157,12 @@ class ChecklistItemController extends Controller
     {
         // Tìm ChecklistItem theo id, nếu không tìm thấy sẽ tự động trả về lỗi 404
         $item = ChecklistItem::findOrFail($id);
+        $cardId = $item->checklist->card_id;
 
         // Xóa ChecklistItem
         $item->delete();
+
+        broadcast(new ChecklistItemDeleted($id, $cardId))->toOthers();
 
         // Trả về phản hồi thành công
         return response()->json([
