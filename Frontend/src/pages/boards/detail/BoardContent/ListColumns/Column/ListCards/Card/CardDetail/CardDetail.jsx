@@ -677,11 +677,17 @@ const CardModal = () => {
           </Typography>
           {/* New section to match the provided image */}
           <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-            <Avatar
-              sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
-            >
-              PH
-            </Avatar>
+            {members?.data?.map((member) => (
+              <Avatar
+                key={member.id}
+                sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
+              >
+                {member.full_name
+                  ? member.full_name.charAt(0).toUpperCase()
+                  : "?"}
+              </Avatar>
+            ))}
+
             <AddIcon
               sx={{
                 fontSize: 14,
