@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\User;
 use Google\Client;
 use Google\Service\Gmail;
-use League\OAuth1\Client\Server\Trello;
 
 class GoogleService
 {

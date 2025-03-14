@@ -80,21 +80,21 @@ class BoardController extends Controller
     {
         try {
             $user = Auth::user()->id;
-            if(!$user){
+            if (!$user) {
                 return 'Cho cái sanctum vào !!!!!';
             }
-       
-        $boards = Board::where('is_marked', 1)
-        ->whereHas('workspace.users', function ($query) use ($user) {
-            $query->where('user_id', $user); // Kiểm tra user có trong workspace không
-        })
-        ->with('workspace:id,display_name') // Lấy thông tin workspace
-        ->get();
 
-    return response()->json([
-        'success' => true,
-        'data' => $boards,
-    ], 200);
+            $boards = Board::where('is_marked', 1)
+                ->whereHas('workspace.users', function ($query) use ($user) {
+                    $query->where('user_id', $user); // Kiểm tra user có trong workspace không
+                })
+                ->with('workspace:id,display_name') // Lấy thông tin workspace
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $boards,
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

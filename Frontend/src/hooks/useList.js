@@ -188,12 +188,7 @@ export const useUpdateColumnPosition = () => {
       }
     },
 
-    onSettled: (data, error, variables) => {
-      // queryClient.invalidateQueries({
-      //   queryKey: ["lists", variables.board_id],
-      //   refetchType: "inactive", // Chỉ refetch nếu query đang không được dùng
-      // });
-    },
+    onSettled: (data, error, variables) => {},
   });
 };
 

@@ -6,13 +6,15 @@ import {
   useAcceptInvitation,
   useGetValidateMember,
 } from "../../../../hooks/useWorkspaceInvite";
+// import { useStateContext } from "../../contexts/ContextProvider";
+import { useStateContext } from "../../../../contexts/ContextProvider";
+
 
 const InviteWithToken = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { workspaceId, inviteToken } = location.state || {};
   const { user } = useStateContext(); // Dùng context để lấy user
-  console.log(user?.id);
 
 
   const { data: invitationData } = useGetValidateInvitation(workspaceId, inviteToken);

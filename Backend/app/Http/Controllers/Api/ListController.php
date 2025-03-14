@@ -19,31 +19,32 @@ class ListController extends Controller
 
     public function index($boardId)
     {
-        $board = Board::where('id', $boardId)
-            ->with([
+        $cacheKey = "board_{$boardId}_with_lists";
+
+        // Kiểm tra xem board đã có trong cache chưa
+        if (!Cache::has($cacheKey)) {
+            $board = Board::with([
                 'listBoards' => function ($query) {
                     $query->where('closed', false)
                         ->orderBy('position')
-                        ->with([
-                            'cards' => function ($cardQuery) {
-                                $cardQuery->orderBy('position')
-                                    ->withCount('comments')
-                                    ->with([
-                                        'checklists' => function ($checklistQuery) {
-                                            $checklistQuery->with('items');
-                                        }
-                                    ]);
-                            }
-                        ]);
+                        ->with(['cards' => function ($cardQuery) {
+                            $cardQuery->orderBy('position');
+                        }])
+                        ->withCount('cards');
                 }
-            ])
-            ->first();
+            ])->find($boardId);
 
-        if (!$board) {
-            return response()->json(['message' => 'Board not found'], 404);
+            if (!$board) {
+                return response()->json(['message' => 'Board not found'], 404);
+            }
+
+            // Lưu vào cache với TTL (thời gian sống) là 10 phút
+            Cache::put($cacheKey, $board, now()->addMinutes(10));
+        } else {
+            $board = Cache::get($cacheKey);
         }
 
-        $responseData = [
+        return response()->json([
             'id' => $board->id,
             'title' => $board->name,
             'description' => $board->description ?? '',
@@ -51,14 +52,12 @@ class ListController extends Controller
             'workspaceId' => $board->workspace_id,
             'isMarked' => (bool) $board->is_marked,
             'thumbnail' => $board->thumbnail ?? null,
-            'columnOrderIds' => $board->listBoards->pluck('id')->toArray(),
             'columns' => $board->listBoards->map(function ($list) {
                 return [
                     'id' => $list->id,
                     'boardId' => $list->board_id,
                     'title' => $list->name,
                     'position' => (int) $list->position,
-                    'cardOrderIds' => $list->cards->pluck('id')->toArray(),
                     'cards' => $list->cards->map(function ($card) {
                         return [
                             'id' => $card->id,
@@ -67,38 +66,12 @@ class ListController extends Controller
                             'description' => $card->description ?? '',
                             'position' => (int) $card->position,
                             'comments_count' => $card->comments_count,
-                            'is_archived' => (bool) $card->is_archived, 
-                            'checklists' => $card->checklists->map(function ($checklist) {
-                                return [
-                                    'id' => $checklist->id,
-                                    'card_id' => $checklist->card_id,
-                                    'name' => $checklist->name,
-                                    'items' => $checklist->items->map(function ($item) {
-                                        return [
-                                            'id' => $item->id,
-                                            'checklist_id' => $item->checklist_id,
-                                            'name' => $item->name,
-                                            'is_completed' => (bool) $item->is_completed,
-                                        ];
-                                    })->toArray(),
-                                ];
-                            })->toArray(),
                         ];
                     })->toArray(),
                 ];
             })->toArray(),
-        ];
-
-        return response()->json($responseData);
-
-        // $lists = ListBoard::where('board_id', $boardId)
-        //     ->where('closed', false)
-        //     ->orderBy('position')
-        //     ->with('cards') // Lấy luôn danh sách thẻ thuộc mỗi danh sách
-        //     ->get();
-        // return response()->json($lists);
+        ]);
     }
-
 
     public function getListClosed($boardId)
     {
@@ -121,7 +94,6 @@ class ListController extends Controller
             ]);
         }
     }
-
     public function destroy($id)
     {
         try {

@@ -26,6 +26,7 @@ import WorkspaceContext from "../../../../contexts/WorkspaceContext";
 const SideBar = () => {
   const { currentWorkspace, isLoading, error } = useContext(WorkspaceContext); const [openSettings, setOpenSettings] = useState(false);
 
+  console.log(currentWorkspace)
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
   };

@@ -15,11 +15,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             // ListBoardSeeder::class,
             UserSeeder::class,
-            WorkspaceSeeder::class,
-            BoardSeeder::class,
-            WorkspaceMembersSeeder::class,
-            BoardUserPermissions::class,
-            BoardMemberSeeder::class
+            // WorkspaceSeeder::class,
+            // BoardSeeder::class,
+            // WorkspaceMembersSeeder::class,
+            // BoardUserPermissions::class,
+            // BoardMemberSeeder::class
         ]);
     }
 }
