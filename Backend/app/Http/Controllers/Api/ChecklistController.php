@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ChecklistCreated;
+use App\Events\ChecklistDeleted;
+use App\Events\ChecklistUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\CheckList;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Activitylog\Models\Activity;
 
 class ChecklistController extends Controller
 {
@@ -61,20 +65,21 @@ class ChecklistController extends Controller
         ]);
 
         // Ghi lại lịch sử hoạt động
-        $user_name = auth()->user()?->user_name ?? 'ai đó';
+        $user_name = auth()->user()?->full_name ?? 'ai đó';
 
-        // activity()
-        //     ->causedBy(auth()->user())
-        //     ->performedOn($card)
-        //     ->event('added_checklist')
-        //     ->withProperties([
-        //         'card_title' => $card->title,
-        //         'checklist_id' => $checklist->id,
-        //         'name' => $request->name,
-        //     ])
-        //     ->log("{$user_name} đã thêm checklist: {$request->name}");
+        $activity = activity()
+            ->causedBy(auth()->user())
+            ->performedOn($card)
+            ->event('added_checklist')
+            ->withProperties([
+                'card_title' => $card->title,
+                'checklist_id' => $checklist->id,
+                'name' => $request->name,
+            ])
+            ->log("{$user_name} đã thêm danh sách công việc {$request->name} vào thẻ này");
 
-        // Trả về phản hồi JSON
+        broadcast(new ChecklistCreated($checklist, $activity))->toOthers();
+
         return response()->json([
             'status' => 'success',
             'message' => 'Checklist đã được thêm!',
@@ -86,10 +91,6 @@ class ChecklistController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
@@ -107,6 +108,8 @@ class ChecklistController extends Controller
 
             // Cập nhật checklist với dữ liệu đã validate
             $checklist->update($validatedData);
+
+            broadcast(new ChecklistUpdated($checklist))->toOthers();
 
             // Trả về response thành công
             return response()->json([
@@ -164,22 +167,58 @@ class ChecklistController extends Controller
     // }
 
     public function deleteChecklist($id)
-{
-    $checklist = Checklist::find($id);
+    {
+        $checklist = Checklist::find($id);
 
-    if (!$checklist) {
-        return response()->json(['message' => 'Checklist không tồn tại'], 404);
+        if (!$checklist) {
+            return response()->json(['message' => 'Checklist không tồn tại'], 404);
+        }
+
+        // Chỉ cho phép người tạo checklist hoặc admin được xóa
+        // if (Auth::id() !== $checklist->user_id && Auth::user()->role !== 'admin') {
+        //     return response()->json(['message' => 'Bạn không có quyền xóa checklist này'], 403);
+        // }
+
+
+        $user_name = auth()->user()?->full_name ?? 'ai đó';
+        $card = $checklist->card; // Giả sử checklist có quan hệ với card
+
+        $hasCompletedItem = $checklist->items()->where('is_completed', true)->exists();
+
+
+        $checklistId = $checklist->id;
+        $cardId = $checklist->card_id;
+        $activity = null;
+
+        $checklist->delete();
+
+        if (!$hasCompletedItem) {
+            // Nếu không có item nào hoàn thành → Xóa activity của hàm tạo checklist
+            Activity::where('event', 'added_checklist')
+                ->where('subject_id', $card->id)
+                ->where('subject_type', Card::class)
+                ->whereJsonContains('properties->checklist_id', intval($checklist->id))
+                ->delete();
+        } else {
+            // Nếu có ít nhất một item đã hoàn thành → Ghi lại activity xóa checklist
+            $activity =  activity()
+                ->causedBy(auth()->user())
+                ->performedOn($card)
+                ->event('deleted_checklist')
+                ->withProperties([
+                    'card_title' => $card->title,
+                    'checklist_id' => $id,
+                    'name' => $checklist->name,
+                ])
+                ->log("{$user_name} đã bỏ danh sách công việc {$checklist->name} khỏi thẻ này");
+
+        }
+
+        broadcast(new ChecklistDeleted($checklistId, $cardId, $activity))->toOthers();
+
+
+        return response()->json(['message' => 'Checklist đã bị xóa thành công']);
     }
-
-    // Chỉ cho phép người tạo checklist hoặc admin được xóa
-    // if (Auth::id() !== $checklist->user_id && Auth::user()->role !== 'admin') {
-    //     return response()->json(['message' => 'Bạn không có quyền xóa checklist này'], 403);
-    // }
-
-    $checklist->delete();
-
-    return response()->json(['message' => 'Checklist đã bị xóa thành công']);
-}
 
 
 }

@@ -1,6 +1,7 @@
 <?php
 
 
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
@@ -230,7 +231,7 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
 
 })->middleware('auth:sanctum');
 // checklists
-// Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     // Checklist routes
     Route::get('/cards/{cardId}/checklists', [ChecklistController::class, 'index']); // Lấy danh sách checklist theo card
     Route::post('/checklists', [ChecklistController::class, 'store']); // Thêm mới checklist
@@ -243,8 +244,10 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
     Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']); // Cập nhật tên của checklist item
     Route::put('/item/{id}/completed', [ChecklistItemController::class, 'toggleCompletionStatus']); // Cập nhật trạng thái hoàn thành của checklist item
     Route::delete('/item/{id}', [ChecklistItemController::class, 'destroy']);
-// });
+});
 // Route::delete('/checklists/{id}', [ChecklistItemController::class, 'destroy']);// xóa checklists
 Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNotifications']);
 
 // });
+
+Route::get('/activities/{cardId}', [ActivityLogController::class, 'getActivitiesByCard']);

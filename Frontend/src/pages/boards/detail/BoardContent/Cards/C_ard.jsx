@@ -22,6 +22,7 @@ import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetai
 import { useCardLabels } from "../../../../../hooks/useLabel";
 import { useCardById } from "../../../../../hooks/useCard";
 import { useCommentsByCard } from "../../../../../hooks/useComment";
+import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
 
 
 const C_ard = ({ card }) => {
@@ -32,10 +33,12 @@ const C_ard = ({ card }) => {
         isLoading,
         error,
         updateDescriptionCard,
-      } = useCardById(card.id);
+    } = useCardById(card.id);
     const { data: cardLabels = [] } = useCardLabels(card.id);
     const { data: comments = [] } = useCommentsByCard(card.id);
-    console.log(cardDetail);
+    // console.log(cardDetail);
+    const { data: checklists = [], isLoadingChecklist } =
+        useChecklistsByCard(card.id);
     const [open, setOpen] = useState(false); // State mở/đóng Dialog
     const navigate = useNavigate(); // Điều hướng URL
     const location = useLocation(); // Lấy URL hiện tại
@@ -87,14 +90,15 @@ const C_ard = ({ card }) => {
             !!comments?.length ||
             !!card?.attachments?.length ||
             !!cardDetail?.description ||
-            !!card?.checklists?.some(checklist => checklist.items.length > 0)
+            !!checklists?.some(checklist => checklist.items.length > 0)
 
         );
     };
 
-    const allChecklistsCompleted = card?.checklists?.every((checklist) =>
-        checklist.items.every((item) => item.is_completed)
+    const allChecklistsCompleted = checklists?.every((checklist) =>
+        checklist.items?.every((item) => item.is_completed) ?? false
     );
+
     return (
         <>
             <Card  // Sử dụng index làm key (không khuyến khích nếu thứ tự thay đổi)
@@ -195,7 +199,7 @@ const C_ard = ({ card }) => {
                         )}
 
 
-                        {!!card?.checklists?.some((checklist) => checklist.items.length > 0) && (
+                        {!!checklists?.some((checklist) => checklist.items.length > 0) && (
                             <Tooltip title={'Mục trong danh sách công việc'}>
                                 <Box sx={{
                                     display: "flex",
@@ -219,12 +223,12 @@ const C_ard = ({ card }) => {
                                             // color: allChecklistsCompleted ? "success.main" : "primary.dark", // Đổi màu khi hoàn thành
                                         }}
                                     >
-                                        {card?.checklists.reduce(
+                                        {checklists.reduce(
                                             (total, checklist) => total + checklist.items.filter((item) => item.is_completed).length,
                                             0
                                         )}
                                         /
-                                        {card?.checklists.reduce((total, checklist) => total + checklist.items.length, 0)}
+                                        {checklists.reduce((total, checklist) => total + checklist.items.length, 0)}
                                     </Typography>
                                 </Box>
                             </Tooltip>

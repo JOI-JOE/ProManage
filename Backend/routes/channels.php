@@ -38,3 +38,7 @@ Broadcast::channel('board.{boardId}.card.{cardId}', function ($user, $boardId, $
 Broadcast::channel('card.{cardId}', function ($user, $cardId) {
     return true; // Hoặc thêm logic kiểm tra quyền truy cập
 });
+
+Broadcast::channel('checklist.{cardId}', function ($cardId) {
+    return true; // 🔥 Public channel, ai cũng nghe được
+});
