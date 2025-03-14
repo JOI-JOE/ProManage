@@ -16,7 +16,7 @@ export const useChecklistsByCard = (cardId) => {
 
     useEffect(() => {
         if (!cardId) {
-            console.warn("❌ checklist_id chưa có, không đăng ký kênh.");
+            // console.warn("❌ checklist_id chưa có, không đăng ký kênh.");
             return;
         }
     

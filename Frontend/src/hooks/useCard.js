@@ -9,6 +9,8 @@ import {
   updateArchivedCard,
   deleteCard,
   getCardArchivedByBoard,
+  getMemberInCard,
+  toggleCardMember,
 } from "../api/models/cardsApi";
 import { useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
@@ -184,4 +186,27 @@ export const useCardActions = (boardId) => {
     archiveCard: archiveCard.mutate, // Gọi mutate trực tiếp
     deleteCard: deleteCardMutation.mutate, // Gọi mutate trực tiếp
   };
+};
+
+export const useGetMemberInCard = (cardId) => {
+  const queryClient = useQueryClient();
+
+  // Fetch danh sách thành viên
+  const membersQuery = useQuery({
+    queryKey: ["membersInCard", cardId],
+    queryFn: () => getMemberInCard(cardId),
+    staleTime: 1000 * 60 * 5, // 5 phút.
+    cacheTime: 1000 * 60 * 30, // 30 phút.
+    enabled: !!cardId, // Chỉ gọi API khi có cardId hợp lệ.
+  });
+
+  // Mutation để thêm/xóa thành viên
+  const mutation = useMutation({
+    mutationFn: (userId) => toggleCardMember(cardId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["membersInCard", cardId]); // Fetch lại sau khi API thành công
+    },
+  });
+
+  return { ...membersQuery, toggleMember: mutation.mutate };
 };

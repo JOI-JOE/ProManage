@@ -15,8 +15,15 @@ import {
   MenuItem,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useParams } from "react-router-dom";
+import { useGenerateInviteLink } from "../../../../../../../hooks/useInviteBoard";
 
 const ShareBoardDialog = ({ open, onClose }) => {
+  const { boardId } = useParams()
+  // console.log(boardId);
+
+  const { mutate: generateLink, data, isLoading, error } = useGenerateInviteLink();
+  
   const [roleAnchorEl, setRoleAnchorEl] = useState(null);
   const [selectedRole, setSelectedRole] = useState("Quản trị viên");
   const [link, setLink] = useState("");
@@ -32,7 +39,9 @@ const ShareBoardDialog = ({ open, onClose }) => {
 
   const handleCreateLink = () => {
     // Giả lập tạo liên kết
-    setLink("https://example.com/share-link");
+    generateLink(boardId);
+    // console.log(12121212);
+    
   };
 
   return (
