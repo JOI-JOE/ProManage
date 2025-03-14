@@ -27,10 +27,18 @@ class ListController extends Controller
                 'listBoards' => function ($query) {
                     $query->where('closed', false)
                         ->orderBy('position')
-                        ->with(['cards' => function ($cardQuery) {
-                            $cardQuery->orderBy('position');
-                        }])
-                        ->withCount('cards');
+                        ->with([
+                            'cards' => function ($cardQuery) {
+                                $cardQuery->orderBy('position')
+                                    ->withCount('comments')
+                                    ->with([
+                                        'checklists' => function ($checklistQuery) {
+                                            $checklistQuery->with('items');
+                                        },
+                                        'labels' // Thêm mối quan hệ labels
+                                    ]);
+                            }
+                        ]);
                 }
             ])->find($boardId);
 
@@ -66,6 +74,30 @@ class ListController extends Controller
                             'description' => $card->description ?? '',
                             'position' => (int) $card->position,
                             'comments_count' => $card->comments_count,
+                            'is_archived' => (bool) $card->is_archived,
+                            'checklists' => $card->checklists->map(function ($checklist) {
+                                return [
+                                    'id' => $checklist->id,
+                                    'card_id' => $checklist->card_id,
+                                    'name' => $checklist->name,
+                                    'items' => $checklist->items->map(function ($item) {
+                                        return [
+                                            'id' => $item->id,
+                                            'checklist_id' => $item->checklist_id,
+                                            'name' => $item->name,
+                                            'is_completed' => (bool) $item->is_completed,
+                                        ];
+                                    })->toArray(),
+                                ];
+                            })->toArray(),
+                            'labels' => $card->labels->map(function ($label) {
+                                return [
+                                    'id' => $label->id,
+                                    'card_id' => $label->card_id,
+                                    'color' => $label->color,
+                                    'text' => $label->text,
+                                ];
+                            })->toArray(), // Thêm thông tin về labels
                         ];
                     })->toArray(),
                 ];
@@ -158,10 +190,10 @@ class ListController extends Controller
 
 
         return response()->json([
-            'id'        => $list->id,
-            'title'     => $list->name,
-            'position'  => $list->position,
-            'board_id'  => $list->board_id,
+            'id' => $list->id,
+            'title' => $list->name,
+            'position' => $list->position,
+            'board_id' => $list->board_id,
         ], 201);
     }
 

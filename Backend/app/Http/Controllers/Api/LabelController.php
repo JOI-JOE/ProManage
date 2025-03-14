@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\LabelCreated;
+// use App\Events\LabelUpdated;
+use App\Events\LabelDeleted;
+use App\Events\LabelNameUpdated;
+use App\Events\LabelUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\Color;
@@ -20,7 +25,7 @@ class LabelController extends Controller
         try {
 
             $card = Card::findOrFail($cardId);
-            $labels = $card->labels()->get(['id', 'title', 'color_id']);
+            $labels = $card->labels()->with('color')->get(['id', 'title', 'color_id']);
             return response()->json([
                 'message' => 'lấy nhãn thành công',
                 'status' => true,
@@ -80,6 +85,8 @@ class LabelController extends Controller
             ]);
         }
 
+        broadcast(new LabelCreated($label->load('color')))->toOthers();
+
         return response()->json(['message' => 'Nhãn đã được tạo', 'label' => $label->load('color')]);
     }
     public function updateAddAndRemove(Request $request, $cardID)
@@ -96,10 +103,11 @@ class LabelController extends Controller
             $card->labels()->detach($request->label_id);
         }
 
+        broadcast(new LabelUpdated($card))->toOthers();
+        
         return response()->json(['message' => 'Updated successfully', 'labels' => $card->labels]);
     }
 
-    // thêm  nhãn vào thẻ
     public function updateLabelName(Request $request, $labelId)
     {
         try {
@@ -114,6 +122,8 @@ class LabelController extends Controller
             $label->update([
                 'title' => $request->title,
             ]);
+
+            broadcast(new LabelNameUpdated($label))->toOthers();
 
             return response()->json([
                 'message' => 'Cập nhật tên  nhãn thành công',
@@ -131,13 +141,19 @@ class LabelController extends Controller
     public function deleteLabelByBoard($labelId)
     {
 
+        $label = Label::findOrFail($labelId);
+        $boardId = $label->board_id; // Lấy board_id của label trước khi xóa
+    
+        // Xóa trong bảng trung gian
         DB::table('card_label')->where('label_id', $labelId)->delete();
-
+    
         // Xóa label
-        Label::findOrFail($labelId)->delete();
+        $label->delete();
+    
 
+        broadcast(new LabelDeleted($labelId, $boardId))->toOthers();
         return response()->json(['message' => 'Label deleted successfully']);
 
-        return response()->json(['message' => 'Label deleted successfully'], 200);
+        // return response()->json(['message' => 'Label deleted successfully'], 200);
     }
 }

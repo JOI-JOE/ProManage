@@ -40,7 +40,11 @@ const MoveCardModal = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" inert={!open}>
-      <DialogTitle sx={{ fontSize: "14px" }}>Di chuyển thẻ</DialogTitle>
+      <DialogTitle
+        sx={{ textAlign: "center", fontSize: "17px", fontWeight: "bold" }}
+      >
+        Di chuyển thẻ
+      </DialogTitle>
       <DialogContent>
         <Box sx={boxStyle}>
           <FormControl fullWidth>

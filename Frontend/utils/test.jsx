@@ -31,7 +31,6 @@ import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
-import DateModal from "./childComponent_CardDetail/Date";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import LinearProgress from "@mui/material/LinearProgress";
 import Checkbox from "@mui/material/Checkbox";
@@ -79,10 +78,6 @@ import {
   useUpdateCheckListItemName,
 } from "../../../../../../../../../hooks/useCheckListItem";
 import CoverPhoto from "./childComponent_CardDetail/CoverPhoto";
-import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
-import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
-import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
-import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -93,9 +88,6 @@ const CardModal = () => {
   const [comment, setComment] = useState("");
   const [isEditingComment, setIsEditingComment] = useState(false);
   // const [setComments] = useState([]);
-  const { data: cardLabels = [] } = useCardLabels(cardId);
-  const [labels, setLabels] = useState([]);
-
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [tasks, setTasks] = useState([]);
@@ -114,8 +106,6 @@ const CardModal = () => {
   const [previousCardName, setPreviousCardName] = useState(title);
   const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
-  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
-  // const [activity, setActivity] = useState("");
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
@@ -145,6 +135,7 @@ const CardModal = () => {
   //   avatar: "https://via.placeholder.com/40",
   // };
   const { data: comments = [] } = useCommentsByCard(cardId);
+  const { data: user, isLoadingUser, errorUser } = useUser();
   const {
     data: cardDetail,
     isLoading,
@@ -165,33 +156,10 @@ const CardModal = () => {
   const { mutate: updateCheckListItemName } = useUpdateCheckListItemName();
   const { mutate: deleteItem } = useDeleteCheckListItem();
 
-
-  const { data: activities = [], isLoadingActivity, errorActivity } = useActivityByCardId(cardId);
-  const { user } = useStateContext();
-
-
-  const mergedData = [...comments, ...activities].sort(
-    (a, b) => new Date(a.created_at) - new Date(b.created_at)
-  );
-
-  // console.log(user);
-  if (isLoadingActivity) return <Typography>Đang tải hoạt động...</Typography>;
-  if (errorActivity) return <Typography color="red">Lỗi khi tải dữ liệu!</Typography>;
-
-
-
-
-  // console.log(activities);
+  // console.log(cardId);
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
-  useEffect(() => {
-    if (JSON.stringify(labels) !== JSON.stringify(cardLabels)) {
-      setLabels(cardLabels);
-    }
-  }, [cardLabels, labels]);
-
-  // console.log(cardLabels);
 
   // const {
   //   data: list,
@@ -286,8 +254,8 @@ const CardModal = () => {
     });
   };
 
-  // if (isLoadingUser) return <p>Loading...</p>;
-  // if (errorUser) return <p>Lỗi khi lấy dữ liệu user!</p>;
+  if (isLoadingUser) return <p>Loading...</p>;
+  if (errorUser) return <p>Lỗi khi lấy dữ liệu user!</p>;
 
   /// THÊM CÔNG VIỆC
 
@@ -323,8 +291,6 @@ const CardModal = () => {
     toggleItemStatus(id, {
       onSuccess: () => {
         console.log("✅ Cập nhật trạng thái thành công");
-        // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
-        // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
       },
       onError: () => {
         console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
@@ -343,9 +309,7 @@ const CardModal = () => {
     removeCheckList(checklistId, {
       onSuccess: () => {
         console.log("✅ Checklist đã bị xóa thành công!");
-        // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
-        // // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] }); // Cập nhật lại danh sách checklist
-        // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
+        queryClient.invalidateQueries(["checklists", cardId]);
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa checklist:", error);
@@ -492,9 +456,7 @@ const CardModal = () => {
         setIsDeleteConfirmOpen(false);
         setCommentToDelete(null);
 
-        // queryClient.invalidateQueries(["comments", cardId]);
-        queryClient.invalidateQueries({ queryKey: ["comments"] });
-        queryClient.invalidateQueries({ queryKey: ["lists"] });
+        queryClient.invalidateQueries(["comments", cardId]);
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa bình luận:", error);
@@ -528,29 +490,6 @@ const CardModal = () => {
     }
   };
 
-  //NGÀY
-  const [dateInfo, setDateInfo] = useState(null);
-  const [openDateModal, setOpenDateModal] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  const handleSaveDate = (data) => {
-    setDateInfo(data); // Lưu dữ liệu từ DateModal.jsx
-    setOpenDateModal(false); // Đóng modal sau khi lưu
-  };
-
-  const isNearDeadline = () => {
-    if (!dateInfo?.endDate) return false;
-    const now = dayjs();
-    const end = dayjs(dateInfo.endDate);
-    return end.diff(now, "hour") < 2 && end.isAfter(now);
-  };
-
-  const isOverdue = () => {
-    if (!dateInfo?.endDate) return false;
-    const now = dayjs();
-    return dayjs(dateInfo.endDate).isBefore(now);
-  };
-
   const handleCommentClick = () => {
     setIsEditingComment(true);
   };
@@ -561,28 +500,28 @@ const CardModal = () => {
     setIsDetailHidden(!isDetailHidden);
   };
 
-  // const activities = [
-  //   {
-  //     name: "Pham Thi Hong Ngat (FPL HN)",
-  //     action: "đã gửi thẻ này tới bảng",
-  //     time: "2 giờ trước",
-  //   },
-  //   {
-  //     name: "Pham Thi Hong Ngat (FPL HN)",
-  //     action: "đã lưu trữ thẻ này",
-  //     time: "2 giờ trước",
-  //   },
-  //   {
-  //     name: "Pham Thi Hong Ngat (FPL HN)",
-  //     action: "đã tham gia thẻ này",
-  //     time: "21:39 8 thg 3, 2025",
-  //   },
-  //   {
-  //     name: "Pham Thi Hong Ngat (FPL HN)",
-  //     action: "đã thêm thẻ này vào danh sách mmm",
-  //     time: "22:54 7 thg 3, 2025",
-  //   },
-  // ];
+  const activities = [
+    {
+      name: "Pham Thi Hong Ngat (FPL HN)",
+      action: "đã gửi thẻ này tới bảng",
+      time: "2 giờ trước",
+    },
+    {
+      name: "Pham Thi Hong Ngat (FPL HN)",
+      action: "đã lưu trữ thẻ này",
+      time: "2 giờ trước",
+    },
+    {
+      name: "Pham Thi Hong Ngat (FPL HN)",
+      action: "đã tham gia thẻ này",
+      time: "21:39 8 thg 3, 2025",
+    },
+    {
+      name: "Pham Thi Hong Ngat (FPL HN)",
+      action: "đã thêm thẻ này vào danh sách mmm",
+      time: "22:54 7 thg 3, 2025",
+    },
+  ];
 
   const [isCoverPhotoOpen, setIsCoverPhotoOpen] = useState(false);
 
@@ -663,6 +602,7 @@ const CardModal = () => {
             </span>
           </Typography>
           {/* New section to match the provided image */}
+
           <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
             <Avatar
               sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
@@ -679,24 +619,79 @@ const CardModal = () => {
               }}
               onClick={() => setIsMemberListOpen(true)} // Thêm sự kiện onClick
             />
-            {labels?.map((label) => (
-              <Button
-                key={label.id}
-                variant="contained"
-                sx={{
-                  bgcolor: label.color?.hex_code || "#ccc",
-                  mr: 1,
-                  height: 25,
-                  p: "0px 8px", // Thêm padding ngang để không bị cắt chữ
-                  minWidth: "auto", // Cho phép nút mở rộng theo chữ
-                  width: "fit-content", // Tự động điều chỉnh theo nội dung
-                  maxWidth: "100%", // Giới hạn tối đa để tránh tràn
-                }}
-                onClick={() => setIsLabelListOpen(true)}
-              >
-                {label.title}
-              </Button>
-            ))}
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#D69D00",
+                mr: 1,
+                height: 25,
+                p: 0,
+                width: 36,
+                minWidth: 0,
+              }}
+              onClick={() => setIsLabelListOpen(true)} // Thêm sự kiện onClick
+            ></Button>
 
             <AddIcon
               sx={{
@@ -724,49 +719,6 @@ const CardModal = () => {
             </Button>
           </Box>
         </DialogTitle>
-
-        {/* NGÀY */}
-        {dateInfo && (
-          <>
-            <Typography sx={{ fontWeight: "bold", mb: 0, ml: 3 }}>
-              Ngày
-            </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-
-                ml: 3,
-                p: 1,
-              }}
-              onClick={openDateModal}
-            >
-              <CalendarTodayIcon />
-              {dateInfo.startDate !== "Không có" && (
-                <Typography>{dateInfo.startDate.split(" ")[0]} -</Typography>
-              )}
-              <Typography>{dateInfo.endDate.split(" ")[1]}</Typography>
-              <Typography>{dateInfo.endDate.split(" ")[0]}</Typography>
-              {/* Kiểm tra trạng thái deadline */}
-              {isOverdue() && (
-                <Chip
-                  label="Quá hạn"
-                  color="error"
-                  sx={{ fontSize: 12, height: 22 }}
-                />
-              )}
-              {isNearDeadline() && (
-                <Chip
-                  label="Sắp hết hạn"
-                  color="warning"
-                  sx={{ fontSize: 12, height: 22 }}
-                />
-              )}
-              <ArrowDropDownIcon />
-            </Box>
-          </>
-        )}
         <DialogContent>
           <Grid container spacing={2}>
             {/* Cột trái (Nội dung chính) */}
@@ -1230,9 +1182,6 @@ const CardModal = () => {
                 </>
               )}
 
-              
-
-
               {/* Hiển thị các bình luận và hoạt động */}
               {comments.map((cmt, index) => {
                 const content = cmt.content || "";
@@ -1278,9 +1227,8 @@ const CardModal = () => {
                               padding: "3px 0px",
                             }}
                           >
-                            {/* {new Date(cmt.created_at).toLocaleTimeString()}{" "}
-                            {new Date(cmt.created_at).toLocaleDateString()} */}
-                            {formatTime(cmt.created_at)}
+                            {new Date(cmt.created_at).toLocaleTimeString()}{" "}
+                            {new Date(cmt.created_at).toLocaleDateString()}
                           </Typography>
                         </Typography>
                       </Box>
@@ -1442,62 +1390,36 @@ const CardModal = () => {
                   }}
                 >
                   <Stack spacing={2}>
-                    {activities.length > 0 ? (
-                      activities.map((activity, index) => {
-
-                        const description = activity.description;
-                        const keyword = "đã"; // Từ khóa để xác định phần còn lại của chuỗi
-                        const keywordIndex = description.indexOf(keyword);
-
-                        if (keywordIndex === -1) {
-                          return null; // Nếu không tìm thấy "đã", bỏ qua activity này
-                        }
-                        // Lấy tên người thực hiện hành động (trước từ "đã")
-                        const userName = description.substring(0, keywordIndex).trim();
-
-                        // Lấy phần còn lại của mô tả
-                        const actionText = description.substring(keywordIndex).trim();
-
-                        const namePattern = /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
-                        const affectedUsers = actionText.match(namePattern) || [];
-                        // Kiểm tra nếu activity có username giống user hiện tại thì in đậm
-
-                        return (
-                          <Box key={index} display="flex" alignItems="center" mb={1}>
-                            <Avatar sx={{ bgcolor: "pink", width: 28, height: 28, mt: 2, fontSize: "0.6rem", }}>
-                              {userName.charAt(0)}
-                            </Avatar>
-                            <Box>
-                              <Typography>
-                                <Typography
-                                  component="span"
-                                  fontWeight={"bold"}
-                                >
-                                  {userName}
-                                </Typography>{" "}
-                                {affectedUsers.length > 0 ? (
-                                  actionText.split(affectedUsers[0]).map((part, i) => (
-                                    <React.Fragment key={i}>
-                                      {i > 0 && <Typography component="span" fontWeight="bold"> {affectedUsers[0]}</Typography>}
-                                      {part}
-                                    </React.Fragment>
-                                  ))
-                                ) : (
-                                  <Typography component="span" fontWeight="normal">
-                                    {actionText}
-                                  </Typography>
-                                )}
-                              </Typography>
-                              <Typography fontSize="0.8rem" color="gray">
-                                {formatTime(activity.created_at)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        );
-                      })
-                    ) : (
-                      <Typography color="gray">Không có hoạt động nào</Typography>
-                    )}
+                    {activities.map((activity, index) => (
+                      <Box key={index} display="flex" alignItems="center">
+                        <Avatar
+                          sx={{
+                            bgcolor: "pink",
+                            width: 28,
+                            height: 28,
+                            fontSize: "0.6rem",
+                            mr: 1,
+                          }}
+                        >
+                          PH
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight="bold" color="black">
+                            {activity.name}{" "}
+                            <Typography
+                              component="span"
+                              fontWeight="normal"
+                              color="black"
+                            >
+                              {activity.action}
+                            </Typography>
+                          </Typography>
+                          <Typography fontSize="0.5rem" color="gray">
+                            {activity.time}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
                   </Stack>
                 </Box>
               )}
@@ -1561,10 +1483,7 @@ const CardModal = () => {
                           sx={{ color: "black", fontSize: "0.8rem" }}
                         />
                       </ListItemIcon>
-                      <ListItemText
-                        primary="Ngày"
-                        onClick={() => setIsDateModalOpen(true)}
-                      />
+                      <ListItemText primary="Ngày" />
                     </ListItemButton>
                   </ListItem>
 
@@ -1592,9 +1511,7 @@ const CardModal = () => {
                     </ListItemButton>
                   </ListItem>
                 </List>
-
                 <Divider sx={{ my: 1 }} />
-
                 <Typography variant="subtitle1" fontWeight="bold">
                   Thao tác
                 </Typography>
@@ -1678,7 +1595,7 @@ const CardModal = () => {
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-        // onSave={handleAddTask}
+          // onSave={handleAddTask}
         />
 
         {/* Component Label List */}
@@ -1720,13 +1637,6 @@ const CardModal = () => {
           onCoverColorChange={handleCoverColorChange} // Pass the handler to CoverPhoto
         />
 
-        <DateModal
-          open={isDateModalOpen}
-          onClose={() => setIsDateModalOpen(false)}
-          onSave={handleSaveDate}
-          initialData={dateInfo}
-        />
-
         <Dialog
           open={isDeleteConfirmOpen}
           onClose={() => setIsDeleteConfirmOpen(false)}
@@ -1741,7 +1651,6 @@ const CardModal = () => {
             </Button>
           </DialogActions>
         </Dialog>
-
         <ToastContainer />
       </Box>{" "}
       {/* Move the Box here to wrap the entire content */}

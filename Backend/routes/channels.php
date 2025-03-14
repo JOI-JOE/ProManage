@@ -30,3 +30,15 @@ Broadcast::channel('board.{boardId}.list.{listId}', function ($user, $boardId, $
 Broadcast::channel('board.{boardId}.card.{cardId}', function ($user, $boardId, $cardId) {
     return Board::find($boardId) !== null && Card::find($cardId) !== null; // Kiểm tra xem Board và Card có tồn tại không
 });
+
+// Broadcast::channel('card.' . $cardId, function ($user) use ($card) {
+//     return true; // Cho phép tất cả người dùng nghe sự kiện
+// });
+
+Broadcast::channel('card.{cardId}', function ($user, $cardId) {
+    return true; // Hoặc thêm logic kiểm tra quyền truy cập
+});
+
+Broadcast::channel('checklist.{cardId}', function ($cardId) {
+    return true; // 🔥 Public channel, ai cũng nghe được
+});
