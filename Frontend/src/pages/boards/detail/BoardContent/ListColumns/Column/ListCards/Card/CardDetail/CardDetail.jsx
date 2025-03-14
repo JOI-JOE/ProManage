@@ -55,6 +55,7 @@ import CollectionsIcon from "@mui/icons-material/Collections";
 import {
   useCardActions,
   useCardById,
+  useGetMemberInCard,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
 import {
@@ -83,6 +84,9 @@ import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
 import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
 import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import dayjs from "dayjs";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -139,11 +143,6 @@ const CardModal = () => {
     setIsFollowing(!isFollowing);
   };
 
-  const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
-  // const loggedInUser = {
-  //   name: "Current User",
-  //   avatar: "https://via.placeholder.com/40",
-  // };
   const { data: comments = [] } = useCommentsByCard(cardId);
   const {
     data: cardDetail,
@@ -165,10 +164,13 @@ const CardModal = () => {
   const { mutate: updateCheckListItemName } = useUpdateCheckListItemName();
   const { mutate: deleteItem } = useDeleteCheckListItem();
 
-
-  const { data: activities = [], isLoadingActivity, errorActivity } = useActivityByCardId(cardId);
+  const {
+    data: activities = [],
+    isLoadingActivity,
+    errorActivity,
+  } = useActivityByCardId(cardId);
   const { user } = useStateContext();
-
+  const userId = user?.id;
 
   const mergedData = [...comments, ...activities].sort(
     (a, b) => new Date(a.created_at) - new Date(b.created_at)
@@ -176,15 +178,14 @@ const CardModal = () => {
 
   // console.log(user);
   if (isLoadingActivity) return <Typography>Đang tải hoạt động...</Typography>;
-  if (errorActivity) return <Typography color="red">Lỗi khi tải dữ liệu!</Typography>;
-
-
-
+  if (errorActivity)
+    return <Typography color="red">Lỗi khi tải dữ liệu!</Typography>;
 
   // console.log(activities);
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
+  const { data: members, toggleMember } = useGetMemberInCard(cardId);
   useEffect(() => {
     if (JSON.stringify(labels) !== JSON.stringify(cardLabels)) {
       setLabels(cardLabels);
@@ -256,9 +257,12 @@ const CardModal = () => {
     }
   };
 
-  // const handleDescriptionClick = () => {
-  //   setIsEditingDescription(true);
-  // };
+  // Xử lý tham gia/rời khỏi card
+  const handleJoinCard = () => {
+    toggleMember(userId);
+  };
+
+  const isMember = members?.data?.some((m) => m.id === userId);
 
   const getPlainText = (html) => {
     const tempDiv = document.createElement("div");
@@ -324,7 +328,7 @@ const CardModal = () => {
       onSuccess: () => {
         console.log("✅ Cập nhật trạng thái thành công");
         // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
-        // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
+        // queryClient.invalidateQueries({ queryKey: ["activities"] });
       },
       onError: () => {
         console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
@@ -345,7 +349,7 @@ const CardModal = () => {
         console.log("✅ Checklist đã bị xóa thành công!");
         // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
         // // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] }); // Cập nhật lại danh sách checklist
-        // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
+        // queryClient.invalidateQueries({ queryKey: ["activities"] });
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa checklist:", error);
@@ -664,11 +668,17 @@ const CardModal = () => {
           </Typography>
           {/* New section to match the provided image */}
           <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-            <Avatar
-              sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
-            >
-              PH
-            </Avatar>
+            {members?.data?.map((member) => (
+              <Avatar
+                key={member.id}
+                sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
+              >
+                {member.full_name
+                  ? member.full_name.charAt(0).toUpperCase()
+                  : "?"}
+              </Avatar>
+            ))}
+
             <AddIcon
               sx={{
                 fontSize: 14,
@@ -1230,9 +1240,6 @@ const CardModal = () => {
                 </>
               )}
 
-              
-
-
               {/* Hiển thị các bình luận và hoạt động */}
               {comments.map((cmt, index) => {
                 const content = cmt.content || "";
@@ -1444,7 +1451,6 @@ const CardModal = () => {
                   <Stack spacing={2}>
                     {activities.length > 0 ? (
                       activities.map((activity, index) => {
-
                         const description = activity.description;
                         const keyword = "đã"; // Từ khóa để xác định phần còn lại của chuỗi
                         const keywordIndex = description.indexOf(keyword);
@@ -1453,18 +1459,37 @@ const CardModal = () => {
                           return null; // Nếu không tìm thấy "đã", bỏ qua activity này
                         }
                         // Lấy tên người thực hiện hành động (trước từ "đã")
-                        const userName = description.substring(0, keywordIndex).trim();
+                        const userName = description
+                          .substring(0, keywordIndex)
+                          .trim();
 
                         // Lấy phần còn lại của mô tả
-                        const actionText = description.substring(keywordIndex).trim();
+                        const actionText = description
+                          .substring(keywordIndex)
+                          .trim();
 
-                        const namePattern = /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
-                        const affectedUsers = actionText.match(namePattern) || [];
+                        const namePattern =
+                          /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
+                        const affectedUsers =
+                          actionText.match(namePattern) || [];
                         // Kiểm tra nếu activity có username giống user hiện tại thì in đậm
 
                         return (
-                          <Box key={index} display="flex" alignItems="center" mb={1}>
-                            <Avatar sx={{ bgcolor: "pink", width: 28, height: 28, mt: 2, fontSize: "0.6rem", }}>
+                          <Box
+                            key={index}
+                            display="flex"
+                            alignItems="center"
+                            mb={1}
+                          >
+                            <Avatar
+                              sx={{
+                                bgcolor: "pink",
+                                width: 28,
+                                height: 28,
+                                mt: 2,
+                                fontSize: "0.6rem",
+                              }}
+                            >
                               {userName.charAt(0)}
                             </Avatar>
                             <Box>
@@ -1476,14 +1501,27 @@ const CardModal = () => {
                                   {userName}
                                 </Typography>{" "}
                                 {affectedUsers.length > 0 ? (
-                                  actionText.split(affectedUsers[0]).map((part, i) => (
-                                    <React.Fragment key={i}>
-                                      {i > 0 && <Typography component="span" fontWeight="bold"> {affectedUsers[0]}</Typography>}
-                                      {part}
-                                    </React.Fragment>
-                                  ))
+                                  actionText
+                                    .split(affectedUsers[0])
+                                    .map((part, i) => (
+                                      <React.Fragment key={i}>
+                                        {i > 0 && (
+                                          <Typography
+                                            component="span"
+                                            fontWeight="bold"
+                                          >
+                                            {" "}
+                                            {affectedUsers[0]}
+                                          </Typography>
+                                        )}
+                                        {part}
+                                      </React.Fragment>
+                                    ))
                                 ) : (
-                                  <Typography component="span" fontWeight="normal">
+                                  <Typography
+                                    component="span"
+                                    fontWeight="normal"
+                                  >
                                     {actionText}
                                   </Typography>
                                 )}
@@ -1496,7 +1534,9 @@ const CardModal = () => {
                         );
                       })
                     ) : (
-                      <Typography color="gray">Không có hoạt động nào</Typography>
+                      <Typography color="gray">
+                        Không có hoạt động nào
+                      </Typography>
                     )}
                   </Stack>
                 </Box>
@@ -1508,13 +1548,10 @@ const CardModal = () => {
               <Box sx={{ borderLeft: "1px solid #ddd", pl: 2 }}>
                 <List>
                   <ListItem disablePadding>
-                    <ListItemButton>
-                      <ListItemIcon>
-                        <PersonAddIcon
-                          sx={{ color: "black", fontSize: "0.8rem" }}
-                        />
-                      </ListItemIcon>
-                      <ListItemText primary="Tham gia" />
+                    <ListItemButton onClick={handleJoinCard}>
+                      <ListItemText
+                        primary={isMember ? "Rời khỏi" : "Tham gia"}
+                      />
                     </ListItemButton>
                   </ListItem>
 
@@ -1671,14 +1708,14 @@ const CardModal = () => {
         <MemberList
           open={isMemberListOpen}
           onClose={() => setIsMemberListOpen(false)}
-          members={members}
+  
         />
 
         {/* Component Task Modal */}
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-        // onSave={handleAddTask}
+          // onSave={handleAddTask}
         />
 
         {/* Component Label List */}
