@@ -21,6 +21,8 @@ import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/Li
 import InviteHandling from "../pages/workspace/invite/InviteHandling";
 import InviteWithToken from "../pages/workspace/invite/child/InviteWithToken";
 import InviteWithoutToken from "../pages/workspace/invite/child/InviteWithoutToken";
+import InvitePage from "../pages/boards/invite/InvitePage";
+import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -109,6 +111,15 @@ const router = createBrowserRouter([
     path: "/",
     element: <LayoutWrapper />, // Chọn layout dựa trên trạng thái đăng nhập
     children: [
+      {
+        path: "invite-board/:token",
+        element: <InvitePage/>, // Tự động kiểm tra đăng nhập và chuyển hướng
+      },
+      {
+        path: "accept-invite/:token",
+        element: <AcceptInvitePage/>, // Tự động kiểm tra đăng nhập và chuyển hướng
+      },
+      
       {
         path: "invite/accept-team",
         element: isAuthenticated() ? (

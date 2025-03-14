@@ -124,3 +124,29 @@ export const deleteCard = async (cardId) => {
     throw new Error(error.response?.data?.message || "Failed to delete card.");
   }
 };
+
+
+
+export const getMemberInCard = async (cardId) => {
+  try {
+    const response = await authClient.get(`/cards/${cardId}/members`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy ra thành viên của card:", error);
+    throw error;
+  }   
+}
+
+export const toggleCardMember = async (cardId,userId) => {
+  try {
+    const response = await authClient.post(`/cards/${cardId}/toggle-member`, {
+      user_id: userId, // Gửi user_id trong body
+    });
+    return response.data
+  } catch (error) {
+    console.error("Lỗi khi lấy ra thành viên của card:", error);
+    throw error;
+  }   
+}
+
+

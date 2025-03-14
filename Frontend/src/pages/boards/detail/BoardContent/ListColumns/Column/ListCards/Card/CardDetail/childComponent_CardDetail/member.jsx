@@ -12,12 +12,9 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-const MemberList = ({ open, onClose, members = [] }) => {
-  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredMembers = members.filter((member) =>
-    member.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const MemberList = ({ open, onClose,}) => {
+  const [searchTerm, setSearchTerm] = useState("");
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -52,15 +49,16 @@ const MemberList = ({ open, onClose, members = [] }) => {
           }}
         />
         <List>
-          {filteredMembers.map((member, index) => (
+          {/* {members.map((member) => (
             <ListItem
-              key={index}
+              key={member.id}
               sx={{ display: "flex", alignItems: "center" }}
             >
-              <Avatar sx={{ mr: 2 }}>{member.name.charAt(0)}</Avatar>
-              <Typography>{member.name}</Typography>
+              <Avatar sx={{ mr: 2 }}>{member.user_name.charAt(0)}</Avatar>
+              <Typography>{member.user_name}</Typography>
             </ListItem>
-          ))}
+          ))} */}
+            <Typography>Chỗ này là thành viên của bảng, để lựa chọn để add và card</Typography>
         </List>
       </DialogContent>
     </Dialog>

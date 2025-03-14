@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\CardController;
+use App\Http\Controllers\api\CardMemberController;
 use App\Http\Controllers\Api\ChecklistController;
 use App\Http\Controllers\Api\ChecklistItemController;
 use App\Http\Controllers\Api\ColorController;
@@ -144,6 +145,7 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
 Route::get('/boards', [BoardController::class, 'index']);
 
 
+
 Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
 Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
 
@@ -159,13 +161,22 @@ Route::prefix('boards/{id}/')->group(function () {
     Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
 });
 
-// Routes cho thành viên bảng
-Route::prefix('boards/{boardId}/members')->group(function () {
-    Route::get('', [BoardMemberController::class, 'index']);
-    Route::post('', [BoardMemberController::class, 'addMember']);
-    Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
-    Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
+// // Routes cho thành viên bảng
+// Route::prefix('boards/{boardId}/members')->group(function () {
+//     Route::get('', [BoardMemberController::class, 'index']);
+//     Route::post('', [BoardMemberController::class, 'addMember']);
+//     Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
+//     Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
+// });
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user/boards', [BoardMemberController::class, 'getUserBoards']);
+    Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
+    Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
+
 });
+Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']); 
+
 // Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
@@ -188,6 +199,11 @@ Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
     Route::patch('/{cardID}/description', [CardController::class, 'updateDescription']);
     Route::post('/', [CardController::class, 'store']);
     Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
+
+    /////Lấy ra member của card
+    Route::get('/{cardId}/members', [CardMemberController::class, 'getCardMembers']);
+    Route::post('/{card_id}/toggle-member', [CardMemberController::class, 'toggleCardMember']);
+
 
     Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail'])->name('card.addMember'); // thêm thành viên vào thẻ
     Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
