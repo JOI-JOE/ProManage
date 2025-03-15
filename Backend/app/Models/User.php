@@ -90,7 +90,7 @@ class User extends Authenticatable
         $queryText = request()->input('query', '');
         $idWorkspace = request()->input('idWorkspace', '');
 
-        return app()->call('App\Http\Controllers\WorkspaceInvitationsController@searchMembers', [
+        return app()->call('App\Http\Controllers\Api\WorkspaceInvitationsController@searchMembers', [
             'user' => $this,
             'queryText' => $queryText,
             'idWorkspace' => $idWorkspace
@@ -125,7 +125,6 @@ class User extends Authenticatable
     public function boardsMemmber()
     {
         return $this->belongsToMany(Board::class, 'board_member', 'user_id', 'board_id')
-        ->withPivot('role');
+            ->withPivot('role');
     }
- 
 }

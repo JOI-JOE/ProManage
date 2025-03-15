@@ -12,10 +12,26 @@ use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class CommentCardController extends Controller
 {
-    //
+    // //
+    // public function index($cardId)
+    // {
+
+    //     $card = Card::find($cardId);
+    //     if (!$card) {
+    //         return response()->json(['message' => 'Card không tồn tại!'], 404);
+    //     }
+
+    //     $comments = CommentCard::where('card_id', $cardId)
+    //         // ->with('user:id,full_name')
+    //         ->orderBy('created_at', 'desc')
+    //         ->get();
+
+    //     return response()->json($comments);
+    // }
     public function index($cardId)
     {
         $card = Card::find($cardId);
@@ -24,13 +40,12 @@ class CommentCardController extends Controller
         }
 
         $comments = CommentCard::where('card_id', $cardId)
-            ->with('user:id,full_name')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->load('user:id,full_name'); // Load quan hệ user ngay sau khi lấy dữ liệu
 
         return response()->json($comments);
     }
-
     public function addCommentIntoCard(Request $request)
     {
         $rules = [
@@ -120,7 +135,4 @@ class CommentCardController extends Controller
             'comment' => $comment
         ], 200);
     }
-
-
-
 }

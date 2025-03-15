@@ -2,6 +2,8 @@
 
 
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\WorkspaceInvitationsController;
+use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
@@ -18,8 +20,6 @@ use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Api\LabelController;
-use App\Http\Controllers\Api\WorkspaceInvitationsController;
-use App\Http\Controllers\Api\WorkspaceMembersController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 
@@ -52,7 +52,7 @@ Route::middleware(['web'])->group(function () {
 });
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
-Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
+// Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
@@ -175,9 +175,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/boards', [BoardMemberController::class, 'getUserBoards']);
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
-
 });
-Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']); 
+Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
 
 // Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
