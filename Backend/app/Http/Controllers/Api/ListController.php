@@ -16,40 +16,29 @@ use Pusher\Pusher;
 
 class ListController extends Controller
 {
-
     public function index($boardId)
     {
-        $cacheKey = "board_{$boardId}_with_lists";
-
-        // Kiểm tra xem board đã có trong cache chưa
-        if (!Cache::has($cacheKey)) {
-            $board = Board::with([
-                'listBoards' => function ($query) {
-                    $query->where('closed', false)
-                        ->orderBy('position')
-                        ->with([
-                            'cards' => function ($cardQuery) {
-                                $cardQuery->orderBy('position')
-                                    ->withCount('comments')
-                                    ->with([
-                                        'checklists' => function ($checklistQuery) {
-                                            $checklistQuery->with('items');
-                                        },
-                                        'labels' // Thêm mối quan hệ labels
-                                    ]);
-                            }
-                        ]);
-                }
-            ])->find($boardId);
-
-            if (!$board) {
-                return response()->json(['message' => 'Board not found'], 404);
+        $board = Board::with([
+            'listBoards' => function ($query) {
+                $query->where('closed', false)
+                    ->orderBy('position')
+                    ->with([
+                        'cards' => function ($cardQuery) {
+                            $cardQuery->orderBy('position')
+                                ->withCount('comments')
+                                ->with([
+                                    'checklists' => function ($checklistQuery) {
+                                        $checklistQuery->with('items');
+                                    },
+                                    'labels'
+                                ]);
+                        }
+                    ]);
             }
+        ])->find($boardId);
 
-            // Lưu vào cache với TTL (thời gian sống) là 10 phút
-            Cache::put($cacheKey, $board, now()->addMinutes(10));
-        } else {
-            $board = Cache::get($cacheKey);
+        if (!$board) {
+            return response()->json(['message' => 'Board not found'], 404);
         }
 
         return response()->json([
@@ -97,7 +86,7 @@ class ListController extends Controller
                                     'color' => $label->color,
                                     'text' => $label->text,
                                 ];
-                            })->toArray(), // Thêm thông tin về labels
+                            })->toArray(),
                         ];
                     })->toArray(),
                 ];
