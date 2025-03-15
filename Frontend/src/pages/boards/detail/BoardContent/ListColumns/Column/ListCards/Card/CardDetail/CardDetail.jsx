@@ -53,6 +53,7 @@ import ArchiveIcon from "@mui/icons-material/Archive";
 import ShareIcon from "@mui/icons-material/Share";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import CloseIcon from "@mui/icons-material/Close";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import {
   useCardActions,
   useCardById,
@@ -726,6 +727,7 @@ const CardModal = () => {
                   maxWidth: "100%", // Giới hạn tối đa để tránh tràn
                   whiteSpace: "normal", // Cho phép xuống dòng
                   wordBreak: "break-word", // Tự động xuống dòng khi quá dài
+                  fontSize: "0.5rem", // Chỉnh kích thước chữ
                 }}
                 onClick={() => setIsLabelListOpen(true)}
               >
@@ -1570,6 +1572,11 @@ const CardModal = () => {
                 <List>
                   <ListItem disablePadding>
                     <ListItemButton onClick={handleJoinCard}>
+                      <ListItemIcon>
+                        <PersonAddAlt1Icon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
                       <ListItemText
                         primary={isMember ? "Rời khỏi" : "Tham gia"}
                       />
