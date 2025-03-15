@@ -62,7 +62,7 @@ class CardMemberController extends Controller
                     'user_id' => $user->id,
                     'user_name' => $user->user_name,
                 ])
-                ->log("{$user->user_name} đã rời khỏi thẻ {$card->title}");
+                ->log("{$authUser->full_name} đã rời khỏi thẻ này");
         }
 
         return response()->json(['message' => 'Bạn đã rời khỏi thẻ']);
@@ -80,7 +80,7 @@ class CardMemberController extends Controller
                 'user_id' => $user->id,
                 'user_name' => $user->user_name,
             ])
-            ->log("{$user->user_name} đã tham gia thẻ {$card->title}");
+            ->log("{$authUser->full_name} đã tham gia thẻ này");
 
         return response()->json(['message' => 'Bạn đã tham gia vào thẻ']);
     }

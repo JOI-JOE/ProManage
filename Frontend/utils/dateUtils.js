@@ -9,5 +9,5 @@ export const formatTime = (timestamp) => {
   if (diffMinutes < 1) return "Vừa xong"; // Dưới 1 phút
   if (diffMinutes < 60) return `${diffMinutes} phút trước`; // Dưới 1 giờ
   if (diffMinutes < 24 * 60) return formatDistanceToNow(time, { addSuffix: true, locale: vi }); // Trong ngày
-  return format(time, "HH:mm - dd 'tháng' MM 'năm' yyyy", { locale: vi }); // Ngày khác
+  return format(time, "HH:mm - dd 'thg' MM',' yyyy", { locale: vi }); // Ngày khác
 };
