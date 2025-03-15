@@ -278,7 +278,7 @@ const Account = () => {
             alignItems: "center",
             justifyContent: "space-between",
             marginBottom: "15px",
-            alignItems: "flex-start",
+            // alignItems: "flex-start",
             height: "100px", // Đặt chiều cao cố định để tránh nhảy layout
             overflow: "hidden",
           }}
