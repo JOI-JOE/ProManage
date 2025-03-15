@@ -24,6 +24,8 @@ import InviteWithoutToken from "../pages/workspace/invite/child/InviteWithoutTok
 import NotFoundPage from "../pages/NotFoundPage";
 import Account from "../pages/boards/detail/Account";
 import AcceptTeam from "../pages/workspace/invite/AcceptTeam";
+import InvitePage from "../pages/boards/invite/InvitePage";
+import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -83,6 +85,15 @@ const router = createBrowserRouter([
     path: "/",
     element: <LayoutWrapper />,
     children: [
+      {
+        path: "invite-board/:token",
+        element: <InvitePage/>, // Tự động kiểm tra đăng nhập và chuyển hướng
+      },
+      {
+        path: "accept-invite/:token",
+        element: <AcceptInvitePage/>, // Tự động kiểm tra đăng nhập và chuyển hướng
+      },
+      
       {
         path: "invite/accept-team",
         element: <AcceptTeam />
