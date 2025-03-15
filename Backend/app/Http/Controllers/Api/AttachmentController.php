@@ -64,14 +64,9 @@ class AttachmentController extends Controller
             return response()->json(['message' => 'Vui lòng cung cấp file hoặc link hợp lệ'], 400);
         }
 
-        return response()->json([
-            'message' => 'Đính kèm đã được tải lên thành công!',
-            'status' => true,
-            'data' => $attachment,
-        ]);
-
         // Ghi log hoạt động
-        $user_name = auth()->user()?->user_name ?? 'ai đó';
+        $user_name = auth()->user()?->full_name ?? 'ai đó';
+
         $card = Card::findOrFail($cardId);
         activity()
             ->causedBy(auth()->user())
@@ -81,7 +76,7 @@ class AttachmentController extends Controller
                 'file_name' => $attachment->file_name_defaut,
                 'file_path' => $attachment->path_url,
             ])
-            ->log("{$user_name} đã tải lên tệp đính kèm '{$attachment->file_name_defaut}' trong thẻ '{$card->title}'");
+            ->log("{$user_name} đã đính kèm tập tin {$attachment->file_name_defaut} vào thẻ này");
 
         // Gửi thông báo
         $users = $card->users()->where('id', '!=', auth()->id())->get();
@@ -105,7 +100,7 @@ class AttachmentController extends Controller
 
         Storage::disk('public')->delete($attachment->path_url);
         $attachment->delete();
-        $user_name = auth()->user()?->user_name ?? 'ai đó';
+        $user_name = auth()->user()?->full_name ?? 'ai đó';
 
         $card = Card::findOrFail($cardId);
         activity()
@@ -117,7 +112,7 @@ class AttachmentController extends Controller
                 'attachment_id' => $attachmentId,
                 'file_name' => $fileNameDefault,
             ])
-            ->log("{$user_name} đã xóa tệp đính kèm '{$fileNameDefault}' trong thẻ '");
+            ->log("{$user_name} đã xoá tập tin đính kèm {$fileNameDefault} khỏi thẻ này ");
 
         return response()->json([
             'message' => 'Xóa tệp đính kèm thành công!',
