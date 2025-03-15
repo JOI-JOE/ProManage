@@ -60,11 +60,17 @@ class Board extends Model
     }
 
 
+    // public function members()
+    // {
+    //     return $this->belongsToMany(User::class, 'board_members', 'board_id', 'user_id')
+    //         ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated')
+    //         ->withTimestamps();
+    // }
+
     public function members()
     {
         return $this->belongsToMany(User::class, 'board_members', 'board_id', 'user_id')
-            ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated')
-            ->withTimestamps();
+                    ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated');
     }
 
 

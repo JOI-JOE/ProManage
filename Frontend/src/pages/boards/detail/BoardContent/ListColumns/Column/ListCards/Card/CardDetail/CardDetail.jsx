@@ -55,6 +55,7 @@ import CollectionsIcon from "@mui/icons-material/Collections";
 import {
   useCardActions,
   useCardById,
+  useGetMemberInCard,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
 import {
@@ -83,6 +84,9 @@ import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
 import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
 import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import dayjs from "dayjs";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -139,11 +143,6 @@ const CardModal = () => {
     setIsFollowing(!isFollowing);
   };
 
-  const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
-  // const loggedInUser = {
-  //   name: "Current User",
-  //   avatar: "https://via.placeholder.com/40",
-  // };
   const { data: comments = [] } = useCommentsByCard(cardId);
   const {
     data: cardDetail,
@@ -165,26 +164,35 @@ const CardModal = () => {
   const { mutate: updateCheckListItemName } = useUpdateCheckListItemName();
   const { mutate: deleteItem } = useDeleteCheckListItem();
 
+  const {
+    data: activities = [],
+    isLoadingActivity,
+    errorActivity,
+  } = useActivityByCardId(cardId);
 
-  const { data: activities = [], isLoadingActivity, errorActivity } = useActivityByCardId(cardId);
+
+
   const { user } = useStateContext();
+  const userId = user?.id;
 
+  const combinedData = [
+    ...comments.map((comment) => ({ ...comment, type: "comment" })),
+    ...activities.map((activity) => ({ ...activity, type: "activity" })),
+  ];
 
-  const mergedData = [...comments, ...activities].sort(
-    (a, b) => new Date(a.created_at) - new Date(b.created_at)
-  );
-
+  const sortedData = combinedData.sort((a, b) => {
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
   // console.log(user);
   if (isLoadingActivity) return <Typography>Đang tải hoạt động...</Typography>;
-  if (errorActivity) return <Typography color="red">Lỗi khi tải dữ liệu!</Typography>;
-
-
-
+  if (errorActivity)
+    return <Typography color="red">Lỗi khi tải dữ liệu!</Typography>;
 
   // console.log(activities);
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
+  const { data: members, toggleMember } = useGetMemberInCard(cardId);
   useEffect(() => {
     if (JSON.stringify(labels) !== JSON.stringify(cardLabels)) {
       setLabels(cardLabels);
@@ -256,9 +264,12 @@ const CardModal = () => {
     }
   };
 
-  // const handleDescriptionClick = () => {
-  //   setIsEditingDescription(true);
-  // };
+  // Xử lý tham gia/rời khỏi card
+  const handleJoinCard = () => {
+    toggleMember(userId);
+  };
+
+  const isMember = members?.data?.some((m) => m.id === userId);
 
   const getPlainText = (html) => {
     const tempDiv = document.createElement("div");
@@ -324,7 +335,7 @@ const CardModal = () => {
       onSuccess: () => {
         console.log("✅ Cập nhật trạng thái thành công");
         // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
-        // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
+        // queryClient.invalidateQueries({ queryKey: ["activities"] });
       },
       onError: () => {
         console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
@@ -345,7 +356,7 @@ const CardModal = () => {
         console.log("✅ Checklist đã bị xóa thành công!");
         // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
         // // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] }); // Cập nhật lại danh sách checklist
-        // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
+        // queryClient.invalidateQueries({ queryKey: ["activities"] });
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa checklist:", error);
@@ -664,11 +675,17 @@ const CardModal = () => {
           </Typography>
           {/* New section to match the provided image */}
           <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-            <Avatar
-              sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
-            >
-              PH
-            </Avatar>
+            {members?.data?.map((member) => (
+              <Avatar
+                key={member.id}
+                sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
+              >
+                {member.full_name
+                  ? member.full_name.charAt(0).toUpperCase()
+                  : "?"}
+              </Avatar>
+            ))}
+
             <AddIcon
               sx={{
                 fontSize: 14,
@@ -1230,277 +1247,247 @@ const CardModal = () => {
                 </>
               )}
 
-              
+              <>
+                {sortedData.map((item, index) => {
+                  if (item.type === "comment") {
+                    const content = item.content || "";
+                    if (isEmptyHTML(content)) return null;
 
-
-              {/* Hiển thị các bình luận và hoạt động */}
-              {comments.map((cmt, index) => {
-                const content = cmt.content || "";
-                if (isEmptyHTML(content)) return null;
-
-                return (
-                  <Box
-                    key={index}
-                    sx={{ display: "flex", flexDirection: "column", mt: 1 }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <Avatar
-                        src={cmt?.user?.avatar || ""}
-                        sx={{
-                          bgcolor: !cmt?.user?.avatar ? "pink" : "transparent",
-                          color: !cmt?.user?.avatar ? "white" : "inherit",
-                          width: 28,
-                          height: 28,
-                          fontSize: "0.6rem",
-                          mt: 2, // Move the avatar down
-                        }}
+                    return (
+                      <Box
+                        key={index}
+                        sx={{ display: "flex", flexDirection: "column", mt: 1 }}
                       >
-                        {!cmt?.user?.avatar &&
-                          (cmt?.user?.full_name?.charAt(0)?.toUpperCase() ||
-                            "?")}
-                      </Avatar>
-                      <Box sx={{ ml: 1 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: "bold", fontSize: "14px" }}
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Avatar
+                            src={item?.user?.avatar || ""}
+                            sx={{
+                              bgcolor: !item?.user?.avatar ? "pink" : "transparent",
+                              color: !item?.user?.avatar ? "white" : "inherit",
+                              width: 28,
+                              height: 28,
+                              fontSize: "0.6rem",
+                              mt: 2, // Move the avatar down
+                            }}
+                          >
+                            {!item?.user?.avatar &&
+                              (item?.user?.full_name?.charAt(0)?.toUpperCase() || "?")}
+                          </Avatar>
+                          <Box sx={{ ml: 1 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: "bold", fontSize: "14px" }}
+                            >
+                              {item.user?.full_name || "Người dùng"}{" "}
+                              <span style={{ fontWeight: "normal" }}>
+                                {item.user?.username}
+                              </span>
+                              <Typography
+                                variant="body2"
+                                component="span"
+                                sx={{
+                                  fontSize: "0.5rem",
+                                  color: "gray",
+                                  ml: 0.5,
+                                  padding: "3px 0px",
+                                }}
+                              >
+                                {formatTime(item.created_at)}
+                              </Typography>
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box
+                          sx={{
+                            ml: 4.5,
+                            mt: -1,
+                            backgroundColor: "#f5f6fa",
+                            p: 0.7,
+                            borderRadius: "8px",
+                          }}
                         >
-                          {cmt.user?.full_name || "Người dùng"}{" "}
-                          <span style={{ fontWeight: "normal" }}>
-                            {cmt.user?.username}
-                          </span>
-                          <Typography
-                            variant="body2"
-                            component="span"
-                            sx={{
-                              fontSize: "0.5rem",
-                              color: "gray",
-                              ml: 0.5,
-                              padding: "3px 0px",
-                            }}
-                          >
-                            {/* {new Date(cmt.created_at).toLocaleTimeString()}{" "}
-                            {new Date(cmt.created_at).toLocaleDateString()} */}
-                            {formatTime(cmt.created_at)}
-                          </Typography>
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Box
-                      sx={{
-                        ml: 4.5,
-                        mt: -1,
-                        backgroundColor: "#f5f6fa",
-                        p: 0.7,
-                        borderRadius: "8px",
-                      }}
-                    >
-                      {editingCommentIndex === cmt.id ? (
-                        <>
-                          <ReactQuill
-                            value={editingCommentText}
-                            onChange={setEditingCommentText}
-                            placeholder="Edit your comment..."
-                            style={{ marginTop: "8px" }}
-                            theme="snow"
-                            modules={{
-                              toolbar: [
-                                [{ header: [1, 2, false] }],
-                                ["bold", "italic", "underline", "strike"],
-                                [{ list: "ordered" }, { list: "bullet" }],
-                                ["link"],
-                                ["image"],
-                                ["clean"],
-                              ],
-                            }}
-                            formats={[
-                              "header",
-                              "bold",
-                              "italic",
-                              "underline",
-                              "strike",
-                              "list",
-                              "bullet",
-                              "link",
-                              "image",
-                            ]}
-                            sx={{
-                              "& .ql-container": {
-                                border: "1px solid #ddd",
-                                borderRadius: 4,
-                              },
-                              "& .ql-toolbar": { border: "1px solid #ddd" },
-                            }}
-                          />
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              gap: 1,
-                              mt: 1,
-                            }}
-                          >
-                            <Button
-                              variant="contained"
-                              size="small"
-                              sx={{
-                                backgroundColor: "teal",
-                                color: "#FFF",
-                                fontSize: "0.6rem",
-                                height: "25px",
-                                minWidth: "50px",
-                              }}
-                              onClick={handleSaveEditedComment}
-                              disabled={isEmptyHTML(editingCommentText)}
-                            >
-                              Lưu
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              sx={{
-                                color: "#172B4D",
-                                borderColor: "#ddd",
-                                fontSize: "0.6rem",
-                                height: "25px",
-                                minWidth: "50px",
-                                "&:hover": {
-                                  backgroundColor: "#E4E7EB",
-                                  borderColor: "#bbb",
-                                },
-                              }}
-                              onClick={() => {
-                                setEditingCommentIndex(null); // Thoát chế độ chỉnh sửa
-                                setEditingCommentText(""); // Reset nội dung chỉnh sửa
-                              }}
-                            >
-                              Hủy
-                            </Button>
-                          </Box>
-                        </>
-                      ) : (
-                        <>
-                          <Typography
-                            variant="body2"
-                            style={{
-                              wordWrap: "break-word",
-                              whiteSpace: "pre-wrap",
-                              overflowWrap: "break-word",
-                              wordBreak: "break-word",
-                              fontSize: "0.rem", // Change font size to 0.7rem
-                            }}
-                          >
-                            {content.replace(/<\/?p>/g, "")}
-                          </Typography>
-                          <Box sx={{ display: "flex", mt: "-4px" }}>
-                            <Button
-                              size="small"
-                              onClick={() =>
-                                handleEditComment(cmt.id, cmt.content)
-                              }
-                              sx={{
-                                width: "20px",
-                                minWidth: "20px",
-                                ml: "4px",
-                                mr: "-8px",
-                                fontSize: "0.4rem", // Smaller font size
-                                textTransform: "none",
-                                padding: "2px 4px", // Smaller padding
-                              }}
-                            >
-                              Sửa
-                            </Button>
-                            <Button
-                              size="small"
-                              onClick={() => handleDeleteComment(cmt.id)}
-                              sx={{
-                                width: "20px",
-                                minWidth: "20px",
-                                ml: "10px",
-                                fontSize: "0.4rem", // Smaller font size
-                                textTransform: "none",
-                                padding: "2px 4px", // Smaller padding
-                              }}
-                            >
-                              Xóa
-                            </Button>
-                          </Box>
-                        </>
-                      )}
-                    </Box>
-                  </Box>
-                );
-              })}
-
-              {/* Hiển thị các hoạt động */}
-              {!isDetailHidden && (
-                <Box
-                  sx={{
-                    backgroundColor: "white",
-                    pt: 1,
-                    borderRadius: 2,
-                    mt: 0.5,
-                  }}
-                >
-                  <Stack spacing={2}>
-                    {activities.length > 0 ? (
-                      activities.map((activity, index) => {
-
-                        const description = activity.description;
-                        const keyword = "đã"; // Từ khóa để xác định phần còn lại của chuỗi
-                        const keywordIndex = description.indexOf(keyword);
-
-                        if (keywordIndex === -1) {
-                          return null; // Nếu không tìm thấy "đã", bỏ qua activity này
-                        }
-                        // Lấy tên người thực hiện hành động (trước từ "đã")
-                        const userName = description.substring(0, keywordIndex).trim();
-
-                        // Lấy phần còn lại của mô tả
-                        const actionText = description.substring(keywordIndex).trim();
-
-                        const namePattern = /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
-                        const affectedUsers = actionText.match(namePattern) || [];
-                        // Kiểm tra nếu activity có username giống user hiện tại thì in đậm
-
-                        return (
-                          <Box key={index} display="flex" alignItems="center" mb={1}>
-                            <Avatar sx={{ bgcolor: "pink", width: 28, height: 28, mt: 2, fontSize: "0.6rem", }}>
-                              {userName.charAt(0)}
-                            </Avatar>
-                            <Box>
-                              <Typography>
-                                <Typography
-                                  component="span"
-                                  fontWeight={"bold"}
+                          {editingCommentIndex === item.id ? (
+                            <>
+                              <ReactQuill
+                                value={editingCommentText}
+                                onChange={setEditingCommentText}
+                                placeholder="Edit your comment..."
+                                style={{ marginTop: "8px" }}
+                                theme="snow"
+                                modules={{
+                                  toolbar: [
+                                    [{ header: [1, 2, false] }],
+                                    ["bold", "italic", "underline", "strike"],
+                                    [{ list: "ordered" }, { list: "bullet" }],
+                                    ["link"],
+                                    ["image"],
+                                    ["clean"],
+                                  ],
+                                }}
+                                formats={[
+                                  "header",
+                                  "bold",
+                                  "italic",
+                                  "underline",
+                                  "strike",
+                                  "list",
+                                  "bullet",
+                                  "link",
+                                  "image",
+                                ]}
+                                sx={{
+                                  "& .ql-container": {
+                                    border: "1px solid #ddd",
+                                    borderRadius: 4,
+                                  },
+                                  "& .ql-toolbar": { border: "1px solid #ddd" },
+                                }}
+                              />
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                  gap: 1,
+                                  mt: 1,
+                                }}
+                              >
+                                <Button
+                                  variant="contained"
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: "teal",
+                                    color: "#FFF",
+                                    fontSize: "0.6rem",
+                                    height: "25px",
+                                    minWidth: "50px",
+                                  }}
+                                  onClick={handleSaveEditedComment}
+                                  disabled={isEmptyHTML(editingCommentText)}
                                 >
-                                  {userName}
-                                </Typography>{" "}
-                                {affectedUsers.length > 0 ? (
-                                  actionText.split(affectedUsers[0]).map((part, i) => (
-                                    <React.Fragment key={i}>
-                                      {i > 0 && <Typography component="span" fontWeight="bold"> {affectedUsers[0]}</Typography>}
-                                      {part}
-                                    </React.Fragment>
-                                  ))
-                                ) : (
-                                  <Typography component="span" fontWeight="normal">
-                                    {actionText}
-                                  </Typography>
-                                )}
+                                  Lưu
+                                </Button>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{
+                                    color: "#172B4D",
+                                    borderColor: "#ddd",
+                                    fontSize: "0.6rem",
+                                    height: "25px",
+                                    minWidth: "50px",
+                                    "&:hover": {
+                                      backgroundColor: "#E4E7EB",
+                                      borderColor: "#bbb",
+                                    },
+                                  }}
+                                  onClick={() => {
+                                    setEditingCommentIndex(null); // Thoát chế độ chỉnh sửa
+                                    setEditingCommentText(""); // Reset nội dung chỉnh sửa
+                                  }}
+                                >
+                                  Hủy
+                                </Button>
+                              </Box>
+                            </>
+                          ) : (
+                            <>
+                              <Typography
+                                variant="body2"
+                                style={{
+                                  wordWrap: "break-word",
+                                  whiteSpace: "pre-wrap",
+                                  overflowWrap: "break-word",
+                                  wordBreak: "break-word",
+                                  fontSize: "0.rem", // Change font size to 0.7rem
+                                }}
+                              >
+                                {content.replace(/<\/?p>/g, "")}
                               </Typography>
-                              <Typography fontSize="0.8rem" color="gray">
-                                {formatTime(activity.created_at)}
+                              <Box sx={{ display: "flex", mt: "-4px" }}>
+                                <Button
+                                  size="small"
+                                  onClick={() =>
+                                    handleEditComment(item.id, item.content)
+                                  }
+                                  sx={{
+                                    width: "20px",
+                                    minWidth: "20px",
+                                    ml: "4px",
+                                    mr: "-8px",
+                                    fontSize: "0.4rem", // Smaller font size
+                                    textTransform: "none",
+                                    padding: "2px 4px", // Smaller padding
+                                  }}
+                                >
+                                  Sửa
+                                </Button>
+                                <Button
+                                  size="small"
+                                  onClick={() => handleDeleteComment(item.id)}
+                                  sx={{
+                                    width: "20px",
+                                    minWidth: "20px",
+                                    ml: "10px",
+                                    fontSize: "0.4rem", // Smaller font size
+                                    textTransform: "none",
+                                    padding: "2px 4px", // Smaller padding
+                                  }}
+                                >
+                                  Xóa
+                                </Button>
+                              </Box>
+                            </>
+                          )}
+                        </Box>
+                      </Box>
+                    );
+                  } else if (item.type === "activity") {
+                    const description = item.description;
+                    const keyword = "đã";
+                    const keywordIndex = description.indexOf(keyword);
+
+                    if (keywordIndex === -1) return null;
+
+                    const userName = description.substring(0, keywordIndex).trim();
+                    const actionText = description.substring(keywordIndex).trim();
+
+                    const namePattern = /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
+                    const affectedUsers = actionText.match(namePattern) || [];
+
+                    return (
+                      <Box key={index} display="flex" alignItems="center" mb={1}>
+                        <Avatar sx={{ bgcolor: "pink", width: 28, height: 28, mt: 2, fontSize: "0.6rem" }}>
+                          {userName.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography>
+                            <Typography component="span" fontWeight={"bold"}>
+                              {userName}
+                            </Typography>{" "}
+                            {affectedUsers.length > 0 ? (
+                              actionText.split(affectedUsers[0]).map((part, i) => (
+                                <React.Fragment key={i}>
+                                  {i > 0 && <Typography component="span" fontWeight="bold"> {affectedUsers[0]}</Typography>}
+                                  {part}
+                                </React.Fragment>
+                              ))
+                            ) : (
+                              <Typography component="span" fontWeight="normal">
+                                {actionText}
                               </Typography>
-                            </Box>
-                          </Box>
-                        );
-                      })
-                    ) : (
-                      <Typography color="gray">Không có hoạt động nào</Typography>
-                    )}
-                  </Stack>
-                </Box>
-              )}
+                            )}
+                          </Typography>
+                          <Typography fontSize="0.8rem" color="gray">
+                            {formatTime(item.created_at)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    );
+                  }
+
+                  return null;
+                })}
+              </>
             </Grid>
 
             {/* Cột phải (Sidebar) */}
@@ -1508,13 +1495,10 @@ const CardModal = () => {
               <Box sx={{ borderLeft: "1px solid #ddd", pl: 2 }}>
                 <List>
                   <ListItem disablePadding>
-                    <ListItemButton>
-                      <ListItemIcon>
-                        <PersonAddIcon
-                          sx={{ color: "black", fontSize: "0.8rem" }}
-                        />
-                      </ListItemIcon>
-                      <ListItemText primary="Tham gia" />
+                    <ListItemButton onClick={handleJoinCard}>
+                      <ListItemText
+                        primary={isMember ? "Rời khỏi" : "Tham gia"}
+                      />
                     </ListItemButton>
                   </ListItem>
 
@@ -1671,7 +1655,7 @@ const CardModal = () => {
         <MemberList
           open={isMemberListOpen}
           onClose={() => setIsMemberListOpen(false)}
-          members={members}
+
         />
 
         {/* Component Task Modal */}

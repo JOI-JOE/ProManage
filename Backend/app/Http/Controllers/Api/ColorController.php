@@ -12,9 +12,8 @@ class ColorController extends Controller
     public function index()
     {
         try {
-            $colors = Cache::remember('colors_list', 3600, function () {
-                return Color::all() ?? []; // Trả về mảng rỗng nếu không có dữ liệu
-            });
+        
+            $colors = Color::all();
         return response()->json(
            [
             'success' => true,
