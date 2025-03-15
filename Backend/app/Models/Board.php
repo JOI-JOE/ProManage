@@ -42,7 +42,7 @@ class Board extends Model
      */
     public function workspace()
     {
-        return $this->belongsTo(Workspace::class,'workspace_id');  // Liên kết với model Workspace
+        return $this->belongsTo(Workspace::class, 'workspace_id');  // Liên kết với model Workspace
     }
 
     public function listBoards()
@@ -52,7 +52,7 @@ class Board extends Model
 
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by'); // 'created_by' là trường ngoại trong bảng 'boards'
+        return $this->belongsTo(User::class, 'user_id'); // 'created_by' là trường ngoại trong bảng 'boards'
     }
     public function lists()
     {

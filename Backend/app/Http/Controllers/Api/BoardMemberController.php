@@ -99,7 +99,6 @@ class BoardMemberController extends Controller
                 'joined' => now(),
             ]);
         }
-
         // Kiểm tra nếu user chưa có trong workspace thì thêm vào
         $workspaceId = $board->workspace->id;
 
