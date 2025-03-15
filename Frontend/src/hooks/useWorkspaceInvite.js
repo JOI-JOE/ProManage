@@ -4,11 +4,11 @@ import {
   createInviteWorkspace,
   acceptInvitation,
   cancelInviteWorkspace,
-  getValidateInvitation,
   getValidateMemberInWorkspace,
   getSearchMembers,
   addMemberToWorkspace,
   confirmWorkspaceMembers,
+  getInvitationSecretByReferrer,
 } from "../api/models/inviteWorkspaceApi";
 
 export const useAcceptInvitation = () => {
@@ -95,10 +95,10 @@ export const useCancelInvitationWorkspace = () => {
   });
 };
 
-export const useGetValidateInvitation = (workspaceId, inviteToken) => {
+export const useGetInvitationSecretByReferrer = (workspaceId, inviteToken) => {
   return useQuery({
     queryKey: ["workspaces", workspaceId, "invitationSecret", inviteToken], // Add inviteToken to the queryKey
-    queryFn: () => getValidateInvitation(workspaceId, inviteToken),
+    queryFn: () => getInvitationSecretByReferrer(workspaceId, inviteToken),
     onError: (error) => {
       console.error("Lỗi khi lấy dữ liệu của workspace");
     },

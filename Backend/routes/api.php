@@ -51,7 +51,7 @@ Route::middleware(['web'])->group(function () {
 });
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
-Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getValidateInvitation']);
+Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
@@ -69,7 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceInvitationsController::class)->group(callback: function () {
         Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
-        Route::get('/workspaces/{workspaceId}/{inviteToken}', 'getInvitationSecret');
+        Route::get('/workspaces/{workspaceId}/invitationSecret', 'getInvitationSecret');
         Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
         Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
         // Function search
@@ -117,7 +117,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Send Email
 });
-
 
 
 Route::get('/color', [ColorController::class, 'index']);
@@ -228,10 +227,9 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
     Route::patch('/{attachmentId}/update-name', [AttachmentController::class, 'updateNameFileAttachment']);
     Route::post('/upload', [AttachmentController::class, 'uploadAttachment']);
     Route::post('/uploadcover', [AttachmentController::class, 'uploadCover']);
-  
+
     Route::delete('/{attachmentId}/delete', [AttachmentController::class, 'deleteAttachment']);
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']);
-
 })->middleware('auth:sanctum');
 // checklists
 Route::middleware('auth:sanctum')->group(function () {

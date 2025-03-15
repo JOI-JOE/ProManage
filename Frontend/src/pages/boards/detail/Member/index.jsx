@@ -464,94 +464,6 @@ const Member = () => {
                   padding: "5px 10px", // 🔥 Tạo khoảng cách padding đẹp hơn
                 }}
               >
-                {/* <Autocomplete
-                  multiple
-                  id="custom-autocomplete"
-                  options={options.filter(
-                    (option) => !selectedUsers.some((user) => user.id === option.id)
-                  )}
-                  getOptionLabel={(option) => option.full_name}
-                  filterOptions={(options, state) => {
-                    return options.filter((option) =>
-                      option.full_name?.toLowerCase().includes(state.inputValue.toLowerCase()) ||
-                      option.user_name?.toLowerCase().includes(state.inputValue.toLowerCase()) ||
-                      option.email?.toLowerCase().includes(state.inputValue.toLowerCase())
-                    );
-                  }}
-                  disableClearable
-                  popupIcon={null}
-                  loading={isLoadingMember}
-                  loadingText={
-                    <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
-                      <SvgIcon
-                        component={loadingLogo}
-                        sx={{ width: 50, height: 50, transform: "scale(0.5)" }}
-                        viewBox="0 0 24 24"
-                        inheritViewBox
-                      />
-                    </Box>
-                  }
-                  noOptionsText={isLoadingMember ? "Đang tìm kiếm..." : inputValue.length >= 3 ? "Không tìm thấy thành viên nào." : ""}
-                  open={open}
-                  value={selectedUsers}
-                  onChange={handleOptionSelect}
-                  fullWidth
-                  renderOption={(props, option) => (
-                    <ListItem {...props} alignItems="flex-start">
-                      <ListItemAvatar>
-                        <Avatar alt={option.full_name} src={option.image || "/static/images/avatar/default.jpg"} />
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={option.full_name}
-                        secondary={
-                          <Fragment>
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              sx={{ color: "text.primary", display: "inline" }}
-                            >
-                              {option.joined
-                                ? option.memberType === "admin"
-                                  ? " (Quản trị viên của không gian làm việc)"
-                                  : " (Thành viên không gian làm việc)"
-                                : ""}
-                            </Typography>
-                          </Fragment>
-                        }
-                      />
-                    </ListItem>
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      variant="standard"
-                      placeholder="Nhập tên hoặc email..."
-                      InputProps={{ ...params.InputProps, disableUnderline: true }}
-                      onChange={handleInputChange}
-                      sx={{ width: "100%", padding: "5px 5px" }}
-                    />
-                  )}
-                  PopperComponent={(props) => (
-                    <Popper {...props} modifiers={[{ name: "offset", options: { offset: [0, 15] } }]} />
-                  )}
-                  sx={{
-                    flex: 1,
-                    "& .MuiAutocomplete-tag": {
-                      maxWidth: "150px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    },
-                    "& .MuiAutocomplete-inputRoot": {
-                      maxHeight: "100px",
-                      overflowY: "auto",
-                      overflowX: "hidden",
-                      scrollbarWidth: "thin",
-                      "&::-webkit-scrollbar": { width: "5px" },
-                      "&::-webkit-scrollbar-thumb": { backgroundColor: "#aaa", borderRadius: "10px" },
-                      "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#888" },
-                    },
-                  }}
-                /> */}
                 <Autocomplete
                   multiple
                   id="custom-autocomplete"
@@ -686,6 +598,7 @@ const Member = () => {
                 fullWidth
                 value={invitationMessage} // Gán giá trị từ state
                 onChange={(e) => setInvitationMessage(e.target.value)} // Cập nhật state khi nhập
+                disabled={isProcessing} // Vô hiệu hóa khi đang xử lý
                 sx={{
                   "& .MuiInputBase-input": { color: "gray" },
                   "& .MuiInputLabel-root": { color: "#9FADBC" },

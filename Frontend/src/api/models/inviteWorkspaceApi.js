@@ -12,8 +12,10 @@ export const acceptInvitation = async (workspaceId, inviteToken) => {
     throw error;
   }
 };
-
-export const getValidateInvitation = async (workspaceId, inviteToken) => {
+export const getInvitationSecretByReferrer = async (
+  workspaceId,
+  inviteToken
+) => {
   try {
     const response = await authClient.get(
       `/workspaces/${workspaceId}/invitationSecret/${inviteToken}`

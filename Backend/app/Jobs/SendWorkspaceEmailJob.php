@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Services\GoogleService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -17,28 +16,41 @@ class SendWorkspaceEmailJob implements ShouldQueue
 
     protected $accessToken;
     protected $senderName;
+    protected $senderEmail;
     protected $toEmails;
     protected $subject;
-    protected $body;
+    protected $data;
+    protected $template;
 
-    public function __construct($accessToken, $senderName, $toEmails, $subject, $body)
+    public function __construct($accessToken, $senderName, $senderEmail, $toEmails, $subject, $data, $template = 'emails.invite')
     {
         $this->accessToken = $accessToken;
         $this->senderName = $senderName;
+        $this->senderEmail = $senderEmail;
         $this->toEmails = $toEmails;
         $this->subject = $subject;
-        $this->body = $body;
+        $this->data = $data;
+        $this->template = $template;
     }
 
     public function handle(GoogleService $googleService)
     {
         try {
             foreach ($this->toEmails as $to) {
-                $googleService->sendEmail($this->accessToken, $this->senderName, $to, $this->subject, $this->body);
+                $googleService->sendEmail(
+                    $this->accessToken,
+                    $this->senderName,
+                    $this->senderEmail,
+                    $to,
+                    $this->subject,
+                    $this->data,
+                    $this->template
+                );
                 Log::info("📧 Email sent successfully to {$to}");
             }
         } catch (\Exception $e) {
             Log::error("❌ Failed to send email: " . $e->getMessage());
+            throw $e; // Re-throw exception để xử lý ở cấp cao hơn nếu cần
         }
     }
 }

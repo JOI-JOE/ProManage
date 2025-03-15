@@ -46,8 +46,8 @@ const MemberItem = ({ member }) => {
                 <Box>
                     <Typography fontWeight="bold" sx={{ color: "#fff" }}>{member?.name}</Typography>
                     <Typography variant="body2" sx={{ color: "gray" }}>
-                        {/* @{member.email} • {member.last_active} */}
-                        @{member.email} •
+                        @{member.email} • {member.last_active}
+                        {/* @{member.email} • */}
                     </Typography>
                 </Box>
             </Box>
