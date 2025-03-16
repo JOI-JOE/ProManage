@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MeResource;
+use App\Models\Board;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,76 @@ use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
+    public function getUserData(Request $request)
+    {
+        // 🔹 Log query params để kiểm tra
+        Log::info('Received query params: ', $request->query());
+
+        // 🔹 Danh sách các fields hợp lệ cho user
+        $validFields = ['id', 'user_name', 'full_name', 'initials', 'image', 'email', 'activity_block'];
+
+        // 🔹 Lấy danh sách fields từ request
+        $fields = $request->query('fields') ? explode(',', $request->query('fields')) : ['id'];
+        $selectedFields = array_intersect($fields, $validFields);
+        if (empty($selectedFields)) {
+            $selectedFields = ['id'];
+        }
+
+        // 🔹 Truy vấn user từ database
+        $user = User::where('id', auth()->id())->select($selectedFields)->first();
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
+        }
+
+        // ====================================================
+        // 🔹 Xử lý danh sách boards (Mặc định lấy `open`)
+        // ====================================================
+        $validBoards = ['open', 'starred'];
+        $requestedBoards = $request->query('boards') ? explode(',', $request->query('boards')) : ['open'];
+        $filteredBoards = array_intersect($requestedBoards, $validBoards);
+        if (empty($filteredBoards)) {
+            $filteredBoards = ['open'];
+        }
+
+        // ====================================================
+        // 🔹 Xử lý danh sách board_fields (Chỉ giữ lại các trường có trong bảng `boards`)
+        // ====================================================
+        $validBoardFields = ['id', 'name', 'thumbnail', 'description', 'is_marked', 'archive', 'closed', 'created_by', 'visibility', 'workspace_id'];
+
+        $boardFields = $request->query('board_fields') ? explode(',', $request->query('board_fields')) : ['id', 'name'];
+        $selectedBoardFields = array_intersect($boardFields, $validBoardFields);
+        if (empty($selectedBoardFields)) {
+            $selectedBoardFields = ['id', 'name'];
+        }
+
+        // ====================================================
+        // 🔹 Truy vấn danh sách boards
+        // ====================================================
+
+        // ✅ Truy vấn cơ bản lấy boards mà user là thành viên
+        $boardQuery = Board::whereHas('boardMembers', function ($query) {
+            $query->where('user_id', auth()->id());
+        })->select($selectedBoardFields);
+
+        // ✅ Lấy danh sách boards "open" (không bị đóng)
+        $boards = in_array('open', $filteredBoards)
+            ? (clone $boardQuery)->where('closed', false)->get()
+            : collect();
+
+        $boardStars = in_array('starred', $filteredBoards)
+            ? Board::where('is_marked', true)->select(['id', 'name'])->get()
+            : collect();
+
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User data retrieved successfully',
+            'query_params' => $request->query(),
+            'user' => $user,
+            'boards' => $boards,         // Danh sách board "open"
+            'boardStars' => $boardStars, // Danh sách board "starred"
+        ]);
+    }
     public function getUser()
     {
         $user = Auth::user(); // Lấy thông tin người dùng hiện tại
@@ -121,7 +192,7 @@ class AuthController extends Controller
 
         // Gửi email mật khẩu mới
         Mail::raw("Mật khẩu mới của bạn là: $newPassword", function ($message) use ($user) {
-                $message->to($user->email)
+            $message->to($user->email)
                 ->subject('Mật khẩu mới của bạn');
         });
 

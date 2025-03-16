@@ -52,10 +52,12 @@ Route::middleware(['web'])->group(function () {
 });
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
-// Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
+Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
+Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getWorkspaceById']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
+    Route::get('member/me', [AuthController::class, 'getUserData']);
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');

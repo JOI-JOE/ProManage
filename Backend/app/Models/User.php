@@ -81,9 +81,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-
-
-    protected $appends = ['similarity']; // Thêm trường similarity vào output JSON
+    // protected $appends = ['similarity']; // Thêm trường similarity vào output JSON
 
     public function getSimilarityAttribute()
     {

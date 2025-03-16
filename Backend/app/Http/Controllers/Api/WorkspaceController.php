@@ -49,8 +49,8 @@ class WorkspaceController extends Controller
 
             // Tìm workspace theo tên
             $workspace = Workspace::where('name', $workspaceName)
-            ->with('markedBoards')
-            ->first();
+                ->with('markedBoards')
+                ->first();
             // if ($workspace) {
             //     $markedBoards = $workspace->markedBoards(); // Lấy danh sách board có is_marked = 1
             // } else {
@@ -76,27 +76,22 @@ class WorkspaceController extends Controller
             ], 500);
         }
     }
-
-
     public function getBoardMarkedByWorkspace($workspaceName)
     {
-      try {
-         $workspace = Workspace::where('name', $workspaceName)->first();
-        $boardMarked = $workspace->boards()->where('is_marked', 1)->get();
-        return response()->json([
-          'success' => true,
-          'data' => $boardMarked,
-        ]);
-      } catch (\Throwable $th) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Có lỗi xảy ra khi lấy danh sách board.',
-          ]);
-      }
+        try {
+            $workspace = Workspace::where('name', $workspaceName)->first();
+            $boardMarked = $workspace->boards()->where('is_marked', 1)->get();
+            return response()->json([
+                'success' => true,
+                'data' => $boardMarked,
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lấy danh sách board.',
+            ]);
+        }
     }
-
-
-
     public function showWorkspaceById($workspaceId)
     {
         try {
@@ -116,7 +111,6 @@ class WorkspaceController extends Controller
             ], 500);
         }
     }
-
     public function store(WorkspaceRequest $request)
     {
         $user = Auth::user();
@@ -172,7 +166,6 @@ class WorkspaceController extends Controller
             ], 500);
         }
     }
-
     public function destroy(Workspace $workspace)
     {
         if ($workspace) {
@@ -184,16 +177,6 @@ class WorkspaceController extends Controller
             return response()->json(['error' => 'Workspace not found'], 404);
         }
     }
-
-    /**
-     * Summary of updateWorkspaceInfo
-     * @param \App\Http\Requests\WorkspaceRequest $request
-     * @param \App\Models\Workspace $workspace
-     * @return mixed|\Illuminate\Http\JsonResponse
-     * 
-     * cập nhật các trường như name, display_name, desc
-     * nó có sử dụng realtime event để cập nhật thông tin cho các thành viên trong workspace
-     */
     public function updateWorkspaceInfo(Request $request, $id)
     {
         // Tìm workspace dựa trên ID
@@ -221,9 +204,6 @@ class WorkspaceController extends Controller
             'data' => new WorkspaceResource($workspace->fresh()), // Sử dụng fresh() để tải lại dữ liệu mới nhất
         ], 200);
     }
-
-
-
     public function permissionLevel(Request $request)
     {
         $validatedData = $request->validate([
@@ -239,5 +219,67 @@ class WorkspaceController extends Controller
         return response()->json([
             'data' => $permissionLevels,
         ]);
+    }
+    public function getWorkspaceInPulic(Request $request, $workspaceId)
+    {
+        try {
+            // 🔹 Tìm workspace theo ID
+            $workspace = Workspace::findOrFail($workspaceId);
+
+            // 🔹 Kiểm tra tham số query
+            $includeEnterprise = filter_var($request->query('enterprise', false), FILTER_VALIDATE_BOOLEAN);
+            $fields = $request->query('fields', 'basic');
+            $includeMembers = $request->query('members', false);
+            $memberFields = $request->query('member_fields', '');
+
+            // 🔹 Danh sách trường hợp lệ của thành viên
+            $defaultMemberFields = [
+                // 'workspace_members.user_id as id',  // 🔹 Sử dụng `user_id` thay vì `id`
+                // 'users.full_name as fullName',
+                'users.user_name'
+            ];
+
+            // 🔹 Nếu có member_fields, lọc các trường hợp lệ
+            $selectedFields = [];
+            if (!empty($memberFields)) {
+                $allowedFields = array_map('trim', explode(',', $memberFields));
+                $mappedFields = array_intersect_key(array_flip($allowedFields), array_flip($defaultMemberFields));
+                $selectedFields = array_values(array_intersect($defaultMemberFields, array_keys($mappedFields)));
+            }
+
+            if (empty($selectedFields)) {
+                $selectedFields = $defaultMemberFields;
+            }
+
+            // 🔹 Chuẩn bị response
+            $response = [
+                'id' => $workspace->id,
+                'name' => $workspace->name,
+                'enterprise' => $includeEnterprise,
+            ];
+
+            if ($fields === 'all') {
+                $response['details'] = $workspace;
+            }
+
+            if ($includeMembers === 'all') {
+                $response['members'] = DB::table('workspace_members')
+                    ->join('users', 'workspace_members.user_id', '=', 'users.id')
+                    ->where('workspace_members.workspace_id', $workspaceId)
+                    ->select($selectedFields)
+                    ->get();
+            }
+
+            return response()->json($response, 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Workspace không tồn tại!',
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Lỗi khi lấy thông tin workspace!',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

@@ -16,33 +16,19 @@ use Illuminate\Support\Facades\Log;
 
 class CommentCardController extends Controller
 {
-    // //
-    // public function index($cardId)
-    // {
-
-    //     $card = Card::find($cardId);
-    //     if (!$card) {
-    //         return response()->json(['message' => 'Card không tồn tại!'], 404);
-    //     }
-
-    //     $comments = CommentCard::where('card_id', $cardId)
-    //         // ->with('user:id,full_name')
-    //         ->orderBy('created_at', 'desc')
-    //         ->get();
-
-    //     return response()->json($comments);
-    // }
+    //
     public function index($cardId)
     {
+
         $card = Card::find($cardId);
         if (!$card) {
             return response()->json(['message' => 'Card không tồn tại!'], 404);
         }
 
         $comments = CommentCard::where('card_id', $cardId)
+            ->with('user:id,full_name')
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->load('user:id,full_name'); // Load quan hệ user ngay sau khi lấy dữ liệu
+            ->get();
 
         return response()->json($comments);
     }

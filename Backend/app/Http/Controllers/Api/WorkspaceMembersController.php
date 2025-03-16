@@ -74,7 +74,9 @@ class WorkspaceMembersController extends Controller
 
         return response()->json(['message' => 'Members added successfully', 'new_members' => $newMembers], 201);
     }
-    // // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/677ea51482b962a06bc469ac/deactivated
+
+ 
+     // // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/677ea51482b962a06bc469ac/deactivated
     // public function deactivateMember(Request $request, $idOrganization, $idMember)
     // {
     //     // Deactivate a member in the organization
