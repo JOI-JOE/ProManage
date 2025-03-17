@@ -8,30 +8,32 @@ import {
   TextField,
   List,
   ListItem,
-  ListItemButton,
   ListItemText,
   Divider,
   IconButton,
   Typography,
+  CircularProgress,
+  ListItemButton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
 const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
-  const [search, setSearch] = useState("");
   const [newLink, setNewLink] = useState("");
   const [displayText, setDisplayText] = useState("");
-  const [files, setFiles] = useState([
-    { id: 1, name: "card 4", user: "Hồng Ngát", time: "3 giờ trước" },
-    { id: 2, name: "gghhjj", user: "Hồng Ngát", time: "5 giờ trước" },
-    { id: 3, name: "card 8", user: "Hồng Ngát", time: "2 ngày trước" },
+  const [uploading, setUploading] = useState(false);
+
+  const recentFiles = [
+    { id: 1, name: "Báo cáo tuần", user: "Hồng Ngát", time: "3 giờ trước" },
+    { id: 2, name: "Tài liệu dự án", user: "Hồng Ngát", time: "5 giờ trước" },
+    { id: 3, name: "Hợp đồng A", user: "Hồng Ngát", time: "2 ngày trước" },
     {
       id: 4,
       name: "Thất tịch",
       user: "Không gian làm việc",
       time: "2 ngày trước",
     },
-    { id: 5, name: "Test", user: "", time: "1 tuần trước" },
-  ]);
+    { id: 5, name: "Test file", user: "", time: "1 tuần trước" },
+  ];
 
   const isValidURL = (str) => {
     const pattern = new RegExp(
@@ -43,29 +45,44 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
 
   const handleInsert = () => {
     if (isValidURL(newLink)) {
-      onAddAttachment?.({
+      const newAttachment = {
         id: Date.now(),
         name: displayText || newLink,
         url: newLink,
         type: "link",
-      });
+        time: new Date().toISOString(),
+      };
+      onAddAttachment(newAttachment);
       setNewLink("");
       setDisplayText("");
       onClose();
     }
   };
 
-  const handleFileChange = (event) => {
-    const selectedFiles = event.target.files;
-    if (selectedFiles.length > 0) {
-      const fileArray = Array.from(selectedFiles).map((file) => ({
-        id: Date.now(),
-        name: file.name,
-        type: file.type,
-      }));
-      setFiles((prevFiles) => [...prevFiles, ...fileArray]);
+  const handleFileSelect = (event) => {
+    const files = Array.from(event.target.files).map((file) => ({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      url: URL.createObjectURL(file),
+      time: new Date().toISOString(),
+      type: "file",
+    }));
+
+    if (files.length > 0) {
+      setUploading(true);
+      setTimeout(() => {
+        onAddAttachment(files);
+        setUploading(false);
+        onClose();
+      }, 1500);
     }
   };
+
+  const filteredRecentFiles = !isValidURL(newLink)
+    ? recentFiles.filter((file) =>
+        file.name.toLowerCase().includes(newLink.toLowerCase())
+      )
+    : [];
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
@@ -87,7 +104,7 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           fullWidth
           variant="outlined"
           size="small"
-          placeholder="Tìm kiếm các liên kết gần đây hoặc dán một liên kết"
+          placeholder="Tìm kiếm file hoặc dán liên kết"
           value={newLink}
           onChange={(e) => setNewLink(e.target.value)}
           sx={{ mb: 2 }}
@@ -104,32 +121,54 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           onChange={(e) => setDisplayText(e.target.value)}
           sx={{ mb: 2 }}
         />
-        <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-          Đã xem gần đây
-        </Typography>
-        <List sx={{ maxHeight: 250, overflowY: "auto" }}>
-          {files.map((file) => (
-            <ListItem key={file.id} disablePadding>
-              <ListItemButton>
-                <ListItemText
-                  primary={file.name}
-                  secondary={`${file.user} - ${file.time}`}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider sx={{ my: 2 }} />
-        <Button variant="contained" fullWidth component="label">
-          Chọn tệp
-          <input type="file" hidden multiple onChange={handleFileChange} />
+        {!isValidURL(newLink) && filteredRecentFiles.length > 0 && (
+          <>
+            <Typography variant="body2" sx={{ fontWeight: "bold", mt: 2 }}>
+              Đã xem gần đây
+            </Typography>
+            <List sx={{ maxHeight: 150, overflowY: "auto" }}>
+              {filteredRecentFiles.map((file) => (
+                <ListItem key={file.id} disablePadding>
+                  <ListItemButton>
+                    <ListItemText
+                      primary={file.name}
+                      secondary={`${file.user} - ${file.time}`}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+            <Divider sx={{ my: 2 }} />
+          </>
+        )}
+        <Button
+          variant="contained"
+          fullWidth
+          component="label"
+          disabled={uploading}
+        >
+          {uploading ? "Tệp đang tải lên..." : "Chọn tệp"}
+          <input type="file" hidden multiple onChange={handleFileSelect} />
         </Button>
+
+        {uploading && (
+          <Typography
+            variant="body2"
+            sx={{ mt: 2, display: "flex", alignItems: "center" }}
+          >
+            <CircularProgress size={20} sx={{ mr: 1 }} /> Tệp đang tải lên...
+          </Typography>
+        )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Hủy</Button>
-        <Button onClick={handleInsert} variant="contained">
-          Chèn
+        <Button onClick={onClose} disabled={uploading}>
+          Hủy
         </Button>
+        {!uploading && (
+          <Button onClick={handleInsert} variant="contained">
+            Chèn
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
