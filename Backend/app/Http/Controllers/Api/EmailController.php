@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendWorkspaceEmailJob;
 use App\Models\User;
 use App\Services\GoogleService;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,6 @@ class EmailController extends Controller
     {
         $this->googleService = $googleService;
     }
-
     public function sendEmail(Request $request)
     {
         try {
@@ -46,10 +46,10 @@ class EmailController extends Controller
                 return response()->json(['error' => 'Recipient emails are required'], 400);
             }
 
-            // Xử lý gửi email
-            $this->processEmails($accessToken, $toEmails, $subject, $body, $user->full_name);
+            // Đẩy vào hàng đợi để gửi email bất đồng bộ
+            dispatch(new SendWorkspaceEmailJob($accessToken, $user->full_name, $toEmails, $subject, $body));
 
-            return response()->json(['message' => 'Emails processed successfully!']);
+            return response()->json(['message' => 'Emails are being processed in the background.']);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to send email',
@@ -57,7 +57,6 @@ class EmailController extends Controller
             ], 500);
         }
     }
-
     /**
      * Kiểm tra và làm mới access token nếu cần
      */
@@ -88,46 +87,46 @@ class EmailController extends Controller
      * 1. là email đã tồn tại trên database
      * 2. là email chưa tồn tại trên database
      */
-    private function processEmails($accessToken, $toEmails, $subject, $body, $senderName)
-    {
-        $sentEmails = [];
-        $failedEmails = [];
+    // private function processEmails($accessToken, $toEmails, $subject, $body, $senderName)
+    // {
+    //     $sentEmails = [];
+    //     $failedEmails = [];
 
-        foreach ($toEmails as $to) {
-            if ($this->checkEmailExists($to)) {
-                // Gửi email cho user đã có tài khoản
-                if ($this->googleService->sendEmail($accessToken, $senderName, $to, $subject, $body)) {
-                    $sentEmails[] = $to;
-                } else {
-                    $failedEmails[] = $to;
-                }
-            } else {
-                $failedEmails[] = $to;
-            }
-        }
+    //     foreach ($toEmails as $to) {
+    //         if ($this->checkEmailExists($to)) {
+    //             // Gửi email cho user đã có tài khoản
+    //             if ($this->googleService->sendEmail($accessToken, $senderName, $to, $subject, $body)) {
+    //                 $sentEmails[] = $to;
+    //             } else {
+    //                 $failedEmails[] = $to;
+    //             }
+    //         } else {
+    //             $failedEmails[] = $to;
+    //         }
+    //     }
 
-        // Trả về response tổng hợp
-        $response = [];
+    //     // Trả về response tổng hợp
+    //     $response = [];
 
-        if (!empty($sentEmails)) {
-            $response['message'] = 'Emails processed successfully!';
-            $response['sent'] = $sentEmails;
-        }
+    //     if (!empty($sentEmails)) {
+    //         $response['message'] = 'Emails processed successfully!';
+    //         $response['sent'] = $sentEmails;
+    //     }
 
-        if (!empty($failedEmails)) {
-            $response['error'] = 'Some emails could not be sent.';
-            $response['failed'] = $failedEmails;
-        }
+    //     if (!empty($failedEmails)) {
+    //         $response['error'] = 'Some emails could not be sent.';
+    //         $response['failed'] = $failedEmails;
+    //     }
 
-        // Chọn HTTP status code phù hợp
-        $statusCode = empty($failedEmails) ? 200 : 400;
+    //     // Chọn HTTP status code phù hợp
+    //     $statusCode = empty($failedEmails) ? 200 : 400;
 
-        return response()->json($response, $statusCode);
-    }
+    //     return response()->json($response, $statusCode);
+    // }
 
-    private function checkEmailExists($email)
-    {
-        $user = User::where('email', $email)->first();
-        return $user !== null;
-    }
+    // private function checkEmailExists($email)
+    // {
+    //     $user = User::where('email', $email)->first();
+    //     return $user !== null;
+    // }
 }

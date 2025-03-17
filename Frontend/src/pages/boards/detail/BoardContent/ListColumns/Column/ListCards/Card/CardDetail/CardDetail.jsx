@@ -18,6 +18,7 @@ import {
   IconButton,
   Chip,
   Stack,
+  Modal,
   Popover,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
@@ -56,6 +57,7 @@ import CollectionsIcon from "@mui/icons-material/Collections";
 import {
   useCardActions,
   useCardById,
+  useGetMemberInCard,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
 import {
@@ -81,16 +83,18 @@ import {
 } from "../../../../../../../../../hooks/useCheckListItem";
 import CoverPhoto from "./childComponent_CardDetail/CoverPhoto";
 import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
-import { ArrowDropDownIcon } from "@mui/x-date-pickers";
+import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
+import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
+import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import dayjs from "dayjs";
-import LinkIcon from "@mui/icons-material/Link";
-import AttachmentIcon from "@mui/icons-material/Attachment";
-import { ArrowBack } from "@mui/icons-material";
-import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-const CardModal = ({}) => {
+import CloseIcon from "@mui/icons-material/Close";
+import AttachmentIcon from "@mui/icons-material/Attachment";
+import dayjs from "dayjs";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+
+const CardModal = () => {
   const { cardId, title } = useParams();
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
@@ -121,6 +125,7 @@ const CardModal = ({}) => {
   const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  // const [activity, setActivity] = useState("");
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
@@ -144,13 +149,7 @@ const CardModal = ({}) => {
     setIsFollowing(!isFollowing);
   };
 
-  const members = [{ name: "Pham Thi Hong Ngat (FPL HN)" }];
-  // const loggedInUser = {
-  //   name: "Current User",
-  //   avatar: "https://via.placeholder.com/40",
-  // };
   const { data: comments = [] } = useCommentsByCard(cardId);
-  const { data: user, isLoadingUser, errorUser } = useUser();
   const {
     data: cardDetail,
     isLoading,
@@ -171,10 +170,35 @@ const CardModal = ({}) => {
   const { mutate: updateCheckListItemName } = useUpdateCheckListItemName();
   const { mutate: deleteItem } = useDeleteCheckListItem();
 
-  // console.log(cardId);
+  const {
+    data: activities = [],
+    isLoadingActivity,
+    errorActivity,
+  } = useActivityByCardId(cardId);
+
+  // console.log(activities);
+
+  const { user } = useStateContext();
+  const userId = user?.id;
+
+  const combinedData = [
+    ...comments.map((comment) => ({ ...comment, type: "comment" })),
+    ...activities.map((activity) => ({ ...activity, type: "activity" })),
+  ];
+
+  const sortedData = combinedData.sort((a, b) => {
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+  // console.log(user);
+  if (isLoadingActivity) return <Typography>Đang tải hoạt động...</Typography>;
+  if (errorActivity)
+    return <Typography color="red">Lỗi khi tải dữ liệu!</Typography>;
+
+  // console.log(activities);
 
   const { mutate: addComment, isLoadingComment } = useCreateComment();
   const { archiveCard } = useCardActions();
+  const { data: members, toggleMember } = useGetMemberInCard(cardId);
   useEffect(() => {
     if (JSON.stringify(labels) !== JSON.stringify(cardLabels)) {
       setLabels(cardLabels);
@@ -246,9 +270,12 @@ const CardModal = ({}) => {
     }
   };
 
-  // const handleDescriptionClick = () => {
-  //   setIsEditingDescription(true);
-  // };
+  // Xử lý tham gia/rời khỏi card
+  const handleJoinCard = () => {
+    toggleMember(userId);
+  };
+
+  const isMember = members?.data?.some((m) => m.id === userId);
 
   const getPlainText = (html) => {
     const tempDiv = document.createElement("div");
@@ -276,8 +303,8 @@ const CardModal = ({}) => {
     });
   };
 
-  if (isLoadingUser) return <p>Loading...</p>;
-  if (errorUser) return <p>Lỗi khi lấy dữ liệu user!</p>;
+  // if (isLoadingUser) return <p>Loading...</p>;
+  // if (errorUser) return <p>Lỗi khi lấy dữ liệu user!</p>;
 
   /// THÊM CÔNG VIỆC
 
@@ -313,6 +340,8 @@ const CardModal = ({}) => {
     toggleItemStatus(id, {
       onSuccess: () => {
         console.log("✅ Cập nhật trạng thái thành công");
+        // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
+        // queryClient.invalidateQueries({ queryKey: ["activities"] });
       },
       onError: () => {
         console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
@@ -331,7 +360,9 @@ const CardModal = ({}) => {
     removeCheckList(checklistId, {
       onSuccess: () => {
         console.log("✅ Checklist đã bị xóa thành công!");
-        queryClient.invalidateQueries(["checklists", cardId]);
+        // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
+        // // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] }); // Cập nhật lại danh sách checklist
+        // queryClient.invalidateQueries({ queryKey: ["activities"] });
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa checklist:", error);
@@ -514,10 +545,23 @@ const CardModal = ({}) => {
     }
   };
 
+  const [open, setOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const handleOpen = (imageUrl) => {
+    setSelectedImage(imageUrl);
+    setOpen(true);
+  };
+
+  // Hàm đóng modal
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedImage(null);
+  };
+
   //NGÀY
   const [dateInfo, setDateInfo] = useState(null);
   const [openDateModal, setOpenDateModal] = useState(false);
-  const [open, setOpen] = useState(false);
 
   const handleSaveDate = (data) => {
     setDateInfo(data); // Lưu dữ liệu từ DateModal.jsx
@@ -547,28 +591,28 @@ const CardModal = ({}) => {
     setIsDetailHidden(!isDetailHidden);
   };
 
-  const activities = [
-    {
-      name: "Pham Thi Hong Ngat (FPL HN)",
-      action: "đã gửi thẻ này tới bảng",
-      time: "2 giờ trước",
-    },
-    {
-      name: "Pham Thi Hong Ngat (FPL HN)",
-      action: "đã lưu trữ thẻ này",
-      time: "2 giờ trước",
-    },
-    {
-      name: "Pham Thi Hong Ngat (FPL HN)",
-      action: "đã tham gia thẻ này",
-      time: "21:39 8 thg 3, 2025",
-    },
-    {
-      name: "Pham Thi Hong Ngat (FPL HN)",
-      action: "đã thêm thẻ này vào danh sách mmm",
-      time: "22:54 7 thg 3, 2025",
-    },
-  ];
+  // const activities = [
+  //   {
+  //     name: "Pham Thi Hong Ngat (FPL HN)",
+  //     action: "đã gửi thẻ này tới bảng",
+  //     time: "2 giờ trước",
+  //   },
+  //   {
+  //     name: "Pham Thi Hong Ngat (FPL HN)",
+  //     action: "đã lưu trữ thẻ này",
+  //     time: "2 giờ trước",
+  //   },
+  //   {
+  //     name: "Pham Thi Hong Ngat (FPL HN)",
+  //     action: "đã tham gia thẻ này",
+  //     time: "21:39 8 thg 3, 2025",
+  //   },
+  //   {
+  //     name: "Pham Thi Hong Ngat (FPL HN)",
+  //     action: "đã thêm thẻ này vào danh sách mmm",
+  //     time: "22:54 7 thg 3, 2025",
+  //   },
+  // ];
 
   const [isCoverPhotoOpen, setIsCoverPhotoOpen] = useState(false);
 
@@ -641,12 +685,12 @@ const CardModal = ({}) => {
 
   const [selectedFile, setSelectedFile] = useState(null);
 
-  const handleOpen = (file) => {
+  const handleOpen1 = (file) => {
     setSelectedFile(file);
     setOpen(true);
   };
 
-  const handleClose = () => {
+  const handleClose1 = () => {
     setSelectedFile(null);
     setOpen(false);
   };
@@ -805,11 +849,17 @@ const CardModal = ({}) => {
           </Typography>
           {/* New section to match the provided image */}
           <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-            <Avatar
-              sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
-            >
-              PH
-            </Avatar>
+            {members?.data?.map((member) => (
+              <Avatar
+                key={member.id}
+                sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
+              >
+                {member.full_name
+                  ? member.full_name.charAt(0).toUpperCase()
+                  : "?"}
+              </Avatar>
+            ))}
+
             <AddIcon
               sx={{
                 fontSize: 14,
@@ -1187,7 +1237,7 @@ const CardModal = ({}) => {
                 >
                   <Box sx={{ padding: 2, width: 300 }}>
                     <IconButton onClick={() => setPopoverAnchorEl(null)}>
-                      <ArrowBack />
+                      {/* <ArrowBack /> */}
                     </IconButton>
                     <Typography variant="h6" sx={{ textAlign: "center" }}>
                       Sửa tệp đính kèm
@@ -1292,14 +1342,14 @@ const CardModal = ({}) => {
                                 borderRadius: "8px",
                                 objectFit: "cover",
                               }}
-                              onClick={() => handleOpen(file)}
+                              onClick={() => handleOpen1(file)}
                             />
 
                             {/* Nội dung tên và thời gian */}
                             <Box sx={{ flexGrow: 1, ml: "10px" }}>
                               <Typography
                                 sx={{ fontWeight: "bold", fontSize: "13px" }}
-                                onClick={() => handleOpen(file)}
+                                onClick={() => handleOpen1(file)}
                               >
                                 {file.name || "Không có tên"}
                               </Typography>
@@ -1307,7 +1357,7 @@ const CardModal = ({}) => {
                                 variant="body2"
                                 color="textSecondary"
                                 sx={{ fontSize: "13px" }}
-                                onClick={() => handleOpen(file)}
+                                onClick={() => handleOpen1(file)}
                               >
                                 Đã thêm{" "}
                                 {file.time
@@ -1413,7 +1463,7 @@ const CardModal = ({}) => {
                 </Popover>
                 <Dialog
                   open={open}
-                  onClose={handleClose}
+                  onClose={handleClose1}
                   fullWidth
                   maxWidth="sm"
                   sx={{
@@ -1429,7 +1479,7 @@ const CardModal = ({}) => {
                   }}
                 >
                   <IconButton
-                    onClick={handleClose}
+                    onClick={handleClose1}
                     sx={{
                       position: "absolute",
                       top: -120,
@@ -1538,7 +1588,7 @@ const CardModal = ({}) => {
                           onClick={() => {
                             handleDeleteFile(); // Gọi hàm xử lý xóa file (nếu có)
                             setSelectedFile(null); // Xóa file khỏi giao diện
-                            handleClose(); // Đóng dialog
+                            handleClose1(); // Đóng dialog
                           }}
                           sx={{ ml: 2 }}
                         >
@@ -1915,247 +1965,382 @@ const CardModal = ({}) => {
                 </>
               )}
 
-              {/* Hiển thị các bình luận và hoạt động */}
-              {comments.map((cmt, index) => {
-                const content = cmt.content || "";
-                if (isEmptyHTML(content)) return null;
+              <>
+                {sortedData.map((item, index) => {
+                  if (item.type === "comment") {
+                    const content = item.content || "";
+                    if (isEmptyHTML(content)) return null;
 
-                return (
-                  <Box
-                    key={index}
-                    sx={{ display: "flex", flexDirection: "column", mt: 1 }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <Avatar
-                        src={cmt?.user?.avatar || ""}
-                        sx={{
-                          bgcolor: !cmt?.user?.avatar ? "pink" : "transparent",
-                          color: !cmt?.user?.avatar ? "white" : "inherit",
-                          width: 28,
-                          height: 28,
-                          fontSize: "0.6rem",
-                          mt: 2, // Move the avatar down
-                        }}
+                    return (
+                      <Box
+                        key={index}
+                        sx={{ display: "flex", flexDirection: "column", mt: 1 }}
                       >
-                        {!cmt?.user?.avatar &&
-                          (cmt?.user?.full_name?.charAt(0)?.toUpperCase() ||
-                            "?")}
-                      </Avatar>
-                      <Box sx={{ ml: 1 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: "bold", fontSize: "14px" }}
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Avatar
+                            src={item?.user?.avatar || ""}
+                            sx={{
+                              bgcolor: !item?.user?.avatar
+                                ? "pink"
+                                : "transparent",
+                              color: !item?.user?.avatar ? "white" : "inherit",
+                              width: 28,
+                              height: 28,
+                              fontSize: "0.6rem",
+                              mt: 2, // Move the avatar down
+                            }}
+                          >
+                            {!item?.user?.avatar &&
+                              (item?.user?.full_name
+                                ?.charAt(0)
+                                ?.toUpperCase() ||
+                                "?")}
+                          </Avatar>
+                          <Box sx={{ ml: 1 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: "bold", fontSize: "14px" }}
+                            >
+                              {item.user?.full_name || "Người dùng"}{" "}
+                              <span style={{ fontWeight: "normal" }}>
+                                {item.user?.username}
+                              </span>
+                              <Typography
+                                variant="body2"
+                                component="span"
+                                sx={{
+                                  fontSize: "0.5rem",
+                                  color: "gray",
+                                  ml: 0.5,
+                                  padding: "3px 0px",
+                                }}
+                              >
+                                {formatTime(item.created_at)}
+                              </Typography>
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box
+                          sx={{
+                            ml: 4.5,
+                            mt: -1,
+                            backgroundColor: "#f5f6fa",
+                            p: 0.7,
+                            borderRadius: "8px",
+                          }}
                         >
-                          {cmt.user?.full_name || "Người dùng"}{" "}
-                          <span style={{ fontWeight: "normal" }}>
-                            {cmt.user?.username}
-                          </span>
-                          <Typography
-                            variant="body2"
-                            component="span"
-                            sx={{
-                              fontSize: "0.5rem",
-                              color: "gray",
-                              ml: 0.5,
-                              padding: "3px 0px",
-                            }}
-                          >
-                            {new Date(cmt.created_at).toLocaleTimeString()}{" "}
-                            {new Date(cmt.created_at).toLocaleDateString()}
-                          </Typography>
-                        </Typography>
+                          {editingCommentIndex === item.id ? (
+                            <>
+                              <ReactQuill
+                                value={editingCommentText}
+                                onChange={setEditingCommentText}
+                                placeholder="Edit your comment..."
+                                style={{ marginTop: "8px" }}
+                                theme="snow"
+                                modules={{
+                                  toolbar: [
+                                    [{ header: [1, 2, false] }],
+                                    ["bold", "italic", "underline", "strike"],
+                                    [{ list: "ordered" }, { list: "bullet" }],
+                                    ["link"],
+                                    ["image"],
+                                    ["clean"],
+                                  ],
+                                }}
+                                formats={[
+                                  "header",
+                                  "bold",
+                                  "italic",
+                                  "underline",
+                                  "strike",
+                                  "list",
+                                  "bullet",
+                                  "link",
+                                  "image",
+                                ]}
+                                sx={{
+                                  "& .ql-container": {
+                                    border: "1px solid #ddd",
+                                    borderRadius: 4,
+                                  },
+                                  "& .ql-toolbar": { border: "1px solid #ddd" },
+                                }}
+                              />
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                  gap: 1,
+                                  mt: 1,
+                                }}
+                              >
+                                <Button
+                                  variant="contained"
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: "teal",
+                                    color: "#FFF",
+                                    fontSize: "0.6rem",
+                                    height: "25px",
+                                    minWidth: "50px",
+                                  }}
+                                  onClick={handleSaveEditedComment}
+                                  disabled={isEmptyHTML(editingCommentText)}
+                                >
+                                  Lưu
+                                </Button>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{
+                                    color: "#172B4D",
+                                    borderColor: "#ddd",
+                                    fontSize: "0.6rem",
+                                    height: "25px",
+                                    minWidth: "50px",
+                                    "&:hover": {
+                                      backgroundColor: "#E4E7EB",
+                                      borderColor: "#bbb",
+                                    },
+                                  }}
+                                  onClick={() => {
+                                    setEditingCommentIndex(null); // Thoát chế độ chỉnh sửa
+                                    setEditingCommentText(""); // Reset nội dung chỉnh sửa
+                                  }}
+                                >
+                                  Hủy
+                                </Button>
+                              </Box>
+                            </>
+                          ) : (
+                            <>
+                              <Typography
+                                variant="body2"
+                                style={{
+                                  wordWrap: "break-word",
+                                  whiteSpace: "pre-wrap",
+                                  overflowWrap: "break-word",
+                                  wordBreak: "break-word",
+                                  fontSize: "0.rem", // Change font size to 0.7rem
+                                }}
+                              >
+                                {content.replace(/<\/?p>/g, "")}
+                              </Typography>
+                              <Box sx={{ display: "flex", mt: "-4px" }}>
+                                <Button
+                                  size="small"
+                                  onClick={() =>
+                                    handleEditComment(item.id, item.content)
+                                  }
+                                  sx={{
+                                    width: "20px",
+                                    minWidth: "20px",
+                                    ml: "4px",
+                                    mr: "-8px",
+                                    fontSize: "0.4rem", // Smaller font size
+                                    textTransform: "none",
+                                    padding: "2px 4px", // Smaller padding
+                                  }}
+                                >
+                                  Sửa
+                                </Button>
+                                <Button
+                                  size="small"
+                                  onClick={() => handleDeleteComment(item.id)}
+                                  sx={{
+                                    width: "20px",
+                                    minWidth: "20px",
+                                    ml: "10px",
+                                    fontSize: "0.4rem", // Smaller font size
+                                    textTransform: "none",
+                                    padding: "2px 4px", // Smaller padding
+                                  }}
+                                >
+                                  Xóa
+                                </Button>
+                              </Box>
+                            </>
+                          )}
+                        </Box>
                       </Box>
-                    </Box>
-                    <Box
-                      sx={{
-                        ml: 4.5,
-                        mt: -1,
-                        backgroundColor: "#f5f6fa",
-                        p: 0.7,
-                        borderRadius: "8px",
-                      }}
-                    >
-                      {editingCommentIndex === cmt.id ? (
-                        <>
-                          <ReactQuill
-                            value={editingCommentText}
-                            onChange={setEditingCommentText}
-                            placeholder="Edit your comment..."
-                            style={{ marginTop: "8px" }}
-                            theme="snow"
-                            modules={{
-                              toolbar: [
-                                [{ header: [1, 2, false] }],
-                                ["bold", "italic", "underline", "strike"],
-                                [{ list: "ordered" }, { list: "bullet" }],
-                                ["link"],
-                                ["image"],
-                                ["clean"],
-                              ],
-                            }}
-                            formats={[
-                              "header",
-                              "bold",
-                              "italic",
-                              "underline",
-                              "strike",
-                              "list",
-                              "bullet",
-                              "link",
-                              "image",
-                            ]}
-                            sx={{
-                              "& .ql-container": {
-                                border: "1px solid #ddd",
-                                borderRadius: 4,
-                              },
-                              "& .ql-toolbar": { border: "1px solid #ddd" },
-                            }}
-                          />
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              gap: 1,
-                              mt: 1,
-                            }}
-                          >
-                            <Button
-                              variant="contained"
-                              size="small"
-                              sx={{
-                                backgroundColor: "teal",
-                                color: "#FFF",
-                                fontSize: "0.6rem",
-                                height: "25px",
-                                minWidth: "50px",
-                              }}
-                              onClick={handleSaveEditedComment}
-                              disabled={isEmptyHTML(editingCommentText)}
-                            >
-                              Lưu
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              sx={{
-                                color: "#172B4D",
-                                borderColor: "#ddd",
-                                fontSize: "0.6rem",
-                                height: "25px",
-                                minWidth: "50px",
-                                "&:hover": {
-                                  backgroundColor: "#E4E7EB",
-                                  borderColor: "#bbb",
-                                },
-                              }}
-                              onClick={() => {
-                                setEditingCommentIndex(null); // Thoát chế độ chỉnh sửa
-                                setEditingCommentText(""); // Reset nội dung chỉnh sửa
-                              }}
-                            >
-                              Hủy
-                            </Button>
-                          </Box>
-                        </>
-                      ) : (
-                        <>
-                          <Typography
-                            variant="body2"
-                            style={{
-                              wordWrap: "break-word",
-                              whiteSpace: "pre-wrap",
-                              overflowWrap: "break-word",
-                              wordBreak: "break-word",
-                              fontSize: "0.rem", // Change font size to 0.7rem
-                            }}
-                          >
-                            {content.replace(/<\/?p>/g, "")}
-                          </Typography>
-                          <Box sx={{ display: "flex", mt: "-4px" }}>
-                            <Button
-                              size="small"
-                              onClick={() =>
-                                handleEditComment(cmt.id, cmt.content)
-                              }
-                              sx={{
-                                width: "20px",
-                                minWidth: "20px",
-                                ml: "4px",
-                                mr: "-8px",
-                                fontSize: "0.4rem", // Smaller font size
-                                textTransform: "none",
-                                padding: "2px 4px", // Smaller padding
-                              }}
-                            >
-                              Sửa
-                            </Button>
-                            <Button
-                              size="small"
-                              onClick={() => handleDeleteComment(cmt.id)}
-                              sx={{
-                                width: "20px",
-                                minWidth: "20px",
-                                ml: "10px",
-                                fontSize: "0.4rem", // Smaller font size
-                                textTransform: "none",
-                                padding: "2px 4px", // Smaller padding
-                              }}
-                            >
-                              Xóa
-                            </Button>
-                          </Box>
-                        </>
-                      )}
-                    </Box>
-                  </Box>
-                );
-              })}
+                    );
+                  } else if (item.type === "activity") {
+                    const description = item.description;
+                    const keyword = "đã";
+                    const keywordIndex = description.indexOf(keyword);
 
-              {/* Hiển thị các hoạt động */}
-              {!isDetailHidden && (
-                <Box
-                  sx={{
-                    backgroundColor: "white",
-                    pt: 1,
-                    borderRadius: 2,
-                    mt: 0.5,
-                  }}
-                >
-                  <Stack spacing={2}>
-                    {activities.map((activity, index) => (
-                      <Box key={index} display="flex" alignItems="center">
+                    if (keywordIndex === -1) return null;
+
+                    const userName = description
+                      .substring(0, keywordIndex)
+                      .trim();
+                    const actionText = description
+                      .substring(keywordIndex)
+                      .trim();
+
+                    const namePattern =
+                      /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
+                    const affectedUsers = actionText.match(namePattern) || [];
+
+                    // Hàm để chuyển đổi description thành JSX với link
+                    const renderDescriptionWithLink = (
+                      description,
+                      filePath,
+                      fileName
+                    ) => {
+                      const fileIndex = description.indexOf(fileName);
+                      if (fileIndex === -1) return description; // Nếu không tìm thấy, trả về description gốc
+
+                      const beforeFile = description.slice(0, fileIndex);
+                      const afterFile = description.slice(
+                        fileIndex + fileName.length
+                      );
+
+                      // Kiểm tra xem file có phải là ảnh không
+                      const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(
+                        fileName
+                      );
+
+                      return (
+                        <>
+                          {beforeFile}
+                          <span
+                            style={{
+                              color: "blue",
+                              textDecoration: "none", // Mặc định không gạch chân
+                              cursor: "pointer",
+                              ":hover": {
+                                textDecoration: "underline", // Gạch chân khi hover
+                              },
+                            }}
+                            onClick={() => {
+                              if (isImage) {
+                                handleOpen(filePath); // Mở modal nếu là ảnh
+                              } else {
+                                window.open(filePath, "_blank"); // Tải file nếu không phải ảnh
+                              }
+                            }}
+                          >
+                            {fileName}
+                          </span>
+                          {afterFile}
+                        </>
+                      );
+                    };
+
+                    return (
+                      <Box
+                        key={index}
+                        display="flex"
+                        alignItems="flex-start"
+                        mb={1}
+                      >
                         <Avatar
                           sx={{
                             bgcolor: "pink",
                             width: 28,
                             height: 28,
+                            mt: 2,
                             fontSize: "0.6rem",
-                            mr: 1,
                           }}
                         >
-                          PH
+                          {userName.charAt(0)}
                         </Avatar>
                         <Box>
-                          <Typography fontWeight="bold" color="black">
-                            {activity.name}{" "}
-                            <Typography
-                              component="span"
-                              fontWeight="normal"
-                              color="black"
-                            >
-                              {activity.action}
-                            </Typography>
+                          <Typography>
+                            <Typography component="span" fontWeight={"bold"}>
+                              {userName}
+                            </Typography>{" "}
+                            {affectedUsers.length > 0 ? (
+                              actionText
+                                .split(affectedUsers[0])
+                                .map((part, i) => (
+                                  <React.Fragment key={i}>
+                                    {i > 0 && (
+                                      <Typography
+                                        component="span"
+                                        fontWeight="bold"
+                                      >
+                                        {" "}
+                                        {affectedUsers[0]}
+                                      </Typography>
+                                    )}
+                                    {part}
+                                  </React.Fragment>
+                                ))
+                            ) : (
+                              <Typography component="span" fontWeight="normal">
+                                {item.properties &&
+                                item.properties.file_path &&
+                                item.properties.file_name
+                                  ? renderDescriptionWithLink(
+                                      actionText,
+                                      item.properties.file_path,
+                                      item.properties.file_name
+                                    )
+                                  : actionText}
+                              </Typography>
+                            )}
                           </Typography>
-                          <Typography fontSize="0.5rem" color="gray">
-                            {activity.time}
+                          <Typography fontSize="0.8rem" color="gray">
+                            {formatTime(item.created_at)}
                           </Typography>
+
+                          {/* Hiển thị ảnh nếu file là ảnh */}
+                          {item.properties &&
+                            item.properties.file_path &&
+                            /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(
+                              item.properties.file_name
+                            ) && (
+                              <Box mt={1}>
+                                <img
+                                  src={item.properties.file_path}
+                                  alt="Attachment"
+                                  style={{
+                                    maxWidth: "100%",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() =>
+                                    handleOpen(item.properties.file_path)
+                                  }
+                                />
+                              </Box>
+                            )}
                         </Box>
+
+                        {/* Modal để hiển thị ảnh lớn */}
+                        <Modal open={open} onClose={handleClose}>
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: "50%",
+                              left: "50%",
+                              transform: "translate(-50%, -50%)",
+                              bgcolor: "background.paper",
+                              boxShadow: 24,
+                              p: 2,
+                              outline: "none",
+                            }}
+                          >
+                            <img
+                              src={selectedImage}
+                              alt="Selected Attachment"
+                              style={{
+                                maxWidth: "90vw",
+                                maxHeight: "90vh",
+                                borderRadius: "8px",
+                              }}
+                            />
+                          </Box>
+                        </Modal>
                       </Box>
-                    ))}
-                  </Stack>
-                </Box>
-              )}
+                    );
+                  }
+
+                  return null;
+                })}
+              </>
             </Grid>
 
             {/* Cột phải (Sidebar) */}
@@ -2163,13 +2348,10 @@ const CardModal = ({}) => {
               <Box sx={{ borderLeft: "1px solid #ddd", pl: 2 }}>
                 <List>
                   <ListItem disablePadding>
-                    <ListItemButton>
-                      <ListItemIcon>
-                        <PersonAddIcon
-                          sx={{ color: "black", fontSize: "0.8rem" }}
-                        />
-                      </ListItemIcon>
-                      <ListItemText primary="Tham gia" />
+                    <ListItemButton onClick={handleJoinCard}>
+                      <ListItemText
+                        primary={isMember ? "Rời khỏi" : "Tham gia"}
+                      />
                     </ListItemButton>
                   </ListItem>
 
@@ -2326,7 +2508,6 @@ const CardModal = ({}) => {
         <MemberList
           open={isMemberListOpen}
           onClose={() => setIsMemberListOpen(false)}
-          members={members}
         />
 
         {/* Component Task Modal */}

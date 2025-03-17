@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLogin } from "../../hooks/useUser";
 import GitHubAuth from "./GitHubAuth";
 import GoogleAuth from "./GoogleAuth";
@@ -7,6 +7,8 @@ import GoogleAuth from "./GoogleAuth";
 const LoginForm = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const location = useLocation();
+  const inviteToken = location.state?.inviteToken;
   const [errors, setErrors] = useState({
     email: "",
     password: "",
@@ -43,10 +45,15 @@ const LoginForm = () => {
     // Call the login mutation
     login(formData, {
       onSuccess: (data) => {
-        localStorage.setItem("token", data.token); // Store the token
-        alert("Đăng nhập thành công");
-        navigate("/home");
-        window.location.reload(); // Reset lại trang
+        localStorage.setItem("token", data.token); // Lưu token
+      
+        if (inviteToken) {
+          navigate(`/accept-invite/${inviteToken}`);
+        } else {
+          navigate('/home');
+        }
+      
+        alert("Đăng nhập thành công"); // Thông báo
       },
       onError: (err) => {
         console.error("Lỗi đăng nhập:", err);

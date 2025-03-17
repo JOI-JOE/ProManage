@@ -1,11 +1,13 @@
 <?php
 
 
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\CardController;
+use App\Http\Controllers\api\CardMemberController;
 use App\Http\Controllers\Api\ChecklistController;
 use App\Http\Controllers\Api\ChecklistItemController;
 use App\Http\Controllers\Api\ColorController;
@@ -50,7 +52,7 @@ Route::middleware(['web'])->group(function () {
 });
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
-Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getValidateInvitation']);
+Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
@@ -61,7 +63,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
 
-
         Route::post('workspaces', 'store');
         Route::delete('workspaces/{workspace}', 'destroy');
         Route::put('workspaces/{workspace}', 'updateWorkspaceInfo');
@@ -69,17 +70,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceInvitationsController::class)->group(callback: function () {
         Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
-
-        Route::get('/workspaces/{workspaceId}/{inviteToken}', 'getInvitationSecret');
-
+        Route::get('/workspaces/{workspaceId}/invitationSecret', 'getInvitationSecret');
         Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
         Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
+        // Function search
+        // https://trello.com/1/search/members?idOrganization=678b57031faba8dd978f0dee&query=ikn
+        // search/members?idWorkspace=92248292498298&query=hau
+        Route::get('search/members', 'searchMembers');
+        // function để gửi email và cập nhật dữ liệu member trong workspace member
+        Route::put('workspaces/{workspaceId}/members/{memberId}', 'confirmWorkspaceMembers');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
-        Route::get('/workspaces/{workspaceId}/addMembers', 'inviteMemberToWorkspace');
-        Route::get('/workspaces/{workspaceId}/members/{memberId}', 'getValidateMemberInWorkspace');
+        Route::post('/workspace/{workspaceId}/addMembers', 'addMembersToWorkspace');
+        Route::get('/workspaces/{workspaceId}/members/{memberId}',  'getValidateMemberInWorkspace');
     });
+    Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 
     Route::controller(BoardController::class)->group(function () {
         Route::get('boards/{boardId}', 'showBoardById');
@@ -111,9 +117,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
 
     // Send Email
-    Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 });
-
 
 
 Route::get('/color', [ColorController::class, 'index']);
@@ -143,10 +147,11 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
 Route::get('/boards', [BoardController::class, 'index']);
 
 
+
 Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
+Route::get('/board/{id}', [BoardController::class, 'getBoard']);
 Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
 
-Route::get('/board/{id}', [BoardController::class, 'getBoard']);
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 
 Route::prefix('boards/{id}/')->group(function () {
@@ -158,13 +163,22 @@ Route::prefix('boards/{id}/')->group(function () {
     Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
 });
 
-// Routes cho thành viên bảng
-Route::prefix('boards/{boardId}/members')->group(function () {
-    Route::get('', [BoardMemberController::class, 'index']);
-    Route::post('', [BoardMemberController::class, 'addMember']);
-    Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
-    Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
+// // Routes cho thành viên bảng
+// Route::prefix('boards/{boardId}/members')->group(function () {
+//     Route::get('', [BoardMemberController::class, 'index']);
+//     Route::post('', [BoardMemberController::class, 'addMember']);
+//     Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
+//     Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
+// });
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user/boards', [BoardMemberController::class, 'getUserBoards']);
+    Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
+    Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
+
 });
+Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']); 
+
 // Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
@@ -187,6 +201,11 @@ Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
     Route::patch('/{cardID}/description', [CardController::class, 'updateDescription']);
     Route::post('/', [CardController::class, 'store']);
     Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
+
+    /////Lấy ra member của card
+    Route::get('/{cardId}/members', [CardMemberController::class, 'getCardMembers']);
+    Route::post('/{card_id}/toggle-member', [CardMemberController::class, 'toggleCardMember']);
+
 
     Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail'])->name('card.addMember'); // thêm thành viên vào thẻ
     Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
@@ -224,13 +243,12 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
     Route::patch('/{attachmentId}/update-name', [AttachmentController::class, 'updateNameFileAttachment']);
     Route::post('/upload', [AttachmentController::class, 'uploadAttachment']);
     Route::post('/uploadcover', [AttachmentController::class, 'uploadCover']);
-  
+
     Route::delete('/{attachmentId}/delete', [AttachmentController::class, 'deleteAttachment']);
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']);
-
 })->middleware('auth:sanctum');
 // checklists
-// Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     // Checklist routes
     Route::get('/cards/{cardId}/checklists', [ChecklistController::class, 'index']); // Lấy danh sách checklist theo card
     Route::post('/checklists', [ChecklistController::class, 'store']); // Thêm mới checklist
@@ -243,8 +261,10 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
     Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']); // Cập nhật tên của checklist item
     Route::put('/item/{id}/completed', [ChecklistItemController::class, 'toggleCompletionStatus']); // Cập nhật trạng thái hoàn thành của checklist item
     Route::delete('/item/{id}', [ChecklistItemController::class, 'destroy']);
-// });
+});
 // Route::delete('/checklists/{id}', [ChecklistItemController::class, 'destroy']);// xóa checklists
 Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNotifications']);
 
 // });
+
+Route::get('/activities/{cardId}', [ActivityLogController::class, 'getActivitiesByCard']);

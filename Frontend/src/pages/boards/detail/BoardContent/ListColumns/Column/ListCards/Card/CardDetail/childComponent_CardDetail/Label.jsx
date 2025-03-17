@@ -108,6 +108,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["labels"] });
           queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
+          // queryClient.invalidateQueries({ queryKey: ["lists"] });
           setLabels((prevLabels) =>
             prevLabels.map((label) =>
               label.id === editLabelId
@@ -169,8 +170,9 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       {  labelId },
       {
         onSuccess:()=>{
-          queryClient.invalidateQueries({ queryKey: ["labels"] });
-          queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
+          // queryClient.invalidateQueries({ queryKey: ["labels"] });
+          // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
+        
         }
       }
 
@@ -315,7 +317,7 @@ const handleEditLabel = (id, title) => {
                     sx={{
                       width: "300px", // Thanh màu dài ra
                       height: 24,
-                      backgroundColor: label.color.hex_code,
+                      backgroundColor: label?.color?.hex_code,
                       borderRadius: "4px",
                       position: "relative",
                       display: "flex",

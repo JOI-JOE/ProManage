@@ -82,14 +82,24 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
+
+    protected $appends = ['similarity']; // Thêm trường similarity vào output JSON
+
+    public function getSimilarityAttribute()
+    {
+        $queryText = request()->input('query', '');
+        $idWorkspace = request()->input('idWorkspace', '');
+
+        return app()->call('App\Http\Controllers\Api\WorkspaceInvitationsController@searchMembers', [
+            'user' => $this,
+            'queryText' => $queryText,
+            'idWorkspace' => $idWorkspace
+        ]);
+    }
     /**
      * Get the workspaces associated with the user.
      */
 
-    public function boards()
-    {
-        return $this->hasMany(Board::class, 'created_by');
-    }
 
     public function workspaces()
     {
@@ -98,12 +108,24 @@ class User extends Authenticatable
 
     public function workspaceMember()
     {
-        return $this->hasOne(WorkspaceMembers::class, 'id_member');
+        return $this->hasMany(WorkspaceMembers::class, 'user_id', 'id');
     }
+
+    public function boardMember()
+    {
+        return $this->hasMany(BoardMember::class, 'user_id', 'id');
+    }
+
 
     public function comments()
     {
         return $this->hasMany(CommentCard::class);  // Mỗi user có thể tạo nhiều bình luận
+    }
+
+    public function boardsMemmber()
+    {
+        return $this->belongsToMany(Board::class, 'board_member', 'user_id', 'board_id')
+        ->withPivot('role');
     }
  
 }
