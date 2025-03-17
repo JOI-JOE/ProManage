@@ -41,6 +41,7 @@ const CoverImageDialog = ({
       reader.onload = (e) => {
         const imageUrl = e.target.result;
         onCoverImageChange(imageUrl); // Call the handler with the uploaded image
+        handleClose(); // Close the dialog after selecting the image
       };
       reader.readAsDataURL(file);
     }
@@ -75,7 +76,10 @@ const CoverImageDialog = ({
                   height: 30,
                   minWidth: 0,
                 }}
-                onClick={() => onCoverColorChange(color)} // Call the handler
+                onClick={() => {
+                  onCoverColorChange(color); // Call the handler
+                  handleClose(); // Close the dialog after selecting the color
+                }}
               />
             </Grid>
           ))}
@@ -109,7 +113,10 @@ const CoverImageDialog = ({
                   borderRadius: 1,
                   cursor: "pointer",
                 }}
-                onClick={() => onCoverImageChange(img)} // Call the handler with the selected image
+                onClick={() => {
+                  onCoverImageChange(img); // Call the handler with the selected image
+                  handleClose(); // Close the dialog after selecting the image
+                }}
               />
             </Grid>
           ))}
