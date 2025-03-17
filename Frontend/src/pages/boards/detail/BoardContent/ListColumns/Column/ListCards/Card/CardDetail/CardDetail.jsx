@@ -92,8 +92,11 @@ import dayjs from "dayjs";
 import LinkIcon from "@mui/icons-material/Link";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import { ArrowBack } from "@mui/icons-material";
-import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
+import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
+import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
+
 const CardModal = ({}) => {
   const { cardId, title } = useParams();
   const navigate = useNavigate();
@@ -690,16 +693,6 @@ const CardModal = ({}) => {
   const [files, setFiles] = useState([]);
 
   const [selectedFile, setSelectedFile] = useState(null);
-
-  const handleOpen = (file) => {
-    setSelectedFile(file);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setSelectedFile(null);
-    setOpen(false);
-  };
 
   // Mở ảnh trong tab mới với tiêu đề là tên ảnh
   const openInNewTab = (file) => {
