@@ -18,6 +18,7 @@ import {
   IconButton,
   Chip,
   Stack,
+  Modal,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
@@ -177,6 +178,8 @@ const CardModal = () => {
     isLoadingActivity,
     errorActivity,
   } = useActivityByCardId(cardId);
+
+  // console.log(activities);
 
   const { user } = useStateContext();
   const userId = user?.id;
@@ -545,10 +548,23 @@ const CardModal = () => {
     }
   };
 
+  const [open, setOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const handleOpen = (imageUrl) => {
+    setSelectedImage(imageUrl);
+    setOpen(true);
+  };
+
+  // Hàm đóng modal
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedImage(null);
+  };
+
   //NGÀY
   const [dateInfo, setDateInfo] = useState(null);
   const [openDateModal, setOpenDateModal] = useState(false);
-  const [open, setOpen] = useState(false);
 
   const handleSaveDate = (data) => {
     setDateInfo(data); // Lưu dữ liệu từ DateModal.jsx
@@ -1505,22 +1521,67 @@ const CardModal = () => {
                       /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
                     const affectedUsers = actionText.match(namePattern) || [];
 
+                    // Hàm để chuyển đổi description thành JSX với link
+                    const renderDescriptionWithLink = (
+                      description,
+                      filePath,
+                      fileName
+                    ) => {
+                      const fileIndex = description.indexOf(fileName);
+                      if (fileIndex === -1) return description; // Nếu không tìm thấy, trả về description gốc
+
+                      const beforeFile = description.slice(0, fileIndex);
+                      const afterFile = description.slice(
+                        fileIndex + fileName.length
+                      );
+
+                      // Kiểm tra xem file có phải là ảnh không
+                      const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(
+                        fileName
+                      );
+
+                      return (
+                        <>
+                          {beforeFile}
+                          <span
+                            style={{
+                              color: "blue",
+                              textDecoration: "none", // Mặc định không gạch chân
+                              cursor: "pointer",
+                              ":hover": {
+                                textDecoration: "underline", // Gạch chân khi hover
+                              },
+                            }}
+                            onClick={() => {
+                              if (isImage) {
+                                handleOpen(filePath); // Mở modal nếu là ảnh
+                              } else {
+                                window.open(filePath, "_blank"); // Tải file nếu không phải ảnh
+                              }
+                            }}
+                          >
+                            {fileName}
+                          </span>
+                          {afterFile}
+                        </>
+                      );
+                    };
+
                     return (
                       <Box
                         key={index}
                         display="flex"
-                        alignItems="center"
+                        alignItems="flex-start"
                         mb={1}
-                        mt={2}
                       >
                         <Avatar
                           sx={{
                             bgcolor: "pink",
                             width: 28,
                             height: 28,
-                            mt: 1,
-                            mr: 1.3,
+                            mt: 2,
                             fontSize: "0.6rem",
+                            mr: 1.2,
                           }}
                         >
                           {userName.charAt(0)}
@@ -1549,14 +1610,70 @@ const CardModal = () => {
                                 ))
                             ) : (
                               <Typography component="span" fontWeight="normal">
-                                {actionText}
+                                {item.properties &&
+                                item.properties.file_path &&
+                                item.properties.file_name
+                                  ? renderDescriptionWithLink(
+                                      actionText,
+                                      item.properties.file_path,
+                                      item.properties.file_name
+                                    )
+                                  : actionText}
                               </Typography>
                             )}
                           </Typography>
                           <Typography fontSize="0.5rem" color="gray">
                             {formatTime(item.created_at)}
                           </Typography>
+
+                          {/* Hiển thị ảnh nếu file là ảnh */}
+                          {item.properties &&
+                            item.properties.file_path &&
+                            /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(
+                              item.properties.file_name
+                            ) && (
+                              <Box mt={1}>
+                                <img
+                                  src={item.properties.file_path}
+                                  alt="Attachment"
+                                  style={{
+                                    maxWidth: "100%",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() =>
+                                    handleOpen(item.properties.file_path)
+                                  }
+                                />
+                              </Box>
+                            )}
                         </Box>
+
+                        {/* Modal để hiển thị ảnh lớn */}
+                        <Modal open={open} onClose={handleClose}>
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: "50%",
+                              left: "50%",
+                              transform: "translate(-50%, -50%)",
+                              bgcolor: "background.paper",
+                              boxShadow: 24,
+                              p: 2,
+                              outline: "none",
+                            }}
+                          >
+                            <img
+                              src={selectedImage}
+                              alt="Selected Attachment"
+                              style={{
+                                maxWidth: "90vw",
+                                maxHeight: "90vh",
+                                borderRadius: "8px",
+                              }}
+                            />
+                          </Box>
+                        </Modal>
                       </Box>
                     );
                   }

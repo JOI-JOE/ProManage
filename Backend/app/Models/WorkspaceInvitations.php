@@ -22,7 +22,7 @@ class WorkspaceInvitations extends Model
         'invitation_message',
         'invite_token',
         'accept_unconfirmed',
-        'id_invited_by_member',
+        'invited_by_member_id',
     ];
 
     protected static function boot()

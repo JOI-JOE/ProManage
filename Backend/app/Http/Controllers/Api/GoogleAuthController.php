@@ -41,7 +41,7 @@ class GoogleAuthController extends Controller
             $token = $user->createToken('auth_token')->plainTextToken;
 
             // Trả về token qua response JSON hoặc redirect với token trong query (tùy chọn)
-            return redirect("http://localhost:5173/login/google?token={$token}");
+            return redirect("http://localhost:5173/login/google?token={$token}&idMember={$user->id}");
         } catch (\Exception $e) {
             // Ghi log lỗi để debug
             \Log::error('Google OAuth Error: ' . $e->getMessage());

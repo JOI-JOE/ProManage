@@ -16,35 +16,32 @@ use Pusher\Pusher;
 
 class ListController extends Controller
 {
-
     public function index($boardId)
     {
-        $board = Board::where('id', $boardId)
-            ->with([
-                'listBoards' => function ($query) {
-                    $query->where('closed', false)
-                        ->orderBy('position')
-                        ->with([
-                            'cards' => function ($cardQuery) {
-                                $cardQuery->orderBy('position')
-                                    ->withCount('comments')
-                                    ->with([
-                                        'checklists' => function ($checklistQuery) {
-                                            $checklistQuery->with('items');
-                                        },
-                                        'labels' // Thêm mối quan hệ labels
-                                    ]);
-                            }
-                        ]);
-                }
-            ])
-            ->first();
+        $board = Board::with([
+            'listBoards' => function ($query) {
+                $query->where('closed', false)
+                    ->orderBy('position')
+                    ->with([
+                        'cards' => function ($cardQuery) {
+                            $cardQuery->orderBy('position')
+                                ->withCount('comments')
+                                ->with([
+                                    'checklists' => function ($checklistQuery) {
+                                        $checklistQuery->with('items');
+                                    },
+                                    'labels'
+                                ]);
+                        }
+                    ]);
+            }
+        ])->find($boardId);
 
         if (!$board) {
             return response()->json(['message' => 'Board not found'], 404);
         }
 
-        $responseData = [
+        return response()->json([
             'id' => $board->id,
             'title' => $board->name,
             'description' => $board->description ?? '',
@@ -52,14 +49,12 @@ class ListController extends Controller
             'workspaceId' => $board->workspace_id,
             'isMarked' => (bool) $board->is_marked,
             'thumbnail' => $board->thumbnail ?? null,
-            'columnOrderIds' => $board->listBoards->pluck('id')->toArray(),
             'columns' => $board->listBoards->map(function ($list) {
                 return [
                     'id' => $list->id,
                     'boardId' => $list->board_id,
                     'title' => $list->name,
                     'position' => (int) $list->position,
-                    'cardOrderIds' => $list->cards->pluck('id')->toArray(),
                     'cards' => $list->cards->map(function ($card) {
                         return [
                             'id' => $card->id,
@@ -91,16 +86,13 @@ class ListController extends Controller
                                     'color' => $label->color,
                                     'text' => $label->text,
                                 ];
-                            })->toArray(), // Thêm thông tin về labels
+                            })->toArray(),
                         ];
                     })->toArray(),
                 ];
             })->toArray(),
-        ];
-
-        return response()->json($responseData);
+        ]);
     }
-
 
     public function getListClosed($boardId)
     {
@@ -123,7 +115,6 @@ class ListController extends Controller
             ]);
         }
     }
-
     public function destroy($id)
     {
         try {

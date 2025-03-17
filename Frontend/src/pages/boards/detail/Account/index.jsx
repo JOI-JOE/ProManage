@@ -23,7 +23,7 @@ import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
+// import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
 
 const Account = () => {
   const [isFormVisible, setFormVisible] = useState(false);
@@ -278,7 +278,7 @@ const Account = () => {
             alignItems: "center",
             justifyContent: "space-between",
             marginBottom: "15px",
-            alignItems: "flex-start",
+            // alignItems: "flex-start",
             height: "100px", // Đặt chiều cao cố định để tránh nhảy layout
             overflow: "hidden",
           }}
