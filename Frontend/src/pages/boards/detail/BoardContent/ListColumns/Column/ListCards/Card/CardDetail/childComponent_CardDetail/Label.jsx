@@ -57,7 +57,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [newLabelColor, setNewLabelColor] = useState("#000000");
 
-  
   // useEffect(() => {
   //   if (fetchedLabels) {
   //     setLabels(fetchedLabels); // Cập nhật danh sách nhãn từ board
@@ -66,16 +65,13 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   //     setCheckedLabels(new Set(fetchedCardLabels.map(label => label.id))); // Đánh dấu các nhãn đã được gán vào thẻ
   //   }
   // }, [fetchedLabels, fetchedCardLabels]);
-   useEffect(() => {
+  useEffect(() => {
     if (fetchedLabels) setLabels(fetchedLabels);
     if (fetchedCardLabels) {
-      setCheckedLabels(new Set(fetchedCardLabels.map(label => label.id)));
+      setCheckedLabels(new Set(fetchedCardLabels.map((label) => label.id)));
     }
   }, [fetchedLabels, fetchedCardLabels]);
 
-  
-  
-  
   // tạo mới
   // console.log(createLabelMutation);
   // console.log("updateLabelNameMutation:", updateLabelNameMutation);
@@ -100,8 +96,8 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   // sửa tên
 
   const handleUpdateLabelName = () => {
-    if (!NewUpdatedLabelName.trim())  alert("Tên nhãn không được để trống!");
-    
+    if (!NewUpdatedLabelName.trim()) alert("Tên nhãn không được để trống!");
+
     updateLabelNameMutation.mutate(
       { labelId: editLabelId, data: { title: NewUpdatedLabelName } },
       {
@@ -127,7 +123,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
     );
   };
   const handleCheckboxChange = (labelId) => {
-    
     setCheckedLabels((prev) => {
       const updated = new Set(prev);
 
@@ -136,50 +131,36 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       } else {
         updated.add(labelId);
       }
-      
-     
+
       // Gọi API với giá trị mới thay vì `checkedLabels`
       updateLabelMutation.mutate(
         { cardId, labelId, action: updated.has(labelId) ? "add" : "remove" },
         {
           onSuccess: () => {
-          
-              // queryClient.invalidateQueries(["labels", cardId]);
-          
-           
-
-
-            
-            
+            // queryClient.invalidateQueries(["labels", cardId]);
           },
           onError: (error) => {
             console.error("❌ Lỗi mutation:", error);
-          }
+          },
         }
-        
       );
-  
-    
-  
+
       return new Set(updated);
-    
     });
   };
-  const handleDeleteLabel = ( labelId) => {
+  const handleDeleteLabel = (labelId) => {
     deleteLabelMutation.mutate(
-      {  labelId },
+      { labelId },
       {
-        onSuccess:()=>{
+        onSuccess: () => {
           // queryClient.invalidateQueries({ queryKey: ["labels"] });
           // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
-        
-        }
+        },
       }
-
     );
     // fetchedLabels();
-};
-  
+  };
+
   // Xử lý khi đang tải hoặc lỗi
   const filteredLabels = labels.filter((label) =>
     label.title.toLowerCase().includes(search.toLowerCase())
@@ -193,8 +174,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   //   onSelectLabel && onSelectLabel(newChecked);
   // };
 
-  
-const handleEditLabel = (id, title) => {
+  const handleEditLabel = (id, title) => {
     setEditLabelId(id);
     setIsEditingLabel(true);
     setUpdatedLabelName("");

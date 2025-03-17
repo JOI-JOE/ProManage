@@ -54,6 +54,8 @@ import SpeakerGroupIcon from "@mui/icons-material/SpeakerGroup";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import ShareIcon from "@mui/icons-material/Share";
 import CollectionsIcon from "@mui/icons-material/Collections";
+import CloseIcon from "@mui/icons-material/Close";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import {
   useCardActions,
   useCardById,
@@ -129,18 +131,24 @@ const CardModal = ({}) => {
   const [newItem, setNewItem] = useState("");
 
   const [coverImage, setCoverImage] = useState(
-    "https://i.pinimg.com/736x/49/43/7a/49437a99d17db363a6b2c6ffe7902fba.jpg"
+    localStorage.getItem(`coverImage-${cardId}`) || null
   );
-  const [coverColor, setCoverColor] = useState(null);
+  const [coverColor, setCoverColor] = useState(
+    localStorage.getItem(`coverColor-${cardId}`) || null
+  );
 
   const handleCoverImageChange = (newImage) => {
     setCoverImage(newImage);
     setCoverColor(null); // Reset color when an image is selected
+    localStorage.setItem(`coverImage-${cardId}`, newImage);
+    localStorage.removeItem(`coverColor-${cardId}`);
   };
 
   const handleCoverColorChange = (newColor) => {
     setCoverColor(newColor);
     setCoverImage(null); // Reset image when a color is selected
+    localStorage.setItem(`coverColor-${cardId}`, newColor);
+    localStorage.removeItem(`coverImage-${cardId}`);
   };
 
   const handleFollowClick = () => {
@@ -557,12 +565,9 @@ const CardModal = ({}) => {
     setSelectedImage(null);
   };
 
-
-
   //NGÀY
   const [dateInfo, setDateInfo] = useState(null);
   const [openDateModal, setOpenDateModal] = useState(false);
-
 
   const handleSaveDate = (data) => {
     setDateInfo(data); // Lưu dữ liệu từ DateModal.jsx
@@ -805,22 +810,24 @@ const CardModal = ({}) => {
       >
         <DialogTitle>
           {/* New image section */}
-          <Box
-            sx={{
-              width: "100%",
-              height: "150px",
-              mb: 2,
-              backgroundColor: coverColor || "transparent",
-            }}
-          >
-            {coverImage && (
-              <img
-                src={coverImage} // Use the dynamic cover image
-                alt="Card Cover"
-                style={{ width: "100%", height: "150px" }}
-              />
-            )}
-          </Box>
+          {(coverImage || coverColor) && (
+            <Box
+              sx={{
+                width: "100%",
+                height: "150px",
+                mb: 2,
+                backgroundColor: coverColor || "transparent",
+              }}
+            >
+              {coverImage && (
+                <img
+                  src={coverImage} // Use the dynamic cover image
+                  alt="Card Cover"
+                  style={{ width: "100%", height: "150px" }}
+                />
+              )}
+            </Box>
+          )}
           {isEditingName ? (
             <TextField
               value={cardName}
@@ -849,11 +856,18 @@ const CardModal = ({}) => {
             </span>
           </Typography>
           {/* New section to match the provided image */}
-          <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              mt: 2,
+              flexWrap: "wrap",
+            }}
+          >
             {members?.data?.map((member) => (
               <Avatar
                 key={member.id}
-                sx={{ bgcolor: "teal", width: 26, height: 26, fontSize: 10 }}
+                sx={{ bgcolor: "pink", width: 26, height: 26, fontSize: 10 }}
               >
                 {member.full_name
                   ? member.full_name.charAt(0).toUpperCase()
@@ -878,11 +892,16 @@ const CardModal = ({}) => {
                 sx={{
                   bgcolor: label.color?.hex_code || "#ccc",
                   mr: 1,
+                  mt: 1,
+                  mb: 1, // Add margin bottom to separate rows
                   height: 25,
                   p: "0px 8px", // Thêm padding ngang để không bị cắt chữ
                   minWidth: "auto", // Cho phép nút mở rộng theo chữ
                   width: "fit-content", // Tự động điều chỉnh theo nội dung
                   maxWidth: "100%", // Giới hạn tối đa để tránh tràn
+                  whiteSpace: "normal", // Cho phép xuống dòng
+                  wordBreak: "break-word", // Tự động xuống dòng khi quá dài
+                  fontSize: "0.5rem", // Chỉnh kích thước chữ
                 }}
                 onClick={() => setIsLabelListOpen(true)}
               >
@@ -915,6 +934,22 @@ const CardModal = ({}) => {
               {isFollowing ? "Đang theo dõi" : "Theo dõi"}
             </Button>
           </Box>
+          <IconButton
+            aria-label="close"
+            onClick={() => navigate(-1)}
+            sx={{
+              position: "absolute",
+              right: -3,
+              top: 8,
+              color: "black",
+            }}
+          >
+            <CloseIcon
+              sx={{
+                fontSize: "14px",
+              }}
+            />
+          </IconButton>
         </DialogTitle>
 
         {/* NGÀY */}
@@ -1965,7 +2000,6 @@ const CardModal = ({}) => {
                   </Box>
                 </>
               )}
-
               <>
                 {sortedData.map((item, index) => {
                   if (item.type === "comment") {
@@ -1975,13 +2009,19 @@ const CardModal = ({}) => {
                     return (
                       <Box
                         key={index}
-                        sx={{ display: "flex", flexDirection: "column", mt: 1 }}
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          mt: 1,
+                        }}
                       >
                         <Box sx={{ display: "flex", alignItems: "center" }}>
                           <Avatar
                             src={item?.user?.avatar || ""}
                             sx={{
-                              bgcolor: !item?.user?.avatar ? "pink" : "transparent",
+                              bgcolor: !item?.user?.avatar
+                                ? "pink"
+                                : "transparent",
                               color: !item?.user?.avatar ? "white" : "inherit",
                               width: 28,
                               height: 28,
@@ -1990,7 +2030,10 @@ const CardModal = ({}) => {
                             }}
                           >
                             {!item?.user?.avatar &&
-                              (item?.user?.full_name?.charAt(0)?.toUpperCase() || "?")}
+                              (item?.user?.full_name
+                                ?.charAt(0)
+                                ?.toUpperCase() ||
+                                "?")}
                           </Avatar>
                           <Box sx={{ ml: 1 }}>
                             <Typography
@@ -2059,7 +2102,9 @@ const CardModal = ({}) => {
                                     border: "1px solid #ddd",
                                     borderRadius: 4,
                                   },
-                                  "& .ql-toolbar": { border: "1px solid #ddd" },
+                                  "& .ql-toolbar": {
+                                    border: "1px solid #ddd",
+                                  },
                                 }}
                               />
                               <Box
@@ -2160,41 +2205,54 @@ const CardModal = ({}) => {
                         </Box>
                       </Box>
                     );
-                  } else if (item.type === "activity") {
+                  } else if (item.type === "activity" && !isDetailHidden) {
                     const description = item.description;
                     const keyword = "đã";
                     const keywordIndex = description.indexOf(keyword);
 
                     if (keywordIndex === -1) return null;
 
-                    const userName = description.substring(0, keywordIndex).trim();
-                    const actionText = description.substring(keywordIndex).trim();
+                    const userName = description
+                      .substring(0, keywordIndex)
+                      .trim();
+                    const actionText = description
+                      .substring(keywordIndex)
+                      .trim();
 
-                    const namePattern = /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
+                    const namePattern =
+                      /\b[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+\b/g;
                     const affectedUsers = actionText.match(namePattern) || [];
 
                     // Hàm để chuyển đổi description thành JSX với link
-                    const renderDescriptionWithLink = (description, filePath, fileName) => {
+                    const renderDescriptionWithLink = (
+                      description,
+                      filePath,
+                      fileName
+                    ) => {
                       const fileIndex = description.indexOf(fileName);
                       if (fileIndex === -1) return description; // Nếu không tìm thấy, trả về description gốc
 
                       const beforeFile = description.slice(0, fileIndex);
-                      const afterFile = description.slice(fileIndex + fileName.length);
+                      const afterFile = description.slice(
+                        fileIndex + fileName.length
+                      );
 
                       // Kiểm tra xem file có phải là ảnh không
-                      const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(fileName);
+                      const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(
+                        fileName
+                      );
 
                       return (
                         <>
                           {beforeFile}
                           <span
-                             style={{ 
-                              color: "blue", 
+                            style={{
+                              color: "blue",
                               textDecoration: "none", // Mặc định không gạch chân
                               cursor: "pointer",
                               ":hover": {
                                 textDecoration: "underline", // Gạch chân khi hover
-                              }
+                              },
                             }}
                             onClick={() => {
                               if (isImage) {
@@ -2212,8 +2270,22 @@ const CardModal = ({}) => {
                     };
 
                     return (
-                      <Box key={index} display="flex" alignItems="flex-start" mb={1}>
-                        <Avatar sx={{ bgcolor: "pink", width: 28, height: 28, mt: 2, fontSize: "0.6rem" }}>
+                      <Box
+                        key={index}
+                        display="flex"
+                        alignItems="flex-start"
+                        mb={1}
+                      >
+                        <Avatar
+                          sx={{
+                            bgcolor: "pink",
+                            width: 28,
+                            height: 28,
+                            mt: 2,
+                            fontSize: "0.6rem",
+                            mr: 1.2,
+                          }}
+                        >
                           {userName.charAt(0)}
                         </Avatar>
                         <Box>
@@ -2222,35 +2294,61 @@ const CardModal = ({}) => {
                               {userName}
                             </Typography>{" "}
                             {affectedUsers.length > 0 ? (
-                              actionText.split(affectedUsers[0]).map((part, i) => (
-                                <React.Fragment key={i}>
-                                  {i > 0 && <Typography component="span" fontWeight="bold"> {affectedUsers[0]}</Typography>}
-                                  {part}
-                                </React.Fragment>
-                              ))
+                              actionText
+                                .split(affectedUsers[0])
+                                .map((part, i) => (
+                                  <React.Fragment key={i}>
+                                    {i > 0 && (
+                                      <Typography
+                                        component="span"
+                                        fontWeight="bold"
+                                      >
+                                        {" "}
+                                        {affectedUsers[0]}
+                                      </Typography>
+                                    )}
+                                    {part}
+                                  </React.Fragment>
+                                ))
                             ) : (
                               <Typography component="span" fontWeight="normal">
-                                {item.properties && item.properties.file_path && item.properties.file_name
-                                  ? renderDescriptionWithLink(actionText, item.properties.file_path, item.properties.file_name)
+                                {item.properties &&
+                                item.properties.file_path &&
+                                item.properties.file_name
+                                  ? renderDescriptionWithLink(
+                                      actionText,
+                                      item.properties.file_path,
+                                      item.properties.file_name
+                                    )
                                   : actionText}
                               </Typography>
                             )}
                           </Typography>
-                          <Typography fontSize="0.8rem" color="gray">
+                          <Typography fontSize="0.5rem" color="gray">
                             {formatTime(item.created_at)}
                           </Typography>
 
                           {/* Hiển thị ảnh nếu file là ảnh */}
-                          {item.properties && item.properties.file_path && /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(item.properties.file_name) && (
-                            <Box mt={1}>
-                              <img
-                                src={item.properties.file_path}
-                                alt="Attachment"
-                                style={{ maxWidth: '100%', borderRadius: '8px', cursor: "pointer" }}
-                                onClick={() => handleOpen(item.properties.file_path)}
-                              />
-                            </Box>
-                          )}
+                          {item.properties &&
+                            item.properties.file_path &&
+                            /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(
+                              item.properties.file_name
+                            ) && (
+                              <Box mt={1}>
+                                <img
+                                  src={item.properties.file_path}
+                                  alt="Attachment"
+                                  style={{
+                                    maxWidth: "100%",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() =>
+                                    handleOpen(item.properties.file_path)
+                                  }
+                                />
+                              </Box>
+                            )}
                         </Box>
 
                         {/* Modal để hiển thị ảnh lớn */}
@@ -2270,7 +2368,11 @@ const CardModal = ({}) => {
                             <img
                               src={selectedImage}
                               alt="Selected Attachment"
-                              style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: "8px" }}
+                              style={{
+                                maxWidth: "90vw",
+                                maxHeight: "90vh",
+                                borderRadius: "8px",
+                              }}
                             />
                           </Box>
                         </Modal>
@@ -2289,6 +2391,11 @@ const CardModal = ({}) => {
                 <List>
                   <ListItem disablePadding>
                     <ListItemButton onClick={handleJoinCard}>
+                      <ListItemIcon>
+                        <PersonAddAlt1Icon
+                          sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                      </ListItemIcon>
                       <ListItemText
                         primary={isMember ? "Rời khỏi" : "Tham gia"}
                       />
@@ -2440,22 +2547,17 @@ const CardModal = ({}) => {
           </Grid>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={() => navigate(-1)}>Close</Button>
-        </DialogActions>
-
         {/* Component Member List */}
         <MemberList
           open={isMemberListOpen}
           onClose={() => setIsMemberListOpen(false)}
-
         />
 
         {/* Component Task Modal */}
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-        // onSave={handleAddTask}
+          // onSave={handleAddTask}
         />
 
         {/* Component Label List */}
