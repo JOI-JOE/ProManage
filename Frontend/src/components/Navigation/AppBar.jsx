@@ -28,8 +28,16 @@ import Profile from "./Menus/Profiles";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import Recent from "./Menus/Recent";
+import { useUser } from "../../hooks/useUser";
+import useNotifications from "../../hooks/useNotification";
+// import useNotifications from "../../hooks/useNotification";
 
 const AppBar = ({ username, email }) => {
+  const { data: user } = useUser();
+  const userId = user?.id;
+  const { notifications, isLoading, error } = useNotifications(userId);
+  console.log(notifications);
+
   const [searchText, setSearchText] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [showUnread, setShowUnread] = useState(false);
@@ -104,7 +112,6 @@ const AppBar = ({ username, email }) => {
           <Recent />
           <Started />
           <Template />
-
         </Box>
       </Box>
 
@@ -255,15 +262,29 @@ const AppBar = ({ username, email }) => {
 
             {/* Nội dung thông báo */}
             <Box sx={{ textAlign: "center", mt: 2 }}>
-              <img
-                src="https://cdn-icons-png.flaticon.com/512/6596/6596121.png"
-                alt="No Notifications"
-                width={100}
-              />
               <Typography variant="body1" sx={{ mt: 1 }}>
-                {showUnread
-                  ? "Không có thông báo chưa đọc"
-                  : "Không có thông báo"}
+                {notifications?.data?.length === 0 ? (
+                  <p>Không có thông báo</p>
+                ) : (
+                  notifications?.data?.map((notif) => (
+                    <div
+                      key={notif.id}
+                      style={{
+                        margin: "10px 0",
+                        padding: "10px",
+                        border: "1px solid #ccc",
+                        backgroundColor: notif.read_at ? "#f9f9f9" : "#e0f7fa", // Chưa đọc: màu xanh nhạt
+                      }}
+                    >
+                      <p>{notif.data.message}</p>
+                      <Link
+                        to={`/b/${notif.data.board_id}/${notif.data.board_name}`}
+                      >
+                        Xem bảng
+                      </Link>
+                    </div>
+                  ))
+                )}
               </Typography>
             </Box>
           </Box>

@@ -30,7 +30,7 @@ import Print from "./Component_BoardMenu/Print";
 import ChangeBackground from "./Component_BoardMenu/ChangeBackground/ChangeBackground";
 import LabelList from "./Component_BoardMenu/Label/Label";
 
-const BoardMenu = ({board}) => {
+const BoardMenu = React.memo(({board}) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
@@ -177,6 +177,6 @@ const BoardMenu = ({board}) => {
       <LabelList open={labelOpen} onClose={toggleLabel(false)} />
     </div>
   );
-};
+});
 
 export default BoardMenu;

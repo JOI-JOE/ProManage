@@ -74,7 +74,7 @@ class Workspace extends Model
 
     public function boards()
     {
-        return $this->hasMany(Board::class);
+        return $this->hasMany(Board::class,'workspace_id');
     }
     public function markedBoards()
     {
@@ -85,7 +85,6 @@ class Workspace extends Model
     {
         return $this->hasMany(WorkspaceMembers::class, 'workspace_id');
     }
-
     protected $dispatchesEvents = [
         'created' => WorkspaceUpdate::class,
         'updated' => WorkspaceUpdate::class
