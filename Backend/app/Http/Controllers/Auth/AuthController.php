@@ -32,19 +32,17 @@ class AuthController extends Controller
             return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
         }
 
-        $response = ['user' => $this->prepareUserData($request, $user)];
+        $response = [
+            'user' => $this->prepareUserData($request, $user),
+            'workspaces' => $request->has('workspaces') ? $this->getWorkspaces($request, $user) : [],
+            'boards' => $request->has('boards') ? $this->getBoards($request, $user) : [],
+            'boardStars' => $request->query('board_stars') === 'true' ? $this->getBoardStars() : [],
+        ];
 
-        if ($request->has('workspaces')) {
-            $response['workspaces'] = $this->getWorkspaces($request, $user);
-        }
-
-        if ($request->has('boards')) {
-            $response['boards'] = $this->getBoards($request, $user);
-        }
-
-        if ($request->query('board_stars') === 'true') {
-            $response['boardStars'] = $this->getBoardStars();
-        }
+        // Lọc bỏ các phần tử rỗng
+        $response = array_filter($response, function ($value) {
+            return !empty($value);
+        });
 
         return response()->json($response);
     }

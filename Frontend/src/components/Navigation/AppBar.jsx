@@ -28,8 +28,12 @@ import Profile from "./Menus/Profiles";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import Recent from "./Menus/Recent";
+// import { useMe } from "../context/MeContext"; // Import hook useMe
+import { useMe } from "../../contexts/MeContext";
 
-const AppBar = ({ username, email }) => {
+const AppBar = () => {
+  const { user } = useMe();
+
   const [searchText, setSearchText] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [showUnread, setShowUnread] = useState(false);
@@ -48,12 +52,10 @@ const AppBar = ({ username, email }) => {
   const handleSettingsOpen = (event) => {
     setSettingsAnchorEl(event.currentTarget);
   };
-
   // Đóng menu cài đặt
   const handleSettingsClose = () => {
     setSettingsAnchorEl(null);
   };
-
   return (
     <Box
       px={2}
@@ -78,7 +80,7 @@ const AppBar = ({ username, email }) => {
         <Box
           component={Link}
           // Link fix cứng
-          to={`/u/${username}/boards`}
+          to={`/u/${user?.user_name}/boards`}
           sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
         >
           <SvgIcon
@@ -167,7 +169,8 @@ const AppBar = ({ username, email }) => {
             }}
           />
         </Tooltip>
-        <Profile email={email} />
+        {/* dữ liệu trong profile */}
+        <Profile fullName={user?.full_name} email={user?.email} />
 
         {/* Popover hiển thị thông báo */}
         <Popover

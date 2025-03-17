@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Typography, Container, Paper, Button } from "@mui/material";
 // import { useUser, loading, error } from "../contexts/userContext";
-import { useStateContext } from "../contexts/ContextProvider";
+import { useMe } from "../contexts/MeContext";
 
 const Home = () => {
-  const { user, loading, error } = useStateContext(); // Dùng context để lấy user
+  const { user } = useMe(); // Dùng context để lấy user
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  console.log(user);
   const slides = [
     { type: "image", src: "/img/sl1.webp" },
     { type: "image", src: "/img/pro manage.webp" },

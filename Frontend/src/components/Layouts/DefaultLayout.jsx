@@ -6,9 +6,6 @@ import { MeProvider } from "../../contexts/MeContext";
 
 
 const DefaultLayout = () => {
-    // const { user } = useStateContext(); // Dùng context để lấy user
-
-    
     return (
         <MeProvider>
             <AppBar />

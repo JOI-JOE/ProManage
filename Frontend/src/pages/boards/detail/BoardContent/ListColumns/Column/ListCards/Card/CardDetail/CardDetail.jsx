@@ -27,8 +27,6 @@ import MemberList from "./childComponent_CardDetail/member.jsx";
 import TaskModal from "./childComponent_CardDetail/Task.jsx";
 import LabelList from "./childComponent_CardDetail/Label.jsx";
 import AttachmentModal from "./childComponent_CardDetail/Attached.jsx";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
@@ -41,7 +39,6 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import NotesIcon from "@mui/icons-material/Notes";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import GroupIcon from "@mui/icons-material/Group";
 import LabelIcon from "@mui/icons-material/Label";
 import ChecklistIcon from "@mui/icons-material/Checklist";
@@ -65,7 +62,6 @@ import {
   useDeleteComment,
   useUpdateComment,
 } from "../../../../../../../../../hooks/useComment";
-import { useUser } from "../../../../../../../../../hooks/useUser";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { toast, ToastContainer } from "react-toastify";
@@ -83,11 +79,10 @@ import {
 import CoverPhoto from "./childComponent_CardDetail/CoverPhoto";
 import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
 import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
-import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import dayjs from "dayjs";
+import { useMe } from "../../../../../../../../../contexts/MeContext.jsx";
 
 const CardModal = () => {
   const { cardId, title } = useParams();
@@ -173,7 +168,7 @@ const CardModal = () => {
 
   // console.log(activities);
 
-  const { user } = useStateContext();
+  const { user } = useMe();
   const userId = user?.id;
 
   const combinedData = [
@@ -1486,8 +1481,8 @@ const CardModal = () => {
                         <>
                           {beforeFile}
                           <span
-                             style={{ 
-                              color: "blue", 
+                            style={{
+                              color: "blue",
                               textDecoration: "none", // Mặc định không gạch chân
                               cursor: "pointer",
                               ":hover": {

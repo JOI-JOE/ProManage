@@ -26,7 +26,7 @@ export const fetchUserProfile = () => {
 
 export const fetchUserDashboardData = () => {
   return fetchUserDataWithParams({
-    fields: "id,user_name,full_name,email,image,url",
+    // fields: "id,user_name,full_name,email,image,url",
     boards: "open,starred",
     board_memberships: "me",
     board_stars: "true",
