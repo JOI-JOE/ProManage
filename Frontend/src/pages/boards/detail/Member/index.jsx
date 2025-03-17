@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -16,27 +16,36 @@ import {
   DialogTitle,
   DialogContent,
   Stack,
+  Autocomplete,
+  SvgIcon,
+  Popper,
+  ListItemAvatar,
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import LinkIcon from "@mui/icons-material/Link";
 import CloseIcon from "@mui/icons-material/Close";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useParams } from "react-router-dom";
+import loadingLogo from "~/assets/loading.svg?react";
+
 
 import MemberItem from "./MemberItem";
 import GenerateLink from "../../../../components/GenerateLink";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
 import {
+  useAddMemberToWorkspace,
   useCancelInvitationWorkspace,
+  useConfirmWorkspaceMember,
   useCreateInviteWorkspace,
+  useSearchMembers,
 } from "../../../../hooks/useWorkspaceInvite";
 import WorkspaceInfo from "../../../../components/WorkspaceInfo";
 import { useGetInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 
 const Member = () => {
   const { workspaceName } = useParams();
-  // Fetch thông tin workspace dựa trên workspaceName
+
+  // Dữ liệu để lấy được workspace bằng tên
   const {
     data: workspace,
     isLoading: isLoadingWorkspace,
@@ -46,7 +55,7 @@ const Member = () => {
     enabled: !!workspaceName, // Chỉ fetch khi workspaceName tồn tại
   });
 
-  // Sử dụng useGetInviteWorkspace trong component
+  // Dữ liệu để lấy được inviteToken
   const {
     data: inviteData,
     isLoading: isInviteLoading,
@@ -54,6 +63,89 @@ const Member = () => {
   } = useGetInviteWorkspace(workspace?.id, {
     enabled: !!workspace?.id,
   });
+
+  const { mutate: addMember, isLoading, error } = useAddMemberToWorkspace();
+  const { mutate: confirmMember } = useConfirmWorkspaceMember();
+
+
+  const [inputValue, setInputValue] = useState("");
+  const [options, setOptions] = useState([]);
+  const [debouncedValue, setDebouncedValue] = useState("");
+  const [open, setOpen] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState([]); // Luôn là mảng rỗng ban đầu
+  const [selectedUserIds, setSelectedUserIds] = useState(new Set());
+  const [invitationMessage, setInvitationMessage] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const { data: memberSearch, isLoading: isLoadingMember } = useSearchMembers(debouncedValue, workspace?.id);
+
+  // ✅ Tạo debounce bằng useRef -> Tránh spam API khi gõ nhanh
+  const debounceTimeout = useRef(null);
+
+  const handleInputChange = (event) => {
+    const value = event.target.value.trim();
+    setInputValue(value);
+
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+
+    debounceTimeout.current = setTimeout(() => {
+      setDebouncedValue(value.length >= 3 ? value : "");
+    }, 300);
+  };
+
+  useEffect(() => {
+    if (debouncedValue.length >= 3) {
+      setOptions(memberSearch || []);
+      setOpen(true);
+    } else {
+      setOptions([]);
+      setOpen(false);
+    }
+  }, [debouncedValue, memberSearch]);
+
+  const handleOptionSelect = (event, newValue) => {
+    const newIds = newValue.map(user => user.id);
+
+    setSelectedUsers(newValue);
+    setSelectedUserIds(prevIds => [...new Set([...prevIds, ...newIds])]);
+
+    if (newIds.length > 0) {
+      console.log("📢 Sending API with userIds:", newIds);
+
+      addMember(
+        { workspaceId: workspace.id, userIds: newIds },
+      );
+    }
+    setInputValue("");
+    setOptions([]);
+  };
+
+  const handleSendInvitations = async () => {
+    if (!selectedUsers.length) return;
+
+    const memberIds = selectedUsers.map(user => user.id);
+    console.log("📩 Đang gửi lời mời:", memberIds);
+
+    setIsProcessing(true); // Bắt đầu hiển thị loading
+
+    try {
+      // Duyệt qua từng memberId và gửi yêu cầu mời
+      for (const memberId of memberIds) {
+        await confirmMember({ workspaceId: workspace.id, memberId, invitationMessage });
+      }
+
+      console.log("✅ Tất cả lời mời đã gửi!");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Giữ loading một lúc trước khi đóng
+
+      handleCloseInvite(); // Đóng modal sau khi hoàn tất
+    } catch (error) {
+      console.error("❌ Lỗi khi gửi lời mời:", error);
+    } finally {
+      setIsProcessing(false); // Mở lại nút sau khi hoàn thành
+    }
+  };
+
+
 
   const { mutate: createInviteLink, isLoading: isCreatingInvite } =
     useCreateInviteWorkspace();
@@ -67,24 +159,26 @@ const Member = () => {
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
 
   const handleOpenInvite = () => {
+
     setInviteOpen(true);
     setLinkCopied(false);
     setIsLinkActive(false);
   };
+
   const toggleFormVisibility = () => {
-    setFormVisible(!isFormVisible);
+    setFormVisible((prev) => !prev);
   };
+
   const handleCloseInvite = () => {
+    if (isProcessing) return; // Nếu đang xử lý, không cho đóng bảng
+
     setInviteOpen(false);
-  };
-  const handleDisableLink = () => {
-    setIsLinkActive(false);
-    setLinkCopied(false);
+    setInputValue("");
+    setSelectedUsers([]);
+    setOptions([]);
   };
 
   const members = workspace?.members || [];
-
-  console.log(inviteData?.invitationSecret);
 
   const handleGenerateLink = async () => {
     if (!workspace?.id) {
@@ -136,7 +230,7 @@ const Member = () => {
           minHeight: "80px",
         }}
       >
-        {isFormVisible ? (
+        {!isFormVisible ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Avatar
               sx={{
@@ -181,7 +275,7 @@ const Member = () => {
         ) : (
           <WorkspaceInfo
             workspaceInfo={workspace}
-            onCancel={toggleFormVisibility} // Truyền hàm đóng form
+            onCancel={toggleFormVisibility} // Đóng form khi hủy
           />
         )}
 
@@ -299,9 +393,9 @@ const Member = () => {
                 lý được tính vào giới hạn 10 người cộng tác.
               </Typography>
 
-              <Button variant="outlined" startIcon={<LinkIcon />}>
+              {/* <Button variant="outlined" startIcon={<LinkIcon />}>
                 Mời bằng liên kết
-              </Button>
+              </Button> */}
             </Box>
 
             {/* Lọc thành viên */}
@@ -355,17 +449,197 @@ const Member = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            placeholder="Địa chỉ email hoặc tên"
-            sx={{ marginBottom: "10px" }}
-          />
-          <GenerateLink onGenerateLink={handleGenerateLink} onDeleteLink={handleDeleteLink} secret={inviteData?.invitationSecret} workspaceId={workspace?.id} />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+            <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  flex: 1, // 🔥 Giúp Paper mở rộng full width
+                  borderRadius: "3px",
+                  boxShadow: "inset 0 0 0 1px rgba(9, 30, 66, 0.15)",
+                  transition: "background-color 85ms ease, border-color 85ms ease, box-shadow 85ms ease",
+                  backgroundColor: "#ffffff",
+                  padding: "5px 10px", // 🔥 Tạo khoảng cách padding đẹp hơn
+                }}
+              >
+                <Autocomplete
+                  multiple
+                  id="custom-autocomplete"
+                  options={options.filter(
+                    (option) => !selectedUsers.some((user) => user.id === option.id)
+                  )}
+                  getOptionLabel={(option) => option.full_name}
+                  getOptionDisabled={(option) => option.joined} // 🔥 Vô hiệu hóa nếu đã joined
+                  filterOptions={(options, state) =>
+                    options.filter(
+                      (option) =>
+                        option.full_name?.toLowerCase().includes(state.inputValue.toLowerCase()) ||
+                        option.user_name?.toLowerCase().includes(state.inputValue.toLowerCase()) ||
+                        option.email?.toLowerCase().includes(state.inputValue.toLowerCase())
+                    )
+                  }
+                  disableClearable
+                  popupIcon={null}
+                  loading={isLoadingMember}
+                  loadingText={
+                    <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+                      <SvgIcon
+                        component={loadingLogo}
+                        sx={{ width: 50, height: 50, transform: "scale(0.5)" }}
+                        viewBox="0 0 24 24"
+                        inheritViewBox
+                      />
+                    </Box>
+                  }
+                  noOptionsText={isLoadingMember ? "Đang tìm kiếm..." : inputValue.length >= 3 ? "Không tìm thấy thành viên nào." : ""}
+                  open={open}
+                  value={selectedUsers}
+                  onChange={handleOptionSelect}
+                  fullWidth
+                  renderOption={(props, option) => (
+                    <ListItem {...props} alignItems="flex-start" disabled={option.joined}>
+                      <ListItemAvatar>
+                        <Avatar alt={option.full_name} src={option.image || "/static/images/avatar/default.jpg"} />
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={option.full_name}
+                        secondary={
+                          <Fragment>
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              sx={{ color: "text.primary", display: "inline" }}
+                            >
+                              {option.joined
+                                ? option.memberType === "admin"
+                                  ? " (Quản trị viên của không gian làm việc)"
+                                  : " (Thành viên không gian làm việc)"
+                                : ""}
+                            </Typography>
+                          </Fragment>
+                        }
+                      />
+                    </ListItem>
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      variant="standard"
+                      placeholder="Nhập tên hoặc email..."
+                      InputProps={{ ...params.InputProps, disableUnderline: true }}
+                      onChange={handleInputChange}
+                      sx={{ width: "100%", padding: "5px 5px" }}
+                    />
+                  )}
+                  PopperComponent={(props) => (
+                    <Popper {...props} modifiers={[{ name: "offset", options: { offset: [0, 15] } }]} />
+                  )}
+                  sx={{
+                    flex: 1,
+                    "& .MuiAutocomplete-tag": {
+                      maxWidth: "150px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    },
+                    "& .MuiAutocomplete-inputRoot": {
+                      maxHeight: "100px",
+                      overflowY: "auto",
+                      overflowX: "hidden",
+                      scrollbarWidth: "thin",
+                      "&::-webkit-scrollbar": { width: "5px" },
+                      "&::-webkit-scrollbar-thumb": { backgroundColor: "#aaa", borderRadius: "10px" },
+                      "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#888" },
+                    },
+                  }}
+                />
+              </Paper>
+              {selectedUsers.length > 0 && (
+                isProcessing ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: "100%",
+                    }}
+                  >
+                    <SvgIcon
+                      component={loadingLogo}
+                      sx={{
+                        width: 50,
+                        height: 50,
+                        transform: "scale(0.5)", // Giữ nguyên tỷ lệ nhưng thu nhỏ
+                      }}
+                      viewBox="0 0 24 24"
+                      inheritViewBox
+                    />
+                  </Box>
+                ) : (
+                  <Button
+                    variant="contained"
+                    sx={{ height: "40px", textTransform: "none" }}
+                    onClick={handleSendInvitations}
+                    disabled={isProcessing} // Chặn nhấn nút khi đang loading
+                  >
+                    Gửi lời mời
+                  </Button>
+                )
+              )}
 
-          {/* <GenerateLink onGenerateLink={handleGenerateLink} onDeleteLink={handleDeleteLink} id={workspace.id} /> */}
+            </Box>
+            {selectedUsers.length > 0 && (
+              <TextField
+                id="outlined-textarea"
+                placeholder="Tham gia Không gian làm việc Trello này để bắt đầu cộng tác với tôi!"
+                multiline
+                maxRows={2}
+                fullWidth
+                value={invitationMessage} // Gán giá trị từ state
+                onChange={(e) => setInvitationMessage(e.target.value)} // Cập nhật state khi nhập
+                disabled={isProcessing} // Vô hiệu hóa khi đang xử lý
+                sx={{
+                  "& .MuiInputBase-input": { color: "gray" },
+                  "& .MuiInputLabel-root": { color: "#9FADBC" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#579DFF" },
+                }}
+              />
+            )}
+          </Box>
+
+          {isInviteLoading || isLoadingWorkspace ? (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+              }}
+            >
+              <SvgIcon
+                component={loadingLogo}
+                sx={{
+                  width: 50,
+                  height: 50,
+                  transform: "scale(0.5)", // Giữ nguyên tỷ lệ nhưng thu nhỏ
+                }}
+                viewBox="0 0 24 24"
+                inheritViewBox
+              />
+            </Box>
+          ) : (
+            // Đây là component dùng để tạo ra invite token
+            <GenerateLink
+              onGenerateLink={handleGenerateLink}
+              onDeleteLink={handleDeleteLink}
+              secret={inviteData?.invitationSecret}
+              workspaceId={workspace?.id}
+            />
+          )}
         </DialogContent>
       </Dialog>
-    </Box>
+    </Box >
   );
 };
 export default Member;

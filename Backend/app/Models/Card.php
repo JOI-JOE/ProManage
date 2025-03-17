@@ -106,11 +106,10 @@ class Card extends Model
     // }
 
 
-    public function users()
+    public function members()
     {
         return $this->belongsToMany(User::class, 'card_user');
     }
-
     public function list()
     {
         return $this->belongsTo(ListBoard::class, 'list_board_id');

@@ -9,9 +9,12 @@ import {
   updateArchivedCard,
   deleteCard,
   getCardArchivedByBoard,
+  getMemberInCard,
+  toggleCardMember,
 } from "../api/models/cardsApi";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
+import echoInstance from "./realtime/useRealtime";
 
 export const useCreateCard = () => {
   return useMutation({
@@ -57,13 +60,52 @@ export const useCardById = (cardId) => {
     },
   });
 
+  useEffect(() => {
+    if (!cardId || !echoInstance) return;
+
+    const channel = echoInstance.channel(`card.${cardId}`);
+    // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
+
+    channel.listen(".card.updated", (event) => {
+    
+
+      if (event?.card?.id === cardId) {
+        queryClient.setQueryData(["cards", cardId], (oldData) => {
+          if (!oldData) return oldData;
+
+          // console.log("🔄 Cập nhật dữ liệu card:", { ...oldData, title: event.card.title });
+
+          return { ...oldData, title: event.card.title }; 
+        });
+      }
+    });
+
+    channel.listen(".card.description.updated", (event) => {
+     
+
+      if (event?.card?.id === cardId) {
+        queryClient.setQueryData(["cards", cardId], (oldData) => {
+          if (!oldData) return oldData;
+          console.log("🔄 Cập nhật mô tả card:", event.card.description);
+          return { ...oldData, description: event.card.description };
+        });
+      }
+    });
+
+    return () => {
+      channel.stopListening(".card.updated");
+      channel.stopListening(".card.description.updated");
+      echoInstance.leave(`card.${cardId}`);
+    };
+  }, [cardId, queryClient]);
+
+
+
+
   const updateDescriptionMutation = useMutation({
     mutationFn: (description) => updateDescription(cardId, description), // Gọi API cập nhật mô tả
     onSuccess: (data) => {
       console.log("Mô tả đã được cập nhật:", data);
-      //   setIsEditingDescription(false);
-      // Invalidates danh sách card của listId để refetch dữ liệu
-      //   setDescription(data.cardDetail.description); // Cập nhật state local
 
       queryClient.invalidateQueries(["cardDetail", cardId]);
     },
@@ -90,7 +132,8 @@ export const useUpdateCardTitle = () => {
     mutationFn: ({ cardId, title }) => updateCardTitle(cardId, title),
     onSuccess: (data, variables) => {
       // Cập nhật dữ liệu card trong cache sau khi update thành công
-      queryClient.invalidateQueries(["cards", variables.cardId]);
+      queryClient.invalidateQueries({ queryKey: ["cards", variables.cardId] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] }); 
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật tên card:", error);
@@ -143,4 +186,27 @@ export const useCardActions = (boardId) => {
     archiveCard: archiveCard.mutate, // Gọi mutate trực tiếp
     deleteCard: deleteCardMutation.mutate, // Gọi mutate trực tiếp
   };
+};
+
+export const useGetMemberInCard = (cardId) => {
+  const queryClient = useQueryClient();
+
+  // Fetch danh sách thành viên
+  const membersQuery = useQuery({
+    queryKey: ["membersInCard", cardId],
+    queryFn: () => getMemberInCard(cardId),
+    staleTime: 1000 * 60 * 5, // 5 phút.
+    cacheTime: 1000 * 60 * 30, // 30 phút.
+    enabled: !!cardId, // Chỉ gọi API khi có cardId hợp lệ.
+  });
+
+  // Mutation để thêm/xóa thành viên
+  const mutation = useMutation({
+    mutationFn: (userId) => toggleCardMember(cardId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["membersInCard", cardId]); // Fetch lại sau khi API thành công
+    },
+  });
+
+  return { ...membersQuery, toggleMember: mutation.mutate };
 };

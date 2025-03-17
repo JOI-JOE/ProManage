@@ -7,7 +7,8 @@ import {
     Typography,
     Dialog,
     Box,
-    Tooltip
+    Tooltip,
+    Avatar
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams, Outlet } from "react-router-dom";
@@ -19,11 +20,36 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import DescriptionIcon from '@mui/icons-material/Description';
 import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+import { useCardLabels } from "../../../../../hooks/useLabel";
+import { useCardById, useGetMemberInCard } from "../../../../../hooks/useCard";
+import { useCommentsByCard } from "../../../../../hooks/useComment";
+import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
+import useAttachments from "../../../../../hooks/useAttachment";
 
 
 const C_ard = ({ card }) => {
-    console.log(card.labels);
-    console.log(card.checklists);
+    // console.log(card.labels);
+    // console.log(card.checklists);
+    const {
+        data: cardDetail,
+        isLoading,
+        error,
+        updateDescriptionCard,
+    } = useCardById(card.id);
+    const { data: cardLabels = [] } = useCardLabels(card.id);
+    const { data: comments = [] } = useCommentsByCard(card.id);
+    // console.log(cardDetail);
+    const { data: checklists = [], isLoadingChecklist } =
+        useChecklistsByCard(card.id);
+
+    const { data: members = [], toggleMember } = useGetMemberInCard(card.id);
+
+    const { attachments = [], addAttachment, updateAttachment, removeAttachment } = useAttachments(card.id);
+
+    useEffect(() => {
+        console.log("Members data:", members); // Kiểm tra dữ liệu members
+    }, [members]);
+
     const [open, setOpen] = useState(false); // State mở/đóng Dialog
     const navigate = useNavigate(); // Điều hướng URL
     const location = useLocation(); // Lấy URL hiện tại
@@ -71,18 +97,19 @@ const C_ard = ({ card }) => {
     const showCardActions = () => {
 
         return (
-            !!card?.memberIds?.length ||
-            !!card?.comments_count ||
-            !!card?.attachments?.length ||
-            !!card?.description ||
-            !!card?.checklists?.some(checklist => checklist.items.length > 0)
+            // !!card?.memberIds?.length ||
+            !!comments?.length ||
+            !!attachments?.data?.length ||
+            !!cardDetail?.description ||
+            !!checklists?.some(checklist => checklist.items.length > 0)
 
         );
     };
 
-    const allChecklistsCompleted = card?.checklists?.every((checklist) =>
-        checklist.items.every((item) => item.is_completed)
+    const allChecklistsCompleted = checklists?.every((checklist) =>
+        checklist.items?.every((item) => item.is_completed) ?? false
     );
+
     return (
         <>
             <Card  // Sử dụng index làm key (không khuyến khích nếu thứ tự thay đổi)
@@ -92,10 +119,17 @@ const C_ard = ({ card }) => {
                 {...listeners}
                 onClick={handleOpen}
                 sx={{
+                    position: "relative",
                     cursor: "pointer",
                     boxShadow: "0 1px 1px rgba(0,0,0,0.2)",
                     overflow: "unset",
                     display: card?.FE_PlaceholderCard ? "none" : "block",
+                    border: "1px solid transparent",
+                    transition: "border 0.2s ease-in-out, box-shadow 0.2s ease-in-out", // Thêm transition
+                    ":hover": {
+                        border: "1px solid #0079bf", // Border màu xanh khi hover (giống Trello)
+                    },
+                    // height: "110px"
                 }}
             >
                 {card?.cover && <CardMedia sx={{ height: 140 }} image={card?.cover} />}
@@ -119,27 +153,28 @@ const C_ard = ({ card }) => {
                     </Box>
                 )} */}
 
-               
-                <CardContent sx={{ p: 1.5, "&:last-child": { p: 1.5 } }}>
-                {card?.labels?.length > 0 && (
-                    <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap", mb: 1 }}>
-                        {card.labels.map((label, index) => (
-                            <Tooltip key={index} title={label.text || 'No text'}> {/* Hiển thị text khi di chuột qua */}
-                                <Box
-                                    sx={{
-                                        backgroundColor: label.color.hex_code,
-                                        height: "8px",
-                                        width: "40px",
-                                        borderRadius: "4px",
-                                    }}
-                                />
-                            </Tooltip>
-                        ))}
-                    </Box>
-                )}
 
-                    <Typography sx={{ fontSize: "0.7rem" }}>{card?.title}</Typography>
+                <CardContent sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
+                    {cardLabels?.length > 0 && (
+                        <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap", mb: 1 }}>
+                            {cardLabels?.map((label, index) => (
+                                <Tooltip key={index} title={label.title || 'No text'}> {/* Hiển thị text khi di chuột qua */}
+                                    <Box
+                                        sx={{
+                                            backgroundColor: label.color.hex_code,
+                                            height: "8px",
+                                            width: "40px",
+                                            borderRadius: "4px",
+                                        }}
+                                    />
+                                </Tooltip>
+                            ))}
+                        </Box>
+                    )}
+
+                    <Typography sx={{ fontSize: "0.7rem" }}>{cardDetail?.title}</Typography>
                 </CardContent>
+
 
                 {showCardActions() && (
                     <CardActions sx={{
@@ -147,6 +182,8 @@ const C_ard = ({ card }) => {
                         display: "flex",
                         alignItems: "center",
                         gap: "6px", // Điều chỉnh khoảng cách giữa các icon
+                        // width: "100%",
+                        flexWrap: "wrap",
                     }}>
                         {!!card?.memberIds?.length && (
                             <Button
@@ -159,68 +196,112 @@ const C_ard = ({ card }) => {
                         )}
 
 
-                        {!!card?.description && (
-                            <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                <DescriptionIcon sx={{ fontSize: 16, color: "primary.dark" }} />
-                            </Box>
+                        {!!cardDetail?.description && (
+                            <Tooltip title={'Thẻ này có mô tả'}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <DescriptionIcon sx={{ fontSize: 16, color: "primary.dark" }} />
+                                </Box>
+                            </Tooltip>
+
                         )}
 
 
 
-                        {!!card?.comments_count && (
-                            <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                <CommentIcon sx={{ fontSize: 16, color: "primary.dark" }} />
-                                <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "primary.dark" }}>
-                                    {card?.comments_count}
-                                </Typography>
-                            </Box>
+                        {!!comments?.length && (
+                            <Tooltip title={'Bình luận'}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <CommentIcon sx={{ fontSize: 16, color: "primary.dark" }} />
+                                    <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "primary.dark" }}>
+                                        {comments?.length}
+                                    </Typography>
+                                </Box>
+                            </Tooltip>
+
+                        )}
+
+                        {!!attachments?.data?.length && (
+                            <Tooltip title={'Các tệp tin đính kèm'}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <AttachmentIcon sx={{ fontSize: 16, color: "primary.dark" }} />
+                                    <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "primary.dark" }}>
+                                    {attachments?.data?.length}
+                                    </Typography>
+                                </Box>
+                            </Tooltip>
+
                         )}
 
 
-                        {!!card?.checklists?.some((checklist) => checklist.items.length > 0) && (
-                            <Box sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                backgroundColor: allChecklistsCompleted ? "primary.dark" : "transparent", // Màu nền xanh khi hoàn thành
-                                color: allChecklistsCompleted ? "white" : "primary.dark", // Màu chữ trắng khi hoàn thành
-                                padding: "4px 8px", // Thêm padding để làm nổi bật
-                                borderRadius: "4px", // Bo góc
-                            }}>
-                                <CheckBoxOutlinedIcon
-                                    sx={{
-                                        fontSize: 16,
-                                        // color: allChecklistsCompleted ? "success.main" : "primary.dark", // Đổi màu khi hoàn thành
-                                    }}
-                                />
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        fontSize: "0.75rem",
-                                        // color: allChecklistsCompleted ? "success.main" : "primary.dark", // Đổi màu khi hoàn thành
-                                    }}
-                                >
-                                    {card?.checklists.reduce(
-                                        (total, checklist) => total + checklist.items.filter((item) => item.is_completed).length,
-                                        0
-                                    )}
-                                    /
-                                    {card?.checklists.reduce((total, checklist) => total + checklist.items.length, 0)}
-                                </Typography>
-                            </Box>
+                        {!!checklists?.some((checklist) => checklist.items.length > 0) && (
+                            <Tooltip title={'Mục trong danh sách công việc'}>
+                                <Box sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    backgroundColor: allChecklistsCompleted ? "primary.dark" : "transparent", // Màu nền xanh khi hoàn thành
+                                    color: allChecklistsCompleted ? "white" : "primary.dark", // Màu chữ trắng khi hoàn thành
+                                    padding: "4px 8px", // Thêm padding để làm nổi bật
+                                    borderRadius: "4px", // Bo góc
+                                }}>
+                                    <CheckBoxOutlinedIcon
+                                        sx={{
+                                            fontSize: 16,
+                                            // color: allChecklistsCompleted ? "success.main" : "primary.dark", // Đổi màu khi hoàn thành
+                                        }}
+                                    />
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontSize: "0.75rem",
+                                            // color: allChecklistsCompleted ? "success.main" : "primary.dark", // Đổi màu khi hoàn thành
+                                        }}
+                                    >
+                                        {checklists.reduce(
+                                            (total, checklist) => total + checklist.items.filter((item) => item.is_completed).length,
+                                            0
+                                        )}
+                                        /
+                                        {checklists.reduce((total, checklist) => total + checklist.items.length, 0)}
+                                    </Typography>
+                                </Box>
+                            </Tooltip>
+
                         )}
 
-                        {!!card?.attachments?.length && (
-                            <Button
-                                size="small"
-                                startIcon={<AttachmentIcon />}
-                                sx={{ fontSize: "0.65rem", color: "primary.dark" }}
-                            >
-                                {card?.attachments?.length}
-                            </Button>
-                        )}
+                      
                     </CardActions>
                 )}
+
+                {!!members?.data?.length && (
+                    <Box
+                        sx={{
+                            position: "absolute", // Đặt vị trí tuyệt đối
+                            bottom: 8, // Cách đáy 8px
+                            right: 8, // Cách phải 8px
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            zIndex: 1, // Đảm bảo avatar hiển thị trên cùng
+                            marginTop: "10px"
+                        }}
+                    >
+                        {members?.data?.map((member, index) => (
+                            <Tooltip key={index} title={member.full_name || 'No name'}>
+                                <Avatar
+                                    sx={{
+                                        width: 24,
+                                        height: 24,
+                                        fontSize: "0.75rem",
+                                        bgcolor: "primary.main",
+                                    }}
+                                >
+                                    {member.full_name.charAt(0)}
+                                </Avatar>
+                            </Tooltip>
+                        ))}
+                    </Box>
+                )}
+
             </Card>
             <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
                 <CardModal card={card} closeDetail={handleClose} />

@@ -21,6 +21,11 @@ import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/Li
 import InviteHandling from "../pages/workspace/invite/InviteHandling";
 import InviteWithToken from "../pages/workspace/invite/child/InviteWithToken";
 import InviteWithoutToken from "../pages/workspace/invite/child/InviteWithoutToken";
+import NotFoundPage from "../pages/NotFoundPage";
+import Account from "../pages/boards/detail/Account";
+import AcceptTeam from "../pages/workspace/invite/AcceptTeam";
+import InvitePage from "../pages/boards/invite/InvitePage";
+import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -38,39 +43,21 @@ const LayoutWrapper = () => {
 
 const router = createBrowserRouter([
   {
-    path: "/", // Path RIÊNG BIỆT cho GuestLayout
+    path: "/",
     element: <GuestLayout />,
     children: [
-      {
-        path: "login",
-        element: <LoginForm />,
-      },
-      {
-        path: "register",
-        element: <Register />,
-      },
-      {
-        path: "login/google", // Add this route!
-        element: <GoogleAuth />, // Use your GoogleAuth component here
-      },
-      {
-        path: "auth/callback", // Add this route!
-        element: <GitHubAuth />, // Use your GoogleAuth component here
-      },
-      {
-        path: "/forgort-password", // Add this route!
-        element: <ForgotPassword />, // Use your GoogleAuth component here
-      },
+      { path: "login", element: <LoginForm /> },
+      { path: "register", element: <Register /> },
+      { path: "login/google", element: <GoogleAuth /> },
+      { path: "auth/callback", element: <GitHubAuth /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
     ],
   },
   {
-    path: "/", // Parent route
+    path: "/",
     element: <DefaultLayout />,
     children: [
-      {
-        path: "home", // Or perhaps redirect if you have a separate home page
-        element: <Home />,
-      },
+      { path: "home", element: <Home /> },
       {
         element: <Dashboard />,
         children: [
@@ -85,40 +72,39 @@ const router = createBrowserRouter([
           {
             path: "b/:boardId/:name",
             element: <BoardContent />,
-            children: [
-              { path: "c/:cardId/:title", element: <CardModal /> }, // CardModal chỉ là Dialog
-            ],
+            children: [{ path: "c/:cardId/:title", element: <CardModal /> }],
           },
-          {
-            path: "w/:workspaceName/members",
-            element: <Member />,
-          },
-          // {
-          //   path: "c/:cardId/:name",
-          //   element: <CardModal />,
-          // }
+          { path: "w/:workspaceName/members", element: <Member /> },
+          { path: "w/:workspaceName/account", element: <Account /> },
         ],
       },
     ],
   },
-  {
-    path: "invite/:workspaceId/:inviteToken", // Route với token và workspaceId trong URL
-    element: <InviteHandling />,
-  },
+  { path: "invite/:workspaceId/:inviteToken", element: <InviteHandling /> },
   {
     path: "/",
-    element: <LayoutWrapper />, // Chọn layout dựa trên trạng thái đăng nhập
+    element: <LayoutWrapper />,
     children: [
       {
+        path: "invite-board/:token",
+        element: <InvitePage/>, // Tự động kiểm tra đăng nhập và chuyển hướng
+      },
+      {
+        path: "accept-invite/:token",
+        element: <AcceptInvitePage/>, // Tự động kiểm tra đăng nhập và chuyển hướng
+      },
+      
+      {
         path: "invite/accept-team",
-        element: isAuthenticated() ? (
-          <InviteWithToken />
-        ) : (
-          <InviteWithoutToken />
-        ), // Chỉ hiển thị đúng component khi có đường dẫn
+        element: <AcceptTeam />
       },
     ],
   },
+  {
+    path: "*",
+    element: <NotFoundPage />,
+  },
 ]);
+
 
 export default router;

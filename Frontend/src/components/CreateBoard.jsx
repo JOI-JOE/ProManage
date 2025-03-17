@@ -46,9 +46,8 @@ const CreateBoard = React.memo(() => {
   const { data: workspaces, isLoading: isLoadingWorkspaces, error } = useGetWorkspaces();
   const memoizedWorkspaces = useMemo(() => workspaces ?? [], [workspaces]);
 
-  // 🟢 Fetch màu chỉ 1 lần khi component mount
-  const { isLoading, errorColor } = useFetchColors();
-  const colors = useColorStore((state) => state.colors);
+  const { data: colors, isLoading: isLoadingColors, errorColors } = useColor();
+ 
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -158,7 +157,7 @@ const CreateBoard = React.memo(() => {
 
          
          
-         {colors.length > 0 ? (
+         {colors?.length > 0 ? (
             <Grid container spacing={1} mt={1}>
               {colors.map((color) => (
                 <Grid item key={color.id}>
@@ -166,13 +165,13 @@ const CreateBoard = React.memo(() => {
                     sx={{
                       width: "50px",
                       height: "35px",
-                      backgroundColor: color.hex,
+                      backgroundColor: color.hex_code,
                       borderRadius: "4px",
                       cursor: "pointer",
                       border:
-                        selectedBg === color.hex ? "2px solid #007BFF" : "none",
+                        selectedBg === color.hex_code ? "2px solid #007BFF" : "none",
                     }}
-                    onClick={() => handleSelectBg(color.hex)}
+                    onClick={() => handleSelectBg(color.hex_code)}
                   />
                 </Grid>
               ))}
