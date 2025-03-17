@@ -2,9 +2,38 @@ import authClient from "../authClient";
 
 // Phần để tối ưu gọi api
 
-export const fetchUserData = async () => {
-  
-}
+// dữ liệu chính
+const fetchUserDataWithParams = async (params) => {
+  try {
+    const queryParams = new URLSearchParams(params);
+    const response = await authClient.get(
+      `/member/me?${queryParams.toString()}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+    throw error;
+  }
+};
+
+export const fetchUserProfile = () => {
+  return fetchUserDataWithParams({
+    fields: "id,user_name,full_name,email,image",
+    workspaces: "all",
+    workspace_fields: "id,name,display_name",
+  });
+};
+
+export const fetchUserDashboardData = () => {
+  return fetchUserDataWithParams({
+    fields: "id,user_name,full_name,email,image,url",
+    boards: "open,starred",
+    board_memberships: "me",
+    board_stars: "true",
+    workspaces: "all",
+    workspace_fields: "id,name,display_name",
+  });
+};
 
 // Để làm gì -> Lấy danh sách Workspaces của người dùng
 // Nơi dùng ->	Sidebar và mục "Các Không Gian Làm Việc Của Bạn"

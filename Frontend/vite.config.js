@@ -24,4 +24,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    sourcemap: true, // Thêm dòng này để bật source maps
+  },
 });

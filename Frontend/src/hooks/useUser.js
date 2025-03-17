@@ -1,9 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import {
-  fetchUserBoards,
-  fetchUserBoardsWithWorkspaces,
-  fetchUserWorkspaces,
+  fetchUserDashboardData,
+  fetchUserProfile,
   forgotPassword,
   getUser,
   userRegister,
@@ -11,34 +10,31 @@ import {
 import { loginUser } from "../api/models/userApi";
 import { logoutUser } from "../api/models/userApi";
 
-// Hook dùng để lấy danh sách Boards không nhóm theo Workspaces
-export const useUserBoards = () => {
-  return useQuery({
-    queryKey: ["userBoards"],
-    queryFn: fetchUserBoards,
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
+export const useUserData = () => {
+  const {
+    data: userProfile,
+    isLoading: loadingProfile,
+    error: errorProfile,
+  } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: fetchUserProfile,
   });
-};
 
-// Hook dùng để lấy danh sách Workspaces
-export const useUserWorkspaces = () => {
-  return useQuery({
-    queryKey: ["userWorkspaces"],
-    queryFn: fetchUserWorkspaces,
-    staleTime: 1000 * 60 * 5, // Giữ cache 5 phút
-    retry: 1, // Số lần thử lại khi gặp lỗi
+  const {
+    data: userDashboard,
+    isLoading: loadingDashboard,
+    error: errorDashboard,
+  } = useQuery({
+    queryKey: ["userDashboard"],
+    queryFn: fetchUserDashboardData,
   });
-};
 
-// Hook dùng để lấy danh sách Boards nhóm theo Workspaces
-export const useUserBoardsWithWorkspaces = () => {
-  return useQuery({
-    queryKey: ["userBoardsWithWorkspaces"],
-    queryFn: fetchUserBoardsWithWorkspaces,
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
-  });
+  return {
+    userProfile,
+    userDashboard,
+    isLoading: loadingProfile || loadingDashboard,
+    error: errorProfile || errorDashboard,
+  };
 };
 
 export const useUser = () => {
@@ -50,14 +46,6 @@ export const useUser = () => {
   });
 };
 
-/**
- * Hook useLogin để đăng nhập.
- * @returns {object} - Object chứa hàm mutate để gọi API đăng nhập và các trạng thái liên quan.
- *
- * useMutation -> được dùng cho các thao tác thay đổi dữ liệu trên serve
- * ví dụ : tạo mới, xóa, cập nhật dữ liệu.\
- * Thao tác thay đổi trạng thái của người dùng (từ chưa đăng nhập sang đăng nhập)
- */
 export const useLogin = () => {
   const queryClient = useQueryClient();
 

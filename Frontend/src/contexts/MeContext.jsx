@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import { useUserBoards, useUserBoardsWithWorkspaces, useUserWorkspaces } from "../hooks/useUser";
+import { useUserData } from "../hooks/useUser";
 
 // Tạo Context
 const MeContext = createContext();
@@ -8,20 +8,17 @@ export const useMe = () => useContext(MeContext);
 
 // Provider chính
 export const MeProvider = ({ children }) => {
-    // Gọi API thông qua React Query hooks
-    const { data: workspaces, isLoading: loadingWorkspaces, error: errorWorkspaces } = useUserWorkspaces();
-    const { data: boardsWithWorkspaces, isLoading: loadingBoardsWithWorkspaces, error: errorBoardsWithWorkspaces } = useUserBoardsWithWorkspaces();
-    const { data: boards, isLoading: loadingBoards, error: errorBoards } = useUserBoards();
 
-    // Kiểm tra trạng thái tải dữ liệu
-    const isLoading = loadingWorkspaces || loadingBoardsWithWorkspaces || loadingBoards;
-    const hasError = errorWorkspaces || errorBoardsWithWorkspaces || errorBoards;
+    const { userProfile, userDashboard, isLoading, error } = useUserData();
 
-    console.log(workspaces)
-    console.log(boardsWithWorkspaces)
-    console.log(boards)
+    if (isLoading) return <p>Đang tải dữ liệu...</p>;
+    if (error) return <p>Có lỗi xảy ra!</p>;
+
+    console.log(userProfile)
+    console.log(userDashboard)
+
     return (
-        <MeContext.Provider value={{ workspaces, boardsWithWorkspaces, boards, isLoading, hasError }}>
+        <MeContext.Provider value={{ userProfile, userDashboard }}>
             {children}
         </MeContext.Provider>
     );
