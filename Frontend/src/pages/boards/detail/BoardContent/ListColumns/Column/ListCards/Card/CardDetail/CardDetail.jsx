@@ -18,6 +18,7 @@ import {
   IconButton,
   Chip,
   Stack,
+  Popover,
   Modal,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
@@ -82,14 +83,16 @@ import {
 } from "../../../../../../../../../hooks/useCheckListItem";
 import CoverPhoto from "./childComponent_CardDetail/CoverPhoto";
 import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
-import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
-import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
-import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
+import { ArrowDropDownIcon } from "@mui/x-date-pickers";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import dayjs from "dayjs";
-
-const CardModal = () => {
+import LinkIcon from "@mui/icons-material/Link";
+import AttachmentIcon from "@mui/icons-material/Attachment";
+import { ArrowBack } from "@mui/icons-material";
+import CloseIcon from "@mui/icons-material/Close";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+const CardModal = ({}) => {
   const { cardId, title } = useParams();
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
@@ -614,6 +617,161 @@ const CardModal = () => {
 
   const [isCoverPhotoOpen, setIsCoverPhotoOpen] = useState(false);
 
+  //ĐÍNH KÈM
+  // const [attachments, setAttachments] = useState([
+  //   { id: 1, name: "Tài liệu A", url: "https://example.com/A" },
+  //   { id: 2, name: "Báo cáo B", url: "https://example.com/B" },
+  //   { id: 3, name: "Hướng dẫn C", url: "https://example.com/C" },
+  // ]);
+  const [attachments, setAttachments] = useState([]); // Lưu file/link đính kèm
+  const [anchorEl1, setAnchorEl1] = useState(null); // Menu liên kết
+  const [anchorEl2, setAnchorEl2] = useState(null); // Menu tệp
+
+  const [popoverAnchorEl, setPopoverAnchorEl] = useState(null);
+  const [editedItem, setEditedItem] = useState(null);
+  const [editedUrl, setEditedUrl] = useState("");
+  const [editedDisplayText, setEditedDisplayText] = useState("");
+
+  const handleAddAttachment = (newAttachments) => {
+    if (!newAttachments) return; // Bỏ qua nếu dữ liệu không hợp lệ
+
+    setAttachments((prev) => {
+      let formattedAttachments = Array.isArray(newAttachments)
+        ? newAttachments
+        : [newAttachments];
+
+      // Đảm bảo mỗi file/link đều có type đúng
+      formattedAttachments = formattedAttachments.map((item) => ({
+        ...item,
+        type: item.type || (item.url ? "link" : "file"), // Nếu có url nhưng không có type, mặc định là "link"
+      }));
+
+      return [...prev, ...formattedAttachments];
+    });
+  };
+
+  const handleMenuOpen1 = (event, item) => {
+    setAnchorEl1(event.currentTarget);
+    setEditedItem(item);
+  };
+
+  const handleMenuClose1 = () => {
+    setAnchorEl1(null);
+  };
+
+  const handleEdit = () => {
+    setEditedUrl(editedItem.url);
+    setEditedDisplayText(editedItem.name);
+    setPopoverAnchorEl(anchorEl1);
+    handleMenuClose1();
+  };
+
+  const handleDelete = () => {
+    setAttachments(attachments.filter((item) => item.id !== editedItem.id));
+    handleMenuClose1();
+  };
+
+  const handleSave1 = () => {
+    setAttachments((prevAttachments) =>
+      prevAttachments.map((item) =>
+        item.id === editedItem.id
+          ? { ...item, url: editedUrl, name: editedDisplayText }
+          : item
+      )
+    );
+    setPopoverAnchorEl(null);
+  };
+
+  const [files, setFiles] = useState([]);
+
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const handleOpen = (file) => {
+    setSelectedFile(file);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setSelectedFile(null);
+    setOpen(false);
+  };
+
+  // Mở ảnh trong tab mới với tiêu đề là tên ảnh
+  const openInNewTab = (file) => {
+    const newWindow = window.open(file.url, "_blank");
+    if (newWindow) {
+      newWindow.onload = () => {
+        newWindow.document.title = file.name;
+      };
+    }
+  };
+
+  // Tải ảnh xuống
+  const downloadFile = (file) => {
+    const link = document.createElement("a");
+    link.href = file.url;
+    link.download = file.name || "downloaded_image";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const [editAnchorEl, setEditAnchorEl] = useState(null);
+  const [newFileName, setNewFileName] = useState("");
+
+  const handleMenuOpen2 = (event, file) => {
+    setAnchorEl2(event.currentTarget);
+    setSelectedFile(file);
+  };
+
+  const handleMenuClose2 = () => {
+    setAnchorEl2(null);
+  };
+
+  // Hàm mở Popover (có thể gọi ở nút "Sửa")
+  const handleOpenPopover = () => {
+    setNewFileName(selectedFile?.name || ""); // Lưu sẵn tên file vào input
+    setEditAnchorEl(anchorEl2); // Gán vị trí anchor từ menu con
+    handleMenuClose2(); // Đóng menu con
+  };
+
+  // Hàm đóng Popover
+  const handleClosePopover = () => {
+    setEditAnchorEl(null);
+  };
+
+  // Hàm đổi tên file (logic đổi tên sẽ được bạn tùy chỉnh)
+  const handleRename = () => {
+    if (selectedFile && newFileName.trim() !== "") {
+      // Cập nhật tên file trong danh sách attachments (tuỳ theo cách lưu trữ)
+      const updatedAttachments = attachments.map((file) =>
+        file.id === selectedFile.id ? { ...file, name: newFileName } : file
+      );
+
+      setAttachments(updatedAttachments); // Giả sử bạn có setAttachments để cập nhật state
+      handleClosePopover(); // Đóng popover sau khi cập nhật
+    }
+  };
+  const handleDeleteFile = () => {
+    if (selectedFile) {
+      setAttachments((prev) =>
+        prev.filter((file) => file.id !== selectedFile.id)
+      );
+      handleMenuClose2(); // Đóng menu sau khi xóa
+    }
+  };
+  const handleDownloadFile = (file) => {
+    if (!file || !file.url) return;
+
+    // Tạo một thẻ <a> ẩn để tải file
+    const link = document.createElement("a");
+    link.href = file.url;
+    link.setAttribute("download", file.name || "download"); // Đặt tên file khi tải về
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Dialog
       open={true}
@@ -925,6 +1083,524 @@ const CardModal = () => {
                 </>
               )}
 
+              {/* ĐÍNH KÈM */}
+              <Box sx={{ mt: "30px", pl: "5" }}>
+                {attachments.length > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      mb: "10px",
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: "bold",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <AttachmentIcon sx={{ marginRight: "8px" }} /> Các tập tin
+                      đính kèm
+                    </Typography>
+
+                    <Button onClick={() => setIsAttachmentModalOpen(true)}>
+                      Thêm
+                    </Button>
+                  </Box>
+                )}
+
+                {/* Liên kết */}
+                {attachments.some((item) => item.type === "link") && (
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontSize: "12px", // Giảm font size để tiết kiệm không gian
+                        ml: "20px",
+                        mt: "5px",
+                        mb: "3px", // Giảm khoảng cách với các mục bên dưới
+                      }}
+                    >
+                      Liên kết
+                    </Typography>
+                    <List>
+                      {attachments
+                        .filter((file) => file.type === "link")
+                        .map((file) => {
+                          const domain = new URL(file.url).hostname.replace(
+                            /^www\./,
+                            ""
+                          );
+
+                          return (
+                            <ListItem
+                              key={file.id}
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                paddingRight: "40px",
+                                mb: "4px",
+                                ml: "10px",
+                                cursor: "pointer",
+                                height: "30px",
+                                width: "100%",
+
+                                border: "1px solid #F2F2F4",
+                                backgroundColor: "#F2F2F4",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              {/* Hiển thị favicon và link cùng một hàng */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  flexGrow: 1,
+                                }}
+                              >
+                                <img
+                                  src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`}
+                                  alt="favicon"
+                                  style={{
+                                    width: "16px",
+                                    height: "16px",
+                                  }}
+                                />
+                                <a
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={file.url}
+                                  style={{
+                                    color: "#5795EC",
+                                    fontSize: "15px",
+                                    textDecoration: "none",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    maxWidth: "300px",
+                                    display: "inline-block",
+                                  }}
+                                >
+                                  {file.name || domain}
+                                </a>
+                              </Box>
+
+                              <IconButton
+                                onClick={(e) => handleMenuOpen1(e, file)}
+                                sx={{ ml: "auto" }}
+                              >
+                                <MoreVertIcon />
+                              </IconButton>
+                            </ListItem>
+                          );
+                        })}
+                    </List>
+                  </Box>
+                )}
+                <Menu
+                  anchorEl={anchorEl1}
+                  open={Boolean(anchorEl1)}
+                  onClose={handleMenuClose1}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  transformOrigin={{ vertical: "top", horizontal: "left" }}
+                >
+                  <MenuItem
+                    onClick={() => {
+                      handleEdit();
+                      handleMenuClose1();
+                    }}
+                  >
+                    Sửa
+                  </MenuItem>
+                  <MenuItem>Nhận xét</MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleDelete();
+                      handleMenuClose1();
+                    }}
+                  >
+                    Xóa
+                  </MenuItem>
+                </Menu>
+
+                {/* Popover chỉnh sửa */}
+                <Popover
+                  open={Boolean(popoverAnchorEl)}
+                  anchorEl={popoverAnchorEl}
+                  onClose={() => setPopoverAnchorEl(null)}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  transformOrigin={{ vertical: "top", horizontal: "left" }}
+                >
+                  <Box sx={{ padding: 2, width: 300 }}>
+                    <IconButton onClick={() => setPopoverAnchorEl(null)}>
+                      <ArrowBack />
+                    </IconButton>
+                    <Typography variant="h6" sx={{ textAlign: "center" }}>
+                      Sửa tệp đính kèm
+                    </Typography>
+                    <Typography variant="subtitle2">
+                      Tìm kiếm hoặc dán liên kết
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <TextField
+                        fullWidth
+                        value={editedUrl}
+                        onChange={(e) => setEditedUrl(e.target.value)}
+                        margin="normal"
+                        placeholder="Nhập URL"
+                      />
+                      {editedUrl && (
+                        <IconButton onClick={() => setEditedUrl("")}>
+                          {" "}
+                          <CloseIcon />{" "}
+                        </IconButton>
+                      )}
+                    </Box>
+                    <Typography variant="subtitle2" sx={{ marginTop: "10px" }}>
+                      Văn bản hiển thị (không bắt buộc)
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <TextField
+                        fullWidth
+                        value={editedDisplayText}
+                        onChange={(e) => setEditedDisplayText(e.target.value)}
+                        margin="normal"
+                        placeholder="Nhập văn bản hiển thị"
+                      />
+                      {editedDisplayText && (
+                        <IconButton onClick={() => setEditedDisplayText("")}>
+                          {" "}
+                          <CloseIcon />{" "}
+                        </IconButton>
+                      )}
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        marginTop: 2,
+                      }}
+                    >
+                      <Button onClick={() => setPopoverAnchorEl(null)}>
+                        Hủy
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={() => {
+                          handleSave1();
+                          setPopoverAnchorEl(null); // Đóng popover sau khi lưu
+                        }}
+                      >
+                        Lưu
+                      </Button>
+                    </Box>
+                  </Box>
+                </Popover>
+
+                {/* Tệp */}
+                {attachments.some((file) => file.type === "file") && (
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontSize: "12px",
+                        ml: "20px",
+                        mt: "5px",
+                        mb: "-15px",
+                      }}
+                    >
+                      Tệp
+                    </Typography>
+                    <List>
+                      {attachments
+                        .filter((file) => file.type === "file")
+                        .map((file) => (
+                          <ListItem
+                            key={file.id}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              paddingRight: "40px",
+                              mb: "-8px",
+                              ml: "10px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {/* Hình ảnh */}
+                            <Box
+                              component="img"
+                              src={file.url}
+                              alt={file.name}
+                              sx={{
+                                width: 50,
+                                height: 50,
+                                borderRadius: "8px",
+                                objectFit: "cover",
+                              }}
+                              onClick={() => handleOpen(file)}
+                            />
+
+                            {/* Nội dung tên và thời gian */}
+                            <Box sx={{ flexGrow: 1, ml: "10px" }}>
+                              <Typography
+                                sx={{ fontWeight: "bold", fontSize: "13px" }}
+                                onClick={() => handleOpen(file)}
+                              >
+                                {file.name || "Không có tên"}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="textSecondary"
+                                sx={{ fontSize: "13px" }}
+                                onClick={() => handleOpen(file)}
+                              >
+                                Đã thêm{" "}
+                                {file.time
+                                  ? new Date(file.time).toLocaleString(
+                                      "vi-VN",
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "numeric",
+                                      }
+                                    )
+                                  : "Không xác định"}
+                                {file.isCover && (
+                                  <Box component="span" sx={{ ml: 1 }}>
+                                    <img
+                                      src="https://img.icons8.com/material-outlined/24/000000/image.png"
+                                      alt="cover-icon"
+                                      style={{
+                                        width: "16px",
+                                        verticalAlign: "middle",
+                                      }}
+                                    />{" "}
+                                    Ảnh bìa
+                                  </Box>
+                                )}
+                              </Typography>
+                            </Box>
+
+                            {/* Menu tác vụ */}
+                            <IconButton
+                              onClick={(e) => handleMenuOpen2(e, file)}
+                              sx={{ ml: "auto" }}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </ListItem>
+                        ))}
+                    </List>
+                  </Box>
+                )}
+
+                {/* Menu con */}
+                <Menu
+                  anchorEl={anchorEl2}
+                  open={Boolean(anchorEl2)}
+                  onClose={handleMenuClose2}
+                >
+                  <MenuItem onClick={handleOpenPopover}>Sửa</MenuItem>
+                  <MenuItem onClick={() => handleDownloadFile(selectedFile)}>
+                    Tải xuống
+                  </MenuItem>
+                  <MenuItem>Nhận xét</MenuItem>
+                  <MenuItem>Tạo ảnh bìa</MenuItem>
+                  <MenuItem onClick={handleDeleteFile} sx={{ color: "red" }}>
+                    Xóa
+                  </MenuItem>
+                </Menu>
+
+                {/* Edit Popover */}
+                <Popover
+                  open={Boolean(editAnchorEl)}
+                  anchorEl={editAnchorEl}
+                  onClose={handleClosePopover}
+                  anchorOrigin={{ vertical: "top", horizontal: "left" }}
+                  transformOrigin={{ vertical: "top", horizontal: "left" }}
+                >
+                  <Box sx={{ padding: "16px", minWidth: "200px" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                      <IconButton onClick={handleClosePopover}>
+                        <ArrowBackIcon />
+                      </IconButton>
+                      <Typography variant="h6" sx={{ fontSize: "14px", ml: 1 }}>
+                        Sửa tệp đính kèm
+                      </Typography>
+                    </Box>
+
+                    <TextField
+                      fullWidth
+                      value={newFileName}
+                      onChange={(e) => setNewFileName(e.target.value)}
+                      placeholder="Nhập tên mới"
+                    />
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        mt: 1,
+                      }}
+                    >
+                      <Button onClick={handleClosePopover}>Hủy</Button>
+                      <Button
+                        onClick={handleRename}
+                        variant="contained"
+                        sx={{ ml: 1 }}
+                      >
+                        Cập nhật
+                      </Button>
+                    </Box>
+                  </Box>
+                </Popover>
+                <Dialog
+                  open={open}
+                  onClose={handleClose}
+                  fullWidth
+                  maxWidth="sm"
+                  sx={{
+                    "& .MuiDialog-paper": {
+                      backgroundColor: "transparent", // Loại bỏ nền trắng của hộp thoại
+                      boxShadow: "none", // Xóa viền hộp thoại
+                      padding: 0,
+                      overflow: "visible",
+                    },
+                    "& .MuiBackdrop-root": {
+                      backgroundColor: "rgba(0, 0, 0, 0.5)", // Nền tối mờ nhẹ (có thể chỉnh mức độ mờ)
+                    },
+                  }}
+                >
+                  <IconButton
+                    onClick={handleClose}
+                    sx={{
+                      position: "absolute",
+                      top: -120,
+                      right: -450,
+                      color: "white",
+                      // backgroundColor: "rgba(255, 255, 255, 0.2)",
+                      // "&:hover": {
+                      //   backgroundColor: "rgba(255, 255, 255, 0.4)",
+                      // },
+                    }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                  <DialogContent
+                    sx={{
+                      textAlign: "center",
+                      maxHeight: "75vh",
+                      overflow: "auto",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    {selectedFile ? (
+                      <>
+                        {/* Ảnh hiển thị trên cùng, không chứa text */}
+                        <Box
+                          component="img"
+                          src={selectedFile.url}
+                          alt={selectedFile.name}
+                          sx={{
+                            maxWidth: "100%",
+                            maxHeight: "300px",
+                            objectFit: "contain",
+                            borderRadius: "8px",
+                          }}
+                        />
+
+                        {/* Tất cả text hiển thị bên ngoài ảnh */}
+                        <Typography
+                          sx={{
+                            fontWeight: "bold",
+                            mt: 2,
+                            color: "#fff",
+                            fontSize: "30px",
+                          }}
+                        >
+                          {selectedFile.name || "Không có tên"}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "#fff" }}>
+                          Đã thêm:{" "}
+                          {selectedFile.time
+                            ? new Date(selectedFile.time).toLocaleString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                }
+                              )
+                            : "Không xác định"}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "#fff" }}>
+                          Dung lượng:{" "}
+                          {selectedFile.size
+                            ? `${selectedFile.size} KB`
+                            : "Không xác định"}
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography sx={{ color: "#fff" }}>
+                        Không có tệp nào được chọn!
+                      </Typography>
+                    )}
+                  </DialogContent>
+
+                  <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+                    {selectedFile && (
+                      <>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => openInNewTab(selectedFile)}
+                        >
+                          🔍 Xem
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          onClick={() => downloadFile(selectedFile)}
+                        >
+                          ⬇ Tải xuống
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          onClick={() => alert("Đặt làm ảnh bìa")}
+                        >
+                          🖼 Tạo ảnh bìa
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          onClick={() => {
+                            handleDeleteFile(); // Gọi hàm xử lý xóa file (nếu có)
+                            setSelectedFile(null); // Xóa file khỏi giao diện
+                            handleClose(); // Đóng dialog
+                          }}
+                          sx={{ ml: 2 }}
+                        >
+                          ❌ Xóa
+                        </Button>
+                      </>
+                    )}
+                  </DialogActions>
+                </Dialog>
+              </Box>
+
               {/* HIỂN THỊ DANH SÁCH VIỆC CẦN LÀM */}
               {checklists?.length > 0 && (
                 <Box sx={{ mt: 2 }}>
@@ -943,8 +1619,12 @@ const CardModal = () => {
                           : 0;
 
                       return (
-                        <Box key={checklist.id} sx={{ mb: 3, p: 2 }}>
+                        <Box
+                          key={checklist.id}
+                          sx={{ mb: 3, p: 2, marginLeft: "-12px" }}
+                        >
                           {/* Hiển thị tên checklist */}
+
                           <Box
                             sx={{
                               display: "flex",
@@ -952,33 +1632,53 @@ const CardModal = () => {
                               alignItems: "center",
                             }}
                           >
-                            {editingTaskId === checklist.id ? (
-                              <TextField
-                                fullWidth
-                                variant="outlined"
-                                size="small"
-                                value={editedTaskName}
-                                onChange={(e) =>
-                                  setEditedTaskName(e.target.value)
-                                }
-                                onBlur={() => handleSaveTask(checklist.id)}
-                                onKeyDown={(e) =>
-                                  handleKeyPressTask(e, checklist.id)
-                                }
-                                autoFocus
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                flexGrow: 1,
+                              }}
+                            >
+                              <CheckBoxIcon
+                                sx={{
+                                  width: "30px",
+                                  height: "30px",
+                                  color: "gray",
+                                  flexShrink: 0, // Giữ icon luôn cố định, không bị đẩy đi
+                                }}
                               />
-                            ) : (
-                              <Typography
-                                variant="h6"
-                                fontWeight="bold"
-                                onClick={() =>
-                                  handleEditTask(checklist.id, checklist.name)
-                                }
-                                sx={{ cursor: "pointer" }}
-                              >
-                                {checklist.name}
-                              </Typography>
-                            )}
+                              {editingTaskId === checklist.id ? (
+                                <TextField
+                                  fullWidth
+                                  variant="outlined"
+                                  size="small"
+                                  value={editedTaskName}
+                                  onChange={(e) =>
+                                    setEditedTaskName(e.target.value)
+                                  }
+                                  onBlur={() => handleSaveTask(checklist.id)}
+                                  onKeyDown={(e) =>
+                                    handleKeyPressTask(e, checklist.id)
+                                  }
+                                  autoFocus
+                                  sx={{
+                                    flexGrow: 1, // Giúp input co giãn nhưng không đẩy icon đi
+                                  }}
+                                />
+                              ) : (
+                                <Typography
+                                  variant="h6"
+                                  fontWeight="bold"
+                                  onClick={() =>
+                                    handleEditTask(checklist.id, checklist.name)
+                                  }
+                                  sx={{ cursor: "pointer", flexGrow: 1 }}
+                                >
+                                  {checklist.name}
+                                </Typography>
+                              )}
+                            </Box>
 
                             <Button
                               variant="outlined"
@@ -1021,9 +1721,12 @@ const CardModal = () => {
                           </Box>
 
                           {/* Danh sách mục trong checklist */}
-                          <List sx={{ mt: 2 }}>
+                          <List sx={{ mt: 0 }}>
                             {taskItems.map((item) => (
-                              <ListItem key={item.id}>
+                              <ListItem
+                                key={item.id}
+                                sx={{ py: 0, my: 0, minHeight: "32px" }}
+                              >
                                 <ListItemIcon>
                                   <Checkbox
                                     checked={item.is_completed || false}
@@ -1101,7 +1804,6 @@ const CardModal = () => {
                                 placeholder="Thêm một mục..."
                                 variant="outlined"
                                 size="small"
-                                sx={{ mt: 2 }}
                                 value={taskInputs[checklist.id] || ""}
                                 onChange={(e) =>
                                   setTaskInputs({
@@ -1149,7 +1851,7 @@ const CardModal = () => {
                               variant="contained"
                               color="primary"
                               size="small"
-                              sx={{ mt: 2 }}
+                              sx={{ mt: 0, bgcolor: "teal" }}
                               onClick={() => setAddingItemForTask(checklist.id)}
                             >
                               Thêm một mục
@@ -1768,6 +2470,7 @@ const CardModal = () => {
         <AttachmentModal
           open={isAttachmentModalOpen}
           onClose={() => setIsAttachmentModalOpen(false)}
+          onAddAttachment={handleAddAttachment}
         />
 
         {/* Component Move Card Modal */}
