@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { getUser } from "../api/models/userApi";
+import { useGetUserData } from "../hooks/useUser";
 
 const StateContext = createContext({
     user: null,
@@ -11,7 +12,11 @@ const StateContext = createContext({
 export const ContextProvider = ({ children }) => {
     const [token, _setToken] = useState(localStorage.getItem("token"));
     const [user, setUser] = useState(null);
-    const isFirstRender = useRef(true);
+
+    const { data: data } = useGetUserData();
+
+    console.log(data)
+
     // Sử dụng useCallback để tránh tạo lại hàm setToken
     const setToken = useCallback((token) => {
         _setToken(token);
@@ -23,28 +28,30 @@ export const ContextProvider = ({ children }) => {
     }, []);
 
 
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return; // Không chạy lần đầu tiên
-        }
+    // useEffect(() => {
+    //     if (isFirstRender.current) {
+    //         isFirstRender.current = false;
+    //         return; // Không chạy lần đầu tiên
+    //     }
 
-        const fetchUser = async () => {
-            if (token) {
-                try {
-                    const userData = await getUser();
-                    setUser(userData);
-                } catch (error) {
-                    console.error("Lỗi khi lấy thông tin người dùng:", error);
-                    setUser(null);
-                }
-            } else {
-                setUser(null);
-            }
-        };
+    //     const fetchUser = async () => {
+    //         if (token) {
+    //             try {
+    //                 const userData = await getUser();
+    //                 const test = await useGetUserData();
+    //                 console.log("test:", test)
+    //                 setUser(userData);
+    //             } catch (error) {
+    //                 console.error("Lỗi khi lấy thông tin người dùng:", error);
+    //                 setUser(null);
+    //             }
+    //         } else {
+    //             setUser(null);
+    //         }
+    //     };
 
-        fetchUser();
-    }, [token]);
+    //     fetchUser();
+    // }, [token]);
 
 
     // Sử dụng useMemo để tránh tạo lại object value mỗi lần component re-render

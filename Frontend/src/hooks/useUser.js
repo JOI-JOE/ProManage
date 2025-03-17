@@ -10,7 +10,12 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { forgotPassword, getUser, userRegister } from "../api/models/userApi";
+import {
+  forgotPassword,
+  getUser,
+  getUserData,
+  userRegister,
+} from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
 import { logoutUser } from "../api/models/userApi";
 
@@ -25,6 +30,15 @@ import { logoutUser } from "../api/models/userApi";
  * - Nó cũng tự động quảng lý loading và error, giúp bạn dễ dàng thay đổi thường xuyên
  *
  */
+
+export const useGetUserData = () => {
+  return useQuery({
+    queryKey: ["test"],
+    queryFn: getUserData,
+    staleTime: 1000 * 60 * 5, // 5 phút trước khi dữ liệu trở thành stale
+    cacheTime: 1000 * 60 * 30, // 30 phút trước khi bị xóa khỏi cache
+  });
+};
 
 export const useUser = () => {
   return useQuery({

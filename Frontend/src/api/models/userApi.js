@@ -9,10 +9,25 @@ import authClient from "../authClient";
  * File userApi.js (Modules) cung cấp dữ liệu và logic cho file useUser.js (Hooks).
  */
 
-/**
- * Hàm này chịu trách nhiệm lấy thông tin người dùng từ API.
- * @returns {Promise<object>} - Promise chứa dữ liệu người dùng.
- */
+export const getUserData = async () => {
+  try {
+    const params = {
+      fields: "id",
+      boards: "open,starred",
+      board_fields: "id,name,closed,is_marked,workspace_id",
+      boardStars: "true",
+      board_memberships: "me",
+    };
+
+    const response = await authClient.get("/member/me", { params });
+
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+    throw error;
+  }
+};
+
 export const getUser = async () => {
   try {
     const response = await authClient.get("/users/me");
@@ -82,5 +97,3 @@ export const userRegister = async (userData) => {
     throw error;
   }
 };
-
-

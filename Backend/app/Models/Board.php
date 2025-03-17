@@ -25,9 +25,6 @@ class Board extends Model
         'visibility',     // Tính công khai (public hoặc private)
         'workspace_id',   // ID của workspace liên quan
     ];
-
-
-
     protected static function boot()
     {
         parent::boot();
