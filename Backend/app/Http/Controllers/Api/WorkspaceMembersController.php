@@ -64,9 +64,10 @@ class WorkspaceMembersController extends Controller
         }
 
         $insertData = array_map(fn($userId) => [
+            'id' => Str::uuid(), // Thêm UUID thủ công
             'workspace_id' => $workspaceId,
             'user_id' => $userId,
-            'member_type' => 'pending', // Có thể tuỳ chỉnh role
+            'member_type' => WorkspaceMembers::$PENDING, // Dùng hằng số trong model
             'joined' => false,  // Chưa tham gia
         ], $newMembers);
 
@@ -75,8 +76,8 @@ class WorkspaceMembersController extends Controller
         return response()->json(['message' => 'Members added successfully', 'new_members' => $newMembers], 201);
     }
 
- 
-     // // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/677ea51482b962a06bc469ac/deactivated
+
+    // // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/677ea51482b962a06bc469ac/deactivated
     // public function deactivateMember(Request $request, $idOrganization, $idMember)
     // {
     //     // Deactivate a member in the organization

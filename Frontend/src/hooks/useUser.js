@@ -1,42 +1,43 @@
-/**
- * FIle này sử dụng các hàm được import từ userApi để thực hiện
- * các thao tác liên quan đến người dùng
- *
- * Tóm lại
- * File useUser.js (Hooks) sử dụng các hàm trong file userApi.js (Modules).
- * File userApi.js (Modules) cung cấp dữ liệu và logic cho file useUser.js (Hooks).
- *
- */
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import {
+  fetchUserBoards,
+  fetchUserBoardsWithWorkspaces,
+  fetchUserWorkspaces,
   forgotPassword,
   getUser,
-  getUserData,
   userRegister,
 } from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
 import { logoutUser } from "../api/models/userApi";
 
-/**
- * Hook useUser để lấy thông tin người dùng.
- * @returns {object} - Object chứa dữ liệu người dùng, trạng thái loading và error.
- *
- * useQuery -> được dùng để lấy dữ liệu không thay đổi từ serve
- * trong trường hợp này thì thông tin người dùng không thay đổi thường xuyên
- *
- * - Nó sẽ cache dữ liệu này để sử dụng lại khi cần, giúp tăng hiệu suất ứng dụng
- * - Nó cũng tự động quảng lý loading và error, giúp bạn dễ dàng thay đổi thường xuyên
- *
- */
-
-export const useGetUserData = () => {
+// Hook dùng để lấy danh sách Boards không nhóm theo Workspaces
+export const useUserBoards = () => {
   return useQuery({
-    queryKey: ["test"],
-    queryFn: getUserData,
-    staleTime: 1000 * 60 * 5, // 5 phút trước khi dữ liệu trở thành stale
-    cacheTime: 1000 * 60 * 30, // 30 phút trước khi bị xóa khỏi cache
+    queryKey: ["userBoards"],
+    queryFn: fetchUserBoards,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+};
+
+// Hook dùng để lấy danh sách Workspaces
+export const useUserWorkspaces = () => {
+  return useQuery({
+    queryKey: ["userWorkspaces"],
+    queryFn: fetchUserWorkspaces,
+    staleTime: 1000 * 60 * 5, // Giữ cache 5 phút
+    retry: 1, // Số lần thử lại khi gặp lỗi
+  });
+};
+
+// Hook dùng để lấy danh sách Boards nhóm theo Workspaces
+export const useUserBoardsWithWorkspaces = () => {
+  return useQuery({
+    queryKey: ["userBoardsWithWorkspaces"],
+    queryFn: fetchUserBoardsWithWorkspaces,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 };
 

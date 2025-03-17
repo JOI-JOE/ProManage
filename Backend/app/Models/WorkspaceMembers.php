@@ -34,8 +34,9 @@ class WorkspaceMembers extends Model
     protected static function boot()
     {
         parent::boot();
+
         static::creating(function ($model) {
-            if (empty($model->id)) {
+            if (!$model->id) {
                 $model->id = (string) Str::uuid();
             }
         });
@@ -66,7 +67,6 @@ class WorkspaceMembers extends Model
     {
         return $this->belongsTo(Workspace::class, 'workspace_id');
     }
-
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

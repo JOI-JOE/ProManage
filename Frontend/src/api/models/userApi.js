@@ -1,32 +1,68 @@
 import authClient from "../authClient";
 
-/**
- * File này giúp tương tác trực tiếp với dữ liệu
- * viết như này để độc lập với UI
- *
- * Tóm lại
- * File useUser.js (Hooks) sử dụng các hàm trong file userApi.js (Modules).
- * File userApi.js (Modules) cung cấp dữ liệu và logic cho file useUser.js (Hooks).
- */
+// Phần để tối ưu gọi api
 
-export const getUserData = async () => {
+export const fetchUserData = async () => {
+  
+}
+
+// Để làm gì -> Lấy danh sách Workspaces của người dùng
+// Nơi dùng ->	Sidebar và mục "Các Không Gian Làm Việc Của Bạn"
+export const fetchUserWorkspaces = async () => {
+  try {
+    const params = {
+      workspaces: "all",
+      workspace_fields: "id,name,display_name",
+    };
+    const response = await authClient.get("/member/me", { params });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách Workspaces:", error);
+    throw error;
+  }
+};
+
+// Để làm gì -> Lấy danh sách Boards và nhóm theo Workspaces
+// Nơi dùng  -> Hiển thị danh sách bảng trong từng Workspace
+export const fetchUserBoardsWithWorkspaces = async () => {
   try {
     const params = {
       fields: "id",
       boards: "open,starred",
-      board_fields: "id,name,closed,is_marked,workspace_id",
-      boardStars: "true",
+      board_fields: "id,name,closed,workspace_id",
       board_memberships: "me",
+      boardStars: "true",
+      workspaces: "all",
+      workspace_fields: "id,display_name,name",
+      workspace_memberships: "all",
     };
-
     const response = await authClient.get("/member/me", { params });
-
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+    console.error("Lỗi khi lấy danh sách Boards (kèm Workspaces):", error);
     throw error;
   }
 };
+
+// Để làm gì -> Lấy danh sách Boards không nhóm theo Workspaces
+// Nơi dùng -> Hiển thị các bảng đã đánh dấu sao hoặc đã xem gần đây
+export const fetchUserBoards = async () => {
+  try {
+    const params = {
+      fields: "id",
+      boards: "open,starred",
+      board_fields: "id,name,closed,is_marked",
+      boardStars: "true",
+      board_memberships: "me",
+    };
+    const response = await authClient.get("/member/me", { params });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách Boards:", error);
+    throw error;
+  }
+};
+// END
 
 export const getUser = async () => {
   try {

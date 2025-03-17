@@ -114,15 +114,8 @@ class User extends Authenticatable
         return $this->hasMany(BoardMember::class, 'user_id', 'id');
     }
 
-
     public function comments()
     {
         return $this->hasMany(CommentCard::class);  // Mỗi user có thể tạo nhiều bình luận
-    }
-
-    public function boardsMemmber()
-    {
-        return $this->belongsToMany(Board::class, 'board_member', 'user_id', 'board_id')
-            ->withPivot('role');
     }
 }
