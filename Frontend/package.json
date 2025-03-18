@@ -29,6 +29,7 @@
     "axios": "^1.7.9",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
+    "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
     "laravel-echo": "^2.0.2",
     "lodash": "^4.17.21",
@@ -43,6 +44,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.1.5",
     "react-toastify": "^11.0.3",
+    "tldts": "^6.1.84",
     "uuid": "^11.1.0",
     "zustand": "^5.0.3"
   },

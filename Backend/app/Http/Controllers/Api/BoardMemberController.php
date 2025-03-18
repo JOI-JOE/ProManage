@@ -4,179 +4,134 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Board;
+use App\Models\BoardInvitation;
 use App\Models\BoardMember;
-use App\Models\BoardUserPermission;
 use App\Models\User;
+use App\Notifications\BoardInvitationReceivedNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class BoardMemberController extends Controller
 {
-    public function index()
-    {
-        $boardMember = BoardMember::all();
-        return response()->json($boardMember);
-    }
-    // public function getAllMembers($boardId)
+
+    // public function getUserBoards(Request $request)
     // {
-    //     try {
-    //         // Kiểm tra board có tồn tại không
-    //         $board = Board::findOrFail($boardId);
+    //     $userId = auth()->id(); // Lấy ID của user đang đăng nhập
 
-    //         // Lấy tất cả các thành viên của board
-    //         $members = BoardUserPermission::where('board_id', $boardId)
-    //             ->with('user') // Giả định rằng bạn có quan hệ 'user' trong BoardUserPermission
-    //             ->get();
+    //     $boards = Board::with('members:id,user_name,email') // Lấy cả thông tin thành viên nhưng chỉ cần ID, Name, Email
+    //         ->whereHas('members', function ($query) use ($userId) {
+    //             $query->where('user_id', $userId);
+    //         })
+    //         ->select('id', 'name', 'description', 'created_at') // Chỉ lấy các cột cần thiết
+    //         ->get();
 
-    //         return response()->json([
-    //             'result' => true,
-    //             'message' => 'Members retrieved successfully.',
-    //             'data' => $members
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         // Nếu có lỗi bất ngờ, bắt lỗi và trả về thông báo lỗi chi tiết
-    //         return response()->json([
-    //             'result' => false,
-    //             'message' => 'An error occurred: ' . $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
-    public function addMember(Request $request, $boardId)
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Danh sách bảng của bạn',
+    //         'data' => $boards
+    //     ]);
+    // }/////////////   CHƯA DÙNG////////////////
+
+    public function getBoardMembers($boardId)
     {
-        // Xác nhận dữ liệu nhập vào
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id', // Kiểm tra user có tồn tại không
-            'role' => 'required|in:admin,member,viewer', // Kiểm tra vai trò hợp lệ
-        ]);
-
-        // Kiểm tra board có tồn tại không
-        $board = Board::find($boardId);
-        if (!$board) {
-            return response()->json([
-                'result' => false,
-                'message' => 'Board not found'
-            ], 404);
-        }
-
-        // Lấy user theo username
-        $user = User::where('username', $validated['username'])->first();
-        if (!$user) {
-            return response()->json([
-                'result' => false,
-                'message' => 'User not found'
-            ], 404);
-        }
-
-        // Kiểm tra nếu user đã có trong board rồi
-        $existingMember = BoardMember::where('board_id', $boardId)
-            ->where('user_id', $validated['user_id'])
-            ->first();
-        if ($existingMember) {
-            return response()->json([
-                'result' => false,
-                'message' => 'User is already a member of this board'
-            ], 400);
-        }
-
-        // Tạo bản ghi mới trong bảng board_user_permissions
-        $boardUserPermission = BoardMember::create([
-            'board_id' => $boardId,
-            'user_id' => $user->id,
-            'role' => $validated['role'],
-        ]);
-
-        return response()->json([
-            'result' => true,
-            'message' => 'Member added successfully',
-            'data' => $boardUserPermission
-        ]);
-    }
-
-
-    public function updateMemberRole(Request $request, $boardId, $userId)
-    {
-        // Xác nhận dữ liệu nhập vào
-        $validated = $request->validate([
-            'role' => 'required|in:admin,member,viewer', // Kiểm tra vai trò hợp lệ
-        ]);
 
         try {
-            // Kiểm tra board có tồn tại không
-            $board = Board::find($boardId);
-            if (!$board) {
-                return response()->json([
-                    'result' => false,
-                    'message' => 'Board not found'
-                ], 404);
-            }
-
-            // Kiểm tra nếu user có tham gia board không
-            $boardUser = BoardMember::where('board_id', $boardId)
-                ->where('user_id', $userId)
-                ->first();
-
-            if (!$boardUser) {
-                return response()->json([
-                    'result' => false,
-                    'message' => 'Member not found in this board'
-                ], 404);
-            }
-
-            // Cập nhật vai trò của thành viên
-            $boardUser->role = $validated['role'];
-            $boardUser->save();
-
+            $board = Board::with('members:id,full_name,email')->find($boardId);
             return response()->json([
-                'result' => true,
-                'message' => 'Member role updated successfully',
-                'data' => $boardUser
+                'success' => true,
+                'message' => 'lấy thành viên của bảng thành công',
+                'data' =>  $board->members
+
             ]);
-        } catch (\Exception $e) {
-            // Nếu có lỗi bất ngờ, bắt lỗi và trả về thông báo lỗi chi tiết
+        } catch (\Throwable $th) {
             return response()->json([
-                'result' => false,
-                'message' => 'An error occurred: ' . $e->getMessage()
-            ], 500);
+                'success' => false,
+                'message' => 'lấy thành viên của bảng khoong thành công',
+
+            ]);
         }
     }
 
-    public function leaveBoard($boardId, $userId)
-{
-    try {
-        // Kiểm tra board có tồn tại không
-        $board = Board::find($boardId);
-        if (!$board) {
-            return response()->json([
-                'result' => false,
-                'message' => 'Board not found'
-            ], 404);
-        }
+    public function generateInviteLink(Request $request, $boardId)
+    {
+        $user = auth()->user(); // Lấy user hiện tại
+        $board = Board::findOrFail($boardId); // Lấy thông tin bảng
 
-        // Kiểm tra nếu user có tham gia board không
-        $boardUser = BoardMember::where('board_id', $boardId)
-            ->where('user_id', $userId)
-            ->first();
+        // Kiểm tra quyền: chỉ Admin hoặc thành viên có quyền mời mới được tạo link
+        // if (!$board->members()->where('user_id', $user->id)->exists()) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'Bạn không có quyền tạo liên kết mời vào bảng này.'
+        //     ], 403);
+        // }
 
-        if (!$boardUser) {
-            return response()->json([
-                'result' => false,
-                'message' => 'Member not found in this board'
-            ], 404);
-        }
+        // Tạo mã token duy nhất
+        $inviteToken = Str::random(16); // Chỉ chứa chữ và số
 
-        // Xóa thành viên khỏi board
-        $boardUser->delete();
+        // $hashToken = hash('sha256', $inviteToken); // Hash token
 
-        return response()->json([
-            'result' => true,
-            'message' => 'Member left the board successfully'
+        // Lưu vào bảng invite_boards
+        $invite = BoardInvitation::create([
+            'board_id' => $board->id,
+            'status' => 'pending',
+            // 'email' => $email, // Nếu không có tài khoản
+            'invitation_message' => 'Mời bạn tham gia bảng!',
+            'invited_by' => auth()->id(),
+            'invite_token' => $inviteToken,
         ]);
-    } catch (\Exception $e) {
-        // Nếu có lỗi bất ngờ, bắt lỗi và trả về thông báo lỗi chi tiết
-        return response()->json([
-            'result' => false,
-            'message' => 'An error occurred: ' . $e->getMessage()
-        ], 500);
-    }
-}
 
+        return response()->json([
+            'success' => true,
+            'message' => 'Tạo liên kết mời thành công!',
+            'invite_link' => "http://localhost:5173/invite-board/{$inviteToken}",
+        ]);
+    }
+
+    // 📍 Khi user click vào link mời
+    public function handleInvite($token)
+    {
+        $invite = BoardInvitation::where('invite_token', $token)->first();
+
+        if (!$invite) {
+            return response()->json(['message' => 'Invalid or expired invite link'], 404);
+        }
+
+        $board = Board::find($invite->board_id);
+        return response()->json([
+            'board' => $board,
+            'token' => $token,
+        ]);
+    }
+
+
+    public function join(Request $request, $token)
+    {
+        $invite = BoardInvitation::where('invite_token', $token)->first();
+
+        if (!$invite) {
+            return response()->json(['message' => 'Invalid or expired invite link'], 404);
+        }
+
+        $user = $request->user(); // Người dùng đã đăng nhập (qua Sanctum)
+        $board = Board::find($invite->board_id);
+        $inviter = User::findOrFail($invite->invited_by); // Lấy người mời
+
+        // Kiểm tra xem user đã là thành viên chưa để tránh trùng lặp
+        if ($board->members()->where('user_id', $user->id)->exists()) {
+            return response()->json(['message' => 'You are already a member of this board'], 400);
+        }
+
+        // Thêm user vào board với role mặc định là 'member'
+        $board->members()->attach($user->id, ['role' => 'member']);
+
+        $user->notify(new BoardInvitationReceivedNotification($board, $inviter));
+
+        // Xóa invite token sau khi sử dụng (tùy chọn)
+        $invite->delete();
+
+        return response()->json(['message' => 'Successfully joined the board', 'board' => $board]);
+    }
 }

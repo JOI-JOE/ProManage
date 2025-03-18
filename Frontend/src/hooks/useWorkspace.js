@@ -6,6 +6,7 @@ import {
   getWorkspaceByName,
   getWorkspaceById,
   getBoardMarkedByWorkspace,
+  getGuestWorkspace,
 } from "../api/models/workspacesApi";
 
 /**
@@ -14,11 +15,33 @@ import {
  */
 export const useGetWorkspaces = () => {
   return useQuery({
-    queryKey: ["workspaces"], // Key để cache dữ liệu
+    queryKey: ["workspaces"],
     queryFn: getWorkspacesAll,
+    staleTime: 5 * 60 * 1000, // 5 phút: dữ liệu "tươi" trong 5 phút
+    cacheTime: 10 * 60 * 1000, // 10 phút: giữ cache 10 phút sau khi không dùng
+    refetchOnWindowFocus: false, // Không refetch khi focus lại tab
+    retry: 2, // Thử lại 2 lần nếu lỗi
+    onSuccess: (data) => {
+      console.log("Danh sách workspaces:", data); // Log dữ liệu thực tế
+    },
     onError: (error) => {
       console.error("Lỗi khi lấy danh sách workspaces:", error);
     },
+  });
+};
+
+export const useGetGuestWorkspaces = () => {
+  return useQuery({
+    queryKey: ["guestWorkspaces"],
+    queryFn: getGuestWorkspace,
+    staleTime: 5 * 60 * 1000, // 5 phút
+    cacheTime: 10 * 60 * 1000, // 10 phút
+    refetchOnWindowFocus: false, // Không refetch khi focus lại tab
+    retry: 2, // Thử lại 2 lần nếu lỗi
+    onError: (error) => {
+      console.error("Lỗi khi lấy danh sách workspaces khách:", error);
+    },
+
   });
 };
 

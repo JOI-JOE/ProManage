@@ -17,7 +17,6 @@ use Pusher\Pusher;
 
 class ListController extends Controller
 {
-
     public function index($boardId)
     {
         $board = Board::where('id', $boardId)
@@ -71,14 +70,12 @@ class ListController extends Controller
             'workspaceId' => $board->workspace_id,
             'isMarked' => (bool) $board->is_marked,
             'thumbnail' => $board->thumbnail ?? null,
-            'columnOrderIds' => $board->listBoards->pluck('id')->toArray(),
             'columns' => $board->listBoards->map(function ($list) {
                 return [
                     'id' => $list->id,
                     'boardId' => $list->board_id,
                     'title' => $list->name,
                     'position' => (int) $list->position,
-                    'cardOrderIds' => $list->cards->pluck('id')->toArray(),
                     'cards' => $list->cards->map(function ($card) {
                         return [
                             'id' => $card->id,
@@ -110,16 +107,14 @@ class ListController extends Controller
                                     'color' => $label->color,
                                     'text' => $label->text,
                                 ];
-                            })->toArray(), // Thêm thông tin về labels
+                            })->toArray(),
                         ];
                     })->toArray(),
                 ];
             })->toArray(),
         ];
-
         return response()->json($responseData);
     }
-
 
     public function getListClosed($boardId)
     {
@@ -142,7 +137,6 @@ class ListController extends Controller
             ]);
         }
     }
-
     public function destroy($id)
     {
         try {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MeResource;
 use App\Models\Board;
+use App\Models\BoardMember;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
@@ -171,6 +172,13 @@ class BoardController extends Controller
                 'created_by' => $userId,
                 'visibility' => $request->visibility,
                 'workspace_id' => $request->workspace_id,
+            ]);
+
+            BoardMember::create([
+                'board_id' => $board->id,
+                'user_id' => $userId,
+                'role' => 'admin',
+                'joined' => 1
             ]);
 
             return response()->json([

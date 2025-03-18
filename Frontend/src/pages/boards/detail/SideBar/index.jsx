@@ -33,6 +33,7 @@ import { useToggleBoardClosed } from "../../../../hooks/useBoard";
 const SideBar = () => {
   const { currentWorkspace} = useContext(WorkspaceContext); const [openSettings, setOpenSettings] = useState(false);
 
+  console.log(currentWorkspace)
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
   };
@@ -125,7 +126,8 @@ const SideBar = () => {
           <ListItemIcon sx={{ color: "white" }}>
             <SettingsIcon />
           </ListItemIcon>
-          <ListItemText primary="Cài đặt Không gian làm việc" />
+          <ListItemText
+            primary="Cài đặt Không gian làm việc" />
           {openSettings ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton>
 
@@ -135,7 +137,10 @@ const SideBar = () => {
               <ListItemIcon sx={{ color: "white" }}>
                 <ViewKanbanIcon />
               </ListItemIcon>
-              <ListItemText primary="Cài đặt không gian làm việc" />
+              <ListItemText
+                component={Link}
+                to={`/w/${currentWorkspace?.name}/account}`}
+                primary="Cài đặt không gian làm việc" />
             </ListItemButton>
             <ListItemButton sx={{ pl: 4 }}>
               <ListItemIcon sx={{ color: "white" }}>
