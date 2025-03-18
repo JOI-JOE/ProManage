@@ -67,7 +67,7 @@ class BoardMemberController extends Controller
         }
 
         // Kiểm tra nếu user đã có trong board rồi
-        $existingMember = BoardUserPermission::where('board_id', $boardId)
+        $existingMember = BoardMember::where('board_id', $boardId)
             ->where('user_id', $validated['user_id'])
             ->first();
         if ($existingMember) {
@@ -78,7 +78,7 @@ class BoardMemberController extends Controller
         }
 
         // Tạo bản ghi mới trong bảng board_user_permissions
-        $boardUserPermission = BoardUserPermission::create([
+        $boardUserPermission = BoardMember::create([
             'board_id' => $boardId,
             'user_id' => $user->id,
             'role' => $validated['role'],
@@ -110,7 +110,7 @@ class BoardMemberController extends Controller
             }
 
             // Kiểm tra nếu user có tham gia board không
-            $boardUser = BoardUserPermission::where('board_id', $boardId)
+            $boardUser = BoardMember::where('board_id', $boardId)
                 ->where('user_id', $userId)
                 ->first();
 

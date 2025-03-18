@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MeResource;
 use App\Models\Board;
+use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -80,21 +81,21 @@ class BoardController extends Controller
     {
         try {
             $user = Auth::user()->id;
-            if(!$user){
+            if (!$user) {
                 return 'Cho cái sanctum vào !!!!!';
             }
-       
-        $boards = Board::where('is_marked', 1)
-        ->whereHas('workspace.users', function ($query) use ($user) {
-            $query->where('user_id', $user); // Kiểm tra user có trong workspace không
-        })
-        ->with('workspace:id,display_name') // Lấy thông tin workspace
-        ->get();
 
-    return response()->json([
-        'success' => true,
-        'data' => $boards,
-    ], 200);
+            $boards = Board::where('is_marked', 1)
+                ->whereHas('workspace.users', function ($query) use ($user) {
+                    $query->where('user_id', $user); // Kiểm tra user có trong workspace không
+                })
+                ->with('workspace:id,display_name') // Lấy thông tin workspace
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $boards,
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -104,10 +105,26 @@ class BoardController extends Controller
         }
     }
 
-    public function trash()
+    public function closed()
     {
-        $board = Board::where('closed', 1)->get();
-        return response()->json($board);
+        $user = Auth::user();
+
+    if (!$user) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    // Lấy các bảng đã đóng, kiểm tra xem người dùng có phải là thành viên trong bảng board_members đó không
+    $closedBoards = Board::where('closed', 1) // Lọc các bảng đã đóng
+        ->whereHas('members', function ($query) use ($user) {
+            $query->where('user_id', $user->id); // Kiểm tra user_id
+        })
+        ->with(['workspace', 'members']) // Eager load thông tin workspace và board_members
+        ->get();
+
+    return response()->json([
+        'result' => true,
+        'data' => $closedBoards
+    ]);
     }
 
     public function store(Request $request)
@@ -300,7 +317,7 @@ class BoardController extends Controller
         try {
             DB::beginTransaction();
             $board = Board::findOrFail($id);
-            
+
             // Kiểm tra nếu có trường 'visibility' trong yêu cầu
 
             if ($request->has('visibility')) {
@@ -401,17 +418,19 @@ class BoardController extends Controller
     /**
      * Xóa mềm -> lưu trữ
      */
-    public function destroy(string $id)
+    public function toggleBoardClosed(string $id)
     {
         $board = Board::find($id);
+
         if ($board) {
-            // Set deleted to 1
-            $board->deleted = 1;
+            // Đảo trạng thái closed (1 -> 0, 0 -> 1)
+            $board->closed = !$board->closed;
             $board->save();
 
             return response()->json([
                 'result' => true,
-                'message' => 'Soft deleted successfully.'
+                'message' => $board->closed ? 'Board closed successfully.' : 'Board reopened successfully.',
+                'data' => $board
             ]);
         }
 
@@ -420,6 +439,7 @@ class BoardController extends Controller
             'message' => 'Record not found.'
         ], 404);
     }
+
 
     /**
      * xóa hoàn toàn -> confirm xóa

@@ -132,6 +132,27 @@ export const updateBoardVisibility = async (boardId, visibility) => {
   }
 };
 
+export const toggleBoardClosed = async (boardId) => {
+  try {
+    const response = await authClient.delete(`/boards/${boardId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái đánh dấu bảng:", error);
+    throw error;
+  }
+};
+
+export const getBoardClosed = async () => {
+  try {
+    const response = await authClient.get(`/closed`);
+    return response.data;
+  } catch (error) {
+    console.error("False get board closed:", error);
+    throw error;
+  }
+};
+
+
 
 
 

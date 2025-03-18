@@ -11,6 +11,7 @@ use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Pusher\Pusher;
 
@@ -36,12 +37,30 @@ class ListController extends Controller
                                     ]);
                             }
                         ]);
-                }
+                },
+                'workspace.members', // Lấy danh sách thành viên của workspace
+                'members' // Lấy danh sách thành viên của board
+
             ])
             ->first();
 
         if (!$board) {
             return response()->json(['message' => 'Board not found'], 404);
+        }
+
+        $user = Auth::user();
+
+        $hasAccess = false;
+        if ($board->visibility === 'public') {
+            $hasAccess = true;
+        } elseif ($board->visibility === 'workspace') {
+            $hasAccess = $board->workspace->members->contains($user->id);
+        } elseif ($board->visibility === 'private') {
+            $hasAccess = $board->members->contains($user->id);
+        }
+        
+        if (!$hasAccess) {
+            return response()->json(['message' => 'Access Denied'], 403);
         }
 
         $responseData = [

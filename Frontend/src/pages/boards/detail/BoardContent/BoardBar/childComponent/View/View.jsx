@@ -73,19 +73,6 @@ const ViewPermissionsDialog = ({ open, onClose , initialVisibility }) => {
           <FormControlLabel
             control={
               <Checkbox
-                checked={selectedVisibility === "organization"}
-                onChange={handleChange}
-                value="organization"
-              />
-            }
-            label="Tổ chức"
-          />
-        </Box>
-
-        <Box>
-          <FormControlLabel
-            control={
-              <Checkbox
                 checked={selectedVisibility === "public"}
                 onChange={handleChange}
                 value="public"

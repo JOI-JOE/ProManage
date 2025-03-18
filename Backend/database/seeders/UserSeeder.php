@@ -18,9 +18,9 @@ class UserSeeder extends Seeder
         // User::factory(1)->member()->create();
 
         $user = User::create([
-            'user_name' => 'thuong',
-            'full_name' => 'thuong',
-            'email' => 'thuong@example.com',
+            'user_name' => 'thai4',
+            'full_name' => 'thai4',
+            'email' => 'thai4@example.com',
             'email_verified_at' => now(),
             'password' => Hash::make('password123'),  // Mã hóa mật khẩu
             'role' => 'member',

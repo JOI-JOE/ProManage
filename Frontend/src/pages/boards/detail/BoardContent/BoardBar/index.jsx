@@ -136,7 +136,7 @@ const BoardBar = () => {
   if (isLoading) return <p>Loading board...</p>;
   if (error) return <p>Board not found</p>;
 
-  const boardVisibility = board?.visibility || "Private"; // Default to "Private"
+  const boardVisibility = board?.visibility || "test"; // Default to "Private"
 
   return (
     <Box

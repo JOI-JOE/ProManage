@@ -39,7 +39,7 @@ class BoardSeeder extends Seeder
                 'archive' => (bool)random_int(0, 1),
                 'closed' => (bool)random_int(0, 1),
                 'created_by' => $userIds[array_rand($userIds)], // Chọn user ngẫu nhiên làm creator
-                'visibility' => ['public', 'private', 'member'][array_rand(['public', 'private', 'member'])],
+                'visibility' => ['public', 'private', 'workspace'][array_rand(['public', 'private', 'workspace'])],
                 'workspace_id' => $workspaceIds[array_rand($workspaceIds)], // Chọn workspace ngẫu nhiên
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),

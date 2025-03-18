@@ -50,7 +50,7 @@ Route::middleware(['web'])->group(function () {
 });
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
-Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getValidateInvitation']);
+Route::get('/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getValidateInvitation']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
@@ -112,6 +112,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Send Email
     Route::post('/send-mail', [EmailController::class, 'sendEmail']);
+    Route::get('lists/{boardId}', [ListController::class, 'index']);
 });
 
 
@@ -120,7 +121,6 @@ Route::get('/color', [ColorController::class, 'index']);
 Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
 
 Route::prefix('lists')->group(function () {
-    Route::get('/{boardId}', [ListController::class, 'index']);
     Route::post('/', [ListController::class, 'store']);
     Route::delete('{id}/destroy', [ListController::class, 'destroy']);
     Route::get('/{boardId}/listClosed', [ListController::class, 'getListClosed']);
@@ -136,8 +136,10 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']);
     Route::get('{boardId}', [BoardController::class, 'show']);
     Route::put('{boardId}', [BoardController::class, 'update']);
-    Route::delete('{boardId}', [BoardController::class, 'destroy']);
+    Route::delete('{boardId}', [BoardController::class, 'closeBoard']);
 });
+
+Route::delete('/boards/{boardId}', [BoardController::class, 'toggleBoardClosed']);
 
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
@@ -169,11 +171,12 @@ Route::prefix('boards/{boardId}/members')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
     Route::post('recent-boards', [RecentBoardController::class, 'store']);
+
+    // Route cho bảng đã xóa
+    Route::get('closed', [BoardController::class, 'closed']);
 });
 
 
-// Route cho bảng đã xóa
-Route::get('/trashes', [BoardController::class, 'trash']);
 
 
 Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
