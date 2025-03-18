@@ -24,9 +24,29 @@ class AuthController extends Controller
 {
     private const FRONTEND_URL = 'http://localhost:5173';
 
-    public function getUserData(Request $request)
+    public function getUserData(Request $request, $id = null)
     {
-        $user = Auth::user();
+        try {
+            // Kiểm tra nếu ID không được truyền thì lấy từ user đang đăng nhập
+            $userId = ($id === 'me') ? Auth::id() : $id;
+            if (!$userId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized or invalid user',
+                ], 401);
+            }
+            return $this->fetchUserData($request, $userId);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Server Error',
+                'error' => $e->getMessage(), // Giúp debug nhanh hơn
+            ], 500);
+        }
+    }
+    private function fetchUserData(Request $request, $id)
+    {
+        $user = User::find($id); // Tìm user theo ID
 
         if (!$user) {
             return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
@@ -36,48 +56,62 @@ class AuthController extends Controller
             'user' => $this->prepareUserData($request, $user),
             'workspaces' => $request->has('workspaces') ? $this->getWorkspaces($request, $user) : [],
             'boards' => $request->has('boards') ? $this->getBoards($request, $user) : [],
-            'boardStars' => $request->query('board_stars') === 'true' ? $this->getBoardStars() : [],
+            'boardStars' => $request->query('boardStars') === 'true' ? $this->getBoardStars($user) : [],
         ];
 
-        // Lọc bỏ các phần tử rỗng
-        $response = array_filter($response, function ($value) {
-            return !empty($value);
-        });
+        // 🔥 Loại bỏ các mảng rỗng ([])
+        $response = array_filter($response);
 
         return response()->json($response);
     }
 
     private function prepareUserData($request, $user)
     {
-        $validUserFields = ['id', 'user_name', 'full_name', 'initials', 'image', 'email', 'role', 'activity_block', 'url'];
+        $validUserFields = [
+            'id',
+            'user_name',
+            'full_name',
+            'initials',
+            'image',
+            'email',
+            'role',
+            'activity_block',
+            'url',
+            'workspace_id',
+            'board_id'
+        ];
 
         $userFields = $request->query('fields');
         if (!$userFields) {
             return [];
         }
 
-        $userFieldsArray = array_filter(explode(',', $userFields));
-        $selectedUserFields = array_intersect($userFieldsArray, $validUserFields);
+        $selectedUserFields = $this->getSelectedFields($userFields, $validUserFields);
 
         if (empty($selectedUserFields)) {
             return [];
         }
 
-        // Lọc dữ liệu user theo các field được yêu cầu
         $filteredUser = collect($user)->only($selectedUserFields);
 
-        // Nếu 'url' có trong danh sách field yêu cầu, thêm vào dữ liệu
+        // Nếu 'url' được yêu cầu, thêm vào dữ liệu
         if (in_array('url', $selectedUserFields)) {
             $filteredUser->put('url', self::FRONTEND_URL . "/u/{$user->user_name}");
         }
 
-        $workspaceIds = $user->workspaceMember ? $user->workspaceMember->pluck('workspace_id')->toArray() : [];
-        $boardIds = $user->boardMember ? $user->boardMember->pluck('board_id')->toArray() : [];
+        // Chỉ thêm workspace_id nếu nó được yêu cầu
+        if (in_array('workspace_id', $selectedUserFields)) {
+            $workspaceIds = optional($user->workspaceMember)->pluck('workspace_id')->toArray() ?? [];
+            $filteredUser->put('workspace_id', $workspaceIds);
+        }
 
-        return array_merge($filteredUser->toArray(), [
-            'workspace_id' => $workspaceIds,
-            'board_id' => $boardIds
-        ]);
+        // Chỉ thêm board_id nếu nó được yêu cầu
+        if (in_array('board_id', $selectedUserFields)) {
+            $boardIds = optional($user->boardMember)->pluck('board_id')->toArray() ?? [];
+            $filteredUser->put('board_id', $boardIds);
+        }
+
+        return $filteredUser->toArray();
     }
 
     private function getWorkspaces($request, $user)
@@ -106,17 +140,14 @@ class AuthController extends Controller
             'team_type'
         ];
 
-        $workspaceFields = explode(',', $request->query('workspace_fields', 'id'));
-        $selectedWorkspaceFields = array_intersect($workspaceFields, $validWorkspaceFields);
+        $selectedWorkspaceFields = $this->getSelectedFields($request->query('workspace_fields', 'id'), $validWorkspaceFields);
 
         $userWorkspaceIds = WorkspaceMembers::where('user_id', $user->id)->pluck('workspace_id');
 
-        $workspaces = Workspace::where(function ($query) use ($userWorkspaceIds, $user) {
+        return Workspace::where(function ($query) use ($userWorkspaceIds, $user) {
             $query->whereIn('id', $userWorkspaceIds)
                 ->orWhere('id_member_creator', $user->id);
         })->select($selectedWorkspaceFields)->get();
-
-        return $workspaces;
     }
 
     private function getBoards($request, $user)
@@ -134,13 +165,51 @@ class AuthController extends Controller
             'workspace_id'
         ];
 
-        $boardFields = explode(',', $request->query('board_fields', 'id'));
-        $selectedBoardFields = array_intersect($boardFields, $validBoardFields);
+        // Xác định các trường hợp lệ được chọn
+        $selectedBoardFields = $this->getSelectedFields(
+            $request->query('board_fields', 'id'),
+            $validBoardFields
+        );
 
-        $boardQuery = Board::whereHas('boardMembers', function ($query) use ($user) {
-            $query->where('user_id', $user->id);
-        })->select($selectedBoardFields);
+        // Query lấy danh sách boards mà user là thành viên
+        $boardQuery = Board::whereHas('boardMembers', fn($query) => $query->where('user_id', $user->id))
+            ->select($selectedBoardFields);
 
+        // Áp dụng bộ lọc
+        $boards = $this->applyBoardFilters($boardQuery, $request);
+
+        // Thêm memberships nếu `board_memberships=me`
+        if ($request->query('board_memberships') === 'me') {
+            $this->addMembershipsToBoards($boards, $user);
+        }
+
+        // Thêm workspace nếu `board_workspaces=true`
+        if ($request->query('board_workspaces') === 'true') {
+
+            $workspaceFields = $request->query('board_workspace_fields');
+            $this->addWorkspaceToBoards($boards, $user, $workspaceFields);
+        }
+
+        return $boards;
+    }
+    private function getBoardStars($user)
+    {
+        return Board::where('is_marked', true)
+            ->whereHas('boardMembers', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->select(['id', 'name'])
+            ->get();
+    }
+
+    private function getSelectedFields($fields, $validFields)
+    {
+        $fieldsArray = array_filter(explode(',', $fields));
+        return array_intersect($fieldsArray, $validFields);
+    }
+
+    private function applyBoardFilters($boardQuery, $request)
+    {
         $boards = collect();
 
         if ($request->has('boards')) {
@@ -154,34 +223,81 @@ class AuthController extends Controller
             }
         }
 
-        if ($request->query('board_memberships') === 'me') {
-            $memberships = BoardMember::whereIn('board_id', $boards->pluck('id'))
-                ->where('user_id', $user->id)
-                ->select(['id', 'board_id', 'user_id', 'role', 'is_unconfirmed', 'is_deactivated'])
-                ->get()
-                ->groupBy('board_id');
-
-            $boards = $boards->map(function ($board) use ($memberships) {
-                $board->members = $memberships->get($board->id, collect())->map(function ($member) {
-                    return [
-                        'id'             => $member->id,
-                        'member_id'      => $member->user_id,
-                        'role'           => $member->role,
-                        'is_unconfirmed' => $member->is_unconfirmed,
-                        'is_deactivated' => $member->is_deactivated,
-                    ];
-                });
-                return $board;
-            });
-        }
-
         return $boards;
     }
 
-    private function getBoardStars()
+    private function addMembershipsToBoards($boards, $user)
     {
-        return Board::where('is_marked', true)->select(['id', 'name'])->get();
+        if ($boards->isEmpty()) {
+            return;
+        }
+
+        $memberships = BoardMember::whereIn('board_id', $boards->pluck('id'))
+            ->where('user_id', $user->id)
+            ->select(['id', 'board_id', 'user_id', 'role', 'is_unconfirmed', 'is_deactivated'])
+            ->get()
+            ->groupBy('board_id');
+
+        $boards->transform(function ($board) use ($memberships) {
+            $board->members = $memberships->get($board->id, collect())->map(fn($member) => [
+                'id'             => $member->id,
+                'member_id'      => $member->user_id,
+                'role'           => $member->role,
+                'is_unconfirmed' => $member->is_unconfirmed,
+                'is_deactivated' => $member->is_deactivated,
+            ]);
+            return $board;
+        });
     }
+
+    private function addWorkspaceToBoards($boards, $user, $workspaceFields): void
+    {
+        if ($boards->isEmpty()) {
+            return;
+        }
+
+        // Lấy danh sách workspace_id từ boards (loại bỏ null)
+        $workspaceIds = $boards->pluck('workspace_id')->filter()->unique();
+
+        if ($workspaceIds->isEmpty()) {
+            return;
+        }
+
+        $validWorkspaceFields = [
+            'id',
+            'name',
+            'display_name',
+            'desc',
+            'logo_hash',
+            'logo_url',
+            'permission_level',
+            'board_invite_restrict',
+            'org_invite_restrict',
+            'board_delete_restrict',
+            'board_visibility_restrict',
+            'team_type'
+        ];
+
+        $selectedWorkspaceFields = $workspaceFields
+            ? $this->getSelectedFields($workspaceFields, $validWorkspaceFields)
+            : ['id', 'name'];
+
+        // Lấy danh sách workspace mà user có quyền truy cập
+        $workspaces = Workspace::whereIn('id', $workspaceIds)
+            ->where(function ($query) use ($user) {
+                $query->whereIn('id', WorkspaceMembers::where('user_id', $user->id)->pluck('workspace_id'))
+                    ->orWhere('id_member_creator', $user->id);
+            })
+            ->select($selectedWorkspaceFields)
+            ->get()
+            ->keyBy('id');
+
+        // Gán thông tin workspace vào từng board
+        $boards->transform(fn($board) => tap($board, fn($b) => $b->workspace = $workspaces->get($b->workspace_id) ?? null));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------
+
     public function getUser()
     {
         $user = Auth::user(); // Lấy thông tin người dùng hiện tại
@@ -233,7 +349,6 @@ class AuthController extends Controller
             ], 500);
         }
     }
-    // Register
     public function handleRegister(Request $request)
     {
         // Validate dữ liệu đầu vào

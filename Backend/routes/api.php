@@ -57,7 +57,8 @@ Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getW
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
-    Route::get('member/me', [AuthController::class, 'getUserData']);
+    // Route::get('member/me', [AuthController::class, 'getUserData']);
+    Route::get('member/{id?}', [AuthController::class, 'getUserData']);
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
