@@ -6,7 +6,6 @@ use App\Events\ListCreated;
 use App\Events\ListUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class ListBoard extends Model
 {

@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
-use App\Models\Card;
-use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -93,10 +91,9 @@ class AttachmentController extends Controller
 
 
     // Xóa file đính kèm
-    public function deleteAttachment($cardId, $attachmentId)
+    public function deleteAttachment($cardId,$attachmentId)
     {
         $attachment = Attachment::findOrFail($attachmentId);
-        $fileNameDefault = $attachment->file_name_defaut; // Lấy tên file gốc
 
         Storage::disk('public')->delete($attachment->path_url);
         $attachment->delete();
@@ -120,7 +117,7 @@ class AttachmentController extends Controller
         ]);
     }
     // tải ảnh bìa lên
-    public function uploadCover(Request $request, $cardId)
+    public function uploadCover(Request $request,$cardId)
     {
         $request->validate([
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -151,7 +148,7 @@ class AttachmentController extends Controller
     }
 
     // Cập nhật tệp đính kèm thành ảnh bìa
-    public function setCoverImage(Request $request, $cardId, $attachmentId)
+    public function setCoverImage(Request $request,$cardId, $attachmentId)
     {
         $attachment = Attachment::findOrFail($attachmentId);
 

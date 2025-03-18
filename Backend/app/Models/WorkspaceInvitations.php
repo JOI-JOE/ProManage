@@ -4,18 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class WorkspaceInvitations extends Model
 {
     use HasFactory;
-    protected $primaryKey = 'id'; // Đặt UUID làm khóa chính
-    public $incrementing = false; // Vô hiệu hóa tự động tăng ID
-    protected $keyType = 'string'; // Định dạng khóa chính là chuỗi
-
 
     protected $fillable = [
-        'id',
         'workspace_id',
         'invited_member_id',
         'email',

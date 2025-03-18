@@ -30,6 +30,7 @@ class WorkspaceInvitationsController extends Controller
     {
         try {
             $user = Auth::user();
+
             // Lấy thông tin workspace
             $workspace = Workspace::find($workspaceId);
             if (!$workspace) {
@@ -39,6 +40,7 @@ class WorkspaceInvitationsController extends Controller
                 ], 404);
             }
 
+            $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
             $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
                 ->where('invite_token', $inviteToken)
                 ->first();

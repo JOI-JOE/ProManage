@@ -11,9 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
+
 
 class WorkspaceController extends Controller
 {
@@ -48,14 +46,7 @@ class WorkspaceController extends Controller
             }
 
             // Tìm workspace theo tên
-            $workspace = Workspace::where('name', $workspaceName)
-            ->with('markedBoards')
-            ->first();
-            // if ($workspace) {
-            //     $markedBoards = $workspace->markedBoards(); // Lấy danh sách board có is_marked = 1
-            // } else {
-            //     $markedBoards = [];
-            // }
+            $workspace = Workspace::where('name', $workspaceName)->first();
 
             // Nếu không tìm thấy
             if (!$workspace) {
@@ -78,25 +69,6 @@ class WorkspaceController extends Controller
     }
 
 
-    public function getBoardMarkedByWorkspace($workspaceName)
-    {
-      try {
-         $workspace = Workspace::where('name', $workspaceName)->first();
-        $boardMarked = $workspace->boards()->where('is_marked', 1)->get();
-        return response()->json([
-          'success' => true,
-          'data' => $boardMarked,
-        ]);
-      } catch (\Throwable $th) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Có lỗi xảy ra khi lấy danh sách board.',
-          ]);
-      }
-    }
-
-
-
     public function showWorkspaceById($workspaceId)
     {
         try {
@@ -117,60 +89,40 @@ class WorkspaceController extends Controller
         }
     }
 
+
+
     public function store(WorkspaceRequest $request)
     {
-        $user = Auth::user();
+        // Dữ liệu đã được validate trong WworkspaceRequest
+        $user = Auth::user(); // Lấy user hiện tại
+
+
         $validatedData = $request->validated();
 
-        // Bắt đầu transaction
-        DB::beginTransaction();
+        $validatedData['name'] = Workspace::generateUniqueName($validatedData['display_name']);
 
-        try {
-            // Tạo workspace
-            $workspace = Workspace::create([
-                'name' => Workspace::generateUniqueName($validatedData['display_name']),
-                'id_member_creator' => $user->id,
-                'board_delete_restrict' => json_encode([
-                    'private' => 'org',
-                    'org' => 'org',
-                    'enterprise' => 'org',
-                    'public' => 'org',
-                ]),
-                'board_visibility_restrict' => json_encode([
-                    'private' => 'org',
-                    'org' => 'org',
-                    'enterprise' => 'org',
-                    'public' => 'org',
-                ]),
-                'display_name' => $validatedData['display_name'],
-                ...Arr::except($validatedData, ['display_name']),
-            ]);
+        $validatedData['id_member_creator'] =  $user->id;
 
-            // Tạo workspace member
-            WorkspaceMembers::create([
-                'workspace_id' => $workspace->id,
-                'user_id' => $user->id,
-                'member_type' => WorkspaceMembers::$ADMIN,
-                'joined' => true,
-                'last_active' => now(),
-            ]);
+        $validatedData['board_delete_restrict'] = json_encode([
+            'private' => 'org',
+            'org' => 'org',
+            'enterprise' => 'org',
+            'public' => 'org',
+        ]);
 
-            // Commit transaction nếu mọi thứ thành công
-            DB::commit();
+        $validatedData['board_visibility_restrict'] = json_encode([
+            'private' => 'org',
+            'org' => 'org',
+            'enterprise' => 'org',
+            'public' => 'org',
+        ]);
 
-            return response()->json([
-                'message' => 'Workspace created successfully',
-                'data' => new WorkspaceResource($workspace),
-            ], 201);
-        } catch (\Exception $e) {
-            // Rollback transaction nếu có lỗi
-            DB::rollBack();
+        $workspace = Workspace::create($validatedData);
 
-            return response()->json([
-                'message' => 'Failed to create workspace',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'Workspace created successfully',
+            'data' => new WorkspaceResource($workspace),
+        ], 201); // 201 Created
     }
 
     public function destroy(Workspace $workspace)

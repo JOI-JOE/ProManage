@@ -188,7 +188,7 @@ class ListController extends Controller
             return ListBoard::create([
                 'name' => $newColumn['title'],
                 'closed' => false,
-                'position' => $position,
+                'position' => $newPosition,
                 'board_id' => $boardId,
             ]);
         });
@@ -225,6 +225,8 @@ class ListController extends Controller
 
         return response()->json($list);
     }
+
+
     public function updateClosed($id)
     {
         $list = ListBoard::find($id);
@@ -292,7 +294,7 @@ class ListController extends Controller
     public function getListById($id)
     {
         // Tìm danh sách dựa trên listId
-        $list = ListBoard::with('board', 'cards')->findOrFail($id);
+        $list = ListBoard::find($id);
 
         if (!$list) {
             return response()->json(['message' => 'List not found'], 404);
@@ -300,4 +302,8 @@ class ListController extends Controller
 
         return response()->json($list);
     }
+
+
+
+
 }

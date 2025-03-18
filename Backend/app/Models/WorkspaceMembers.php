@@ -20,8 +20,8 @@ class WorkspaceMembers extends Model
     public static $PENDING = 'pending';
     // protected $primaryKey = ['workspace_id', 'user_id']; // Khóa chính kép
     protected $fillable = [
-        'workspace_id',
-        'user_id',
+        'id_workspace',
+        'id_member',
         'member_type',
         'is_unconfirmed',
         'joined',

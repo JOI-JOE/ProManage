@@ -14,9 +14,6 @@ import { Link } from 'react-router-dom'
 
 
 const WorkspaceMenu = ({ workspace }) => {
-  const token = localStorage.getItem("token");
-
-
 
   const [openSettings, setOpenSettings] = useState(false)
   const [hoveredItem, setHoveredItem] = useState(null)

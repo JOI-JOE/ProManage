@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogActions,
@@ -532,9 +533,14 @@ const CardModal = ({}) => {
     setPreviousCardName(cardName);
     setIsEditingName(true);
   };
-
-  const handleNameChange = (event) => {
-    setCardName(event.target.value);
+  //Lưu tên công việc
+  const handleSaveTask = (id) => {
+    const updatedTasks = tasks.map((task) =>
+      task.id === id ? { ...task, name: editedTaskName } : task
+    );
+    setTasks(updatedTasks);
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    setEditingTaskId(null);
   };
 
   const handleSave = () => {

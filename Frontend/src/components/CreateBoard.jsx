@@ -26,7 +26,7 @@ const CreateBoard = React.memo(() => {
   const [openPopover, setOpenPopover] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [boardTitle, setBoardTitle] = useState("");
-  const [selectedBg, setSelectedBg] = useState("");
+  const [selectedBg, setSelectedBg] = useState(null);
   const [workspace, setWorkspace] = useState("");
   const [viewPermission, setViewPermission] = useState("");
   // const [colorList, setColorList] = useState([]); // State lưu danh sách màu
@@ -35,11 +35,6 @@ const CreateBoard = React.memo(() => {
   // Sử dụng hook useCreateBoard
   // Sử dụng hook useCreateBoard
   const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
-  const {
-    mutate: fetchUnsplashImages,
-    data: unsplashImages,
-    isLoading: unsplashingImages,
-  } = useImageUnsplash();
 
   // Sử dụng hook useWorkspaces
   const { data: workspaces, isLoading: isLoadingWorkspaces, error } = useGetWorkspaces();
@@ -51,7 +46,6 @@ const CreateBoard = React.memo(() => {
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
     setOpenPopover(true);
-    fetchUnsplashImages(); // Gọi API lấy ảnh
   };
 
   const handleClose = () => {
@@ -72,7 +66,7 @@ const CreateBoard = React.memo(() => {
     const boardData = {
       name: boardTitle,
       thumbnail: selectedBg,
-      workspace_id: workspace,
+      workspace_id: Number(workspace),
       visibility: viewPermission,
     };
 
@@ -143,9 +137,7 @@ const CreateBoard = React.memo(() => {
             sx={{
               width: "100%",
               height: "100px",
-              background: selectedBg.startsWith("#")
-                ? selectedBg
-                : `url(${selectedBg}) center/cover no-repeat`,
+              background: selectedBg,
               borderRadius: "8px",
             }}
           />

@@ -43,14 +43,11 @@ const TaskModal = ({ open, onClose, onSave }) => {
           variant="outlined"
           value={taskName}
           onChange={(e) => setTaskName(e.target.value)}
-          size="small" // Làm ô nhỏ lại
+          size="small"
           sx={{
             marginTop: "8px",
-            padding: "0px", // Giảm padding
-            fontSize: "0.7rem", // Giảm kích thước font chữ
-            height: "25px", // Giảm chiều cao
-            "& .MuiInputBase-root": { height: 25 }, // Giảm chiều cao của input
-            "& .MuiInputBase-input": { fontSize: "0.7rem" }, // Giảm kích thước font chữ khi nhập
+            "& .MuiInputBase-root": { height: 35 },
+            "& .MuiInputBase-input": { fontSize: "0.9rem" },
           }}
         />
       </DialogContent>
@@ -65,3 +62,4 @@ const TaskModal = ({ open, onClose, onSave }) => {
 };
 
 export default TaskModal;
+

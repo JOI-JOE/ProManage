@@ -51,11 +51,6 @@ const BoardContent = () => {
 
   const [orderedColumns, setOrderedColumns] = useState([]);
 
-  const [activeDragItemId, setActiveDragItemId] = useState(null);
-  const [activeDragItemType, setActiveDragItemType] = useState(null);
-  const [activeDragItemData, setActiveDragItemData] = useState(null);
-  const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null);
-
   const lastOverId = useRef(null);
   // const columnOrderIds = []
 
@@ -372,41 +367,33 @@ const BoardContent = () => {
 
           // console.log("Cập nhật thành công:", filteredCards); // Sửa lại thành filteredCards
         } catch (error) {
-          // console.error("Lỗi khi cập nhật database:", error);
-
-          // Rollback state local nếu có lỗi
-          setOrderedColumns((prevColumns) => {
-            const rollbackColumns = cloneDeep(prevColumns);
-            const targetColumn = rollbackColumns.find(
-              (column) => column.id === overColumn.id
-            );
-            targetColumn.cards = oldColumnDraggingCard.cards;
-            targetColumn.cardOrderIds = oldColumnDraggingCard.cards.map(
-              (card) => card.id
-            );
-            return rollbackColumns;
-          });
+          console.error("❌ Lỗi cập nhật danh sách:", error);
+          queryClient.setQueryData(["boardLists", boardId], lists);
         }
-        // END - KÉO THẢ CARD CÙNG MỘT COLUMN
       }
-    }
 
-    // Xử lý kéo thả Column
-    if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-      // Hàm hỗ trợ để tìm index của column dựa trên id
-      const findColumnIndex = (id) => {
-        const index = orderedColumns.findIndex((c) => c.id === id);
-        // console.log(`Tìm thấy column có id: ${id}, index: ${index}`);
-        return index;
-      };
-      // Lấy vị trí cũ từ active
-      const oldColumnIndex = findColumnIndex(active.id);
+      /////////////////////// Xử lý kéo thả card /////////////////////
+      /////////////////////// Xử lý kéo thả card /////////////////////
+      const activeCardId = draggedCardRef.current.id;
+      const activeCardPositionInList = draggedCardRef.current.position;
+      //  console.log("🔥 activeIndex:", activeIndex);
+      // Vị trí index của card đang kéo
+      const overIndex = over.data.current?.sortable.index; // Vị trí index của card được kéo đến
+      console.log(
+        "🔥 Card ID đang kéo:",
+        activeCardId,
+        "🔥 Vị trí cũ:",
+        activeCardPositionInList,
+        "➡ Vị trí mới:",
+        overIndex
+      );
 
-      // Nếu over không tồn tại (kéo đến đầu danh sách), đặt vị trí mới là 0
-      const newColumnIndex = over ? findColumnIndex(over.id) : 0;
-      // Kiểm tra nếu index hợp lệ
-      if (oldColumnIndex === -1) {
-        // console.warn("Invalid column index. Cannot perform reordering.");
+      if (
+        activeCardId === undefined ||
+        overIndex === undefined ||
+        activeCardId === overIndex
+      ) {
+        console.warn("⚠️ Không có thay đổi vị trí, dừng xử lý.");
         return;
       }
       // Sắp xếp lại mảng column ban đầu
@@ -423,8 +410,9 @@ const BoardContent = () => {
         boardId,
       }));
 
-      // Cập nhật state local
-      setOrderedColumns(updatedColumns);
+      // Lấy danh sách card
+      const newCards = [...oldList.cards];
+      // console.log("🔥 newCards:", newCards);
 
       // Gọi mutation để cập nhật dữ liệu trên server
       updateColumnPosition.mutate(updatedColumns); // ✅ Dùng `.mutate()`
@@ -547,16 +535,7 @@ const BoardContent = () => {
             padding: "18px 0 7px 0px",
           })}
         >
-          <Col_list columns={orderedColumns} boardId={boardId} />
-          <DragOverlay dropAnimation={customDropAnimation}>
-            {!activeDragItemType && null}
-            {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN && (
-              <Col column={activeDragItemData} />
-            )}
-            {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD && (
-              <C_ard card={activeDragItemData} />
-            )}
-          </DragOverlay>
+          <ListColumns lists={memoizedLists} />
         </Box>
       </DndContext>
     </>
@@ -564,3 +543,4 @@ const BoardContent = () => {
 };
 
 export default BoardContent;
+

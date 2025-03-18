@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import { Box, Container } from "@mui/material";
-import { Outlet, useParams } from "react-router-dom";
 import AppBar from "../../../components/Navigation/AppBar";
 import SideBar from "./SideBar";
 import WorkspaceProvider from "../../../providers/WorkspaceProvider";

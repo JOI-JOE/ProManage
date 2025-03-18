@@ -4,17 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class Board extends Model
 {
     use HasFactory;
-    public $incrementing = false; // Không dùng auto-increment
-    protected $keyType = 'string'; // UUID là string
-
 
     protected $fillable = [
-        'id',             // ID của board
         'name',           // Tên của board
         'thumbnail',      // Ảnh thu nhỏ của board
         'description',    // Mô tả của board
@@ -26,18 +21,7 @@ class Board extends Model
         'workspace_id',   // ID của workspace liên quan
     ];
 
-
-
-    protected static function boot()
-    {
-        parent::boot();
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) Str::uuid(); // Gán UUID khi tạo mới
-            }
-        });
-    }
-    /**
+        /**
      * Mối quan hệ giữa Board và Workspace (một Board thuộc về một Workspace).
      */
     public function workspace()

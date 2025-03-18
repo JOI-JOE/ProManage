@@ -1,5 +1,5 @@
 import authClient from "../authClient";
-// Lấy danh sách card theo list
+
 export const getCardByList = async (listId) => {
   const response = await authClient.get(`/cards/${listId}/getCardsByList`);
   return response.data.data;
@@ -11,11 +11,14 @@ export const createCard = async (data) => {
   return response.data;
 };
 
-export const updateCardPositionsSameCol = async ({ cards }) => {
+export const updateCardPositions = async ({ cardId, newListId, newPosition }) => {
   try {
-    const response = await authClient.put("/boards/update-card-same-col", {
-      cards,
+    const response = await authClient.put(`/cards/update-position`, {
+      id: cardId, // Bổ sung ID của card
+      new_list_board_id: newListId, // Đúng tên tham số trên API
+      new_position: newPosition, // Đúng tên tham số trên API
     });
+
     return response.data;
   } catch (error) {
     console.error("Error in updateCardPositions:", error);

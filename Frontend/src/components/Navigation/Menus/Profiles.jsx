@@ -23,7 +23,6 @@ import { useNavigate } from "react-router-dom";
 import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
 
-
 export default function ProfileMenu({ email }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);

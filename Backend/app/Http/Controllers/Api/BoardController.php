@@ -21,12 +21,6 @@ class BoardController extends Controller
         return response()->json($board);
     }
 
-    public function getBoardDetail($id)
-    {
-        $board = Board::with('lists.cards')->findOrFail($id);
-        return response()->json($board);
-    }
-
     public function showBoardById($boardId)
     {
         try {
@@ -349,36 +343,25 @@ class BoardController extends Controller
     /**
      * Update cho riêng trường is_marked 
      */
-    public function updateIsMarked(string $id)
+    public function UpdateIs_marked(string $id)
     {
         try {
             DB::beginTransaction();
-
             $board = Board::findOrFail($id);
-            if (!$board) {
-                return response()->json([
-                    'result' => false,
-                    'message' => 'Board not found'
-                ], 404);
-            }
-
             // Toggle giá trị 'is_marked'
-            $board->update(['is_marked' => !$board->is_marked]);
-
+            $board->is_marked = $board->is_marked == 0 ? 1 : 0;
+            // Lưu bản ghi sau khi thay đổi
+            $board->save();
             DB::commit();
-
             return response()->json([
                 'result' => true,
                 'message' => 'is_marked status updated successfully.',
-                'is_marked' => $board->is_marked // Trả về trạng thái mới
+                'data' => $board
             ]);
         } catch (\Throwable $th) {
+            // Rollback nếu có lỗi xảy ra
             DB::rollBack();
-            return response()->json([
-                'result' => false,
-                'message' => 'Failed to update is_marked',
-                'error' => $th->getMessage()
-            ], 500);
+            throw $th;
         }
     }
     /**

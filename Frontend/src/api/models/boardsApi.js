@@ -1,7 +1,4 @@
-import axios from "axios";
 import authClient from "../authClient";
-
-const UNSPLASH_ACCESS_KEY = "3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"; // Thay bằng Access Key của bạn
 
 export const getBoardsAllByClosed = async () => {
   try {
@@ -32,6 +29,8 @@ export const showBoardByWorkspaceId = async (workspaceId) => {
     throw error;
   }
 };
+
+
 
 export const getBoardById = async (boardId) => {
   if (!boardId) {
@@ -64,11 +63,10 @@ export const getRecentBoards = async () => {
   }
 };
 
+
 export const logBoardAccess = async (boardId) => {
   try {
-    const response = await authClient.post("/recent-boards", {
-      board_id: boardId,
-    });
+    const response = await authClient.post("/recent-boards", { board_id: boardId });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lưu thông tin bảng:", error);
