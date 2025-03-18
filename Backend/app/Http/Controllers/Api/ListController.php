@@ -188,7 +188,7 @@ class ListController extends Controller
             return ListBoard::create([
                 'name' => $newColumn['title'],
                 'closed' => false,
-                'position' => $newPosition,
+                'position' => $position,
                 'board_id' => $boardId,
             ]);
         });

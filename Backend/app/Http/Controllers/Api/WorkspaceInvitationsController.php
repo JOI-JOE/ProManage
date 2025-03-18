@@ -41,7 +41,6 @@ class WorkspaceInvitationsController extends Controller
             }
 
             $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
-            $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
                 ->where('invite_token', $inviteToken)
                 ->first();
 

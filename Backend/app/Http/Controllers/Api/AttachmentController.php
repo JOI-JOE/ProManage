@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
+use App\Models\Card;
+use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -94,6 +96,7 @@ class AttachmentController extends Controller
     public function deleteAttachment($cardId,$attachmentId)
     {
         $attachment = Attachment::findOrFail($attachmentId);
+        $fileNameDefault = $attachment->file_name_defaut; // Lấy tên file gốc
 
         Storage::disk('public')->delete($attachment->path_url);
         $attachment->delete();

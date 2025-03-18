@@ -2,7 +2,6 @@ import React from "react";
 import HomeWorkspace from "./home";
 import { useParams } from "react-router-dom";
 import { useGetWorkspaceByName } from "../../hooks/useWorkspace";
-import { useGetWorkspaceByName } from "../../hooks/useWorkspace";
 
 const Workspaces = () => {
     const { workspaceName } = useParams();

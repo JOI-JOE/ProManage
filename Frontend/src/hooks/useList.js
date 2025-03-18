@@ -11,7 +11,7 @@ import {
   deleteList,
   getListClosedByBoard,
 } from "../api/models/listsApi";
-import { useEffect,useState } from "react";
+import {useState } from "react";
 import { useNavigate } from "react-router-dom";
 import echoInstance from "./realtime/useRealtime";
 
