@@ -2268,6 +2268,7 @@ const CardModal = ({}) => {
                         display="flex"
                         alignItems="flex-start"
                         mb={1}
+                        mt={2}
                       >
                         <Avatar
                           sx={{
