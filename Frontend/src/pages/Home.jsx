@@ -20,37 +20,37 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
-    return (
-      <Container
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          color: "white",
-        }}
-      >
-        Đang tải thông tin người dùng...
-      </Container>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <Container
+  //       sx={{
+  //         display: "flex",
+  //         justifyContent: "center",
+  //         alignItems: "center",
+  //         height: "100vh",
+  //         color: "white",
+  //       }}
+  //     >
+  //       Đang tải thông tin người dùng...
+  //     </Container>
+  //   );
+  // }
 
-  if (error) {
-    return (
-      <Container
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          color: "red",
-        }}
-      >
-        Lỗi: {error.message}
-      </Container>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <Container
+  //       sx={{
+  //         display: "flex",
+  //         justifyContent: "center",
+  //         alignItems: "center",
+  //         height: "100vh",
+  //         color: "red",
+  //       }}
+  //     >
+  //       Lỗi: {error.message}
+  //     </Container>
+  //   );
+  // }
 
   return (
     <Container

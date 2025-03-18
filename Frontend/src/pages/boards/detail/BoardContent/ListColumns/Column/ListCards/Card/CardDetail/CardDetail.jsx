@@ -17,7 +17,6 @@ import {
   TextField,
   IconButton,
   Chip,
-  Stack,
   Popover,
   Modal,
 } from "@mui/material";
@@ -83,16 +82,16 @@ import CoverPhoto from "./childComponent_CardDetail/CoverPhoto";
 import { useCardLabels } from "../../../../../../../../../hooks/useLabel.js";
 import { ArrowDropDownIcon } from "@mui/x-date-pickers";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import dayjs from "dayjs";
-import LinkIcon from "@mui/icons-material/Link";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import { ArrowBack } from "@mui/icons-material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
-import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
+import { useMe } from "../../../../../../../../../contexts/MeContext.jsx";
 
-const CardModal = ({}) => {
+const CardModal = ({ }) => {
   const { cardId, title } = useParams();
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
@@ -120,7 +119,6 @@ const CardModal = ({}) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [cardName, setCardName] = useState(title);
   const [previousCardName, setPreviousCardName] = useState(title);
-  const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
   // const [activity, setActivity] = useState("");
@@ -1386,15 +1384,15 @@ const CardModal = ({}) => {
                                 Đã thêm{" "}
                                 {file.time
                                   ? new Date(file.time).toLocaleString(
-                                      "vi-VN",
-                                      {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                      }
-                                    )
+                                    "vi-VN",
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "numeric",
+                                    }
+                                  )
                                   : "Không xác định"}
                                 {file.isCover && (
                                   <Box component="span" sx={{ ml: 1 }}>
@@ -1557,15 +1555,15 @@ const CardModal = ({}) => {
                           Đã thêm:{" "}
                           {selectedFile.time
                             ? new Date(selectedFile.time).toLocaleString(
-                                "vi-VN",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                }
-                              )
+                              "vi-VN",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              }
+                            )
                             : "Không xác định"}
                         </Typography>
                         <Typography variant="body2" sx={{ color: "#fff" }}>
@@ -2301,13 +2299,13 @@ const CardModal = ({}) => {
                             ) : (
                               <Typography component="span" fontWeight="normal">
                                 {item.properties &&
-                                item.properties.file_path &&
-                                item.properties.file_name
+                                  item.properties.file_path &&
+                                  item.properties.file_name
                                   ? renderDescriptionWithLink(
-                                      actionText,
-                                      item.properties.file_path,
-                                      item.properties.file_name
-                                    )
+                                    actionText,
+                                    item.properties.file_path,
+                                    item.properties.file_name
+                                  )
                                   : actionText}
                               </Typography>
                             )}
@@ -2545,7 +2543,7 @@ const CardModal = ({}) => {
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-          // onSave={handleAddTask}
+        // onSave={handleAddTask}
         />
 
         {/* Component Label List */}

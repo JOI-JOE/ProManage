@@ -23,12 +23,10 @@ import Started from "./Menus/Started";
 import Template from "./Menus/Template";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import Profile from "./Menus/Profiles";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import Recent from "./Menus/Recent";
-// import { useMe } from "../context/MeContext"; // Import hook useMe
 import { useMe } from "../../contexts/MeContext";
 
 const AppBar = () => {

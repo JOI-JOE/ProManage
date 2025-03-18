@@ -3,11 +3,11 @@ import authClient from "../authClient";
 // Phần để tối ưu gọi api
 
 // dữ liệu chính
-const fetchUserDataWithParams = async (params) => {
+const fetchUserDataWithParams = async (params, userId = "me") => {
   try {
     const queryParams = new URLSearchParams(params);
     const response = await authClient.get(
-      `/member/me?${queryParams.toString()}`
+      `/member/${userId}?${queryParams.toString()}`
     );
     return response.data;
   } catch (error) {
@@ -35,6 +35,23 @@ export const fetchUserDashboardData = () => {
   });
 };
 
+// Để làm gì -> Lấy danh sách Boards và nhóm theo Workspaces
+// Nơi dùng  -> Hiển thị danh sách bảng trong từng Workspace để so sách
+export const fetchUserBoardsWithWorkspaces = async (userId) => {
+  return fetchUserDataWithParams(
+    {
+      fields: "id",
+      boards: "open,starred",
+      board_fields: "id,name,closed,workspace_id",
+      board_workspace: "true",
+      board_workspace_fields: "id,name,display_name",
+      workspaces: "all",
+      workspace_fields: "id,display_name,name",
+    },
+    userId
+  );
+};
+
 // Để làm gì -> Lấy danh sách Workspaces của người dùng
 // Nơi dùng ->	Sidebar và mục "Các Không Gian Làm Việc Của Bạn"
 export const fetchUserWorkspaces = async () => {
@@ -47,28 +64,6 @@ export const fetchUserWorkspaces = async () => {
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy danh sách Workspaces:", error);
-    throw error;
-  }
-};
-
-// Để làm gì -> Lấy danh sách Boards và nhóm theo Workspaces
-// Nơi dùng  -> Hiển thị danh sách bảng trong từng Workspace
-export const fetchUserBoardsWithWorkspaces = async () => {
-  try {
-    const params = {
-      fields: "id",
-      boards: "open,starred",
-      board_fields: "id,name,closed,workspace_id",
-      board_memberships: "me",
-      boardStars: "true",
-      workspaces: "all",
-      workspace_fields: "id,display_name,name",
-      workspace_memberships: "all",
-    };
-    const response = await authClient.get("/member/me", { params });
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách Boards (kèm Workspaces):", error);
     throw error;
   }
 };
@@ -91,6 +86,7 @@ export const fetchUserBoards = async () => {
     throw error;
   }
 };
+
 // END
 
 export const getUser = async () => {

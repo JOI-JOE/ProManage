@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import {
+  fetchUserBoardsWithWorkspaces,
   fetchUserDashboardData,
   fetchUserProfile,
   forgotPassword,
@@ -35,6 +36,14 @@ export const useUserData = () => {
     isLoading: loadingProfile || loadingDashboard,
     error: errorProfile || errorDashboard,
   };
+};
+
+export const useFetchUserBoardsWithWorkspaces = (userId) => {
+  return useQuery({
+    queryKey: ["userBoardsWithWorkspaces", userId], // Cache theo từng userId
+    queryFn: () => fetchUserBoardsWithWorkspaces(userId), // Gọi API
+    enabled: !!userId, // Chỉ fetch khi có userId hợp lệ
+  });
 };
 
 export const useUser = () => {

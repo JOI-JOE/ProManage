@@ -26,64 +26,64 @@ class WorkspaceInvitationsController extends Controller
         $this->googleService = $googleService;
     }
 
-    public function acceptInvitation($workspaceId, $inviteToken)
-    {
-        try {
-            $user = Auth::user();
-            // Lấy thông tin workspace
-            $workspace = Workspace::find($workspaceId);
-            if (!$workspace) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Workspace not found.',
-                ], 404);
-            }
+    // public function acceptInvitation($workspaceId, $inviteToken)
+    // {
+    //     try {
+    //         $user = Auth::user();
+    //         // Lấy thông tin workspace
+    //         $workspace = Workspace::find($workspaceId);
+    //         if (!$workspace) {
+    //             return response()->json([
+    //                 'status' => 'error',
+    //                 'message' => 'Workspace not found.',
+    //             ], 404);
+    //         }
 
-            $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
-                ->where('invite_token', $inviteToken)
-                ->first();
+    //         $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
+    //             ->where('invite_token', $inviteToken)
+    //             ->first();
 
-            if (!$invitation) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Invalid or expired invitation.',
-                ], 404);
-            }
+    //         if (!$invitation) {
+    //             return response()->json([
+    //                 'status' => 'error',
+    //                 'message' => 'Invalid or expired invitation.',
+    //             ], 404);
+    //         }
 
-            // Kiểm tra user đã là thành viên chưa
-            $isMember = WorkspaceMembers::where('workspace_id', $workspaceId)
-                ->where('user_id', $user->id)
-                ->exists();
+    //         // Kiểm tra user đã là thành viên chưa
+    //         $isMember = WorkspaceMembers::where('workspace_id', $workspaceId)
+    //             ->where('user_id', $user->id)
+    //             ->exists();
 
-            if ($isMember) {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'User is already a member of this workspace.',
-                ], 200);
-            }
+    //         if ($isMember) {
+    //             return response()->json([
+    //                 'status' => 'success',
+    //                 'message' => 'User is already a member of this workspace.',
+    //             ], 200);
+    //         }
 
-            // Nếu user chưa là thành viên, thêm họ vào workspace
-            WorkspaceMembers::create([
-                'workspace_id' => $workspaceId,
-                'user_id' => $user->id,
-                'member_type' => 'normal', // Hoặc loại thành viên khác tùy thuộc vào logic của bạn
-                'is_unconfirmed' => false, // Đã xác nhận
-                'joined' => true, // Ngày tham gia
-                'is_deactivated' => false, // Không vô hiệu hóa
-                'last_active' => now(), // Lần hoạt động cuối cùng
-            ]);
+    //         // Nếu user chưa là thành viên, thêm họ vào workspace
+    //         WorkspaceMembers::create([
+    //             'workspace_id' => $workspaceId,
+    //             'user_id' => $user->id,
+    //             'member_type' => 'normal', // Hoặc loại thành viên khác tùy thuộc vào logic của bạn
+    //             'is_unconfirmed' => false, // Đã xác nhận
+    //             'joined' => true, // Ngày tham gia
+    //             'is_deactivated' => false, // Không vô hiệu hóa
+    //             'last_active' => now(), // Lần hoạt động cuối cùng
+    //         ]);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'User has been successfully added to the workspace.',
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to accept invitation: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
+    //         return response()->json([
+    //             'status' => 'success',
+    //             'message' => 'User has been successfully added to the workspace.',
+    //         ], 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => 'Failed to accept invitation: ' . $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
     public function getInvitationSecret($workspaceId)
     {
         try {

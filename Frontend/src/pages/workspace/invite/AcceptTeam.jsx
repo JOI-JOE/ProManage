@@ -8,6 +8,7 @@ import loadingLogo from "~/assets/loading.svg?react";
 import { Box, SvgIcon } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useGetInvitationSecretByReferrer } from "../../../hooks/useWorkspaceInvite";
+import { useFetchUserBoardsWithWorkspaces } from "../../../hooks/useUser";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -34,29 +35,39 @@ const AcceptTeam = () => {
         setLoading(false);
     }, []);
 
+    useEffect(() => {
+        const memberId = Cookies.get("idMember");
+        setIdMember(memberId);
+    }, []);
+
     const { data: inviteData, isLoading, isError } = useGetInvitationSecretByReferrer(
         invitation?.workspaceId,
         invitation?.inviteToken,
         { enabled: !!invitation?.workspaceId && !!invitation?.inviteToken }
     );
 
+    const { data: userWorkspaces, isLoading: isLoadingUser } = useFetchUserBoardsWithWorkspaces(idMember);
     useEffect(() => {
-        const memberId = Cookies.get("idMember");
-        setIdMember(memberId);
+        if (!idMember || !inviteData) return;
 
-        // Nếu idMember trùng với người mời thì điều hướng luôn
-        if (memberId && memberId === inviteData?.memberInviter?.id) {
-            navigate(`/w/${inviteData?.workspace?.display_name}`);
+        // 1️⃣ Nếu người gửi tự mời chính họ, điều hướng về workspace của họ
+        if (idMember === inviteData?.memberInviter?.id) {
+            navigate(`/w/${inviteData?.workspace?.name}`);
+            return;
         }
-    }, [inviteData, navigate]);
 
-    // Nếu idMember trùng khớp, không cần hiển thị giao diện bên dưới nữa
-    if (idMember && idMember === inviteData?.memberInviter?.id) {
-        return null; // Không hiển thị gì nữa vì đã điều hướng
-    }
+        // 2️⃣ Nếu người nhận đã là thành viên của workspace, điều hướng về workspace
+        const isAlreadyMember = userWorkspaces?.workspaces?.some(
+            (workspace) => workspace.id === inviteData?.workspace?.id
+        );
+
+        if (isAlreadyMember) {
+            navigate(`/w/${inviteData?.workspace?.name}`);
+        }
+    }, [inviteData, idMember, userWorkspaces, navigate]);
 
     // Nếu đang load từ cookies hoặc API, hiển thị loading
-    if (loading || isLoading) {
+    if (loading || isLoading || isLoadingUser) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
                 <SvgIcon

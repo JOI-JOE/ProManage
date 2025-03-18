@@ -11,6 +11,7 @@ export const MeProvider = ({ children }) => {
 
     const { userProfile, userDashboard, isLoading, error } = useUserData();
     const user = userProfile?.user
+    const workspace = userDashboard
     return (
         <MeContext.Provider value={{ user, userProfile, userDashboard }}>
             {children}

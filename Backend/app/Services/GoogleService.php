@@ -176,62 +176,28 @@ class GoogleService
         string $body
     ): string {
 
-        // Thiết lập headers
+        // Thiết lập địa chỉ gửi mặc định để ẩn thông tin người gửi
+        $noReplyEmail = "no-reply@promanage.com";  // Thay bằng email no-reply của bạn
+        // $noReplyName = "Promanage";  // Tên hiển thị trong email
+
+        // Mã hóa tiêu đề
         $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
 
-        $headers = "From: {$senderName} <{$senderEmail}>\r\n";
+        // Thiết lập headers
+        $headers  = "From: {$senderName} <{$noReplyEmail}>\r\n"; // Sử dụng No-Reply
         $headers .= "To: {$to}\r\n";
         $headers .= "Subject: {$encodedSubject}\r\n"; // Mã hóa tiêu đề
         $headers .= "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
         $headers .= "Content-Transfer-Encoding: base64\r\n";
-        $headers .= "Reply-To: {$senderEmail}\r\n\r\n"; // Thêm Reply-To header
-
 
         // Mã hóa nội dung email
         $bodyEncoded = chunk_split(base64_encode($body));
 
         // Kết hợp headers và nội dung email
-        $message = $headers . $bodyEncoded;
+        $message = $headers . "\r\n" . $bodyEncoded;
 
         // Base64url encode toàn bộ message
         return rtrim(strtr(base64_encode($message), '+/', '-_'), '=');
     }
-
-
-    // public function sendEmail($accessToken, $senderName, $to, $subject, $data)
-    // {
-    //     $this->setAccessToken($accessToken);
-    //     $service = new Gmail($this->client);
-
-    //     // Render nội dung email từ Blade template
-    //     $body = view('emails.invite', $data)->render();
-
-    //     $rawMessage = $this->encodeMessage($to, $senderName, $subject, $body);
-    //     $message = new \Google\Service\Gmail\Message();
-    //     $message->setRaw($rawMessage);
-
-    //     return $service->users_messages->send('me', $message);
-    // }
-
-    // public function encodeMessage($to, $senderName, $subject, $body)
-    // {
-    //     $boundary = uniqid(rand(), true);
-    //     $headers = "From: " . $senderName . "\r\n"; // Bỏ địa chỉ email
-    //     $headers .= "To: $to\r\n";
-    //     $headers .= "Subject: $subject\r\n";
-    //     $headers .= "MIME-Version: 1.0\r\n";
-    //     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    //     $headers .= "Content-Transfer-Encoding: base64\r\n\r\n";
-
-    //     $bodyEncoded = chunk_split(base64_encode($body));
-
-    //     // Kết hợp headers và nội dung email
-    //     $message = $headers . $bodyEncoded;
-
-    //     // Base64url encode
-    //     $encodedMessage = rtrim(strtr(base64_encode($message), '+/', '-_'), '=');
-
-    //     return $encodedMessage;
-    // }
 }

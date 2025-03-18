@@ -2,32 +2,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getInviteWorkspaceById,
   createInviteWorkspace,
-  acceptInvitation,
   cancelInviteWorkspace,
-  getValidateMemberInWorkspace,
   getSearchMembers,
   addMemberToWorkspace,
   confirmWorkspaceMembers,
   getInvitationSecretByReferrer,
+  addMemberToWorkspaceDirection,
 } from "../api/models/inviteWorkspaceApi";
 
-export const useAcceptInvitation = () => {
-  const queryClient = useQueryClient();
-
+// Hook mutation
+export const useAddMemberToWorkspaceDirection = () => {
   return useMutation({
-    mutationFn: ({ workspaceId, inviteToken }) =>
-      acceptInvitation(workspaceId, inviteToken),
-    onSuccess: (data, variables) => {
-      // Cập nhật cache với dữ liệu mới
-      queryClient.setQueryData(
-        ["inviteWorkspace", variables.workspaceId],
-        data
-      );
-      console.log("Tham gia workspace thành công:", data);
-    },
-    onError: (error) => {
-      console.error("Lỗi khi chấp nhận lời mời:", error);
-    },
+    mutationFn: addMemberToWorkspaceDirection, // Đảm bảo có mutationFn
   });
 };
 
@@ -41,22 +27,6 @@ export const useGetInviteWorkspace = (workspaceId) => {
     },
     staleTime: 1000 * 60 * 5, // Dữ liệu được coi là "cũ" sau 5 phút
     cacheTime: 1000 * 60 * 10, // Dữ liệu được lưu trong cache 10 phút
-  });
-};
-
-export const useGetValidateMember = (workspaceId, memberId) => {
-  return useQuery({
-    queryKey: ["workspaces", "members", workspaceId, memberId],
-    queryFn: () => getValidateMemberInWorkspace(workspaceId, memberId),
-    enabled: !!memberId && !!workspaceId, // Check both memberId and workspaceId
-    onError: (error) => {
-      console.error(
-        "Lỗi khi lấy thông tin member trong không gian làm việc",
-        error
-      );
-    },
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 10,
   });
 };
 
@@ -132,7 +102,7 @@ export const useAddMemberToWorkspace = () => {
   });
 };
 
-// function sau khi bấm gửi lời mời
+// function sau khi bấm gửi lời mời thêm vào trong trang thành viên
 export const useConfirmWorkspaceMember = () => {
   const queryClient = useQueryClient();
 

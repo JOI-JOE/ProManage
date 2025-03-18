@@ -65,7 +65,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
         Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
-
         Route::post('workspaces', 'store');
         Route::delete('workspaces/{workspace}', 'destroy');
         Route::put('workspaces/{workspace}', 'updateWorkspaceInfo');
@@ -75,20 +74,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
         Route::get('/workspaces/{workspaceId}/invitationSecret', 'getInvitationSecret');
         Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
-        Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
-        // Function search
-        // https://trello.com/1/search/members?idOrganization=678b57031faba8dd978f0dee&query=ikn
-        // search/members?idWorkspace=92248292498298&query=hau
+        // Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
         Route::get('search/members', 'searchMembers');
-        // function để gửi email và cập nhật dữ liệu member trong workspace member
         Route::put('workspaces/{workspaceId}/members/{memberId}', 'confirmWorkspaceMembers');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
-        Route::post('/workspace/{workspaceId}/addMembers', 'addMembersToWorkspace');
-        Route::get('/workspaces/{workspaceId}/members/{memberId}',  'getValidateMemberInWorkspace');
+        Route::post('/workspace/{workspaceId}/addMembers', action: 'addMembersToWorkspace');
+        Route::post('/workspace/{workspaceId}/member/{memberId}',  'addMemberToWorkspaceDirection');
     });
-    Route::post('/send-mail', [EmailController::class, 'sendEmail']);
+
+    // Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 
     Route::controller(BoardController::class)->group(function () {
         Route::get('boards/{boardId}', 'showBoardById');
