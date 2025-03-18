@@ -11,3 +11,12 @@
 .fc .fc-button {
   border: none;
 }
+.fc-daygrid-day.fc-day-today {
+  background-color: #dff9fb !important;
+}
+.fc-timegrid-col.fc-day-today {
+  background-color: #dff9fb !important;
+}
+.fc-button {
+  box-shadow: none !important;
+}

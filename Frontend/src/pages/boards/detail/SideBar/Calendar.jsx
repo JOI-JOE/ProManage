@@ -12,11 +12,11 @@ const Calendar = () => {
   return (
     <Box
       sx={{
-        padding: "20px",
+        padding: "32px",
         height: (theme) =>
           `calc( ${theme.trello.boardContentHeight} + ${theme.trello.boardBarHeight} )`, // Adjust height to match the sidebar
         overflow: "auto", // Ensure overflow is handled
-        fontSize: "0.6rem",
+        fontSize: "0.7rem",
       }}
     >
       <FullCalendar
@@ -33,15 +33,15 @@ const Calendar = () => {
           week: "Week",
           day: "Day",
         }}
-        events={calendarEvents}
-        dateClick={(info) => {
-          const newEvent = {
-            title: "New Event",
-            start: info.dateStr,
-            allDay: true,
-          };
-          setCalendarEvents([...calendarEvents, newEvent]);
-        }}
+        // events={calendarEvents}
+        // dateClick={(info) => {
+        //   const newEvent = {
+        //     title: "New Event",
+        //     start: info.dateStr,
+        //     allDay: true,
+        //   };
+        //   setCalendarEvents([...calendarEvents, newEvent]);
+        // }}
       />
     </Box>
   );
