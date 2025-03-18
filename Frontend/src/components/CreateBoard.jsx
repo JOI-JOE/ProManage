@@ -18,7 +18,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useCreateBoard, useImageUnsplash } from "../hooks/useBoard";
 
 import { useColor } from "../hooks/useColor";
-import useColorStore, { useFetchColors } from "../store/colorStore";
 import { useGetWorkspaces } from "../hooks/useWorkspace";
 
 // const colors = ["#E3F2FD", "#64B5F6", "#1565C0", "#283593", "#8E24AA"];

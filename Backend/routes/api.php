@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\WorkspaceInvitationsController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
+use App\Http\Controllers\Api\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +60,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
+        Route::get('guestWorkspace', 'getGuestWorkspaces');
+
         Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
         Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
@@ -172,10 +175,10 @@ Route::prefix('boards/{id}/')->group(function () {
 // });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user/boards', [BoardMemberController::class, 'getUserBoards']);
+    Route::get('/boards/{boardId}/members', [BoardMemberController::class, 'getBoardMembers']);
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
-
+    Route::get('/notifications', [NotificationController::class, 'getNotifications']);
 });
 Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']); 
 
