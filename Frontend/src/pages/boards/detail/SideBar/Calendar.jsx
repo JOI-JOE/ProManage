@@ -27,6 +27,12 @@ const Calendar = () => {
           center: "title",
           right: "dayGridMonth,timeGridWeek,timeGridDay",
         }}
+        buttonText={{
+          today: "Today",
+          month: "Month",
+          week: "Week",
+          day: "Day",
+        }}
         events={calendarEvents}
         dateClick={(info) => {
           const newEvent = {
