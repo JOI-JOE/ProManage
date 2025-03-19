@@ -291,14 +291,13 @@ const C_ard = ({ card }) => {
         {!!members?.data?.length && (
           <Box
             sx={{
-              position: "absolute", // Đặt vị trí tuyệt đối
-              bottom: 8, // Cách đáy 8px
-              right: 8, // Cách phải 8px
               display: "flex",
-              alignItems: "center",
+              flexWrap: "wrap", // Allow wrapping to the next line
+              justifyContent: "flex-end", // Push to the right
               gap: "4px",
-              zIndex: 1, // Đảm bảo avatar hiển thị trên cùng
+              zIndex: 1, // Ensure avatar is on top
               marginTop: "10px",
+              padding: "0px 8px 8px 8px",
             }}
           >
             {members?.data?.map((member, index) => (
