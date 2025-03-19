@@ -26,7 +26,7 @@ import Account from "../pages/boards/detail/Account";
 import AcceptTeam from "../pages/workspace/invite/AcceptTeam";
 import InvitePage from "../pages/boards/invite/InvitePage";
 import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
-import Calendar from "../pages/boards/detail/SideBar/Calendar";
+import Calendar from "../pages/Boards/detail/SideBar/Calendar/Calendar";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 

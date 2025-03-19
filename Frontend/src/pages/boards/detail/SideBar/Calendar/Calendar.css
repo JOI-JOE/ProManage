@@ -20,6 +20,7 @@
 .fc-button {
   box-shadow: none !important;
 }
+
 /* Tùy chỉnh thanh scrollbar */
 ::-webkit-scrollbar {
   width: 6px; /* Độ rộng thanh scrollbar */

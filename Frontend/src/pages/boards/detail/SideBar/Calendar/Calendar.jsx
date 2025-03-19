@@ -5,6 +5,8 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { Box } from "@mui/material";
 import "./Calendar.css"; // Import custom CSS
+import MenuCalendar from "./MenuCalendar/MenuCalendar";
+import { bg } from "date-fns/locale";
 
 const Calendar = () => {
   const [calendarEvents, setCalendarEvents] = useState([]);
@@ -19,6 +21,11 @@ const Calendar = () => {
         fontSize: "0.7rem",
       }}
     >
+      <MenuCalendar
+        sx={{
+          bgcolor: "background.paper",
+        }}
+      />
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
@@ -33,6 +40,7 @@ const Calendar = () => {
           week: "Week",
           day: "Day",
         }}
+
         // events={calendarEvents}
         // dateClick={(info) => {
         //   const newEvent = {
