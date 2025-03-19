@@ -23,17 +23,13 @@ Broadcast::channel('board.{boardId}', function ($user, $boardId) {
     return Board::find($boardId) !== null; // Kiểm tra xem Board có tồn tại không
 });
 
-Broadcast::channel('board.{boardId}.list.{listId}', function ($user, $boardId, $listId) {
-    return Board::find($boardId) !== null && ListBoard::find($listId) !== null; // Kiểm tra xem Board và List có tồn tại không
+Broadcast::channel('board.{boardId}', function ($user, $boardId) {
+    return $user->boards->contains('id', $boardId);
 });
 
-Broadcast::channel('board.{boardId}.card.{cardId}', function ($user, $boardId, $cardId) {
-    return Board::find($boardId) !== null && Card::find($cardId) !== null; // Kiểm tra xem Board và Card có tồn tại không
-});
-
-Broadcast::channel('workspace-invite-{workspaceId}', function ($user, $workspaceId) {
-    return $user->isMemberOfWorkspace($workspaceId);
-});
+// Broadcast::channel('workspace-invite-{workspaceId}', function ($user, $workspaceId) {
+//     return $user->isMemberOfWorkspace($workspaceId);
+// });
 
 Broadcast::channel('card.{cardId}', function ($user, $cardId) {
     return true; // Hoặc thêm logic kiểm tra quyền truy cập

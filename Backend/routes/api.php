@@ -92,8 +92,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::prefix('cards')->group(function () {
         Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
-        // Route::put('/update-position', [DragDropController::class, 'updateCardPosition']);
-        // Function tạo card
         Route::post('/', [CardController::class, 'store']);
 
         Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
@@ -111,9 +109,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     // Funtion kéo thả column
-    Route::put('/boards/update-column-position', [DragDropController::class, 'updateListPosition']);
-    Route::put('/boards/update-card-same-col', [DragDropController::class, 'updateCardPositionsSameColumn']);
-    Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
+    Route::controller(DragDropController::class)->group(function () {
+        Route::put('/lists/{idBoard}', action: 'updatePositionList');
+    });
+    // Route::put('/boards/update-card-same-col', [DragDropController::class, 'updateCardPositionsSameColumn']);
+    // Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
 
     // Send Email
 });
