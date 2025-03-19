@@ -3,12 +3,26 @@ import authClient from "../authClient";
 export const getWorkspacesAll = async () => {
   try {
     const response = await authClient.get("/workspaces");
+    console.log(response.data);
+    
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy workspace của người dùng:", error);
     throw error;
   }
 };
+
+
+export const getGuestWorkspace = async () => {
+  try {
+    const response = await authClient.get("/guestWorkspace");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy workspace của người dùng:", error);
+    throw error;
+  }
+};
+
 
 export const getWorkspaceByName = async (workspaceName) => {
   const response = await authClient.get(`/workspaces/name/${workspaceName}`);

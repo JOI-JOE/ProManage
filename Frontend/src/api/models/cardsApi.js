@@ -144,7 +144,7 @@ export const toggleCardMember = async (cardId,userId) => {
     });
     return response.data
   } catch (error) {
-    console.error("Lỗi khi lấy ra thành viên của card:", error);
+    console.error("Lỗi khi thêm thành viên của card:", error);
     throw error;
   }   
 }

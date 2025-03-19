@@ -118,7 +118,7 @@ class ChecklistItemController extends Controller
             $statusText = $newStatus ? 'hoàn tất' : 'chưa hoàn tất';
 
             // Ghi log nếu trạng thái thay đổi
-            $activity=  activity()
+            $activity = activity()
                 ->causedBy(auth()->user())
                 ->performedOn($card)
                 ->event('updated_checklist_status')

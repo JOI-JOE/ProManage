@@ -26,7 +26,6 @@ import Account from "../pages/boards/detail/Account";
 import AcceptTeam from "../pages/workspace/invite/AcceptTeam";
 import InvitePage from "../pages/boards/invite/InvitePage";
 import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
-import WorkspaceBoard from "../pages/boards/detail/WorkspaceBoard";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -77,7 +76,6 @@ const router = createBrowserRouter([
           },
           { path: "w/:workspaceName/members", element: <Member /> },
           { path: "w/:workspaceName/account", element: <Account /> },
-          { path: "w/:workspaceName", element: <WorkspaceBoard /> },
         ],
       },
     ],
@@ -98,7 +96,7 @@ const router = createBrowserRouter([
 
       {
         path: "invite/accept-team",
-        element: <AcceptTeam />
+        element: <AcceptTeam />,
       },
     ],
   },
@@ -107,6 +105,5 @@ const router = createBrowserRouter([
     element: <NotFoundPage />,
   },
 ]);
-
 
 export default router;

@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Str;
 
@@ -99,15 +100,15 @@ class User extends Authenticatable
      */
 
 
-    public function workspaces()
-    {
-        return $this->hasMany(Workspace::class, 'id_member_creator');
-    }
+    // public function workspaces()
+    // {
+    //     return $this->hasMany(Workspace::class, 'id_member_creator');
+    // }
+
     public function boards()
     {
         return $this->hasMany(Board::class, 'created_by');
     }
-
     public function workspaceMember()
     {
         return $this->hasMany(WorkspaceMembers::class, 'user_id', 'id');
@@ -121,5 +122,48 @@ class User extends Authenticatable
     public function comments()
     {
         return $this->hasMany(CommentCard::class);  // Mỗi user có thể tạo nhiều bình luận
+    }
+
+    public function boardsMember()
+    {
+        return $this->belongsToMany(Board::class, 'board_members', 'user_id', 'board_id')
+            ->withPivot('role')
+            ->wherePivot('role', 'member');
+    }
+
+    // / Quan hệ với Workspaces chính thức (User là member)
+    public function workspaces()
+    {
+        return $this->belongsToMany(Workspace::class, 'workspace_members', 'user_id', 'workspace_id')
+            ->withPivot('member_type'); // Nếu có cột role
+    }
+
+
+    // Quan hệ để lấy Guest Workspaces
+    //    / Trong User.php
+    public function guestWorkspaces()
+    {
+        $userId = $this->id;
+        Log::info('User ID: ' . $userId);
+        Log::info('BoardsMember IDs: ' . json_encode($this->boardsMember->pluck('id')->toArray()));
+
+        $query = Workspace::whereHas('boards', function ($query) {
+            $query->whereIn('boards.id', $this->boardsMember->pluck('id'));
+        })->whereDoesntHave('members', function ($query) use ($userId) {
+            $query->where('workspace_members.user_id', $userId);
+        })->with(['boards' => function ($query) {
+            $query->whereIn('id', $this->boardsMember->pluck('id'));
+        }]);
+
+        Log::info('SQL: ' . $query->toSql());
+        Log::info('Bindings: ' . json_encode($query->getBindings()));
+        Log::info('Result: ' . json_encode($query->get()->toArray()));
+        return $query;
+    }
+
+
+    public function checklistItems()
+    {
+        return $this->belongsToMany(ChecklistItem::class, 'checklist_item_user', 'user_id', 'checklist_item_id');
     }
 }
