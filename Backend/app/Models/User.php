@@ -166,4 +166,10 @@ class User extends Authenticatable
     }
 
 
+    public function checklistItems()
+    {
+        return $this->belongsToMany(ChecklistItem::class, 'checklist_item_user', 'user_id', 'checklist_item_id');
+    }
+
+
 }
