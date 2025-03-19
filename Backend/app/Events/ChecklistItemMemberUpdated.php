@@ -2,6 +2,8 @@
 
 namespace App\Events;
 
+use App\Models\ChecklistItem;
+use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -10,30 +12,30 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CardMemberUpdated implements ShouldBroadcast
+class ChecklistItemMemberUpdated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $card;
+    public $checklistItem;
     public $user;
     public $action; // "added" hoặc "removed"
-    public $activity; // Thêm dữ liệu activity
 
-    public function __construct($card, $user, $action, $activity)
+    public function __construct($checklistItem, $user, $action)
     {
-        $this->card = $card;
+        $this->checklistItem = $checklistItem;
         $this->user = $user;
         $this->action = $action;
-        $this->activity = $activity;
     }
 
     public function broadcastOn()
     {
-        return new Channel("card.{$this->card->id}");
+
+        return new Channel("checklist-item.{$this->checklistItem->id}");
+
     }
 
     public function broadcastAs()
     {
-        return 'CardMemberUpdated';
+        return 'ChecklistItemMemberUpdated';
     }
 }
