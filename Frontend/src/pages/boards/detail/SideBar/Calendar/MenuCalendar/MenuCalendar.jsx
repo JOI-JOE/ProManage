@@ -13,7 +13,9 @@ import {
 } from "@mui/material";
 
 const MenuCalendar = ({ open, onClose }) => {
-  const [selectedBoards, setSelectedBoards] = useState([]); // Changed to array for multiple selection
+  const [selectedBoards, setSelectedBoards] = useState([]);
+  const [isBoardSelected, setIsBoardSelected] = useState(false);
+
   const [isListSelected, setIsListSelected] = useState(false);
   const [selectedLists, setSelectedLists] = useState([]);
 
@@ -79,43 +81,30 @@ const MenuCalendar = ({ open, onClose }) => {
         <Divider sx={{ my: 2 }} />
 
         {/* Bảng */}
-        <Box>
+        <Box display="flex" alignItems="center" sx={{ ml: -1.27 }}>
+          <Checkbox
+            checked={isBoardSelected}
+            onChange={() => setIsBoardSelected(!isBoardSelected)}
+          />
           <Select
             fullWidth
+            displayEmpty
             value={selectedBoards}
             onChange={(e) => handleSelectBoard(e.target.value)}
-            displayEmpty
+            renderValue={() => "Bảng gần đây"}
             multiple
-            variant="standard"
+            variant="standard" // Bỏ border
             disableUnderline={true}
             sx={{ fontSize: "0.7rem" }}
             MenuProps={{
               PaperProps: {
                 sx: {
-                  maxHeight: 200,
+                  maxWidth: 300, // Giới hạn chiều rộng dropdown
+                  maxHeight: 200, // Giới hạn chiều cao dropdown
                   overflow: "auto",
                 },
               },
             }}
-            renderValue={() => (
-              <Box display="flex" alignItems="center">
-                <Checkbox
-                  checked={selectedBoards.length === boards.length} // Check nếu tất cả đều được chọn
-                  indeterminate={
-                    selectedBoards.length > 0 &&
-                    selectedBoards.length < boards.length
-                  } // Hiển thị trạng thái trung gian
-                  onChange={() => {
-                    if (selectedBoards.length === boards.length) {
-                      setSelectedBoards([]); // Bỏ chọn tất cả
-                    } else {
-                      setSelectedBoards(boards.map((b) => b.id)); // Chọn tất cả
-                    }
-                  }}
-                />
-                <Typography variant="body2">Bảng gần đây</Typography>
-              </Box>
-            )}
           >
             {boards.map((board) => (
               <MenuItem key={board.id} value={board.id}>
