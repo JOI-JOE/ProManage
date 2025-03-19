@@ -92,8 +92,7 @@ export const updateListName = async (listId, newName) => {
 
 export const updateClosed = async (listId) => {
   try {
-    const response = await authClient.patch(`/lists/${listId}/closed`, {
-    });
+    const response = await authClient.patch(`/lists/${listId}/closed`, {});
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
@@ -101,12 +100,14 @@ export const updateClosed = async (listId) => {
   }
 };
 
-export const updateColPosition = async ({ columns }) => {
+export const updatePositionList = async ({ boardId, position, listId }) => {
   try {
-    const response = await authClient.put(`/boards/update-column-position`, {
-      columns,
+    const response = await authClient.put(`/lists/${boardId}`, {
+      position: position, // Vị trí bạn muốn cập nhật
+      listId: listId, // ID của list cần cập nhật
     });
 
+    // Trả về dữ liệu đã được cập nhật từ API
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật vị trí list_board:", error);

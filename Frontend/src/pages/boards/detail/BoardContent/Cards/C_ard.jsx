@@ -51,9 +51,9 @@ const C_ard = ({ card }) => {
     removeAttachment,
   } = useAttachments(card.id);
 
-  useEffect(() => {
-    console.log("Members data:", members); // Kiểm tra dữ liệu members
-  }, [members]);
+  // useEffect(() => {
+  //   console.log("Members data:", members); // Kiểm tra dữ liệu members
+  // }, [members]);
 
   const [open, setOpen] = useState(false); // State mở/đóng Dialog
   const navigate = useNavigate(); // Điều hướng URL

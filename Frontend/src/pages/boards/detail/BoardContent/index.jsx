@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { cloneDeep, isEmpty, isEqual } from "lodash";
+import { cloneDeep, isEmpty, isEqual, over } from "lodash";
 import {
   DndContext,
   MouseSensor,
@@ -23,9 +23,10 @@ import { generatePlaceholderCard } from "../../../../../utils/formatters";
 import { useParams } from "react-router-dom";
 import C_ard from "./Cards/C_ard";
 import { mapOrder } from "../../../../../utils/sort";
-import { useUpdateColumnPosition } from "../../../../hooks/useList";
 import { useCardPositionsInColumns, useCardPositionsOutColumns } from "../../../../hooks/useCard";
 import BoardContext from "../../../../contexts/BoardContext";
+import { calculateItemPosition } from "../../../../../utils/calculateItemPosition";
+import { useUpdatePositionList } from "../../../../hooks/useList";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -35,7 +36,7 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 const BoardContent = () => {
   const { boardId } = useParams();
   const { board } = useContext(BoardContext);
-  const updateColumnPosition = useUpdateColumnPosition(); // ✅ Gọi hook ngay trong body của component
+  const updatePositionListMutation = useUpdatePositionList();
 
 
   // console.log(board)
@@ -55,7 +56,7 @@ const BoardContent = () => {
   const [activeDragItemType, setActiveDragItemType] = useState(null);
   const [activeDragItemData, setActiveDragItemData] = useState(null);
   const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null);
-
+  const [activeList, setActiveList] = useState(false);
   const lastOverId = useRef(null);
   // const columnOrderIds = []
 
@@ -201,24 +202,28 @@ const BoardContent = () => {
     });
   };
 
+  // Khi bắt đầu kéo
   const handleDragStart = (event) => {
-    setActiveDragItemId(event?.active?.id);
+    const { active } = event;
+    if (!active) return;
 
+    setActiveDragItemId(active?.id);
+
+    // Kiểm tra xem đang kéo Column hay Card
     setActiveDragItemType(
-      event?.active?.data?.current?.columnId
+      active?.data?.current?.columnId
         ? ACTIVE_DRAG_ITEM_TYPE.CARD
         : ACTIVE_DRAG_ITEM_TYPE.COLUMN
     );
 
-    setActiveDragItemData(event?.active?.data?.current);
+    setActiveDragItemData(active?.data?.current);
 
-    //Nếu kéo Card thì mới set giá trị oldColumn
-    if (event?.active?.data?.current?.columnId) {
-      setOldColumnDraggingCard(findColumnByCardId(event?.active?.id));
+    // Nếu là Card, lưu lại cột cũ
+    if (active?.data?.current?.columnId) {
+      setOldColumnDraggingCard(findColumnByCardId(active?.id));
     }
   };
 
-  // Trong quá trình kéo một phần tử
   const handleDragOver = (event) => {
     const { active, over } = event;
     if (!active || !over) return;
@@ -229,6 +234,7 @@ const BoardContent = () => {
     } = active;
     const { id: overItemId } = over;
 
+    // Kiểm tra nếu đang kéo Column
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
       const activeColumnIndex = orderedColumns.findIndex(
         (c) => c.id === activeItemId
@@ -236,50 +242,54 @@ const BoardContent = () => {
       const overColumnIndex = orderedColumns.findIndex(
         (c) => c.id === overItemId
       );
-      // .log("📌 Đang kéo column:", activeItemId, "➡ Column target:", overItemId);
 
+      // Kiểm tra nếu cột đang kéo và cột được thả vào khác nhau
       if (
         activeColumnIndex !== -1 &&
         overColumnIndex !== -1 &&
         activeColumnIndex !== overColumnIndex
       ) {
+        // Nếu active và over khác nhau thì mới di chuyển cột
         const dndOrderedColumns = arrayMove(
           orderedColumns,
           activeColumnIndex,
           overColumnIndex
         );
-
+        setActiveList(true)
         setOrderedColumns(dndOrderedColumns);
       }
       return;
     }
-    // Tìm column theo cardId
-    const activeColumn = findColumnByCardId(activeItemId);
-    const overColumn =
-      findColumnByCardId(overItemId) ||
-      orderedColumns.find((col) => col.id === overItemId);
+    // Kiểm tra nếu đang kéo Card
+    if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
+      // Tìm column của Card đang kéo và column mà thả vào
+      const activeColumn = findColumnByCardId(activeItemId);
+      const overColumn =
+        findColumnByCardId(overItemId) ||
+        orderedColumns.find((col) => col.id === overItemId);
 
-    if (!activeColumn || !overColumn) return;
+      // Nếu có sự thay đổi cột, thực hiện việc di chuyển Card
+      if (!activeColumn || !overColumn) return;
 
-    if (activeColumn.id !== overColumn.id) {
-      moveCardBetweenDifferentColumns(
-        overColumn,
-        overItemId,
-        active,
-        over,
-        activeColumn,
-        activeItemId,
-        activeItemData
-      );
+      if (activeColumn.id !== overColumn.id) {
+        moveCardBetweenDifferentColumns(
+          overColumn,
+          overItemId,
+          active,
+          over,
+          activeColumn,
+          activeItemId,
+          activeItemData
+        );
+      }
     }
   };
-
   // Kết thúc kéo một phần tử
   const handleDragEnd = async (event) => {
-    // console.log("handleDragEnd:", event);
     const { active, over } = event;
-
-    if (!active || !over) return;
+    if (!active || !over) {
+      return
+    }
     // Xử lý kéo thả Card
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
       const {
@@ -393,41 +403,27 @@ const BoardContent = () => {
 
     // Xử lý kéo thả Column
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-      // Hàm hỗ trợ để tìm index của column dựa trên id
-      const findColumnIndex = (id) => {
-        const index = orderedColumns.findIndex((c) => c.id === id);
-        // console.log(`Tìm thấy column có id: ${id}, index: ${index}`);
-        return index;
-      };
-      // Lấy vị trí cũ từ active
-      const oldColumnIndex = findColumnIndex(active.id);
+      const activeIndex = orderedColumns.findIndex((c) => c.id === active.id);
+      if (activeList) {
+        const draggedColumn = orderedColumns.find(c => c.id === active.id);
+        if (draggedColumn) {
+          // Lấy chỉ mục hiện tại của draggedColumn trong orderedColumns
+          const draggedColumnIndex = orderedColumns.findIndex((c) => c.id === draggedColumn.id);
 
-      // Nếu over không tồn tại (kéo đến đầu danh sách), đặt vị trí mới là 0
-      const newColumnIndex = over ? findColumnIndex(over.id) : 0;
-      // Kiểm tra nếu index hợp lệ
-      if (oldColumnIndex === -1) {
-        // console.warn("Invalid column index. Cannot perform reordering.");
-        return;
+          const newPosition = calculateItemPosition(draggedColumnIndex, orderedColumns, draggedColumn.id);
+
+          draggedColumn.position = newPosition;
+          const { boardId, id, position } = draggedColumn;
+
+          updatePositionListMutation.mutate({
+            listId: id,
+            position: position,
+            boardId: boardId,
+          });
+          setActiveList(false)
+          console.log(orderedColumns)
+        }
       }
-      // Sắp xếp lại mảng column ban đầu
-      const dndOrderedColumns = arrayMove(
-        orderedColumns,
-        oldColumnIndex,
-        newColumnIndex
-      );
-
-      // Cập nhật lại giá trị position dựa trên vị trí mới, bắt đầu từ 0
-      const updatedColumns = dndOrderedColumns.map((column, index) => ({
-        ...column,
-        position: (index + 1) * 1000,
-        boardId,
-      }));
-
-      // Cập nhật state local
-      setOrderedColumns(updatedColumns);
-
-      // Gọi mutation để cập nhật dữ liệu trên server
-      updateColumnPosition.mutate(updatedColumns); // ✅ Dùng `.mutate()`
     }
 
     setActiveDragItemId(null);
@@ -528,9 +524,9 @@ const BoardContent = () => {
       <DndContext
         sensors={sensors}
         collisionDetection={collisionDetectionStrategy}
+        onDragEnd={handleDragEnd}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
       >
         <Box
           sx={(theme) => ({
@@ -549,6 +545,7 @@ const BoardContent = () => {
         >
           <Col_list columns={orderedColumns} boardId={boardId} />
           <DragOverlay dropAnimation={customDropAnimation}>
+            {/* <DragOverlay> */}
             {!activeDragItemType && null}
             {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN && (
               <Col column={activeDragItemData} />
