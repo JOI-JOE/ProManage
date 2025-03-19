@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 
 const MenuCalendar = ({ open, onClose }) => {
-  const [selectedBoard, setSelectedBoard] = useState("");
+  const [selectedBoards, setSelectedBoards] = useState([]); // Changed to array for multiple selection
   const [selectedList, setSelectedList] = useState("");
   const [isListSelected, setIsListSelected] = useState(false);
   const [selectedLists, setSelectedLists] = useState([]);
@@ -32,6 +32,12 @@ const MenuCalendar = ({ open, onClose }) => {
     { id: "3", name: "Column 3" },
   ];
 
+  const boards = [
+    { id: "1", name: "Bảng 1" },
+    { id: "2", name: "Bảng 2" },
+    { id: "3", name: "Bảng 3" },
+  ];
+
   const handleSelectMember = (id) => {
     setSelectedMembers((prev) =>
       prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
@@ -41,6 +47,12 @@ const MenuCalendar = ({ open, onClose }) => {
   const handleSelectList = (id) => {
     setSelectedLists((prev) =>
       prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectBoard = (id) => {
+    setSelectedBoards((prev) =>
+      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]
     );
   };
 
@@ -56,12 +68,32 @@ const MenuCalendar = ({ open, onClose }) => {
         <Typography variant="subtitle1">Bảng Gần Đây</Typography>
         <Select
           fullWidth
-          value={selectedBoard}
-          onChange={(e) => setSelectedBoard(e.target.value)}
+          value={selectedBoards}
+          onChange={(e) => handleSelectBoard(e.target.value)}
           displayEmpty
-          sx={{ my: 1 }}
+          renderValue={() => "Chọn bảng"}
+          multiple
+          variant="standard"
+          disableUnderline={true}
+          sx={{ fontSize: "0.7rem" }}
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                maxHeight: 200,
+                overflow: "auto",
+              },
+            },
+          }}
         >
-          <MenuItem value="">1 bảng đã chọn</MenuItem>
+          {boards.map((board) => (
+            <MenuItem key={board.id} value={board.id}>
+              <Checkbox
+                checked={selectedBoards.includes(board.id)}
+                onChange={() => handleSelectBoard(board.id)}
+              />
+              <Typography variant="body2">{board.name}</Typography>
+            </MenuItem>
+          ))}
         </Select>
 
         {/* Từ khóa */}
@@ -70,6 +102,9 @@ const MenuCalendar = ({ open, onClose }) => {
           placeholder="Nhập từ khóa..."
           variant="outlined"
           sx={{ my: 2 }}
+          inputProps={{
+            sx: { height: 30, padding: "4px 8px", fontSize: "0.7rem" },
+          }}
         />
 
         {/* Thành viên */}
