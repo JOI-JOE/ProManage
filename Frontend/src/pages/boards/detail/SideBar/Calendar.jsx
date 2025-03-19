@@ -17,18 +17,6 @@ const Calendar = () => {
           `calc( ${theme.trello.boardContentHeight} + ${theme.trello.boardBarHeight} )`, // Adjust height to match the sidebar
         overflow: "auto", // Ensure overflow is handled
         fontSize: "0.7rem",
-        /* Custom scrollbar styles */
-        scrollbarWidth: "thin" /* For Firefox */,
-        "&::-webkit-scrollbar": {
-          width: "4px" /* For WebKit browsers */,
-        },
-        "&::-webkit-scrollbar-thumb": {
-          backgroundColor: "rgba(0, 0, 0, 0.2)",
-          borderRadius: "10px",
-        },
-        "&::-webkit-scrollbar-track": {
-          background: "rgba(0, 0, 0, 0.1)",
-        },
       }}
     >
       <FullCalendar

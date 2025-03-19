@@ -20,21 +20,21 @@
 .fc-button {
   box-shadow: none !important;
 }
-
-/* Custom scrollbar styles */
-.fc {
-  scrollbar-width: thin; /* For Firefox */
+/* Tùy chỉnh thanh scrollbar */
+::-webkit-scrollbar {
+  width: 6px; /* Độ rộng thanh scrollbar */
 }
 
-.fc::-webkit-scrollbar {
-  width: 4px; /* For WebKit browsers */
-}
-
-.fc::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Màu nền của track */
   border-radius: 10px;
 }
 
-.fc::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+::-webkit-scrollbar-thumb {
+  background: #888; /* Màu của thanh kéo */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Màu khi hover */
 }
