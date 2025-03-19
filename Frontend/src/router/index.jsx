@@ -26,6 +26,7 @@ import Account from "../pages/boards/detail/Account";
 import AcceptTeam from "../pages/workspace/invite/AcceptTeam";
 import InvitePage from "../pages/boards/invite/InvitePage";
 import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
+import Board from "../pages/boards/detail/Board";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -74,6 +75,7 @@ const router = createBrowserRouter([
             element: <BoardContent />,
             children: [{ path: "c/:cardId/:title", element: <CardModal /> }],
           },
+          { path: "w/:workspaceName", element: <Board /> },
           { path: "w/:workspaceName/members", element: <Member /> },
           { path: "w/:workspaceName/account", element: <Account /> },
         ],
@@ -87,16 +89,16 @@ const router = createBrowserRouter([
     children: [
       {
         path: "invite-board/:token",
-        element: <InvitePage/>, // Tự động kiểm tra đăng nhập và chuyển hướng
+        element: <InvitePage />, // Tự động kiểm tra đăng nhập và chuyển hướng
       },
       {
         path: "accept-invite/:token",
-        element: <AcceptInvitePage/>, // Tự động kiểm tra đăng nhập và chuyển hướng
+        element: <AcceptInvitePage />, // Tự động kiểm tra đăng nhập và chuyển hướng
       },
-      
+
       {
         path: "invite/accept-team",
-        element: <AcceptTeam />
+        element: <AcceptTeam />,
       },
     ],
   },
@@ -105,6 +107,5 @@ const router = createBrowserRouter([
     element: <NotFoundPage />,
   },
 ]);
-
 
 export default router;
