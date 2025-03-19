@@ -14,7 +14,6 @@ import {
 
 const MenuCalendar = ({ open, onClose }) => {
   const [selectedBoards, setSelectedBoards] = useState([]); // Changed to array for multiple selection
-  const [selectedList, setSelectedList] = useState("");
   const [isListSelected, setIsListSelected] = useState(false);
   const [selectedLists, setSelectedLists] = useState([]);
 
@@ -33,9 +32,24 @@ const MenuCalendar = ({ open, onClose }) => {
   ];
 
   const boards = [
-    { id: "1", name: "Bảng 1" },
-    { id: "2", name: "Bảng 2" },
-    { id: "3", name: "Bảng 3" },
+    {
+      id: "1",
+      name: "Bảng 1",
+      image:
+        "https://i.pinimg.com/736x/ff/df/a4/ffdfa4e4981626865d139d37d0f74e42.jpg",
+    },
+    {
+      id: "2",
+      name: "Bảng 2",
+      image:
+        "https://i.pinimg.com/736x/e4/25/87/e4258704c8d65883256a73d70f118389.jpg",
+    },
+    {
+      id: "3",
+      name: "Bảng 3",
+      image:
+        "https://i.pinimg.com/736x/e8/90/40/e89040791fa5a9cdf2a9f45bfa1f2db0.jpg",
+    },
   ];
 
   const handleSelectMember = (id) => {
@@ -65,37 +79,97 @@ const MenuCalendar = ({ open, onClose }) => {
         <Divider sx={{ my: 2 }} />
 
         {/* Bảng */}
-        <Typography variant="subtitle1">Bảng Gần Đây</Typography>
-        <Select
-          fullWidth
-          value={selectedBoards}
-          onChange={(e) => handleSelectBoard(e.target.value)}
-          displayEmpty
-          renderValue={() => "Chọn bảng"}
-          multiple
-          variant="standard"
-          disableUnderline={true}
-          sx={{ fontSize: "0.7rem" }}
-          MenuProps={{
-            PaperProps: {
-              sx: {
-                maxHeight: 200,
-                overflow: "auto",
+        <Box>
+          <Select
+            fullWidth
+            value={selectedBoards}
+            onChange={(e) => handleSelectBoard(e.target.value)}
+            displayEmpty
+            multiple
+            variant="standard"
+            disableUnderline={true}
+            sx={{ fontSize: "0.7rem" }}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  maxHeight: 200,
+                  overflow: "auto",
+                },
               },
-            },
-          }}
-        >
-          {boards.map((board) => (
-            <MenuItem key={board.id} value={board.id}>
-              <Checkbox
-                checked={selectedBoards.includes(board.id)}
-                onChange={() => handleSelectBoard(board.id)}
-              />
-              <Typography variant="body2">{board.name}</Typography>
-            </MenuItem>
-          ))}
-        </Select>
+            }}
+            renderValue={() => (
+              <Box display="flex" alignItems="center">
+                <Checkbox
+                  checked={selectedBoards.length === boards.length} // Check nếu tất cả đều được chọn
+                  indeterminate={
+                    selectedBoards.length > 0 &&
+                    selectedBoards.length < boards.length
+                  } // Hiển thị trạng thái trung gian
+                  onChange={() => {
+                    if (selectedBoards.length === boards.length) {
+                      setSelectedBoards([]); // Bỏ chọn tất cả
+                    } else {
+                      setSelectedBoards(boards.map((b) => b.id)); // Chọn tất cả
+                    }
+                  }}
+                />
+                <Typography variant="body2">Bảng gần đây</Typography>
+              </Box>
+            )}
+          >
+            {boards.map((board) => (
+              <MenuItem key={board.id} value={board.id}>
+                <Checkbox
+                  checked={selectedBoards.includes(board.id)}
+                  onChange={() => handleSelectBoard(board.id)}
+                />
+                <img
+                  src={board.image}
+                  alt={board.name}
+                  style={{ width: 24, height: 24, marginRight: 8 }}
+                />
+                <Typography variant="body2">{board.name}</Typography>
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
 
+        <Box>
+          <Select
+            fullWidth
+            value={selectedBoards}
+            onChange={(e) => handleSelectBoard(e.target.value)}
+            displayEmpty
+            renderValue={() => "Chọn bảng"}
+            multiple
+            variant="standard"
+            disableUnderline={true}
+            sx={{ fontSize: "0.7rem" }}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  maxHeight: 200,
+                  overflow: "auto",
+                },
+              },
+            }}
+          >
+            {boards.map((board) => (
+              <MenuItem key={board.id} value={board.id}>
+                <Checkbox
+                  checked={selectedBoards.includes(board.id)}
+                  onChange={() => handleSelectBoard(board.id)}
+                />
+                <img
+                  src={board.image}
+                  alt={board.name}
+                  style={{ width: 24, height: 24, marginRight: 8 }}
+                />
+                <Typography variant="body2">{board.name}</Typography>
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
         {/* Từ khóa */}
         <TextField
           fullWidth
@@ -108,7 +182,7 @@ const MenuCalendar = ({ open, onClose }) => {
         />
 
         {/* Thành viên */}
-        <Typography variant="subtitle1">Thành viên</Typography>
+        <Typography variant="h6">Thành viên</Typography>
         <FormGroup>
           <FormControlLabel
             control={<Checkbox />}
@@ -169,7 +243,7 @@ const MenuCalendar = ({ open, onClose }) => {
         </Box>
 
         {/* Card status */}
-        <Typography variant="subtitle1" sx={{ mt: 2 }}>
+        <Typography variant="h6" sx={{ mt: 2 }}>
           Card status
         </Typography>
         <FormGroup>
@@ -184,7 +258,7 @@ const MenuCalendar = ({ open, onClose }) => {
         </FormGroup>
 
         {/* Danh sách */}
-        <Typography variant="subtitle1" sx={{ mt: 2 }}>
+        <Typography variant="h6" sx={{ mt: 2 }}>
           Danh sách
         </Typography>
         <Box display="flex" alignItems="center" sx={{ ml: -1.27 }}>
@@ -245,7 +319,7 @@ const MenuCalendar = ({ open, onClose }) => {
         </Box>
 
         {/* Nhãn */}
-        <Typography variant="subtitle1" sx={{ mt: 2 }}>
+        <Typography variant="h6" sx={{ mt: 2 }}>
           Nhãn
         </Typography>
         <FormGroup>
