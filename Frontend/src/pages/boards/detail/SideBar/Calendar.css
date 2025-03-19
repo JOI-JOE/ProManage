@@ -20,3 +20,21 @@
 .fc-button {
   box-shadow: none !important;
 }
+
+/* Custom scrollbar styles */
+.fc {
+  scrollbar-width: thin; /* For Firefox */
+}
+
+.fc::-webkit-scrollbar {
+  width: 4px; /* For WebKit browsers */
+}
+
+.fc::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.fc::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
