@@ -51,10 +51,51 @@ const useAttachments = (cardId) => {
   const removeAttachmentMutation = useMutation({
     mutationFn: (attachmentId) => deleteAttachment(cardId, attachmentId),
     onSuccess: () => {
-      queryClient.invalidateQueries(["attachments"]);
+      queryClient.invalidateQueries(["attachments",cardId]);
 
     },
   });
+
+   const setCoverImageMutation = useMutation({
+    mutationFn: (attachmentId) => setCoverImage(cardId, attachmentId),
+    onMutate: async (attachmentId) => {
+      await queryClient.cancelQueries(["attachments", cardId]);
+      const previousAttachments = queryClient.getQueryData(["attachments", cardId]) || [];
+  
+      queryClient.setQueryData(["attachments", cardId], (oldData) => {
+        const currentData = Array.isArray(oldData) ? oldData : [];
+        const isAlreadyCover = currentData.some((file) => file.id === attachmentId && file.is_cover);
+  
+        if (isAlreadyCover) {
+          // Nếu đã là ảnh bìa, bỏ trạng thái ảnh bìa
+          return currentData.map((file) =>
+            file.id === attachmentId ? { ...file, is_cover: false } : file
+          );
+        } else {
+          // Đặt ảnh bìa mới, xóa các ảnh bìa cũ
+          return currentData.map((file) =>
+            file.id === attachmentId
+              ? { ...file, is_cover: true }
+              : { ...file, is_cover: false }
+          );
+        }
+      });
+  
+      return { previousAttachments };
+    },
+    onSuccess: () => {
+      queryClient.refetchQueries(["attachments", cardId], { exact: true });
+    },
+    onError: (_error, _attachmentId, context) => {
+      queryClient.setQueryData(["attachments", cardId], context.previousAttachments);
+    },
+  });
+
+
+
+
+
+
 
 
   return {
@@ -64,6 +105,8 @@ const useAttachments = (cardId) => {
     addAttachment: addAttachmentMutation.mutate,
     updateAttachment: updateFileNameAttachmentMutation.mutate,
     removeAttachment: removeAttachmentMutation.mutate,
+    
+    setCoverImages: setCoverImageMutation.mutate, // Thêm hàm để gọi từ component
   };
 };
 

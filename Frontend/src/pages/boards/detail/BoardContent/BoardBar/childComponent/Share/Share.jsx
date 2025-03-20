@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -15,79 +15,146 @@ import {
   MenuItem,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useParams } from "react-router-dom";
-import { useGenerateInviteLink } from "../../../../../../../hooks/useInviteBoard";
+import { useParams, useNavigate } from "react-router-dom";
+import { useGenerateInviteLink, useUpdateRoleMemberInBoards ,useRemoveMemberFromBoard } from "../../../../../../../hooks/useInviteBoard";
+// import { useRemoveMemberFromBoard } from "../../../../../../../hooks/useRemoveMemberFromBoard"; // Import hook đã chỉnh sửa
+import { toast } from "react-toastify";
 
-const ShareBoardDialog = ({ open, onClose }) => {
-  const { boardId } = useParams()
-  // console.log(boardId);
+const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
+  const { boardId } = useParams();
+  const currentBoardId = boardId;
+  const navigate = useNavigate();
 
-  const { mutate: generateLink, data, isLoading, error } = useGenerateInviteLink();
-  
+  // Hooks
+  const { mutate: generateLink } = useGenerateInviteLink();
+  const { mutate: updateRoleMemberInBoard } = useUpdateRoleMemberInBoards();
+  const removeMember = useRemoveMemberFromBoard(currentUser?.id); // Sử dụng hook với currentUserId
+
+  // States
   const [roleAnchorEl, setRoleAnchorEl] = useState(null);
-  const [selectedRole, setSelectedRole] = useState("Quản trị viên");
+  const [leaveAnchorEl, setLeaveAnchorEl] = useState(null);
+  const [selectedMemberId, setSelectedMemberId] = useState(null);
+  const [openLeaveDialog, setOpenLeaveDialog] = useState(false);
   const [link, setLink] = useState("");
+  const leaveButtonRef = useRef(null);
 
-  const handleOpenRoleMenu = (event) => {
+  // Handlers
+  const handleOpenRoleMenu = (event, memberId) => {
     setRoleAnchorEl(event.currentTarget);
+    setSelectedMemberId(memberId);
   };
 
-  const handleCloseRoleMenu = (role) => {
-    if (role) setSelectedRole(role);
+  const handleCloseRoleMenu = (roleDisplay, memberId) => {
+    if (!roleDisplay || !memberId) {
+      setRoleAnchorEl(null);
+      return;
+    }
+
+    const roleApi = {
+      "Quản trị viên": "admin",
+      "Thành viên": "member",
+    }[roleDisplay] || null;
+
+    const isRemoveAction = roleDisplay === "Rời bảng" || roleDisplay === "Xóa khỏi bảng";
+    const isCreator = currentUser.id === boardMembers.data.find(m => m.id === memberId)?.creator_id;
+
+    if (isRemoveAction) {
+      if (isCreator) {
+        setOpenLeaveDialog(true);
+        setSelectedMemberId(memberId);
+      } else {
+        removeMember.mutate(
+          { boardId: currentBoardId, userId: memberId },
+          {
+            onError: (error) => {
+              if (error.message.includes("last admin")) {
+                toast.error("Bạn không thể rời bảng khi không có quản trị viên khác!");
+              }
+            },
+          }
+        );
+      }
+    } else if (roleApi) {
+      updateRoleMemberInBoard(
+        { boardId: currentBoardId, userId: memberId, role: roleApi },
+        {
+          onSuccess: (data) => {
+            if (isCreator && roleApi === "admin" && data.can_leave) {
+              setLeaveAnchorEl(leaveButtonRef.current);
+            }
+          },
+          onError: (error) => {
+            if (error.message.includes("last admin")) {
+              toast.error("Phải có ít nhất 1 quản trị viên!");
+            }
+          },
+        }
+      );
+    }
     setRoleAnchorEl(null);
   };
 
-  const handleCreateLink = () => {
-    // Giả lập tạo liên kết
-    generateLink(boardId);
-    // console.log(12121212);
-    
+  const handleCloseLeaveMenu = (action) => {
+    if (action === "Rời bảng") {
+      setOpenLeaveDialog(true);
+      setSelectedMemberId(currentUser.id);
+    }
+    setLeaveAnchorEl(null);
   };
+
+  const handleLeaveBoard = () => {
+    removeMember.mutate(
+      { boardId: currentBoardId, userId: selectedMemberId },
+      {
+        onSuccess: () => {
+          setOpenLeaveDialog(false);
+          if (selectedMemberId === currentUser.id) {
+            navigate("/home"); // Điều hướng về home nếu người dùng tự rời
+          }
+        },
+      }
+    );
+  };
+
+  const handleCreateLink = () => {
+    generateLink(currentBoardId);
+  };
+
+  // Utility functions
+  const getMemberRoleText = (role) => (role === "admin" ? "Quản trị viên" : "Thành viên");
+  const getMemberRoleDescription = (role) =>
+    role === "admin" ? "Quản trị viên của bảng" : "Thành viên";
+
+  // Kiểm tra số lượng admin
+  const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Chia sẻ bảng</DialogTitle>
       <DialogContent>
-        {/* Nhập email hoặc tên */}
         <TextField
           fullWidth
           variant="outlined"
           placeholder="Địa chỉ email hoặc tên"
           size="small"
           sx={{
-            marginBottom: 2,
-            "& .MuiOutlinedInput-root": {
-              borderRadius: 2,
-            },
-            "& input::placeholder": {
-              fontSize: "0.765rem", // Chỉnh kích thước chữ trong placeholder
-            },
-            "& input": {
-              fontSize: "0.675rem", // Chỉnh kích thước chữ khi nhập vào
-            },
+            mb: 2,
+            "& .MuiOutlinedInput-root": { borderRadius: 2 },
+            "& input::placeholder": { fontSize: "0.765rem" },
+            "& input": { fontSize: "0.675rem" },
           }}
         />
 
-        {/* Chia sẻ bằng liên kết */}
         <Box display="flex" alignItems="center">
           <FormControlLabel
             control={<Switch />}
             label="Chia sẻ bảng này bằng liên kết"
             sx={{
-              "& .MuiSwitch-switchBase.Mui-checked": {
-                color: "teal",
-              },
-              "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                backgroundColor: "teal",
-              },
+              "& .MuiSwitch-switchBase.Mui-checked": { color: "teal" },
+              "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "teal" },
             }}
           />
-          <Typography
-            variant="body2"
-            color="teal"
-            sx={{ cursor: "pointer", ml: 1 }}
-            onClick={handleCreateLink}
-          >
+          <Typography variant="body2" color="teal" sx={{ cursor: "pointer", ml: 1 }} onClick={handleCreateLink}>
             Tạo liên kết
           </Typography>
         </Box>
@@ -98,91 +165,107 @@ const ShareBoardDialog = ({ open, onClose }) => {
           </Typography>
         )}
 
-        {/* Thành viên của bảng */}
-        <Typography
-          variant="subtitle1"
-          sx={{ marginTop: 2, fontWeight: "bold" }}
-        >
+        <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: "bold" }}>
           Thành viên của bảng thông tin
         </Typography>
 
-        <Box
-          display="flex"
-          alignItems="center"
-          gap={2}
-          mt={1}
-          sx={{ p: 1, borderRadius: 2, backgroundColor: "#f4f5f7" }}
+        {boardMembers?.data?.map((member) => {
+          const isCurrentUser = currentUser?.id === member.id;
+          const currentUserBoard = currentUser?.boardMember?.find((board) => board.board_id === currentBoardId);
+          const isAdmin = currentUserBoard?.role === "admin";
+          const canEdit = isAdmin;
+          const isSelectedAdmin = member?.pivot.role === "admin";
+          const removeOptionText =
+            isCurrentUser && adminCount > 1 ? "Rời bảng" : isSelectedAdmin ? "Rời bảng" : "Xóa khỏi bảng";
+
+          return (
+            <Box
+              key={member.id}
+              display="flex"
+              alignItems="center"
+              gap={2}
+              mt={1}
+              sx={{ p: 1, borderRadius: 2, backgroundColor: "#E8CC9F" }}
+            >
+              <Avatar
+                alt={member.full_name}
+                src={member.avatar || ""}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  bgcolor: "#1976d2",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                }}
+              >
+                {!member.avatar && member.full_name.charAt(0).toUpperCase()}
+              </Avatar>
+              <Box flexGrow={1}>
+                <Typography fontWeight="bold">{member.full_name}</Typography>
+                <Typography variant="body2" color="textSecondary">{member.email}</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  {getMemberRoleDescription(member.pivot.role)}
+                </Typography>
+              </Box>
+
+              {canEdit ? (
+                <>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    endIcon={<ExpandMoreIcon />}
+                    onClick={(e) => handleOpenRoleMenu(e, member.id)}
+                    sx={{ fontSize: "0.765rem" }}
+                  >
+                    {getMemberRoleText(member.pivot.role)}
+                  </Button>
+                  <Menu
+                    anchorEl={roleAnchorEl}
+                    open={Boolean(roleAnchorEl) && selectedMemberId === member.id}
+                    onClose={() => handleCloseRoleMenu(null, member.id)}
+                    MenuListProps={{ sx: { "& .MuiMenuItem-root": { fontSize: "0.8rem" } } }}
+                  >
+                    <MenuItem onClick={() => handleCloseRoleMenu("Quản trị viên", member.id)}>
+                      Quản trị viên
+                    </MenuItem>
+                    <MenuItem onClick={() => handleCloseRoleMenu("Thành viên", member.id)}>Thành viên</MenuItem>
+                    <MenuItem onClick={() => handleCloseRoleMenu(removeOptionText, member.id)}>
+                      {removeOptionText}
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <Typography variant="body2" sx={{ fontSize: "0.765rem", p: "4px 8px" }}>
+                  {getMemberRoleText(member.pivot.role)}
+                </Typography>
+              )}
+            </Box>
+          );
+        })}
+
+        <Button ref={leaveButtonRef} sx={{ display: "none" }} />
+        <Menu
+          anchorEl={leaveAnchorEl}
+          open={Boolean(leaveAnchorEl)}
+          onClose={() => handleCloseLeaveMenu(null)}
+          MenuListProps={{ sx: { "& .MuiMenuItem-root": { fontSize: "0.8rem" } } }}
         >
-          <Avatar alt="Người dùng" />
-          <Box flexGrow={1}>
-            <Typography fontWeight="bold">
-              Pham Thi Hong Ngat (FPL HN) (bạn)
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              @phamthihongngatfplhn
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Quản trị viên Không gian làm việc
-            </Typography>
-          </Box>
+          <MenuItem onClick={() => handleCloseLeaveMenu("Rời bảng")}>Rời bảng</MenuItem>
+        </Menu>
 
-          {/* Chọn quyền */}
-          <Button
-            variant="outlined"
-            size="small"
-            endIcon={<ExpandMoreIcon />}
-            onClick={handleOpenRoleMenu}
-            sx={{
-              fontSize: "0.765rem", // Chỉnh kích thước chữ của nút "Quản trị viên"
-            }}
-          >
-            {selectedRole}
-          </Button>
-
-          {/* Menu chọn quyền */}
-          <Menu
-            anchorEl={roleAnchorEl}
-            open={Boolean(roleAnchorEl)}
-            onClose={() => handleCloseRoleMenu(null)}
-            MenuListProps={{
-              sx: {
-                "& .MuiMenuItem-root": {
-                  fontSize: "0.8rem", // Chỉnh kích thước chữ của các mục trong Menu
-                },
-              },
-            }}
-          >
-            <MenuItem onClick={() => handleCloseRoleMenu("Quản trị viên")}>
-              Quản trị viên
-            </MenuItem>
-            <MenuItem onClick={() => handleCloseRoleMenu("Thành viên")}>
-              Thành viên
-            </MenuItem>
-
-            <MenuItem onClick={() => handleCloseRoleMenu("Rời bảng")}>
-              Rời bảng
-            </MenuItem>
-          </Menu>
-        </Box>
+        <Dialog open={openLeaveDialog} onClose={() => setOpenLeaveDialog(false)}>
+          <DialogTitle>Bạn có chắc chắn muốn rời bảng?</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Bạn sẽ mất quyền truy cập vào bảng sau khi rời. Hãy đảm bảo đã chỉ định ít nhất một quản trị viên khác.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenLeaveDialog(false)}>Hủy</Button>
+            <Button onClick={handleLeaveBoard} color="error">Rời bảng</Button>
+          </DialogActions>
+        </Dialog>
       </DialogContent>
-
-      <DialogActions sx={{ justifyContent: "flex-end", px: 3, pb: 2 }}>
-        <Button onClick={onClose} color="secondary">
-          Đóng
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{
-            backgroundColor: "teal",
-            "&:hover": {
-              backgroundColor: "#22a6b3", // Giữ nguyên màu nền khi hover
-            },
-          }}
-        >
-          Chia sẻ
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };
