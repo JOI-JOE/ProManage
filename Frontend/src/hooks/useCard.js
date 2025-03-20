@@ -209,7 +209,7 @@ export const useGetMemberInCard = (cardId) => {
 
     channel.listen(".CardMemberUpdated", (event) => {
       if (event?.card?.id === cardId) {
-          console.log(`👥 Thành viên ${event.action}:`, event.user.full_name);
+          // console.log(`👥 Thành viên ${event.action}:`, event.user.full_name);
 
 
           // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });

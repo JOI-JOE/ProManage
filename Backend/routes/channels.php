@@ -49,3 +49,7 @@ Broadcast::channel('checklist-item.{checklistItemId}', function ($checklistItemI
     return true;
 });
 
+Broadcast::channel('App.Models.User.{userId}', function ($user, $userId) {
+    return (string) $user->id === (string) $userId;
+});
+

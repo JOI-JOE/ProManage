@@ -17,6 +17,7 @@ import theme from "./theme";
 
 import "../index.css";
 import router from "./router";
+import { NotificationProvider } from "./providers/NotificationProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,11 +32,13 @@ createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <ContextProvider>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <ToastContainer theme="light" position="bottom-right" />
-          <RouterProvider router={router} />
-        </ThemeProvider>
+        {/* <NotificationProvider> */}
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <ToastContainer theme="light" position="bottom-right" />
+            <RouterProvider router={router} />
+          </ThemeProvider>
+        {/* </NotificationProvider> */}
       </ContextProvider>
     </QueryClientProvider>
   </React.StrictMode>

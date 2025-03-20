@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendChecklistItemNotification;
 use App\Models\ChecklistItem;
 use App\Models\User;
+use App\Notifications\ChecklistItemMemberNotification;
 use Illuminate\Http\Request;
 use App\Events\ChecklistItemMemberUpdated;
 
@@ -39,6 +41,10 @@ class ChecklistItemMemberController extends Controller
 
             broadcast(new ChecklistItemMemberUpdated($checklistItem, $user, 'removed'))->toOthers();
 
+
+            // $user->notify(new ChecklistItemMemberNotification($checklistItem, $user, 'removed')); 
+
+            
             return response()->json([
                 'message' => 'Đã xoá thành viên khỏi checklist item.',
                 'removed_user_id' => $userId,
@@ -48,6 +54,10 @@ class ChecklistItemMemberController extends Controller
             $checklistItem->members()->sync([$userId]);
 
             broadcast(new ChecklistItemMemberUpdated($checklistItem, $user, 'added'))->toOthers();
+
+            // $user->notify(new ChecklistItemMemberNotification($checklistItem, $user, 'added')); 
+
+            SendChecklistItemNotification::dispatch($checklistItem, $user, 'added', auth()->user());
 
             return response()->json([
                 'message' => 'Đã thêm thành viên (và thay thế thành viên cũ nếu có).',

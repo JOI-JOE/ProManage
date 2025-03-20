@@ -6,6 +6,7 @@ use App\Events\CardMemberUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\User;
+use App\Notifications\CardMemberUpdatedNotification;
 use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
 
@@ -77,6 +78,9 @@ class CardMemberController extends Controller
                         'full_name' => $user->full_name,
                     ])
                     ->log("{$authUser->full_name} đã gỡ {$user->full_name} khỏi thẻ này");
+
+                    $user->notify(new CardMemberUpdatedNotification($card, 'removed', $authUser, $activity, $user->id));
+
             } else {
                 $activity = null;
             }
@@ -114,6 +118,9 @@ class CardMemberController extends Controller
                         // 'authUser' => $authUser->full_name,
                     ])
                     ->log("{$authUser->full_name} đã thêm {$user->full_name} vào thẻ này");
+
+                    $user->notify(new CardMemberUpdatedNotification($card, 'added', $authUser, $activity, $user->id));
+
             }
 
             broadcast(new CardMemberUpdated($card, $user, 'added', $activity))->toOthers();
