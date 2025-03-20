@@ -59,6 +59,7 @@ import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import {
   useCardActions,
   useCardById,
+  useCardSchedule,
   useGetMemberInCard,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
@@ -97,8 +98,10 @@ import { useActivityByCardId } from "../../../../../../../../../hooks/useActivit
 import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
 
-const CardModal = ({}) => {
+const CardModal = ({ }) => {
   const { cardId, title } = useParams();
+  const { data: schedule } = useCardSchedule(cardId);//date
+
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -132,6 +135,11 @@ const CardModal = ({}) => {
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
+  const formatDate = (dateString) => {
+    if (!dateString) return "Không có";
+    const date = new Date(dateString);
+    return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+  }
 
   const [coverImage, setCoverImage] = useState(
     localStorage.getItem(`coverImage-${cardId}`) || null
@@ -946,7 +954,7 @@ const CardModal = ({}) => {
         </DialogTitle>
 
         {/* NGÀY */}
-        {dateInfo && (
+        {schedule && (
           <>
             <Typography sx={{ fontWeight: "bold", mb: 0, ml: 3 }}>
               Ngày
@@ -963,11 +971,10 @@ const CardModal = ({}) => {
               onClick={openDateModal}
             >
               <CalendarTodayIcon />
-              {dateInfo.startDate !== "Không có" && (
-                <Typography>{dateInfo.startDate.split(" ")[0]} -</Typography>
-              )}
-              <Typography>{dateInfo.endDate.split(" ")[1]}</Typography>
-              <Typography>{dateInfo.endDate.split(" ")[0]}</Typography>
+              <Typography>{formatDate(schedule.start_date)} -</Typography>
+
+              <Typography>{formatDate(schedule.end_date)}</Typography>
+              <Typography>{schedule.end_time}</Typography>
               {/* Kiểm tra trạng thái deadline */}
               {isOverdue() && (
                 <Chip
@@ -1391,15 +1398,15 @@ const CardModal = ({}) => {
                                 Đã thêm{" "}
                                 {file.time
                                   ? new Date(file.time).toLocaleString(
-                                      "vi-VN",
-                                      {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                      }
-                                    )
+                                    "vi-VN",
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "numeric",
+                                    }
+                                  )
                                   : "Không xác định"}
                                 {file.isCover && (
                                   <Box component="span" sx={{ ml: 1 }}>
@@ -1562,15 +1569,15 @@ const CardModal = ({}) => {
                           Đã thêm:{" "}
                           {selectedFile.time
                             ? new Date(selectedFile.time).toLocaleString(
-                                "vi-VN",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                }
-                              )
+                              "vi-VN",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              }
+                            )
                             : "Không xác định"}
                         </Typography>
                         <Typography variant="body2" sx={{ color: "#fff" }}>
@@ -2306,13 +2313,13 @@ const CardModal = ({}) => {
                             ) : (
                               <Typography component="span" fontWeight="normal">
                                 {item.properties &&
-                                item.properties.file_path &&
-                                item.properties.file_name
+                                  item.properties.file_path &&
+                                  item.properties.file_name
                                   ? renderDescriptionWithLink(
-                                      actionText,
-                                      item.properties.file_path,
-                                      item.properties.file_name
-                                    )
+                                    actionText,
+                                    item.properties.file_path,
+                                    item.properties.file_name
+                                  )
                                   : actionText}
                               </Typography>
                             )}
@@ -2550,7 +2557,7 @@ const CardModal = ({}) => {
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-          // onSave={handleAddTask}
+        // onSave={handleAddTask}
         />
 
         {/* Component Label List */}

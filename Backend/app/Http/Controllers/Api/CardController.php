@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Events\CardPositionUpdated;
 use App\Events\ColumnPositionUpdated;
+use App\Jobs\SendReminderNotification;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Cache;
@@ -135,7 +137,7 @@ class CardController extends Controller
     {
         $user = User::where('email', $request->email)->first();
         $cards = Card::findOrFail($cardId);
-        $userIds = $cards->users->pluck('id')->toArray();
+        // $userIds = $cards->users->pluck('id')->toArray();
         $userName = auth()->user()?->user_name ?? 'ai đó';
         $request->validate([
             'email' => 'required|email'
@@ -145,16 +147,11 @@ class CardController extends Controller
             return response()->json(['message' => 'Email không tồn tại trong hệ thống'], 404);
         }
         $cards = Card::findOrFail($cardId);
-        $userByCard = $cards->users->pluck('id')->toArray();
+        // $userByCard = $cards->users->pluck('id')->toArray();
         // Kiểm tra nếu user đã có trong thẻ chưa
-        if (!$cards->users()->where('users.id', $user->id)->exists()) {
-            $cards->users()->attach($user->id);
-            // Tạo hoạt động (ví dụ: ai đó cập nhật thẻ)
-            $activity = [
-                'message' => $userName . " đã cập nhật thẻ: " . $cards->title,
-                'timestamp' => now(),
-            ];
-            // ghi lại hoạt động
+        if (!$cards->members()->wherePivot('users.id', $user->id)->exists()) {
+            $cards->members()->attach($user->id);
+
             activity()
                 ->causedBy(auth()->user())
                 ->performedOn($cards)
@@ -165,13 +162,13 @@ class CardController extends Controller
                     'added_user_email' => $user->email,
                 ])
                 ->log("{$userName} đã thêm  {$user->user_name} vào thẻ.");
-            broadcast(new ActivityEvent($activity, $cardId, $userByCard));
-            // Gửi thông báo
-            $user->notify(new CardNotification('add_member', $cards));
-            return response()->json(['message' => 'Đã thêm thành viên vào thẻ và gửi thông báo'], 200);
+            // broadcast(new ActivityEvent($activity, $cardId, $userByCard));
+            // // Gửi thông báo
+            // $user->notify(new CardNotification('add_member', $cards));
+            // return response()->json(['message' => 'Đã thêm thành viên vào thẻ và gửi thông báo'], 200);
+        } else {
+            return response()->json(['message' => 'Người dùng đã có trong thẻ'], 400);
         }
-
-        return response()->json(['message' => 'Người dùng đã có trong thẻ'], 400);
     }
     // thành viên khỏi card
     public function removeMember($cardId, $userID)
@@ -181,13 +178,13 @@ class CardController extends Controller
         $user_name = auth()->user()?->user_name ?? 'ai đó';
 
         // Kiểm tra xem user có trong thẻ không
-        if (!$card->users()->where('user_id', $user->id)->exists()) {
+        if (!$card->members()->where('user_id', $user->id)->exists()) {
             return response()->json([
                 'message' => 'Người dùng không tồn tại trong thẻ này'
             ], 404);
         }
         // Xóa user khỏi thẻ
-        $card->users()->detach($user->id);
+        $card->members()->detach($user->id);
         // Kiểm tra xem người thực hiện có phải là chính user bị xóa không
 
         activity()
@@ -213,44 +210,52 @@ class CardController extends Controller
     }
     public function updateDates(Request $request, $cardId)
     {
-
-        Log::info('Người dùng đăng nhập:', ['user' => auth()->user()]);
-
         $card = Card::findOrFail($cardId);
         $user_name = auth()->user()->user_name ?? 'ai đó';
 
         // Validate các trường nhập
         $request->validate([
             'start_date' => 'nullable|date_format:Y-m-d',
-            'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
-            'end_time' => 'nullable|date_format:H:i',
+            'end_date'   => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
+            'end_time'   => 'nullable|date_format:H:i',
+            'reminder'   => 'nullable|string', // Kiểm tra reminder dưới dạng chuỗi để xử lý linh hoạt
         ]);
 
-        // Kiểm tra sự thay đổi của ngày kết thúc và giờ kết thúc
         $changes = [];
 
+        // Cập nhật start_date nếu thay đổi
+        if ($request->has('start_date') && $request->start_date !== $card->start_date) {
+            $card->start_date = $request->start_date;
+        }
 
-        // Kiểm tra sự thay đổi giữa giá trị trong request và giá trị hiện tại trong cơ sở dữ liệu
+        // Cập nhật end_date nếu thay đổi
         if ($request->has('end_date') && $request->end_date !== $card->end_date) {
             $changes['end_date'] = $request->end_date;
         }
 
+        // Cập nhật end_time nếu thay đổi
         if ($request->has('end_time') && $request->end_time !== $card->end_time) {
             $changes['end_time'] = $request->end_time;
         }
-        $card->update($changes);
+        if ($request->has('reminder') && $request->reminder !== $card->reminder) {
+            $card->reminder = $request->reminder;
+        }
 
-        // Nếu có sự thay đổi
-        if (isset($changes)) {
-            // Cập nhật thẻ với các thay đổi
-            $logMessage = "{$user_name} đã cập nhật ";
+
+
+        // Cập nhật dữ liệu vào database
+        $card->update(array_merge($changes, ['start_date' => $card->start_date]));
+
+        // Nếu có sự thay đổi, ghi log và gửi thông báo
+        if (!empty($changes)) {
+            $logMessage = "{$user_name} đã chuyển ";
 
             if (isset($changes['end_date']) && isset($changes['end_time'])) {
-                $logMessage .= "ngày kết thúc thành {$changes['end_date']} và giờ kết thúc thành {$changes['end_time']}, ";
-            } elseif (isset($changes['end_date'])) {
-                $logMessage .= "ngày kết thúc thành {$changes['end_date']}, ";
-            } elseif (isset($changes['end_time'])) {
-                $logMessage .= "giờ kết thúc thành {$changes['end_time']}, ";
+                $logMessage .= "ngày hết hạn thẻ này sang {$changes['end_date']} lúc {$changes['end_time']}, ";
+            } else if (isset($changes['end_date'])) {
+                $logMessage .= "ngày hết hạn thẻ này sang {$changes['end_date']}, ";
+            } else if (isset($changes['end_time'])) {
+                $logMessage .= "giờ kết thúc sang {$changes['end_time']}, ";
             }
 
             // Loại bỏ dấu phẩy cuối cùng
@@ -264,17 +269,21 @@ class CardController extends Controller
                 ->withProperties(array_merge(['card_title' => $card->title], $changes))
                 ->log($logMessage);
 
-            // Lấy tất cả người dùng liên quan đến thẻ, trừ người dùng đang đăng nhập
-            $users = $card->users()->where('id', '!=', auth()->id())->get();
+            // Gửi thông báo đến tất cả người dùng liên quan
+            // $users = $card->users()->where('id', '!=', auth()->id())->get();
+            // foreach ($users as $user) {
+            //     $user->notify(new CardNotification('update_datetime', $card, [], $user_name));
+            // }
 
-            // Gửi thông báo cho tất cả người dùng trừ người dùng đang đăng nhập
-            foreach ($users as $user) {
-                $user->notify(new CardNotification('update_datetime', $card, [], $user_name));
-            }
+            Log::info("📌 Job được lên lịch chạy vào: " . Carbon::parse($card->reminder));
+
+        }
+        if (!empty($card->reminder) && strtotime($card->reminder)) {
+            dispatch(new SendReminderNotification($card))->delay(Carbon::parse($card->reminder));
         }
 
         return response()->json([
-            'message' => 'Cập nhật ngày và giờ thành công!',
+            'message' => 'Cập nhật ngày, giờ và nhắc nhở thành công!',
             'data' => $card,
         ]);
     }
@@ -409,5 +418,15 @@ class CardController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+    public function getSchedule($cardId)
+    {
+        $card = Card::findOrFail($cardId);
+        return response()->json([
+            'start_date' => $card->start_date,
+            'end_date'   => $card->end_date,
+            'end_time'   => $card->end_time,
+            'reminder'   => $card->reminder,
+        ]);
     }
 }
