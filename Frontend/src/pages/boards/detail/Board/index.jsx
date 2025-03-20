@@ -12,18 +12,20 @@ import {
   DialogContent,
   Stack,
   InputAdornment,
+  List,
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-// import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import { Divider, MenuItem } from "@mui/material";
+import CreateBoard from "../../../../components/CreateBoard";
+import MyBoard from "../../../../components/MyBoard";
 
 const Board = () => {
   const [isFormVisible, setFormVisible] = useState(false);
-  const [setVisibility] = useState("private"); // Mặc định là riêng tư
   const [anchorEl, setAnchorEl] = useState(null);
   const [isInviteOpen, setInviteOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -43,21 +45,6 @@ const Board = () => {
     name: "Tên Không Gian",
   };
 
-  // Mở Popover khi bấm "Thay đổi"
-  const handleOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  // Đóng Popover
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  // Chỉ thay đổi trạng thái, KHÔNG đóng Popover
-  const handleVisibilityChange = (event) => {
-    setVisibility(event.target.value);
-  };
-
   const handleCopyLink = () => {
     setLinkCopied(true);
     setIsLinkActive(true);
@@ -74,26 +61,40 @@ const Board = () => {
     setInviteOpen(false);
   };
 
-  const [createAnchorEl, setCreateAnchorEl] = useState(null);
+  const [openMainPopover, setOpenMainPopover] = useState(false);
+  const [openCreatePopover, setOpenCreatePopover] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState("");
   const [collectionName, setCollectionName] = useState("");
+  const [collections, setCollections] = useState([]);
 
-  const handleMainPopoverOpen = (event) => setAnchorEl(event.currentTarget);
-  const handleMainPopoverClose = () => setAnchorEl(null);
-  const openMainPopover = Boolean(anchorEl);
+  // Mở popover Bộ sưu tập
+  const handleMainPopoverOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+    setOpenMainPopover(true);
+  };
 
+  const handleMainPopoverClose = () => {
+    setOpenMainPopover(false);
+  };
+
+  // Mở popover Tạo bộ sưu tập
   const handleCreatePopoverOpen = () => {
     handleMainPopoverClose(); // Đóng popover chính
-    setCreateAnchorEl(anchorEl); // Anchor là cái popover chính hoặc TextField
-  };
-  // Khi click vào "Tạo bộ sưu tập"
-  const handleCreateCollectionClick = () => {
-    handleCollectionClose(); // đóng popover chính
-    setCreateAnchorEl(collectionAnchorEl); // gán anchor của popover chính (TextField)
     setOpenCreatePopover(true);
   };
 
-  const handleCreatePopoverClose = () => setCreateAnchorEl(null);
-  const openCreatePopover = Boolean(createAnchorEl);
+  const handleCreatePopoverClose = () => {
+    setOpenCreatePopover(false);
+    setCollectionName("");
+  };
+
+  // Lưu bộ sưu tập
+  const handleSaveCollection = () => {
+    if (collectionName.trim()) {
+      setCollections([...collections, collectionName.trim()]);
+      handleCreatePopoverClose();
+    }
+  };
 
   return (
     <Box
@@ -315,16 +316,17 @@ const Board = () => {
                 Lọc theo
               </Typography>
 
+              {/* Ô chọn bộ sưu tập */}
               <TextField
                 size="small"
                 sx={{ minWidth: 220 }}
-                value="Chọn bộ sưu tập"
+                value={selectedCollection || "Chọn bộ sưu tập"}
                 InputProps={{
                   readOnly: true,
                   sx: {
-                    color: "gray",
+                    color: selectedCollection ? "black" : "gray",
                     "& .MuiInputBase-input": {
-                      color: "gray",
+                      color: selectedCollection ? "black" : "gray",
                     },
                   },
                   endAdornment: (
@@ -341,23 +343,42 @@ const Board = () => {
                 open={openMainPopover}
                 anchorEl={anchorEl}
                 onClose={handleMainPopoverClose}
-                anchorOrigin={{
-                  vertical: "bottom",
-                  horizontal: "left",
-                }}
-                PaperProps={{
-                  sx: { p: 2, width: 320, textAlign: "center" },
-                }}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                PaperProps={{ sx: { p: 2, width: 320, textAlign: "center" } }}
               >
                 <Typography sx={{ fontWeight: "bold", mb: 1, color: "gray" }}>
                   Bộ sưu tập
                 </Typography>
-                <Typography sx={{ fontWeight: "bold", mb: 1 }}>
-                  Sắp xếp các bảng của bạn với các bộ sưu tập
-                </Typography>
-                <Typography sx={{ fontSize: "14px", color: "gray", mb: 2 }}>
-                  Nhóm các bảng theo phòng ban, chủ đề, nhóm và hơn thế nữa.
-                </Typography>
+
+                {/* Render danh sách bộ sưu tập */}
+                {collections.map((item, index) => (
+                  <MenuItem
+                    key={index}
+                    onClick={() => {
+                      setSelectedCollection(item);
+                      handleMainPopoverClose();
+                    }}
+                  >
+                    • {item}
+                  </MenuItem>
+                ))}
+                {selectedCollection && (
+                  <>
+                    <Divider sx={{ my: 1 }} />
+                    <MenuItem
+                      onClick={() => {
+                        setSelectedCollection("");
+                        handleMainPopoverClose();
+                      }}
+                      sx={{ color: "gray" }}
+                    >
+                      Làm sạch bộ lọc...
+                    </MenuItem>
+                  </>
+                )}
+
+                <Divider sx={{ my: 1 }} />
+
                 <Button
                   variant="contained"
                   fullWidth
@@ -375,19 +396,11 @@ const Board = () => {
               {/* Popover Tạo bộ sưu tập mới */}
               <Popover
                 open={openCreatePopover}
-                anchorEl={createAnchorEl}
+                anchorEl={anchorEl} // Dùng cùng anchor để "replace" đúng vị trí
                 onClose={handleCreatePopoverClose}
-                anchorOrigin={{
-                  vertical: "bottom",
-                  horizontal: "left",
-                }}
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: "left",
-                }}
-                PaperProps={{
-                  sx: { p: 2, width: 320 },
-                }}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                transformOrigin={{ vertical: "top", horizontal: "left" }}
+                PaperProps={{ sx: { p: 2, width: 320 } }}
               >
                 <Box sx={{ position: "relative" }}>
                   <Typography
@@ -395,12 +408,14 @@ const Board = () => {
                   >
                     Tạo bộ sưu tập mới
                   </Typography>
+
                   <IconButton
                     onClick={handleCreatePopoverClose}
                     sx={{ position: "absolute", top: 0, right: 0 }}
                   >
                     <CloseIcon />
                   </IconButton>
+
                   <Typography sx={{ mb: 1 }}>Tên</Typography>
                   <TextField
                     fullWidth
@@ -410,16 +425,17 @@ const Board = () => {
                     onChange={(e) => setCollectionName(e.target.value)}
                     sx={{ mb: 2 }}
                   />
+
                   <Button
                     variant="contained"
                     fullWidth
-                    disabled={!collectionName}
+                    disabled={!collectionName.trim()}
                     sx={{
-                      bgcolor: !collectionName ? "#F4F5F7" : "#0052CC",
-                      color: !collectionName ? "gray" : "#fff",
+                      bgcolor: !collectionName.trim() ? "#F4F5F7" : "#0052CC",
+                      color: !collectionName.trim() ? "gray" : "#fff",
                       textTransform: "none",
-                      cursor: !collectionName ? "default" : "pointer",
                     }}
+                    onClick={handleSaveCollection}
                   >
                     Lưu
                   </Button>
@@ -452,6 +468,27 @@ const Board = () => {
             />
           </Box>
         </Box>
+        <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+          {/* Bảng Trello của tôi */}
+          {workspace.boards && workspace.boards.length > 0 ? (
+            workspace.boards.map((board) => (
+              <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                <MyBoard
+                  key={board.id}
+                  board={board}
+                  id={`recent-board-${board.id}`}
+                />
+              </ListItem>
+            ))
+          ) : (
+            <Typography variant="body2" color="textSecondary">
+              Không có bảng nào.
+            </Typography>
+          )}
+
+          {/* Tạo bảng mới */}
+          <CreateBoard />
+        </List>
       </Box>
     </Box>
   );
