@@ -24,23 +24,23 @@ const Email = ({ open, onClose, anchorEl }) => {
   const emailInputRef = useRef(null);
   const resetEmailRef = useRef(null);
 
-  // ✅ Sao chép email vào clipboard
+  // Sao chép email vào clipboard
   const handleCopy = () => {
     navigator.clipboard.writeText(email);
     toast.success("Đã sao chép email!", { position: "bottom-left" });
   };
 
-  // ✅ Hiển thị thông báo khi bấm "Gửi email cho tôi địa chỉ này"
+  // Hiển thị thông báo khi bấm "Gửi email cho tôi địa chỉ này"
   const handleSendEmail = () => {
     toast.success("Đã gửi", { position: "bottom-left" });
   };
 
-  // ✅ Mở popover đặt lại email
+  // Mở popover đặt lại email
   const handleResetEmail = () => {
     setOpenResetPopover(true);
   };
 
-  // ✅ Tạo email mới
+  // Tạo email mới
   const handleCreateNewEmail = () => {
     setOpenResetPopover(false);
     setEmail("trangnguyenthu41+moi123");
@@ -54,10 +54,10 @@ const Email = ({ open, onClose, anchorEl }) => {
 
   return (
     <>
-      {/* ✅ Container hiển thị thông báo */}
+      {/* Container hiển thị thông báo */}
       <ToastContainer autoClose={2000} />
 
-      {/* ✅ Popover chính (Hiển thị phía trên dòng "Cài đặt email tới bảng") */}
+      {/* Popover chính (Hiển thị phía trên dòng "Cài đặt email tới bảng") */}
       <Popover
         open={open}
         anchorEl={anchorEl}
@@ -66,7 +66,7 @@ const Email = ({ open, onClose, anchorEl }) => {
         transformOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <div style={{ padding: "10px", width: "300px" }}>
-          {/* ✅ Nút đóng Popover */}
+          {/*  Nút đóng Popover */}
           <IconButton
             onClick={onClose}
             sx={{ position: "absolute", top: 8, right: 8 }}
@@ -76,7 +76,11 @@ const Email = ({ open, onClose, anchorEl }) => {
 
           <Typography
             variant="h6"
-            sx={{ textAlign: "center", marginBottom: "10px" }}
+            sx={{
+              textAlign: "center",
+              marginBottom: "10px",
+              fontWeight: "bold",
+            }}
           >
             Thêm thẻ qua email
           </Typography>
@@ -84,7 +88,7 @@ const Email = ({ open, onClose, anchorEl }) => {
             Địa chỉ email dành cho bảng thông tin này
           </Typography>
 
-          {/* ✅ Trường nhập email + Nút sao chép */}
+          {/* Trường nhập email + Nút sao chép */}
           <Grid container spacing={1} alignItems="center" sx={{ mt: 1 }}>
             <Grid item xs={9}>
               <TextField
@@ -106,7 +110,7 @@ const Email = ({ open, onClose, anchorEl }) => {
             Bất kỳ ai có email này đều có thể thêm thẻ như bạn.
           </Typography>
 
-          {/* ✅ Liên kết đặt lại email */}
+          {/* Liên kết đặt lại email */}
           <Typography variant="body2" sx={{ mt: 2 }}>
             <Link
               href="#"
@@ -132,7 +136,7 @@ const Email = ({ open, onClose, anchorEl }) => {
             </Link>
           </Typography>
 
-          {/* ✅ Dropdown chọn danh sách & vị trí */}
+          {/* Dropdown chọn danh sách & vị trí */}
           <Typography variant="body2" sx={{ mt: 2 }}>
             Những thẻ bạn đã gửi email sẽ xuất hiện trong ...
           </Typography>
@@ -167,7 +171,7 @@ const Email = ({ open, onClose, anchorEl }) => {
         </div>
       </Popover>
 
-      {/* ✅ Popover đặt lại email (Mở dưới "Đặt lại địa chỉ email") */}
+      {/*  Popover đặt lại email (Mở dưới "Đặt lại địa chỉ email") */}
       <Popover
         open={openResetPopover}
         anchorEl={resetEmailRef.current}
