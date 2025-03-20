@@ -3,6 +3,7 @@ import React, {useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useLists } from "../hooks/useList";
 import BoardContext from "../contexts/BoardContext";
+import { getListByBoardId } from "../api/models/listsApi";
 
 const BoardProvider = ({ children }) => {
     const { boardId } = useParams();

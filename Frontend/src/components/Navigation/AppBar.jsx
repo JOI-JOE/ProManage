@@ -13,6 +13,7 @@ import {
   InputLabel,
   Menu,
   MenuItem,
+  CircularProgress
 } from "@mui/material";
 import AppsIcon from "@mui/icons-material/Apps";
 import trelloLogo from "~/assets/trello.svg?react";
@@ -26,10 +27,11 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import Profile from "./Menus/Profiles";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Recent from "./Menus/Recent";
 import { useUser } from "../../hooks/useUser";
 import useNotifications from "../../hooks/useNotification";
+import useSearch from "../../hooks/useSearch";
 // import useNotifications from "../../hooks/useNotification";
 
 const AppBar = ({ username, email }) => {
@@ -41,6 +43,18 @@ const AppBar = ({ username, email }) => {
   const [searchText, setSearchText] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [showUnread, setShowUnread] = useState(false);
+
+  const [query, setQuery] = useState('');
+
+  const { searchResults, isLoadingSearch, errorSearch } = useSearch(searchText, userId);
+
+  useEffect(() => {
+    // Cập nhật kết quả tìm kiếm khi có thay đổi trong searchText
+  }, [searchText]);
+
+  const handleSearchChange = (e) => {
+    setSearchText(e.target.value);
+  };
 
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
@@ -123,39 +137,97 @@ const AppBar = ({ username, email }) => {
           marginLeft: "auto",
         }}
       >
-        <TextField
-          autoComplete="off"
-          id="outlined-search"
-          label="Search..."
-          type="search"
-          size="small"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          InputLabelProps={{
-            sx: { fontSize: "14px", color: "white" }, // Giảm kích thước chữ label
-          }}
-          InputProps={{
-            sx: {
-              height: 35,
-              width: 210,
-              backgroundColor: "black",
-              borderRadius: "8px",
-              color: "white",
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "white",
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "primary.main",
-              },
-
-              "& .MuiInputBase-input": {
-                // color: "white",
-                fontSize: "13px",
-                // padding: "4px 8px",
-              },
+        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <TextField
+        autoComplete="off"
+        id="outlined-search"
+        label="Search..."
+        type="search"
+        size="small"
+        value={searchText}
+        onChange={handleSearchChange}
+        InputLabelProps={{
+          sx: { fontSize: '14px', color: 'white' }, // Giảm kích thước chữ label
+        }}
+        InputProps={{
+          sx: {
+            height: 40,
+            width: 280,
+            backgroundColor: '#1a1a1a', // Nền tối
+            borderRadius: '30px', // Viền bo tròn giống Trello
+            color: 'white',
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'transparent', // Ẩn viền mặc định
             },
-          }}
-        />
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#00C2A0', // Màu viền khi hover
+            },
+            '& .MuiInputBase-input': {
+              fontSize: '14px',
+              padding: '8px 12px',
+            },
+          },
+        }}
+      />
+
+      {isLoading && <CircularProgress size={24} sx={{ color: 'white', marginTop: '10px' }} />}
+      {error && <p style={{ color: 'red' }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>}
+
+      {searchText && !isLoading && !error && searchResults && (
+        <Box sx={{ width: '100%', paddingTop: '20px', backgroundColor: '#2e2e2e', borderRadius: '10px', padding: '10px' }}>
+          <h3 style={{ color: 'white' }}>Kết quả tìm kiếm:</h3>
+
+          {/* Kiểm tra nếu boards tồn tại và có phần tử */}
+          {Array.isArray(searchResults.boards) && searchResults.boards.length > 0 && (
+            <Box sx={{ marginBottom: '15px' }}>
+              <h4 style={{ color: '#00C2A0' }}>Bảng:</h4>
+              <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                {searchResults.boards.map((board) => (
+                  <li key={board.id} style={{ color: 'white', padding: '5px 0', borderBottom: '1px solid #444' }}>
+                    {board.name}
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
+
+          {/* Kiểm tra nếu cards tồn tại và có phần tử */}
+          {Array.isArray(searchResults.cards) && searchResults.cards.length > 0 && (
+            <Box sx={{ marginBottom: '15px' }}>
+              <h4 style={{ color: '#00C2A0' }}>Thẻ:</h4>
+              <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                {searchResults.cards.map((card) => (
+                  <li key={card.id} style={{ color: 'white', padding: '5px 0', borderBottom: '1px solid #444' }}>
+                    {card.title}
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
+
+          {/* Kiểm tra nếu users tồn tại và có phần tử */}
+          {Array.isArray(searchResults.users) && searchResults.users.length > 0 && (
+            <Box sx={{ marginBottom: '15px' }}>
+              <h4 style={{ color: '#00C2A0' }}>Người dùng:</h4>
+              <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                {searchResults.users.map((user) => (
+                  <li key={user.id} style={{ color: 'white', padding: '5px 0', borderBottom: '1px solid #444' }}>
+                    {user.user_name}
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
+
+          {/* Trường hợp không có kết quả tìm kiếm */}
+          {(!Array.isArray(searchResults.boards) || searchResults.boards.length === 0) &&
+           (!Array.isArray(searchResults.cards) || searchResults.cards.length === 0) &&
+           (!Array.isArray(searchResults.users) || searchResults.users.length === 0) && 
+            <p style={{ color: 'white' }}>Không tìm thấy kết quả nào.</p>}
+        </Box>
+      )}
+    </Box>
+
 
         <Tooltip title="Notification">
           <IconButton onClick={handleClick}>

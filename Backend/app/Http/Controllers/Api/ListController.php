@@ -17,6 +17,7 @@ use Pusher\Pusher;
 
 class ListController extends Controller
 {
+    
     public function index($boardId)
     {
         $board = Board::where('id', $boardId)

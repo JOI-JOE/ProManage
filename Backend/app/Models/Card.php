@@ -128,4 +128,8 @@ class Card extends Model
     {
         return $this->hasMany(CheckList::class, 'card_id');
     }
+    public function board()
+    {
+        return $this->belongsTo(Board::class);
+    }
 }

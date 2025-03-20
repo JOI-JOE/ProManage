@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\ColorController;
 use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\RecentBoardController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
@@ -123,7 +124,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Send Email
 
 
-    Route::post('lists/{boardId}', [ListController::class, 'index']);
+    Route::get('lists/{boardId}', [ListController::class, 'index']);
+    
+    Route::get('/search', [SearchController::class, 'search']);
 });
 
 

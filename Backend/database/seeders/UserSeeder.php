@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Tạo ra 10 user với role là member
-        User::factory(50)->member()->create();
+        // User::factory(10)->member()->create();   
 
         // $user = User::create([
         //     'user_name' => 'newuser',
@@ -27,9 +27,9 @@ class UserSeeder extends Seeder
         //     'activity_block' => 1,  // Hoạt động
         // ]);
         $user = User::create([
-            'user_name' => 'thai4',
-            'full_name' => 'thai4',
-            'email' => 'thai4@example.com',
+            'user_name' => 'quoc',
+            'full_name' => 'quoc',
+            'email' => 'quoc@example.com',
             'email_verified_at' => now(),
             'password' => Hash::make('password123'),  // Mã hóa mật khẩu
             'role' => 'member',

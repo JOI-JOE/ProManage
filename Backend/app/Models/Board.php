@@ -81,4 +81,9 @@ class Board extends Model
             ->wherePivot('joined', true)
             ->wherePivot('is_deactivated', false);
     }
+
+    public function cards()
+    {
+        return $this->hasMany(Card::class);
+    }
 }

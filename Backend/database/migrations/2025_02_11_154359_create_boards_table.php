@@ -25,7 +25,7 @@ return new class extends Migration
             $table->uuid('created_by');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
 
-            $table->enum('visibility', ['public', 'private', 'member']);
+            $table->enum('visibility', ['public', 'private', 'workspace']);
 
             $table->uuid('workspace_id');
             $table->foreign('workspace_id')->references('id')->on('workspaces')->onDelete('cascade');
