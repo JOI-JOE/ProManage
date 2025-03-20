@@ -11,16 +11,17 @@ import {
   Divider,
   Box,
 } from "@mui/material";
+import ListIcon from "@mui/icons-material/List";
+import PersonIcon from "@mui/icons-material/Person";
+import LabelIcon from "@mui/icons-material/Label";
+import DashboardIcon from "@mui/icons-material/Dashboard"; // Import new icon
 
 const MenuCalendar = ({ open, onClose }) => {
   const [selectedBoards, setSelectedBoards] = useState([]);
-  const [isBoardSelected, setIsBoardSelected] = useState(false);
 
-  const [isListSelected, setIsListSelected] = useState(false);
   const [selectedLists, setSelectedLists] = useState([]);
 
   const [selectedMembers, setSelectedMembers] = useState([]);
-  const [isMemberSelected, setIsMemberSelected] = useState(false);
 
   const members = [
     { id: "1", name: "Hồng Ngát", username: "hongngat161102" },
@@ -72,6 +73,9 @@ const MenuCalendar = ({ open, onClose }) => {
     );
   };
 
+  const isIndeterminate =
+    selectedLists.length > 0 && selectedLists.length < lists.length;
+
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <Box sx={{ width: 350, padding: 2 }}>
@@ -81,47 +85,6 @@ const MenuCalendar = ({ open, onClose }) => {
         <Divider sx={{ my: 2 }} />
 
         {/* Bảng */}
-        <Box display="flex" alignItems="center" sx={{ ml: -1.27 }}>
-          <Checkbox
-            checked={isBoardSelected}
-            onChange={() => setIsBoardSelected(!isBoardSelected)}
-          />
-          <Select
-            fullWidth
-            displayEmpty
-            value={selectedBoards}
-            onChange={(e) => handleSelectBoard(e.target.value)}
-            renderValue={() => "Bảng gần đây"}
-            multiple
-            variant="standard" // Bỏ border
-            disableUnderline={true}
-            sx={{ fontSize: "0.7rem" }}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  maxWidth: 300, // Giới hạn chiều rộng dropdown
-                  maxHeight: 200, // Giới hạn chiều cao dropdown
-                  overflow: "auto",
-                },
-              },
-            }}
-          >
-            {boards.map((board) => (
-              <MenuItem key={board.id} value={board.id}>
-                <Checkbox
-                  checked={selectedBoards.includes(board.id)}
-                  onChange={() => handleSelectBoard(board.id)}
-                />
-                <img
-                  src={board.image}
-                  alt={board.name}
-                  style={{ width: 24, height: 24, marginRight: 8 }}
-                />
-                <Typography variant="body2">{board.name}</Typography>
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
 
         <Box>
           <Select
@@ -129,7 +92,12 @@ const MenuCalendar = ({ open, onClose }) => {
             value={selectedBoards}
             onChange={(e) => handleSelectBoard(e.target.value)}
             displayEmpty
-            renderValue={() => "Chọn bảng"}
+            renderValue={() => (
+              <Box display="flex" alignItems="center">
+                <DashboardIcon sx={{ mr: 1, fontSize: "14px" }} />
+                Chọn bảng
+              </Box>
+            )}
             multiple
             variant="standard"
             disableUnderline={true}
@@ -159,6 +127,7 @@ const MenuCalendar = ({ open, onClose }) => {
             ))}
           </Select>
         </Box>
+
         {/* Từ khóa */}
         <TextField
           fullWidth
@@ -183,18 +152,19 @@ const MenuCalendar = ({ open, onClose }) => {
           />
         </FormGroup>
 
-        {/* Checkbox + Dropdown chọn thành viên */}
-        <Box display="flex" alignItems="center" sx={{ ml: -1.27 }}>
-          <Checkbox
-            checked={isMemberSelected}
-            onChange={() => setIsMemberSelected(!isMemberSelected)}
-          />
+        {/* Dropdown chọn thành viên */}
+        <Box display="flex" alignItems="center" sx={{ mr: 1 }}>
           <Select
             fullWidth
             displayEmpty
             value={selectedMembers}
             onChange={(e) => handleSelectMember(e.target.value)}
-            renderValue={() => "Chọn thành viên"}
+            renderValue={() => (
+              <Box display="flex" alignItems="center">
+                <PersonIcon sx={{ ml: 0.1, mr: 1, fontSize: "14px" }} />
+                Chọn thành viên
+              </Box>
+            )}
             multiple
             variant="standard" // Bỏ border
             disableUnderline={true}
@@ -251,16 +221,17 @@ const MenuCalendar = ({ open, onClose }) => {
           Danh sách
         </Typography>
         <Box display="flex" alignItems="center" sx={{ ml: -1.27 }}>
-          <Checkbox
-            checked={isListSelected}
-            onChange={() => setIsListSelected(!isListSelected)}
-          />
           <Select
             fullWidth
             displayEmpty
             value={selectedLists}
             onChange={(e) => handleSelectList(e.target.value)}
-            renderValue={() => "Chọn danh sách"}
+            renderValue={() => (
+              <Box display="flex" alignItems="center">
+                <ListIcon sx={{ mr: 1, ml: 1.3, fontSize: "14px" }} />
+                Chọn danh sách
+              </Box>
+            )}
             multiple
             variant="standard"
             disableUnderline={true}
@@ -290,20 +261,6 @@ const MenuCalendar = ({ open, onClose }) => {
                 <Typography variant="body2">{list.name}</Typography>
               </MenuItem>
             ))}
-            <MenuItem disabled>
-              <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-                Hồng Ngát 1
-              </Typography>
-            </MenuItem>
-            {lists.map((list) => (
-              <MenuItem key={list.id} value={list.id} sx={{ py: 0 }}>
-                <Checkbox
-                  checked={selectedLists.includes(list.id)}
-                  onChange={() => handleSelectList(list.id)}
-                />
-                <Typography variant="body2">{list.name}</Typography>
-              </MenuItem>
-            ))}
           </Select>
         </Box>
 
@@ -313,7 +270,10 @@ const MenuCalendar = ({ open, onClose }) => {
         </Typography>
         <FormGroup>
           <FormControlLabel control={<Checkbox />} label="Không có Nhãn" />
-          <FormControlLabel control={<Checkbox />} label="Chọn nhãn" />
+          <Box display="flex" alignItems="center">
+            <LabelIcon sx={{ mr: 1, fontSize: "14px" }} />
+            <Typography variant="body2">Chọn nhãn</Typography>
+          </Box>
         </FormGroup>
       </Box>
     </Drawer>
