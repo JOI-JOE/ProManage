@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\WorkspaceMembersController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -180,8 +181,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Route::put('/boards/update-role', [BoardMemberController::class, 'updateRoleMemberInBoard']);
+    Route::delete('/boards/delete', [BoardMemberController::class, 'removeMemberFromBoard']);
+
     Broadcast::routes();
 });
+
 Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']); 
 
 // Recent board cho user trong workspace
@@ -247,7 +252,7 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
     Route::get('/', [AttachmentController::class, 'getAttachments']);
     Route::patch('/{attachmentId}/update-name', [AttachmentController::class, 'updateNameFileAttachment']);
     Route::post('/upload', [AttachmentController::class, 'uploadAttachment']);
-    Route::post('/uploadcover', [AttachmentController::class, 'uploadCover']);
+    Route::patch('/{attachmentId}/set-cover-image', [AttachmentController::class, 'setCoverImage']);
 
     Route::delete('/{attachmentId}/delete', [AttachmentController::class, 'deleteAttachment']);
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']);

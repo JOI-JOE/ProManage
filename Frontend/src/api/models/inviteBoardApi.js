@@ -33,3 +33,36 @@ export const generateInviteLink = async (boardId) => {
         throw error;
     }
 }
+
+export const updateRoleMemberInBoards = async (boardId, userId, role) => {
+    try {
+        const response = await authClient.put(`/boards/update-role`, {
+            board_id: boardId,
+            user_id: userId,
+            role: role
+        });
+        return response.data;
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Lỗi không xác định';
+        console.error("Lỗi khi cập nhật vai trò thành viên:", errorMessage);
+        throw new Error(errorMessage); // Ném lỗi với thông điệp cụ thể
+    }
+};
+
+export const removeMemberFromBoard = async (boardId, userId) => {
+    try {
+        const response = await authClient.delete(`/boards/delete`, {
+            data: {
+                board_id: boardId,
+                user_id: userId,
+            }
+        });
+        return response.data;
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Lỗi không xác định';
+        console.error("Lỗi khi xóa thành viên khỏi bảng:", errorMessage);
+        throw new Error(errorMessage); // Ném lỗi với thông điệp cụ thể
+    }
+};
+
+

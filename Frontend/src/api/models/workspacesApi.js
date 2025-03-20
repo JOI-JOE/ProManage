@@ -3,7 +3,7 @@ import authClient from "../authClient";
 export const getWorkspacesAll = async () => {
   try {
     const response = await authClient.get("/workspaces");
-    console.log(response.data);
+    // console.log(response.data);
     
     return response.data;
   } catch (error) {
