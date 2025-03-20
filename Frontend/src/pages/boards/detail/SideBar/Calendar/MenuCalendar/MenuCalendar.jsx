@@ -32,6 +32,9 @@ const MenuCalendar = ({ open, onClose }) => {
     { id: "1", name: "Column 1" },
     { id: "2", name: "Column 2" },
     { id: "3", name: "Column 3" },
+    { id: "4", name: "Column 4" },
+    { id: "5", name: "Column 5" },
+    { id: "6", name: "Column 6" },
   ];
 
   const boards = [
@@ -79,10 +82,14 @@ const MenuCalendar = ({ open, onClose }) => {
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <Box sx={{ width: 350, padding: 2 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">Lọc</Typography>
+        <Box display="flex" alignItems="center" justifyContent="center">
+          <Typography
+            variant="h6"
+            sx={{ fontSize: "0.8rem", padding: "4px 0px" }}
+          >
+            Lọc
+          </Typography>
         </Box>
-        <Divider sx={{ my: 2 }} />
 
         {/* Bảng */}
 
@@ -112,7 +119,7 @@ const MenuCalendar = ({ open, onClose }) => {
             }}
           >
             {boards.map((board) => (
-              <MenuItem key={board.id} value={board.id}>
+              <MenuItem key={board.id} value={board.id} sx={{ pt: 0, pb: 0 }}>
                 <Checkbox
                   checked={selectedBoards.includes(board.id)}
                   onChange={() => handleSelectBoard(board.id)}
@@ -180,7 +187,7 @@ const MenuCalendar = ({ open, onClose }) => {
             }}
           >
             {members.map((member) => (
-              <MenuItem key={member.id} value={member.id}>
+              <MenuItem key={member.id} value={member.id} sx={{ pt: 0, pb: 0 }}>
                 <Checkbox
                   checked={selectedMembers.includes(member.id)}
                   onChange={() => handleSelectMember(member.id)}
@@ -217,7 +224,7 @@ const MenuCalendar = ({ open, onClose }) => {
         </FormGroup>
 
         {/* Danh sách */}
-        <Typography variant="h6" sx={{ mt: 2 }}>
+        <Typography variant="h6" sx={{ mt: 1 }}>
           Danh sách
         </Typography>
         <Box display="flex" alignItems="center" sx={{ ml: -1.27 }}>
@@ -242,7 +249,7 @@ const MenuCalendar = ({ open, onClose }) => {
                   maxWidth: 300,
                   maxHeight: 150,
                   overflow: "auto",
-                  mt: 1,
+                  mt: 4,
                 },
               },
             }}
@@ -253,7 +260,7 @@ const MenuCalendar = ({ open, onClose }) => {
               </Typography>
             </MenuItem>
             {lists.map((list) => (
-              <MenuItem key={list.id} value={list.id} sx={{}}>
+              <MenuItem key={list.id} value={list.id} sx={{ pt: 0, pb: 0 }}>
                 <Checkbox
                   checked={selectedLists.includes(list.id)}
                   onChange={() => handleSelectList(list.id)}
