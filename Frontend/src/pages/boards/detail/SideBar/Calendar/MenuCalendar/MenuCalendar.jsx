@@ -70,9 +70,12 @@ const MenuCalendar = ({ open, onClose }) => {
     );
   };
 
-  const handleSelectBoard = (id) => {
-    setSelectedBoards((prev) =>
-      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]
+  const handleSelectBoard = (event) => {
+    const value = event.target.value;
+    setSelectedBoards(
+      selectedBoards.includes(value)
+        ? selectedBoards.filter((id) => id !== value)
+        : [...selectedBoards, value]
     );
   };
 
@@ -97,7 +100,7 @@ const MenuCalendar = ({ open, onClose }) => {
           <Select
             fullWidth
             value={selectedBoards}
-            onChange={(e) => handleSelectBoard(e.target.value)}
+            onChange={handleSelectBoard}
             displayEmpty
             renderValue={() => (
               <Box display="flex" alignItems="center">
@@ -122,7 +125,9 @@ const MenuCalendar = ({ open, onClose }) => {
               <MenuItem key={board.id} value={board.id} sx={{ pt: 0, pb: 0 }}>
                 <Checkbox
                   checked={selectedBoards.includes(board.id)}
-                  onChange={() => handleSelectBoard(board.id)}
+                  onChange={() =>
+                    handleSelectBoard({ target: { value: board.id } })
+                  }
                 />
                 <img
                   src={board.image}
@@ -135,153 +140,176 @@ const MenuCalendar = ({ open, onClose }) => {
           </Select>
         </Box>
 
-        {/* Từ khóa */}
-        <TextField
-          fullWidth
-          placeholder="Nhập từ khóa..."
-          variant="outlined"
-          sx={{ my: 2 }}
-          inputProps={{
-            sx: { height: 30, padding: "4px 8px", fontSize: "0.7rem" },
-          }}
-        />
+        {/* Conditional rendering based on selected boards */}
+        {selectedBoards.length > 0 && (
+          <>
+            {/* Từ khóa */}
+            <TextField
+              fullWidth
+              placeholder="Nhập từ khóa..."
+              variant="outlined"
+              sx={{ my: 2 }}
+              inputProps={{
+                sx: { height: 30, padding: "4px 8px", fontSize: "0.7rem" },
+              }}
+            />
 
-        {/* Thành viên */}
-        <Typography variant="h6">Thành viên</Typography>
-        <FormGroup>
-          <FormControlLabel
-            control={<Checkbox />}
-            label="Không có thành viên"
-          />
-          <FormControlLabel
-            control={<Checkbox />}
-            label="Các thẻ đã chỉ định cho tôi"
-          />
-        </FormGroup>
+            {/* Thành viên */}
+            <Typography variant="h6">Thành viên</Typography>
+            <FormGroup>
+              <FormControlLabel
+                control={<Checkbox />}
+                label="Không có thành viên"
+              />
+              <FormControlLabel
+                control={<Checkbox />}
+                label="Các thẻ đã chỉ định cho tôi"
+              />
+            </FormGroup>
 
-        {/* Dropdown chọn thành viên */}
-        <Box display="flex" alignItems="center" sx={{ mr: 1 }}>
-          <Select
-            fullWidth
-            displayEmpty
-            value={selectedMembers}
-            onChange={(e) => handleSelectMember(e.target.value)}
-            renderValue={() => (
-              <Box display="flex" alignItems="center">
-                <PersonIcon sx={{ ml: 0.1, mr: 1, fontSize: "14px" }} />
-                Chọn thành viên
-              </Box>
-            )}
-            multiple
-            variant="standard" // Bỏ border
-            disableUnderline={true}
-            sx={{ fontSize: "0.7rem" }}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  maxWidth: 300, // Giới hạn chiều rộng dropdown
-                  maxHeight: 200, // Giới hạn chiều cao dropdown
-                  overflow: "auto",
-                },
-              },
-            }}
-          >
-            {members.map((member) => (
-              <MenuItem key={member.id} value={member.id} sx={{ pt: 0, pb: 0 }}>
-                <Checkbox
-                  checked={selectedMembers.includes(member.id)}
-                  onChange={() => handleSelectMember(member.id)}
-                />
-                <Box display="flex" alignItems="center">
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "bold", mr: 1 }}
+            {/* Dropdown chọn thành viên */}
+            <Box display="flex" alignItems="center" sx={{ mr: 1 }}>
+              <Select
+                fullWidth
+                displayEmpty
+                value={selectedMembers}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedMembers(
+                    selectedMembers.includes(value)
+                      ? selectedMembers.filter((id) => id !== value)
+                      : [...selectedMembers, value]
+                  );
+                }}
+                renderValue={() => (
+                  <Box display="flex" alignItems="center">
+                    <PersonIcon sx={{ ml: 0.1, mr: 1, fontSize: "14px" }} />
+                    Chọn thành viên
+                  </Box>
+                )}
+                multiple
+                variant="standard" // Bỏ border
+                disableUnderline={true}
+                sx={{ fontSize: "0.7rem" }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      maxWidth: 300, // Giới hạn chiều rộng dropdown
+                      maxHeight: 200, // Giới hạn chiều cao dropdown
+                      overflow: "auto",
+                    },
+                  },
+                }}
+              >
+                {members.map((member) => (
+                  <MenuItem
+                    key={member.id}
+                    value={member.id}
+                    sx={{ pt: 0, pb: 0 }}
                   >
-                    {member.name}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    @{member.username}
-                  </Typography>
-                </Box>
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
+                    <Checkbox
+                      checked={selectedMembers.includes(member.id)}
+                      onChange={() => handleSelectMember(member.id)}
+                    />
+                    <Box display="flex" alignItems="center">
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "bold", mr: 1 }}
+                      >
+                        {member.name}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        @{member.username}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
 
-        {/* Card status */}
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          Card status
-        </Typography>
-        <FormGroup>
-          <FormControlLabel
-            control={<Checkbox />}
-            label="Đã đánh dấu hoàn thành"
-          />
-          <FormControlLabel
-            control={<Checkbox />}
-            label="Không được đánh dấu là đã hoàn thành"
-          />
-        </FormGroup>
+            {/* Card status */}
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Card status
+            </Typography>
+            <FormGroup>
+              <FormControlLabel
+                control={<Checkbox />}
+                label="Đã đánh dấu hoàn thành"
+              />
+              <FormControlLabel
+                control={<Checkbox />}
+                label="Không được đánh dấu là đã hoàn thành"
+              />
+            </FormGroup>
 
-        {/* Danh sách */}
-        <Typography variant="h6" sx={{ mt: 1 }}>
-          Danh sách
-        </Typography>
-        <Box display="flex" alignItems="center" sx={{ ml: -1.27 }}>
-          <Select
-            fullWidth
-            displayEmpty
-            value={selectedLists}
-            onChange={(e) => handleSelectList(e.target.value)}
-            renderValue={() => (
+            {/* Danh sách */}
+            <Typography variant="h6" sx={{ mt: 1 }}>
+              Danh sách
+            </Typography>
+            <Box display="flex" alignItems="center" sx={{ ml: -1.27 }}>
+              <Select
+                fullWidth
+                displayEmpty
+                value={selectedLists}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedLists(
+                    selectedLists.includes(value)
+                      ? selectedLists.filter((id) => id !== value)
+                      : [...selectedLists, value]
+                  );
+                }}
+                renderValue={() => (
+                  <Box display="flex" alignItems="center">
+                    <ListIcon sx={{ mr: 1, ml: 1.3, fontSize: "14px" }} />
+                    Chọn danh sách
+                  </Box>
+                )}
+                multiple
+                variant="standard"
+                disableUnderline={true}
+                sx={{ fontSize: "0.7rem" }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      maxWidth: 300,
+                      maxHeight: 150,
+                      overflow: "auto",
+                      mt: 4,
+                    },
+                  },
+                }}
+              >
+                <MenuItem disabled>
+                  <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                    Hồng Ngát
+                  </Typography>
+                </MenuItem>
+                {lists.map((list) => (
+                  <MenuItem key={list.id} value={list.id} sx={{ pt: 0, pb: 0 }}>
+                    <Checkbox
+                      checked={selectedLists.includes(list.id)}
+                      onChange={() => handleSelectList(list.id)}
+                    />
+                    <Typography variant="body2">{list.name}</Typography>
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            {/* Nhãn */}
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Nhãn
+            </Typography>
+            <FormGroup>
+              <FormControlLabel control={<Checkbox />} label="Không có Nhãn" />
               <Box display="flex" alignItems="center">
-                <ListIcon sx={{ mr: 1, ml: 1.3, fontSize: "14px" }} />
-                Chọn danh sách
+                <LabelIcon sx={{ mr: 1, fontSize: "14px" }} />
+                <Typography variant="body2">Chọn nhãn</Typography>
               </Box>
-            )}
-            multiple
-            variant="standard"
-            disableUnderline={true}
-            sx={{ fontSize: "0.7rem" }}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  maxWidth: 300,
-                  maxHeight: 150,
-                  overflow: "auto",
-                  mt: 4,
-                },
-              },
-            }}
-          >
-            <MenuItem disabled>
-              <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-                Hồng Ngát
-              </Typography>
-            </MenuItem>
-            {lists.map((list) => (
-              <MenuItem key={list.id} value={list.id} sx={{ pt: 0, pb: 0 }}>
-                <Checkbox
-                  checked={selectedLists.includes(list.id)}
-                  onChange={() => handleSelectList(list.id)}
-                />
-                <Typography variant="body2">{list.name}</Typography>
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
-
-        {/* Nhãn */}
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          Nhãn
-        </Typography>
-        <FormGroup>
-          <FormControlLabel control={<Checkbox />} label="Không có Nhãn" />
-          <Box display="flex" alignItems="center">
-            <LabelIcon sx={{ mr: 1, fontSize: "14px" }} />
-            <Typography variant="body2">Chọn nhãn</Typography>
-          </Box>
-        </FormGroup>
+            </FormGroup>
+          </>
+        )}
       </Box>
     </Drawer>
   );
