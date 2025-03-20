@@ -42,11 +42,10 @@ const style = {
 };
 
 const BoardBar = () => {
-   const { boardId } = useParams();
+  const { boardId } = useParams();
   const { board, isLoading, error } = useContext(BoardContext)
-  const {data:boardMembers } = useGetBoardMembers(boardId)
-  console.log(boardMembers);
-  
+  const { data: boardMembers } = useGetBoardMembers(boardId)
+
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
   const handleFilterDialogOpen = () => setOpenFilterDialog(true);
   const handleFilterDialogClose = () => setOpenFilterDialog(false);
@@ -224,43 +223,43 @@ const BoardBar = () => {
             },
           }}
         >
-      {boardMembers?.data?.map((member) => (
-        <Tooltip key={member.id} title={member.full_name}>
-          <div style={{ position: "relative", display: "inline-block" }}>
-            {/* Avatar với chữ cái đầu */}
-            <Avatar
-              alt={member.full_name}
-              src={member.avatar || ""}
-              sx={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#1976d2",
-                fontSize: "16px",
-                fontWeight: "bold",
-                position: "relative", // Để chứa icon bên trong
-              }}
-            >
-              {!member.avatar && member.full_name.charAt(0).toUpperCase()}
-
-              {/* Icon vương miện nếu là admin */}
-              {member.pivot.role === "admin" && (
-                <ChevronDoubleDownIcon
-                  className="h-4 w-3 text-yellow-500"
-                  style={{
-                    position: "absolute",
-                    bottom: -5,
-                    right: 1,
-                    background: "",
-                    borderRadius: "50%",
-                    padding: "2px",
+          {boardMembers?.data?.map((member) => (
+            <Tooltip key={member.id} title={member.full_name}>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                {/* Avatar với chữ cái đầu */}
+                <Avatar
+                  alt={member.full_name}
+                  src={member.avatar || ""}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    backgroundColor: "#1976d2",
+                    fontSize: "16px",
+                    fontWeight: "bold",
+                    position: "relative", // Để chứa icon bên trong
                   }}
-                />
-              )}
-            </Avatar>
-          </div>
-        </Tooltip>
-      ))}
-         
+                >
+                  {!member.avatar && member.full_name.charAt(0).toUpperCase()}
+
+                  {/* Icon vương miện nếu là admin */}
+                  {member.pivot.role === "admin" && (
+                    <ChevronDoubleDownIcon
+                      className="h-4 w-3 text-yellow-500"
+                      style={{
+                        position: "absolute",
+                        bottom: -5,
+                        right: 1,
+                        background: "",
+                        borderRadius: "50%",
+                        padding: "2px",
+                      }}
+                    />
+                  )}
+                </Avatar>
+              </div>
+            </Tooltip>
+          ))}
+
         </AvatarGroup>
         <Button
           variant="contained"

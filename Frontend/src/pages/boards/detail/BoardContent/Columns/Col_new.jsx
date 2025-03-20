@@ -6,18 +6,19 @@ import CloseIcon from "@mui/icons-material/Close";
 const Col_new = ({ open, setOpen, onAdd }) => {
     const [columnName, setColumnName] = useState("");
 
-    const handleAdd = () => {
-        onAdd(columnName);
-        setOpen(false);
+    const handleAdd = async () => {
+        if (!columnName.trim()) return; // Tránh thêm danh sách rỗng
+        await onAdd(columnName.trim());
         setColumnName("");
+        setOpen(false);
     };
 
-    const handleKeyDown = async (event) => {
+    const handleKeyDown = (event) => {
         if (event.key === "Enter") {
-            await handleAdd(); // Gọi hàm addColumn khi nhấn Enter
+            event.preventDefault(); // Tránh xuống dòng trong input
+            handleAdd();
         }
     };
-
 
     const handleClose = () => {
         setOpen(false);

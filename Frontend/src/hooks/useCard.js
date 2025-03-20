@@ -1,8 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createCard,
-  updateCardPositionsDiffCol,
-  updateCardPositionsSameCol,
   getCardById,
   updateDescription,
   updateCardTitle,
@@ -11,6 +9,7 @@ import {
   getCardArchivedByBoard,
   getMemberInCard,
   toggleCardMember,
+  updatePositionCard,
 } from "../api/models/cardsApi";
 import { useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
@@ -25,25 +24,17 @@ export const useCreateCard = () => {
   });
 };
 
-const updateCardPositionsGeneric = async (cards, updateFunction) => {
-  if (!Array.isArray(cards) || cards.length === 0) {
-    console.error("Invalid or empty cards data:", cards);
-    throw new Error("No valid card data to update.");
-  }
+export const useUpdateCardPosition = () => {
+  const queryClient = useQueryClient(); // Khởi tạo queryClient
 
-  try {
-    return await updateFunction({ cards });
-  } catch (error) {
-    console.error("Failed to update card positions:", error);
-    throw error;
-  }
+  return useMutation({
+    mutationFn: async ({ cardId, listId, position }) => {
+      return await updatePositionCard({ cardId, listId, position });
+    },
+    retry: 3,
+    retryDelay: 1000, // Thử lại sau 1 giây nếu lỗi
+  });
 };
-
-export const useCardPositionsInColumns = (cards) =>
-  updateCardPositionsGeneric(cards, updateCardPositionsSameCol);
-
-export const useCardPositionsOutColumns = (cards) =>
-  updateCardPositionsGeneric(cards, updateCardPositionsDiffCol);
 
 export const useCardById = (cardId) => {
   const queryClient = useQueryClient();
@@ -67,22 +58,18 @@ export const useCardById = (cardId) => {
     // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
 
     channel.listen(".card.updated", (event) => {
-    
-
       if (event?.card?.id === cardId) {
         queryClient.setQueryData(["cards", cardId], (oldData) => {
           if (!oldData) return oldData;
 
           // console.log("🔄 Cập nhật dữ liệu card:", { ...oldData, title: event.card.title });
 
-          return { ...oldData, title: event.card.title }; 
+          return { ...oldData, title: event.card.title };
         });
       }
     });
 
     channel.listen(".card.description.updated", (event) => {
-     
-
       if (event?.card?.id === cardId) {
         queryClient.setQueryData(["cards", cardId], (oldData) => {
           if (!oldData) return oldData;
@@ -98,9 +85,6 @@ export const useCardById = (cardId) => {
       echoInstance.leave(`card.${cardId}`);
     };
   }, [cardId, queryClient]);
-
-
-
 
   const updateDescriptionMutation = useMutation({
     mutationFn: (description) => updateDescription(cardId, description), // Gọi API cập nhật mô tả
@@ -133,7 +117,7 @@ export const useUpdateCardTitle = () => {
     onSuccess: (data, variables) => {
       // Cập nhật dữ liệu card trong cache sau khi update thành công
       queryClient.invalidateQueries({ queryKey: ["cards", variables.cardId] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] }); 
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật tên card:", error);
@@ -200,7 +184,6 @@ export const useGetMemberInCard = (cardId) => {
     enabled: !!cardId, // Chỉ gọi API khi có cardId hợp lệ.
   });
 
-
   useEffect(() => {
     if (!cardId || !echoInstance) return;
 
@@ -209,15 +192,13 @@ export const useGetMemberInCard = (cardId) => {
 
     channel.listen(".CardMemberUpdated", (event) => {
       if (event?.card?.id === cardId) {
-          console.log(`👥 Thành viên ${event.action}:`, event.user.full_name);
+        console.log(`👥 Thành viên ${event.action}:`, event.user.full_name);
 
-
-          // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });
-          queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId]}); // Fetch lại sau khi API thành công
-          queryClient.invalidateQueries({ queryKey: ["activities"] });
-        
+        // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });
+        queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] }); // Fetch lại sau khi API thành công
+        queryClient.invalidateQueries({ queryKey: ["activities"] });
       }
-  });
+    });
 
     return () => {
       channel.stopListening(".CardMemberUpdated");
@@ -225,18 +206,11 @@ export const useGetMemberInCard = (cardId) => {
     };
   }, [cardId, queryClient]);
 
-  
   // Mutation để thêm/xóa thành viên
   const mutation = useMutation({
     mutationFn: (userId) => toggleCardMember(cardId, userId),
-    onSuccess: () => {
-   
-    },
+    onSuccess: () => {},
   });
-
-  
-
-
 
   return { ...membersQuery, toggleMember: mutation.mutate };
 };

@@ -11,27 +11,16 @@ export const createCard = async (data) => {
   return response.data;
 };
 
-export const updateCardPositionsSameCol = async ({ cards }) => {
+export const updatePositionCard = async ({ cardId, listId, position }) => {
   try {
-    const response = await authClient.put("/boards/update-card-same-col", {
-      cards,
+    const response = await authClient.put(`cards/${cardId}`, {
+      listId: listId, // ID của list cần cập nhật
+      position: position, // Vị trí bạn muốn cập nhật
     });
     return response.data;
   } catch (error) {
     console.error("Error in updateCardPositions:", error);
     throw new Error("Failed to update card positions");
-  }
-};
-
-export const updateCardPositionsDiffCol = async ({ cards }) => {
-  try {
-    const response = await authClient.put("/boards/update-card-diff-col", {
-      cards,
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error in updateCardPositionsDifferentColumn:", error);
-    throw new Error("Failed to update card positions across columns");
   }
 };
 
@@ -41,7 +30,6 @@ export const getCardById = async (cardId) => {
     // console.log("API response:", response); // Kiểm tra toàn bộ response
     if (response.data) {
       return response.data;
-    
     } else {
       console.error("No data returned from API.");
       throw new Error("No data from API.");
@@ -70,14 +58,15 @@ export const updateDescription = async (cardId, description) => {
   }
 };
 
-
 export const updateCardTitle = async (cardId, title) => {
   try {
-      const response = await authClient.put(`/cards/${cardId}/updatename`, { title });
-      return response.data;
+    const response = await authClient.put(`/cards/${cardId}/updatename`, {
+      title,
+    });
+    return response.data;
   } catch (error) {
-      console.error("Lỗi khi cập nhật tên card:", error);
-      throw error;
+    console.error("Lỗi khi cập nhật tên card:", error);
+    throw error;
   }
 };
 
@@ -90,13 +79,19 @@ export const getCardArchivedByBoard = async (boardId) => {
 
     // Kiểm tra nếu có response từ server
     if (error.response) {
-      console.error("Server responded with:", error.response.status, error.response.data);
+      console.error(
+        "Server responded with:",
+        error.response.status,
+        error.response.data
+      );
 
       // Ném lỗi để phía trên có thể xử lý nếu cần
       throw new Error(error.response.data.message || "Failed to fetch cards.");
     } else if (error.request) {
       console.error("No response received from server.");
-      throw new Error("No response from server. Please check your internet connection.");
+      throw new Error(
+        "No response from server. Please check your internet connection."
+      );
     } else {
       console.error("Unexpected error:", error.message);
       throw new Error("An unexpected error occurred.");
@@ -111,8 +106,8 @@ export const updateArchivedCard = async (cardId) => {
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
     throw error;
-  }   
-}
+  }
+};
 
 // API xóa card
 export const deleteCard = async (cardId) => {
@@ -125,8 +120,6 @@ export const deleteCard = async (cardId) => {
   }
 };
 
-
-
 export const getMemberInCard = async (cardId) => {
   try {
     const response = await authClient.get(`/cards/${cardId}/members`);
@@ -134,19 +127,17 @@ export const getMemberInCard = async (cardId) => {
   } catch (error) {
     console.error("Lỗi khi lấy ra thành viên của card:", error);
     throw error;
-  }   
-}
+  }
+};
 
-export const toggleCardMember = async (cardId,userId) => {
+export const toggleCardMember = async (cardId, userId) => {
   try {
     const response = await authClient.post(`/cards/${cardId}/toggle-member`, {
       user_id: userId, // Gửi user_id trong body
     });
-    return response.data
+    return response.data;
   } catch (error) {
     console.error("Lỗi khi thêm thành viên của card:", error);
     throw error;
-  }   
-}
-
-
+  }
+};

@@ -3,15 +3,16 @@ import {
   // getListDetail,
   // updateListName,
   updateClosed,
-  createList,
+  createListAPI,
   getListByBoardId,
   // updateColPosition,
   deleteList,
   getListClosedByBoard,
   updatePositionList,
 } from "../api/models/listsApi";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import echoInstance from "./realtime/useRealtime";
+import { optimisticIdManager } from "./optimistic/optimisticIdManager";
 
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();
@@ -165,15 +166,65 @@ export const useUpdatePositionList = () => {
 
 //   return query;
 // };
+export const useCreateList = (boardId) => {
+  const queryClient = useQueryClient();
 
-export const useCreateList = () => {
-  return useMutation({
-    mutationFn: createList,
-    onError: (error) => {
-      console.error("❌ Lỗi khi tạo list:", error);
+  const mutation = useMutation({
+    mutationFn: async (newList) => {
+      // console.log(newList);
+      return await createListAPI(newList); // Gọi API để tạo danh sách
+    },
+
+    onMutate: async (newList) => {
+      await queryClient.cancelQueries({ queryKey: ["lists", boardId] });
+
+      // 🆕 Tạo ID tạm thời
+      const optimisticId = optimisticIdManager.generateOptimisticId("List");
+      const previousLists = queryClient.getQueryData(["lists", boardId]) || [];
+
+      // 🌟 Cập nhật danh sách tạm thời (UI phản hồi ngay lập tức)
+      queryClient.setQueryData(["lists", boardId], (old) => {
+        const safeOld = Array.isArray(old) ? old : []; // Đảm bảo old luôn là mảng
+        return [...safeOld, { id: optimisticId, ...newList, temporary: true }];
+      });
+
+      return { previousLists, optimisticId };
+    },
+
+    onSuccess: (data, newList, context) => {
+      if (!data?.id) {
+        console.error("❌ API không trả về ID hợp lệ, rollback danh sách.");
+        queryClient.setQueryData(["lists", boardId], context.previousLists);
+        return;
+      }
+
+      // 🔄 Cập nhật danh sách với ID thực (thay thế ID lạc quan)
+      queryClient.setQueryData(["lists", boardId], (old = []) =>
+        old.map((list) =>
+          list.id === context.optimisticId ? { ...list, id: data.id } : list
+        )
+      );
+
+      // Liên kết ID lạc quan với ID thực
+      optimisticIdManager.resolveId(context.optimisticId, data.id);
+    },
+
+    onError: (error, newList, context) => {
+      console.error("❌ Lỗi khi tạo danh sách:", error);
+      queryClient.setQueryData(["lists", boardId], context.previousLists);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["lists", boardId],
+        exact: true,
+      });
     },
   });
+
+  return { createList: mutation.mutate, isSaving: mutation.isPending };
 };
+
 
 // Hook lấy danh sách list đã đóng (archived)
 export const useListsClosed = (boardId) => {

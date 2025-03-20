@@ -61,17 +61,20 @@ export const getListDetail = async (listId) => {
   }
 };
 
-export const createList = async ({ newColumn }) => {
+export const createListAPI = async ({ boardId, name, pos }) => {
   try {
-    // Gọi API để tạo danh sách mới
-    const createResponse = await authClient.post(`/lists`, {
-      newColumn,
+    const response = await authClient.post(`/lists`, {
+      boardId,
+      name,
+      pos,
     });
-
-    return createResponse.data;
+    if (response.status !== 201 || !response.data?.id) {
+      throw new Error("API trả về dữ liệu không hợp lệ");
+    }
+    return response.data;
   } catch (error) {
     console.error("❌ Lỗi khi tạo danh sách:", error);
-    throw error;
+    throw error; // Để mutation xử lý lỗi này
   }
 };
 
@@ -106,8 +109,6 @@ export const updatePositionList = async ({ boardId, position, listId }) => {
       position: position, // Vị trí bạn muốn cập nhật
       listId: listId, // ID của list cần cập nhật
     });
-
-    // Trả về dữ liệu đã được cập nhật từ API
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật vị trí list_board:", error);
