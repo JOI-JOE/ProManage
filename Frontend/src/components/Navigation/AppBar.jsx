@@ -32,7 +32,7 @@ import useNotifications from "../../hooks/useNotification";
 
 const AppBar = () => {
   const { user } = useMe();
-  const { notifications, isLoading, error } = useNotifications(userId);
+  const { notifications, isLoading, error } = useNotifications(user?.id);
   console.log(notifications);
 
   const [searchText, setSearchText] = useState("");

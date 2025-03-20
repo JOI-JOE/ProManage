@@ -114,12 +114,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Funtion kéo thả column
     Route::controller(DragDropController::class)->group(function () {
-        Route::put('/lists/{idBoard}', action: 'updatePositionList');
+        Route::put('/lists/{boardId}', action: 'updatePositionList');
+        Route::put('/cards/{cardId}', action: 'updatePositionCard');
     });
-    // Route::put('/boards/update-card-same-col', [DragDropController::class, 'updateCardPositionsSameColumn']);
-    // Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
-
-    // Send Email
 });
 
 
