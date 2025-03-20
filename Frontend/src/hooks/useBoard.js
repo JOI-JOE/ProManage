@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createBoard,
+import {
+  createBoard,
   getBoardById,
   getBoardMarked,
+  getBoardsAllByClosed,
   getRecentBoards,
   getUnsplashImages,
   logBoardAccess,
   showBoardByWorkspaceId,
   toggleBoardMarked,
-  updateBoardName
+  updateBoardName,
 } from "../api/models/boardsApi";
 import { useCallback } from "react";
 
@@ -69,7 +71,6 @@ export const useBoardByWorkspaceId = (workspaceId) => {
 };
 
 export const useBoards = (boardId) => {
-
   const boardsQuery = useQuery({
     queryKey: ["boardLists", boardId],
     queryFn: () => getBoardById(boardId),
@@ -105,25 +106,23 @@ export const useRecentBoardAccess = () => {
   });
 };
 
-
 /**
  * Hook để cập nhật tên bảng
  * @returns {object} - Object chứa mutate để gọi API cập nhật tên bảng
  */
 export const useUpdateBoardName = () => {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: ({ boardId, name }) => updateBoardName(boardId, name),
-        onSuccess: (_, { boardId }) => {
-            queryClient.invalidateQueries({ queryKey: ["board", boardId] });
-            queryClient.invalidateQueries(["boards"]);
-
-        },
-        onError: (error) => {
-            console.error("Lỗi khi cập nhật tên bảng:", error);
-        },
-    });
+  return useMutation({
+    mutationFn: ({ boardId, name }) => updateBoardName(boardId, name),
+    onSuccess: (_, { boardId }) => {
+      queryClient.invalidateQueries({ queryKey: ["board", boardId] });
+      queryClient.invalidateQueries(["boards"]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật tên bảng:", error);
+    },
+  });
 };
 
 export const useToggleBoardMarked = () => {
@@ -147,7 +146,9 @@ export const useToggleBoardMarked = () => {
           return {
             ...oldData,
             data: oldData.data.map((board) =>
-              board.id === boardId ? { ...board, is_marked: !board.is_marked } : board
+              board.id === boardId
+                ? { ...board, is_marked: !board.is_marked }
+                : board
             ),
           };
         });
@@ -173,7 +174,9 @@ export const useToggleBoardMarked = () => {
           return {
             ...oldData,
             data: oldData.data.map((board) =>
-              board.id === boardId ? { ...board, is_marked: data.is_marked } : board
+              board.id === boardId
+                ? { ...board, is_marked: data.is_marked }
+                : board
             ),
           };
         });
@@ -187,7 +190,6 @@ export const useToggleBoardMarked = () => {
   });
 };
 
-  
 export const useBoardMarked = () => {
   return useQuery({
     queryKey: ["boardMarked"],
