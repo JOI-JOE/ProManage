@@ -42,3 +42,19 @@ Broadcast::channel('card.{cardId}', function ($user, $cardId) {
 Broadcast::channel('checklist.{cardId}', function ($cardId) {
     return true; // 🔥 Public channel, ai cũng nghe được
 });
+
+
+Broadcast::channel('checklist-item.{checklistItemId}', function ($checklistItemId) {
+    // Vì đây là public channel, ai cũng có thể đăng ký
+    return true;
+});
+
+Broadcast::channel('App.Models.User.{userId}', function ($user, $userId) {
+    return (string) $user->id === (string) $userId;
+});
+
+Broadcast::channel('user.{id}', function ($user, $id) {
+    // Kiểm tra xem user hiện tại có quyền subscribe vào channel này không
+    return (string) $user->id === (string) $id;
+});
+

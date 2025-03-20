@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
+use App\Http\Controllers\Api\ChecklistItemMemberController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\api\CardMemberController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Api\WorkspaceMembersController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -179,7 +181,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Route::put('/boards/update-role', [BoardMemberController::class, 'updateRoleMemberInBoard']);
+    Route::delete('/boards/delete', [BoardMemberController::class, 'removeMemberFromBoard']);
+
+    Broadcast::routes();
 });
+Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
+
 Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
 
 // Recent board cho user trong workspace
@@ -246,7 +254,7 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
     Route::get('/', [AttachmentController::class, 'getAttachments']);
     Route::patch('/{attachmentId}/update-name', [AttachmentController::class, 'updateNameFileAttachment']);
     Route::post('/upload', [AttachmentController::class, 'uploadAttachment']);
-    Route::post('/uploadcover', [AttachmentController::class, 'uploadCover']);
+    Route::patch('/{attachmentId}/set-cover-image', [AttachmentController::class, 'setCoverImage']);
 
     Route::delete('/{attachmentId}/delete', [AttachmentController::class, 'deleteAttachment']);
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']);
@@ -262,6 +270,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Checklist Item routes
     Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'getChecklistItems']); // Lấy danh sách checklist item theo checklist
     Route::post('/checklist-items', [ChecklistItemController::class, 'store']); // Thêm mới checklist item
+    Route::post('/checklist-items/{id}/toggle-member', [ChecklistItemMemberController::class, 'toggleMember']);
+    Route::get('/checklist-items/{id}/members', [ChecklistItemMemberController::class, 'getMembers']);
     Route::put('/item/{id}/name', [ChecklistItemController::class, 'updateName']); // Cập nhật tên của checklist item
     Route::put('/item/{id}/completed', [ChecklistItemController::class, 'toggleCompletionStatus']); // Cập nhật trạng thái hoàn thành của checklist item
     Route::delete('/item/{id}', [ChecklistItemController::class, 'destroy']);

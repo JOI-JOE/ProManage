@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getChecklistItemsByCheckList, createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName } from "../api/models/checkListItemsApi";
+import { getChecklistItemsByCheckList, createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName, toggleCheckListItemMember, getMembersInCheckListItem } from "../api/models/checkListItemsApi";
 import { useEffect } from "react";
 import echoInstance from "./realtime/useRealtime";
 
@@ -20,7 +20,7 @@ export const useCreateCheckListItem = () => {
     const queryClient = useQueryClient();
 
     // const { checklist_id } = variables;
-    
+
     // console.log(checklist_id);
 
     const createItem = useMutation({
@@ -35,7 +35,7 @@ export const useCreateCheckListItem = () => {
 
             // setLatestChecklistId(checklist_id);
 
-         
+
             // Cập nhật danh sách CheckListItem liên quan
             // queryClient.invalidateQueries({ queryKey: ["checklistItems", checklist_id] });
             // queryClient.invalidateQueries({ queryKey: ["checklists"] });
@@ -122,18 +122,60 @@ export const useDeleteCheckListItem = () => {
             // Đảm bảo dữ liệu được đồng bộ sau khi xóa
             // queryClient.invalidateQueries({ queryKey: ["checklists"] });
             queryClient.invalidateQueries({ queryKey: ["lists"] });
-           
+
         },
     });
 };
 
-// export const useDeleteCheckListItem = () => {
-//     const queryClient = useQueryClient();
+export const useGetMemberInCheckListItem = (itemId) => {
+    const queryClient = useQueryClient();
+    const checkListMembers = useQuery({
+        queryKey: ["checklist-item-members", itemId],
+        queryFn: () => getMembersInCheckListItem(itemId),
+        enabled: !!itemId, // chỉ gọi khi có itemId
+        staleTime: 1000 * 60, // 1 phút không bị gọi lại
+        cacheTime: 1000 * 300, // giữ cache 5 phút
+    });
 
-//     return useMutation({
-//         mutationFn: ({ id }) => deleteCheckListItem(id), // Xóa label chỉ cần labelId
-//         onError: (error) => {
-//             // console.error("Lỗi khi xóa nhãn:", error);
-//         },
-//     });
-// };
+    useEffect(() => {
+        if (!itemId || !echoInstance) return;
+
+        const channel = echoInstance.channel(`checklist-item.${itemId}`);
+        // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
+
+        channel.listen(".ChecklistItemMemberUpdated", (event) => {
+            // console.log("🔄 Nhận sự kiện ChecklistItemMemberUpdated:", event);
+
+            queryClient.invalidateQueries({ queryKey: ["checklist-item-members", itemId] });
+
+        });
+
+        return () => {
+            channel.stopListening(".ChecklistItemMemberUpdated");
+            echoInstance.leave(`checklist-item.${itemId}`);
+        };
+    }, [itemId, queryClient]);
+
+    return checkListMembers;
+
+};
+
+export const useToggleCheckListItemMember = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ itemId, userId }) => toggleCheckListItemMember(itemId, userId),
+        onSuccess: (_, variables) => {
+            console.log(`✅ Toggle thành viên thành công: itemId = ${variables.itemId}, userId = ${variables.userId}`);
+            // Tùy chọn: Invalidate query để load lại danh sách thành viên hoặc checklist items nếu cần
+            // queryClient.invalidateQueries({ queryKey: ["checklists"] });
+            // hoặc nếu bạn lưu riêng: 
+            queryClient.invalidateQueries({ queryKey: ["checklist-item-members", variables.itemId] });
+        },
+        onError: (error) => {
+            console.error("❌ Lỗi khi toggle member checklist item:", error);
+        },
+    });
+};
+
+

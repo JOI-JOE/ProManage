@@ -14,4 +14,9 @@ class ChecklistItem extends Model
     {
         return $this->belongsTo(Checklist::class);
     }
+
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'checklist_item_user', 'checklist_item_id', 'user_id');
+    }
 }

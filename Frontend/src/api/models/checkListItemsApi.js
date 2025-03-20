@@ -59,3 +59,38 @@ export const deleteCheckListItem = async (id) => {
         throw error;
     }
 };
+
+export const toggleCheckListItemMember = async (itemId, userId) => {
+    try {
+        console.log("Sending toggle member for checklist item:", itemId, "user:", userId);
+        const response = await authClient.post(`/checklist-items/${itemId}/toggle-member`, {
+            user_id: userId,
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi toggle member của checklist item:", error.response?.data || error);
+        throw error;
+    }
+};
+
+export const toggleCardMember = async (cardId,userId) => {
+    try {
+      const response = await authClient.post(`/cards/${cardId}/toggle-member`, {
+        user_id: userId, // Gửi user_id trong body
+      });
+      return response.data
+    } catch (error) {
+      console.error("Lỗi khi lấy ra thành viên của card:", error);
+      throw error;
+    }   
+  }
+
+export const getMembersInCheckListItem = async (itemId) => {
+    try {
+        const response = await authClient.get(`/checklist-items/${itemId}/members`);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi lấy ra thành viên của checklist-items:", error);
+        throw error;
+    }
+}
