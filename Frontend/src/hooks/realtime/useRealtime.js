@@ -17,15 +17,15 @@ const echoInstance = new Echo({
   key: PUSHER_KEY,
   cluster: PUSHER_CLUSTER,
   forceTLS: PUSHER_SCHEME === "https",
-  wsHost: `ws-${PUSHER_CLUSTER}.pusher.com`,
-  wsPort: 80,
-  wssPort: 443,
+  // wsHost: `ws-${PUSHER_CLUSTER}.pusher.com`,
+  // wsPort: 80,
+  // wssPort: 443,
   disableStats: true,
   enabledTransports: ["ws", "wss"],
   authEndpoint: `${BACKEND_URL}/broadcasting/auth`,
   auth: {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
+      Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
     },
   },
 });
