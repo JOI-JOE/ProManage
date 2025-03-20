@@ -15,25 +15,22 @@ const useNotifications = (userId) => {
     enabled: !!userId, // Chỉ chạy khi có userId
     staleTime: 5 * 60 * 1000, // Dữ liệu "tươi" trong 5 phút
   });
-// // Lắng nghe thông báo real-time từ Pusher
-// useEffect(() => {
-//   if (!userId) return;
 
-//   const channel = echoInstance.private(`App.Models.User.${userId}`);
-//   channel.notification((newNotification) => {
-//     console.log('New Notification:', newNotification);
-//     // Cập nhật danh sách thông báo trong cache của React Query
-//     queryClient.setQueryData(['notifications', userId], (oldData) => {
-//       if (!oldData) return [newNotification];
-//       return [newNotification, ...oldData];
-//     });
-//   });
+  useEffect(() => {
+    if (!userId || !echoInstance) return;
+  
+    const channel = echoInstance.private(`App.Models.User.${userId}`);
+    
+    channel.notification((notification) => {
+      console.log("📥 New notification: ", notification);
+      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+    });
+  
+    return () => {
+      echoInstance.leave(`private-App.Models.User.${userId}`);
+    };
+  }, [userId, queryClient]);
 
-//   // Cleanup khi component unmount
-//   return () => {
-//     echoInstance.leave(`App.Models.User.${userId}`);
-//   };
-// }, [userId, queryClient]);
 
   return {
     notifications: notifications || [], // Danh sách thông báo

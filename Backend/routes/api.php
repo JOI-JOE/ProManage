@@ -187,6 +187,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Broadcast::routes();
 });
 Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']); 
 

@@ -1,0 +1,41 @@
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  background: rgb(56, 84, 84);
+  border: none;
+}
+.fc .fc-button-primary {
+  background: teal;
+}
+.fc .fc-button:hover {
+  background: teal;
+}
+.fc .fc-button {
+  border: none;
+}
+.fc-daygrid-day.fc-day-today {
+  background-color: #dff9fb !important;
+}
+.fc-timegrid-col.fc-day-today {
+  background-color: #dff9fb !important;
+}
+.fc-button {
+  box-shadow: none !important;
+}
+
+/* Tùy chỉnh thanh scrollbar */
+::-webkit-scrollbar {
+  width: 6px; /* Độ rộng thanh scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Màu nền của track */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888; /* Màu của thanh kéo */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Màu khi hover */
+}
