@@ -15,13 +15,24 @@ import ListIcon from "@mui/icons-material/List";
 import PersonIcon from "@mui/icons-material/Person";
 import LabelIcon from "@mui/icons-material/Label";
 import DashboardIcon from "@mui/icons-material/Dashboard"; // Import new icon
+import {
+  getBoardByClosed,
+  useBoardByWorkspaceId,
+} from "../../../../../../hooks/useBoard";
+import { useGetWorkspaceByName } from "../../../../../../hooks/useWorkspace";
+import { useParams } from "react-router-dom";
 
 const MenuCalendar = ({ open, onClose }) => {
+  const { workspaceName } = useParams();
+
   const [selectedBoards, setSelectedBoards] = useState([]);
 
   const [selectedLists, setSelectedLists] = useState([]);
 
   const [selectedMembers, setSelectedMembers] = useState([]);
+
+  const { data: data, isLoading, error } = useGetWorkspaceByName(workspaceName);
+  console.log(data);
 
   const members = [
     { id: "1", name: "Hồng Ngát", username: "hongngat161102" },
@@ -35,27 +46,6 @@ const MenuCalendar = ({ open, onClose }) => {
     { id: "4", name: "Column 4" },
     { id: "5", name: "Column 5" },
     { id: "6", name: "Column 6" },
-  ];
-
-  const boards = [
-    {
-      id: "1",
-      name: "Bảng 1",
-      image:
-        "https://i.pinimg.com/736x/ff/df/a4/ffdfa4e4981626865d139d37d0f74e42.jpg",
-    },
-    {
-      id: "2",
-      name: "Bảng 2",
-      image:
-        "https://i.pinimg.com/736x/e4/25/87/e4258704c8d65883256a73d70f118389.jpg",
-    },
-    {
-      id: "3",
-      name: "Bảng 3",
-      image:
-        "https://i.pinimg.com/736x/e8/90/40/e89040791fa5a9cdf2a9f45bfa1f2db0.jpg",
-    },
   ];
 
   const handleSelectMember = (id) => {
@@ -121,8 +111,8 @@ const MenuCalendar = ({ open, onClose }) => {
               },
             }}
           >
-            {boards.map((board) => (
-              <MenuItem key={board.id} value={board.id} sx={{ pt: 0, pb: 0 }}>
+            {data?.boards?.map((board) => (
+              <MenuItem key={board?.id} value={board.id} sx={{ pt: 0, pb: 0 }}>
                 <Checkbox
                   checked={selectedBoards.includes(board.id)}
                   onChange={() =>
@@ -130,7 +120,7 @@ const MenuCalendar = ({ open, onClose }) => {
                   }
                 />
                 <img
-                  src={board.image}
+                  src={board.thumbnail}
                   alt={board.name}
                   style={{ width: 24, height: 24, marginRight: 8 }}
                 />
