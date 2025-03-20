@@ -59,6 +59,7 @@ import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import {
   useCardActions,
   useCardById,
+  useCardSchedule,
   useGetMemberInCard,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
@@ -103,8 +104,10 @@ import useAttachments from "../../../../../../../../../hooks/useAttachment.js";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
-const CardModal = ({}) => {
+const CardModal = ({ }) => {
   const { cardId, title } = useParams();
+  const { data: schedule } = useCardSchedule(cardId);//date
+
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -144,6 +147,11 @@ const CardModal = ({}) => {
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
+  const formatDate = (dateString) => {
+    if (!dateString) return "Không có";
+    const date = new Date(dateString);
+    return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+  }
 
   const [coverImage, setCoverImage] = useState(
     localStorage.getItem(`coverImage-${cardId}`) || null
@@ -961,7 +969,7 @@ const CardModal = ({}) => {
         </DialogTitle>
 
         {/* NGÀY */}
-        {dateInfo && (
+        {schedule && (
           <>
             <Typography sx={{ fontWeight: "bold", mb: 0, ml: 3 }}>
               Ngày
@@ -2238,13 +2246,13 @@ const CardModal = ({}) => {
                             ) : (
                               <Typography component="span" fontWeight="normal">
                                 {item.properties &&
-                                item.properties.file_path &&
-                                item.properties.file_name
+                                  item.properties.file_path &&
+                                  item.properties.file_name
                                   ? renderDescriptionWithLink(
-                                      actionText,
-                                      item.properties.file_path,
-                                      item.properties.file_name
-                                    )
+                                    actionText,
+                                    item.properties.file_path,
+                                    item.properties.file_name
+                                  )
                                   : actionText}
                               </Typography>
                             )}
@@ -2502,7 +2510,7 @@ const CardModal = ({}) => {
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-          // onSave={handleAddTask}
+        // onSave={handleAddTask}
         />
 
         {/* Component Label List */}

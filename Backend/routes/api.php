@@ -186,8 +186,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Broadcast::routes();
 });
+Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
 
-Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']); 
+Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
 
 // Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
@@ -219,6 +220,7 @@ Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
 
     Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail'])->name('card.addMember'); // thêm thành viên vào thẻ
     Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
+    Route::get('/{cardId}/dates', [CardController::class, 'getSchedule']);// lấy danh sách ngày giờ theo card
     Route::put('/{cardId}/dates', [CardController::class, 'updateDates']); // cập nhật ngày của thẻ
     Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']); // xóa ngày
     Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']); // danh sách nhãn trong thẻ

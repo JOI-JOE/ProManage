@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -13,63 +13,115 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
-
-const initialLabels = [
-  { id: 1, color: "#137b13", name: "Label 1" },
-  { id: 2, color: "#b05900", name: "Label 2" },
-  { id: 3, color: "#d32f2f", name: "Label 3" },
-  { id: 4, color: "#673ab7", name: "Label 4" },
-  { id: 5, color: "#1976d2", name: "Label 5" },
-];
+import { useCreateLabel, useDeleteLabelByBoard, useLabels, useUpdateCardLabel, useUpdateLabelName } from "../../../../../../../../hooks/useLabel";
+import { useParams } from "react-router-dom";
+// const initialLabels = [
+//   { id: 1, color: "#137b13", name: "Label 1" },
+//   { id: 2, color: "#b05900", name: "Label 2" },
+//   { id: 3, color: "#d32f2f", name: "Label 3" },
+//   { id: 4, color: "#673ab7", name: "Label 4" },
+//   { id: 5, color: "#1976d2", name: "Label 5" },
+// ];
 
 const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
-  const [search, setSearch] = useState("");
-  const [labels, setLabels] = useState(initialLabels);
-  const [editLabelId, setEditLabelId] = useState(null);
+  const { boardId } = useParams();
+  
+  const { data: fetchedLabels } = useLabels(boardId);
+  // Cập nhật labels khi fetchedLabels thay đổi
+  const createLabelMutation = useCreateLabel();
+  const updateLabelMutation = useUpdateCardLabel();
+  const deleteLabelMutation = useDeleteLabelByBoard();
+  const updateLabelNameMutation = useUpdateLabelName(); //
+  const [labels, setLabels] = useState([]);
   const [newLabelName, setNewLabelName] = useState("");
+  const [editLabelId, setEditLabelId] = useState("");
+  const [NewUpdatedLabelName, setUpdatedLabelName] = useState("");
+  const [search, setSearch] = useState("");
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
+    const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [newLabelColor, setNewLabelColor] = useState("#000000");
 
-  const filteredLabels = labels.filter((label) =>
-    label.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleEditLabel = (id, name) => {
-    setEditLabelId(id);
-    setNewLabelName(name);
-  };
-
-  const handleSaveLabelName = () => {
-    setLabels((prevLabels) =>
-      prevLabels.map((label) =>
-        label.id === editLabelId ? { ...label, name: newLabelName } : label
-      )
-    );
-    setEditLabelId(null);
-    setNewLabelName("");
-  };
-
-  const handleKeyPress = (event) => {
-    if (event.key === "Enter") {
-      handleSaveLabelName();
-    }
-  };
-
+    useEffect(() => {
+      if (fetchedLabels) setLabels(fetchedLabels);
+     
+    }, [fetchedLabels]);
   const handleCreateLabel = () => {
-    const newLabel = {
-      id: labels.length + 1,
-      color: newLabelColor,
-      name: newLabelName,
-    };
-    setLabels([...labels, newLabel]);
-    setIsCreatingLabel(false);
-    setNewLabelName("");
-    setNewLabelColor("#000000");
+    if (!newLabelName.trim()) {
+      alert("Tên nhãn không được để trống!");
+      return;
+    }
+    createLabelMutation.mutate(
+      { boardId, data: { title: newLabelName, color: newLabelColor } },
+      {
+        onSuccess: () => {
+          setIsCreatingLabel(false);
+          setNewLabelName("");
+          setNewLabelColor("#000000");
+        },
+      }
+    );
   };
+  // sửa tên
 
-  const handleDeleteLabel = (id) => {
-    setLabels(labels.filter((label) => label.id !== id));
+  const handleUpdateLabelName = () => {
+    if (!NewUpdatedLabelName.trim()) alert("Tên nhãn không được để trống!");
+
+    updateLabelNameMutation.mutate(
+      { labelId: editLabelId, data: { title: NewUpdatedLabelName } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["labels"] });
+          // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
+          // queryClient.invalidateQueries({ queryKey: ["lists"] });
+          setLabels((prevLabels) =>
+            prevLabels.map((label) =>
+              label.id === editLabelId
+                ? { ...label, title: NewUpdatedLabelName }
+                : label
+            )
+          );
+          setIsEditingLabel(false);
+          setEditLabelId(null);
+          setUpdatedLabelName("");
+        },
+        onError: (error) => {
+          console.error(error);
+        },
+      }
+    );
   };
+ const handleDeleteLabel = (labelId) => {
+    deleteLabelMutation.mutate(
+      { labelId },
+      {
+        onSuccess: () => {
+          // queryClient.invalidateQueries({ queryKey: ["labels"] });
+          // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
+        },
+      }
+    );
+    // fetchedLabels();
+  };
+ const filteredLabels = labels.filter((label) =>
+    label.title.toLowerCase().includes(search.toLowerCase())
+  );
+// console.log(filteredLabels);
+const handleEditLabel = (id, title) => {
+  setEditLabelId(id);
+  setIsEditingLabel(true);
+  setUpdatedLabelName("");
+};
+ 
+
+const handleKeyPress = (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault(); // Ngăn chặn reload
+    handleUpdateLabelName(); // Cập nhật tên nhãn
+    setIsEditingLabel(false); // Thoát chế độ chỉnh sửa
+  }
+};
+
+  
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
@@ -143,7 +195,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                 sx={{
                   width: "300px", // Thanh màu dài ra
                   height: 24,
-                  backgroundColor: label.color,
+                  backgroundColor: label?.color?.hex_code,
                   borderRadius: "4px",
                   position: "relative",
                   display: "flex",
@@ -151,7 +203,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                   justifyContent: "space-between",
                   padding: "0 8px",
                   "&:hover::after": {
-                    content: `"${label.name}"`,
+                    content: `"${label.title}"`,
                     position: "absolute",
                     top: "50%",
                     left: "50%",
@@ -162,29 +214,31 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                   },
                 }}
               >
-                {editLabelId === label.id ? (
+                {isEditingLabel && editLabelId === label.id ? (
                   <TextField
-                    value={newLabelName}
-                    onChange={(e) => setNewLabelName(e.target.value)}
-                    onBlur={handleSaveLabelName}
-                    onKeyPress={handleKeyPress}
-                    size="small"
-                    autoFocus
-                    sx={{
-                      width: "80%",
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": {
-                          border: "none",
-                        },
+                  value={NewUpdatedLabelName}
+                  onChange={(e) => setUpdatedLabelName(e.target.value)}
+                  onBlur={handleUpdateLabelName}
+                  onKeyPress={handleKeyPress}
+                  size="small"
+                  autoFocus
+                  sx={{
+                    width: "80%",
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": {
+                        border: "none",
                       },
-                    }}
+                    },
+                  }}
                   />
                 ) : (
                   <>
                     <IconButton
                       size="small"
-                      onClick={() => handleEditLabel(label.id, label.name)}
-                      sx={{ padding: 0, width: 24, height: 24 }}
+                      onClick={() => {
+                        handleEditLabel(label.id, label.title);
+                      }}
+                      sx={{ width: 24, height: 24 }}
                     >
                       <EditIcon sx={{ fontSize: 12, color: "#fff" }} />
                     </IconButton>

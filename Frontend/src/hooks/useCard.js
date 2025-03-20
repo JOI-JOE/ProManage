@@ -11,6 +11,10 @@ import {
   getCardArchivedByBoard,
   getMemberInCard,
   toggleCardMember,
+  updateCardDate,
+  getDateByCard,
+  addMemberToCard,
+  removeMember,
 } from "../api/models/cardsApi";
 import { useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
@@ -239,4 +243,31 @@ export const useGetMemberInCard = (cardId) => {
 
 
   return { ...membersQuery, toggleMember: mutation.mutate };
+};
+export const useCardSchedule = (cardId) => {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: ["cardSchedule", cardId],
+    queryFn: () => getDateByCard(cardId),
+    staleTime: 1000 * 60 * 5, // Dữ liệu cũ sau 5 phút
+    cacheTime: 1000 * 60 * 30, // Lưu trong cache 30 phút
+    enabled: !!cardId, // Chỉ gọi API nếu cardId tồn tại
+  
+  });
+};
+export const useUpdateCardDate = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cardId, startDate, endDate, endTime, reminder }) =>
+      updateCardDate(cardId, startDate, endDate, endTime, reminder),
+    onSuccess: (data, variables) => {
+     
+      queryClient.invalidateQueries(["cardSchedule"],variables.cardId);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật ngày card:", error);
+    },
+  });
 };
