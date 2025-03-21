@@ -71,7 +71,7 @@ export const useCardById = (cardId) => {
     // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
 
     channel.listen(".card.updated", (event) => {
-    
+
 
       if (event?.card?.id === cardId) {
         queryClient.setQueryData(["cards", cardId], (oldData) => {
@@ -79,13 +79,13 @@ export const useCardById = (cardId) => {
 
           // console.log("🔄 Cập nhật dữ liệu card:", { ...oldData, title: event.card.title });
 
-          return { ...oldData, title: event.card.title }; 
+          return { ...oldData, title: event.card.title };
         });
       }
     });
 
     channel.listen(".card.description.updated", (event) => {
-     
+
 
       if (event?.card?.id === cardId) {
         queryClient.setQueryData(["cards", cardId], (oldData) => {
@@ -137,7 +137,7 @@ export const useUpdateCardTitle = () => {
     onSuccess: (data, variables) => {
       // Cập nhật dữ liệu card trong cache sau khi update thành công
       queryClient.invalidateQueries({ queryKey: ["cards", variables.cardId] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] }); 
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật tên card:", error);
@@ -158,6 +158,35 @@ export const useCardActions = (boardId) => {
     queryFn: () => getCardArchivedByBoard(boardId),
     enabled: !!boardId, // Chỉ fetch khi có boardId
   });
+
+  useEffect(() => {
+    if (!boardId || !echoInstance) return;
+
+    const channel = echoInstance.channel(`boards.${boardId}`);
+    // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
+
+
+    channel.listen(".CardArchiveToggled", (data) => {
+      // console.log('Realtime archive changed: ', data);
+     
+      queryClient.invalidateQueries(["lists"]);
+
+    });
+    channel.listen(".CardDelete", (data) => {
+      // console.log('Realtime archive changed: ', data);
+     
+      queryClient.invalidateQueries(["lists"]);
+
+    });
+
+    return () => {
+      channel.stopListening(".CardArchiveToggled");
+      channel.stopListening(".CardDelete");
+      echoInstance.leave(`boards.${boardId}`);
+    };
+  }, [boardId, queryClient]);
+
+
 
   // Mutation lưu trữ card
   const archiveCard = useMutation({
@@ -213,15 +242,15 @@ export const useGetMemberInCard = (cardId) => {
 
     channel.listen(".CardMemberUpdated", (event) => {
       if (event?.card?.id === cardId) {
-          // console.log(`👥 Thành viên ${event.action}:`, event.user.full_name);
+        // console.log(`👥 Thành viên ${event.action}:`, event.user.full_name);
 
 
-          // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });
-          queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId]}); // Fetch lại sau khi API thành công
-          queryClient.invalidateQueries({ queryKey: ["activities"] });
-        
+        // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });
+        queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] }); // Fetch lại sau khi API thành công
+        queryClient.invalidateQueries({ queryKey: ["activities"] });
+
       }
-  });
+    });
 
     return () => {
       channel.stopListening(".CardMemberUpdated");
@@ -229,16 +258,16 @@ export const useGetMemberInCard = (cardId) => {
     };
   }, [cardId, queryClient]);
 
-  
+
   // Mutation để thêm/xóa thành viên
   const mutation = useMutation({
     mutationFn: (userId) => toggleCardMember(cardId, userId),
     onSuccess: () => {
-   
+
     },
   });
 
-  
+
 
 
 
@@ -253,7 +282,7 @@ export const useCardSchedule = (cardId) => {
     staleTime: 1000 * 60 * 5, // Dữ liệu cũ sau 5 phút
     cacheTime: 1000 * 60 * 30, // Lưu trong cache 30 phút
     enabled: !!cardId, // Chỉ gọi API nếu cardId tồn tại
-  
+
   });
 };
 export const useUpdateCardDate = () => {
@@ -263,8 +292,8 @@ export const useUpdateCardDate = () => {
     mutationFn: ({ cardId, startDate, endDate, endTime, reminder }) =>
       updateCardDate(cardId, startDate, endDate, endTime, reminder),
     onSuccess: (data, variables) => {
-     
-      queryClient.invalidateQueries(["cardSchedule"],variables.cardId);
+
+      queryClient.invalidateQueries(["cardSchedule"], variables.cardId);
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật ngày card:", error);

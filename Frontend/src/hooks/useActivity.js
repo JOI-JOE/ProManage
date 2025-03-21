@@ -6,7 +6,7 @@ export const useActivityByCardId = (cardId) => {
     queryKey: ["activities", cardId],
     queryFn: async () => {
       const res = await getActivityByCardId(cardId);
-      console.log("📌 API Response:", res); // Kiểm tra dữ liệu từ API
+      // console.log("📌 API Response:", res); // Kiểm tra dữ liệu từ API
       return res.activities || []; // Đảm bảo luôn trả về mảng
     },
     enabled: !!cardId, // Chỉ gọi API nếu có cardId

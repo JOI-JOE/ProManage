@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import { getAttachmentsByCard, updateAttachment,} from "../api/attachmentApi";
 import { createAttachments, deleteAttachment, getAttachmentsByCard, updateFileNameAttachment } from "../api/models/attachmentsApi";
+import { useEffect } from "react";
+import echoInstance from "./realtime/useRealtime";
 
 const useAttachments = (cardId) => {
   const queryClient = useQueryClient();
@@ -10,6 +12,32 @@ const useAttachments = (cardId) => {
     queryKey: ["attachments", cardId],
     queryFn: () => getAttachmentsByCard(cardId),
   });
+
+
+  useEffect(() => {
+    if (!cardId || !echoInstance) return;
+
+    const channel = echoInstance.channel(`card.${cardId}`);
+    // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
+
+
+   
+    channel.listen(".attachment.uploaded", (data) => {
+        console.log('Realtime archive changed: ', data);
+       
+        // queryClient.invalidateQueries(['boardMembers']);
+        queryClient.invalidateQueries({ queryKey: ["attachments", cardId] });
+        queryClient.invalidateQueries({ queryKey: ["activities"] });
+  
+      });
+
+    return () => {
+      channel.stopListening(".attachment.uploaded");
+    //   channel.stopListening(".CardDelete");
+      echoInstance.leave(`card.${cardId}`);
+    };
+  }, [cardId, queryClient]);
+
 
   // 📌 Mutation: Thêm mới attachment
   const addAttachmentMutation = useMutation({
@@ -30,7 +58,7 @@ const useAttachments = (cardId) => {
 
     onSuccess: () => {
       // Chỉ re-fetch API attachments
-      queryClient.refetchQueries(["attachments", cardId], { exact: true });
+      // queryClient.refetchQueries(["attachments", cardId], { exact: true });
     },
 
     onError: (_error, _newAttachment, context) => {

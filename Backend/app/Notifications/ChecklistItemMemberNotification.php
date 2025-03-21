@@ -60,8 +60,8 @@ class ChecklistItemMemberNotification extends Notification implements ShouldBroa
         return new BroadcastMessage($this->toDatabase($notifiable));
     }
 
-    public function broadcastOn()
-    {
-        return new PrivateChannel('App.Models.User.' . $this->user->id);
-    }
+    // public function broadcastOn()
+    // {
+    //     return new PrivateChannel('App.Models.User.' . $this->user->id);
+    // }
 }

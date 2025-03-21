@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\api;
 
 use App\Events\ActivityEvent;
+use App\Events\CardArchiveToggled;
 use App\Events\CardCreate;
 use App\Events\CardCreated;
+use App\Events\CardDeleted;
 use App\Events\CardDescriptionUpdated;
 use App\Events\CardNameUpdated;
 use App\Http\Controllers\Controller;
@@ -356,6 +358,8 @@ class CardController extends Controller
             $card->is_archived = !$card->is_archived;
             $card->save();
 
+            broadcast(new CardArchiveToggled($card))->toOthers();
+
             return response()->json([
                 'message' => 'Card archive status updated successfully',
                 'is_archived' => $card->is_archived,
@@ -401,9 +405,12 @@ class CardController extends Controller
         try {
             // Tìm card theo ID, nếu không có sẽ ném lỗi 404
             $card = Card::findOrFail($id);
+            $boardId = $card->list->board_id;
 
             // Xóa card
             $card->delete();
+
+            broadcast(new CardDeleted($id, $boardId))->toOthers();
 
             return response()->json([
                 'message' => 'Card deleted successfully',
