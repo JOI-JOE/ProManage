@@ -122,3 +122,45 @@ export const getUnsplashImages = async () => {
     throw error;
   }
 };
+
+export const updateBoardVisibility = async (boardId, visibility) => {
+  if (!boardId) {
+    throw new Error("Lỗi: boardId không hợp lệ!");
+  }
+
+  try {
+    const response = await authClient.patch(`/boards/${boardId}/visibility`, { visibility });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật visibility của bảng:", error);
+    throw error;
+  }
+};
+
+export const toggleBoardClosed = async (boardId) => {
+  try {
+    const response = await authClient.delete(`/boards/${boardId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái đánh dấu bảng:", error);
+    throw error;
+  }
+};
+
+export const getBoardClosed = async () => {
+  try {
+    const response = await authClient.get(`/closed`);
+    return response.data;
+  } catch (error) {
+    console.error("False get board closed:", error);
+    throw error;
+  }
+};
+
+
+
+
+
+
+
+

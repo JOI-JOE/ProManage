@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\ColorController;
 use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\RecentBoardController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
@@ -122,6 +123,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
 
     // Send Email
+
+
+    Route::get('lists/{boardId}', [ListController::class, 'index']);
+    
+    Route::get('/search', [SearchController::class, 'search']);
 });
 
 
@@ -129,7 +135,6 @@ Route::get('/color', [ColorController::class, 'index']);
 Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
 
 Route::prefix('lists')->group(function () {
-    Route::get('/{boardId}', [ListController::class, 'index']);
     Route::post('/', [ListController::class, 'store']);
     Route::delete('{id}/destroy', [ListController::class, 'destroy']);
     Route::get('/{boardId}/listClosed', [ListController::class, 'getListClosed']);
@@ -145,8 +150,10 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']);
     Route::get('{boardId}', [BoardController::class, 'show']);
     Route::put('{boardId}', [BoardController::class, 'update']);
-    Route::delete('{boardId}', [BoardController::class, 'destroy']);
+    Route::delete('{boardId}', [BoardController::class, 'closeBoard']);
 });
+
+Route::delete('/boards/{boardId}', [BoardController::class, 'toggleBoardClosed']);
 
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
@@ -194,11 +201,12 @@ Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
     Route::post('recent-boards', [RecentBoardController::class, 'store']);
+
+    // Route cho bảng đã xóa
+    Route::get('closed', [BoardController::class, 'closed']);
 });
 
 
-// Route cho bảng đã xóa
-Route::get('/trashes', [BoardController::class, 'trash']);
 
 
 Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
