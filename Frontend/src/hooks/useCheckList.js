@@ -113,7 +113,7 @@ export const useChecklistsByCard = (cardId) => {
 
 
         channel.listen(".checklistItem.toggle", (event) => {
-            console.log("📡 Nhận sự kiện ChecklistItemToggle:", event);
+            
         
             queryClient.setQueryData(["checklistItems", event.checklistItem.checklist_id], (oldItems) => {
                 if (!oldItems) return [event.checklistItem];
