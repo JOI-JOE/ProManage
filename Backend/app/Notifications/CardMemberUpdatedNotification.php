@@ -57,9 +57,9 @@ class CardMemberUpdatedNotification extends Notification implements ShouldBroadc
         return new BroadcastMessage($this->toDatabase($notifiable));
     }
 
-    public function broadcastOn()
-    {
-        return new PrivateChannel('App.Models.User.' . $this->notifiableId);
-    }
+    // public function broadcastOn()
+    // {
+    //     return new PrivateChannel('App.Models.User.' . $this->notifiableId);
+    // }
 
 }

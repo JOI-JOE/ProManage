@@ -71,6 +71,17 @@ export const updateFileNameAttachment = async (cardId, attachmentId, fileName) =
   }
 };
 
+// QUỐC ///////
+export const setCoverImage = async (cardId,attachmentId) => {
+  try {
+    const response = await authClient.patch(`/${cardId}/attachments/${attachmentId}/set-cover-image`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting attachments:", error);
+    throw new Error(error.response?.data?.message || "Failed to delete attachments.");
+  }
+};
+
 
 // API xóa attachmentattachment
 export const deleteAttachment = async (cardId,attachmentId) => {

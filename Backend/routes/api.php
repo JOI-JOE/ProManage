@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\WorkspaceMembersController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -187,9 +188,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Route::put('/boards/update-role', [BoardMemberController::class, 'updateRoleMemberInBoard']);
+    Route::delete('/boards/delete', [BoardMemberController::class, 'removeMemberFromBoard']);
+
     Broadcast::routes();
 });
-Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']); 
+Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
+
+Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
 
 // Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
@@ -222,6 +228,7 @@ Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
 
     Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail'])->name('card.addMember'); // thêm thành viên vào thẻ
     Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
+    Route::get('/{cardId}/dates', [CardController::class, 'getSchedule']);// lấy danh sách ngày giờ theo card
     Route::put('/{cardId}/dates', [CardController::class, 'updateDates']); // cập nhật ngày của thẻ
     Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']); // xóa ngày
     Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']); // danh sách nhãn trong thẻ
@@ -255,7 +262,7 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
     Route::get('/', [AttachmentController::class, 'getAttachments']);
     Route::patch('/{attachmentId}/update-name', [AttachmentController::class, 'updateNameFileAttachment']);
     Route::post('/upload', [AttachmentController::class, 'uploadAttachment']);
-    Route::post('/uploadcover', [AttachmentController::class, 'uploadCover']);
+    Route::patch('/{attachmentId}/set-cover-image', [AttachmentController::class, 'setCoverImage']);
 
     Route::delete('/{attachmentId}/delete', [AttachmentController::class, 'deleteAttachment']);
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']);

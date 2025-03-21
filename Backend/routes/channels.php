@@ -53,3 +53,12 @@ Broadcast::channel('App.Models.User.{userId}', function ($user, $userId) {
     return (string) $user->id === (string) $userId;
 });
 
+Broadcast::channel('user.{id}', function ($user, $id) {
+    // Kiểm tra xem user hiện tại có quyền subscribe vào channel này không
+    return (string) $user->id === (string) $id;
+});
+
+// Channel cho các sự kiện liên quan đến Board
+Broadcast::channel('boards.{boardId}', function ($user, $boardId) {
+    return true;
+});
