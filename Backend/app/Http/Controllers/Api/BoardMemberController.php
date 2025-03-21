@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\BoardMemberRoleUpdated;
+use App\Events\MemberJoinedBoard;
+use App\Events\MemberRemovedFromBoard;
 use App\Http\Controllers\Controller;
 use App\Models\Board;
 use App\Models\BoardInvitation;
 use App\Models\BoardMember;
 use App\Models\User;
 use App\Notifications\BoardInvitationReceivedNotification;
+use App\Notifications\BoardMemberRoleUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -43,7 +47,7 @@ class BoardMemberController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'lấy thành viên của bảng thành công',
-                'data' =>  $board->members
+                'data' => $board->members
 
             ]);
         } catch (\Throwable $th) {
@@ -128,10 +132,112 @@ class BoardMemberController extends Controller
         $board->members()->attach($user->id, ['role' => 'member']);
 
         $user->notify(new BoardInvitationReceivedNotification($board, $inviter));
+        // Gửi event tới chủ bảng
+        event(new MemberJoinedBoard($board->created_by, $board->id, $user->full_name));
 
         // Xóa invite token sau khi sử dụng (tùy chọn)
         $invite->delete();
 
         return response()->json(['message' => 'Successfully joined the board', 'board' => $board]);
+    }
+
+    public function updateRoleMemberInBoard(Request $request)
+    {
+        $request->validate([
+            'board_id' => 'required|exists:boards,id',
+            'user_id' => 'required|exists:users,id',
+            'role' => 'required|string|in:admin,member',
+        ]);
+
+        try {
+            $board = Board::findOrFail($request->board_id);
+            $currentUser = auth()->user();
+
+            // Kiểm tra quyền admin
+            if (
+                !$board->members()->where('board_members.user_id', $currentUser->id)
+                    ->where('board_members.role', 'admin')
+                    ->exists()
+            ) {
+                return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
+            }
+
+            // Kiểm tra nếu hạ cấp admin cuối cùng
+            if (
+                $request->role === 'member' &&
+                $board->countAdmins() === 1 &&
+                $board->members()->where('board_members.user_id', $request->user_id)
+                    ->where('board_members.role', 'admin')
+                    ->exists()
+            ) {
+                return response()->json(['success' => false, 'message' => 'Cannot downgrade the last admin'], 400);
+            }
+
+            $board->members()->updateExistingPivot($request->user_id, ['role' => $request->role]);
+
+            $targetUser = User::find($request->user_id);
+            
+            $targetUser->notify(new BoardMemberRoleUpdatedNotification($board, $request->role, $currentUser));
+
+            broadcast(new BoardMemberRoleUpdated($board->id, $request->user_id, $request->role))->toOthers();
+
+            // Trả thêm thông tin để client biết có mở menu rời bảng không
+            $isCreator = $board->isCreator($currentUser->id);
+            $canLeave = $isCreator && $board->countAdmins() > 1;
+            return response()->json([
+                'success' => true,
+                'message' => 'Role updated successfully',
+                'can_leave' => $canLeave,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function removeMemberFromBoard(Request $request)
+    {
+        // Validate dữ liệu đầu vào
+        $request->validate([
+            'board_id' => 'required|exists:boards,id',
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        try {
+            $board = Board::findOrFail($request->board_id);
+            $currentUser = auth()->user();
+
+            // Kiểm tra quyền admin, chỉ định rõ ràng bảng board_members
+            if (
+                !$board->members()->where('board_members.user_id', $currentUser->id)
+                    ->where('board_members.role', 'admin')
+                    ->exists()
+            ) {
+                return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
+            }
+
+            // Kiểm tra nếu xóa admin cuối cùng
+            if (
+                $board->countAdmins() === 1 &&
+                $board->members()->where('board_members.user_id', $request->user_id)
+                    ->where('board_members.role', 'admin')
+                    ->exists()
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot remove the last admin. Please assign another admin first.',
+                ], 400);
+            }
+
+            $board->members()->detach($request->user_id);
+
+
+
+            // Gửi event realtime
+            event(new MemberRemovedFromBoard($request->user_id, $request->board_id));
+
+            return response()->json(['success' => true, 'message' => 'Member removed successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }

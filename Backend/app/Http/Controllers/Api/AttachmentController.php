@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\AttachmentUploaded;
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
 use App\Models\Card;
+use App\Notifications\AttachmentUploadedNotification;
 use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Activitylog\Models\Activity;
 
 class AttachmentController extends Controller
 {
@@ -78,10 +82,18 @@ class AttachmentController extends Controller
             ])
             ->log("{$user_name} đã đính kèm tập tin {$attachment->file_name_defaut} vào thẻ này");
 
+        $activity = Activity::where('subject_type', Card::class)
+            ->where('subject_id', $cardId)
+            ->latest()
+            ->first();
+
+        broadcast(new AttachmentUploaded($attachment, $activity, $user_name));
+
+
         // Gửi thông báo
         $users = $card->users()->where('id', '!=', auth()->id())->get();
         foreach ($users as $user) {
-            $user->notify(new CardNotification('uploaded_attachment', $card, [], $user_name));
+            $user->notify(new AttachmentUploadedNotification($card, $attachment, $user_name));
         }
 
         return response()->json([
@@ -151,54 +163,81 @@ class AttachmentController extends Controller
     }
 
     // Cập nhật tệp đính kèm thành ảnh bìa
-    public function setCoverImage(Request $request, $cardId, $attachmentId)
+    public function setCoverImage($cardId, $attachmentId)
     {
-        $attachment = Attachment::findOrFail($attachmentId);
+        try {
+            // Tìm attachment và kiểm tra nó thuộc card
+            $attachment = Attachment::where('id', $attachmentId)
+                ->where('card_id', $cardId)
+                ->firstOrFail();
 
-        if (!in_array(pathinfo($attachment->file_name, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+            // Kiểm tra định dạng file
+            $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            if (!in_array($extension, $allowedExtensions)) {
+                return response()->json([
+                    'message' => 'Chỉ có thể đặt ảnh làm ảnh bìa!',
+                    'status' => false,
+                ], 422);
+            }
+
+            // Đảm bảo chỉ có 1 ảnh bìa duy nhất hoặc bỏ ảnh bìa nếu đã chọn
+            DB::transaction(function () use ($cardId, $attachment) {
+                if ($attachment->is_cover) {
+                    // Nếu attachment đang là ảnh bìa, bỏ trạng thái ảnh bìa
+                    $attachment->update(['is_cover' => false]);
+                } else {
+                    // Xóa ảnh bìa cũ: đặt tất cả is_cover về false
+                    Attachment::where('card_id', $cardId)
+                        ->update(['is_cover' => false]);
+
+                    // Đặt attachment mới làm ảnh bìa
+                    $attachment->update(['is_cover' => true]);
+                }
+            });
+
             return response()->json([
-                'message' => 'Chỉ có thể đặt ảnh làm ảnh bìa!',
+                'message' => $attachment->is_cover ? 'Cập nhật ảnh bìa thành công!' : 'Đã bỏ ảnh bìa!',
+                'status' => true,
+                'data' => $attachment->fresh(),
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Không tìm thấy tệp đính kèm!',
                 'status' => false,
-            ], 422);
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi cập nhật ảnh bìa!',
+                'status' => false,
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        // Xóa ảnh bìa cũ của thẻ
-        Attachment::where('card_id', $attachment->card_id)->update(['is_cover' => false]);
-
-        // Đặt ảnh mới làm ảnh bìa
-        $attachment->update(['is_cover' => true]);
-
-        return response()->json([
-            'message' => 'Cập nhật ảnh bìa thành công!',
-            'status' => true,
-            'data' => $attachment
-        ]);
     }
-
     public function updateNameFileAttachment(Request $request, $cardId, $attachmentId)
     {
         try {
             // Ghi log để kiểm tra dữ liệu nhận được
             Log::info('Request update file name:', ['cardId' => $cardId, 'attachmentId' => $attachmentId, 'data' => $request->all()]);
-    
+
             // Kiểm tra đầu vào hợp lệ
             $validatedData = $request->validate([
                 'file_name_defaut' => 'required|string|max:255',
             ]);
-    
+
             // Tìm attachment theo ID và kiểm tra có thuộc card không
             $attachment = Attachment::where('id', $attachmentId)
-                                    ->where('card_id', $cardId)
-                                    ->first();
-    
+                ->where('card_id', $cardId)
+                ->first();
+
             if (!$attachment) {
                 return response()->json(['error' => 'Tệp đính kèm không tồn tại hoặc không thuộc thẻ này'], 404);
             }
-    
+
             // Cập nhật tên file
             $attachment->file_name_defaut = $validatedData['file_name_defaut'];
             $attachment->save();
-    
+
             return response()->json([
                 'message' => 'Cập nhật tên tệp thành công',
                 'attachment' => $attachment
@@ -210,5 +249,5 @@ class AttachmentController extends Controller
             return response()->json(['error' => 'Lỗi khi cập nhật tên tệp'], 500);
         }
     }
-    
+
 }

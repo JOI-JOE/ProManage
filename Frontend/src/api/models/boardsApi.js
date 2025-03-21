@@ -78,9 +78,11 @@ export const logBoardAccess = async (boardId) => {
 
 export const updateBoardName = async (boardId, name) => {
   try {
-    const response = await authClient.patch(`/boards/${boardId}/name`, { name });
+    const response = await authClient.patch(`/boards/${boardId}/name`, {
+      name,
+    });
     return response.data;
-  } catch (error) {  
+  } catch (error) {
     console.error("Lỗi khi cập nhật tên bảng:", error);
     throw error;
   }
@@ -107,13 +109,16 @@ export const getBoardMarked = async () => {
 };
 export const getUnsplashImages = async () => {
   try {
-   
-    const response = await axios.get("https://api.unsplash.com/search/photos?query=workspace&per_page=10&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk")
+    const response = await axios.get(
+      "https://api.unsplash.com/search/photos?query=workspace&per_page=10&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"
+    );
 
-  
     return response.data.results; // Lấy danh sách ảnh từ `results`
   } catch (error) {
-    console.error("❌ Lỗi khi lấy ảnh từ Unsplash:", error.response?.data || error.message);
+    console.error(
+      "❌ Lỗi khi lấy ảnh từ Unsplash:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };

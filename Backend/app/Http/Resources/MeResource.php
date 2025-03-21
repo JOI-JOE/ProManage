@@ -20,6 +20,7 @@ class MeResource extends JsonResource
             'user_name' => $this->user_name,
             'email'     => $this->email,
             'workspaces' => $this->workspaces,
+            'boardMember' => $this->boardMember,
             'role' => $this->role,
             'image' => $this->image,
         ];
