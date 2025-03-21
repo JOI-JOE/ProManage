@@ -13,7 +13,6 @@ import {
   toggleBoardMarked,
   updateBoardName,
   updateBoardVisibility
-
 } from "../api/models/boardsApi";
 import { useCallback } from "react";
 

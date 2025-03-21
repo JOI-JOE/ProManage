@@ -15,7 +15,9 @@ import {
   InputLabel,
   Menu,
   MenuItem,
-  CircularProgress
+  CircularProgress,
+  Avatar,
+  Collapse,
 } from "@mui/material";
 import AppsIcon from "@mui/icons-material/Apps";
 import trelloLogo from "~/assets/trello.svg?react";
@@ -33,6 +35,8 @@ import Started from "./Menus/Started";
 import Template from "./Menus/Template";
 import { useUser } from "../../hooks/useUser";
 import useNotifications from "../../hooks/useNotification";
+import useSearch from "../../hooks/useSearch";
+// import useNotifications from "../../hooks/useNotification";
 import { formatTime } from "../../../utils/dateUtils";
 import useSearch from "../../hooks/useSearch";
 
@@ -158,6 +162,15 @@ const AppBar = ({ username, email }) => {
       </Box>
 
       <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          marginLeft: "auto",
+        }}
+      >
+        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <TextField
         autoComplete="off"
         id="outlined-search"
@@ -178,6 +191,7 @@ const AppBar = ({ username, email }) => {
             color: 'white',
             '& .MuiOutlinedInput-notchedOutline': {
               borderColor: 'transparent', // Ẩn viền mặc định
+
             },
             '&:hover .MuiOutlinedInput-notchedOutline': {
               borderColor: '#00C2A0', // Màu viền khi hover
