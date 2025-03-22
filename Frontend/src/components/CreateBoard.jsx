@@ -46,7 +46,7 @@ const CreateBoard = React.memo(() => {
   const memoizedWorkspaces = useMemo(() => workspaces ?? [], [workspaces]);
 
   const { data: colors, isLoading: isLoadingColors, errorColors } = useColor();
- 
+
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -154,9 +154,9 @@ const CreateBoard = React.memo(() => {
             Phông nền
           </Typography>
 
-         
-         
-         {colors?.length > 0 ? (
+
+
+          {colors?.length > 0 ? (
             <Grid container spacing={1} mt={1}>
               {colors.map((color) => (
                 <Grid item key={color.id}>
@@ -233,7 +233,7 @@ const CreateBoard = React.memo(() => {
           <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
             Không gian làm việc
           </Typography>
-       
+
           {isLoadingWorkspaces ? (
             <Typography>Đang tải...</Typography>
           ) : error ? (
@@ -267,7 +267,7 @@ const CreateBoard = React.memo(() => {
               <LockIcon fontSize="small" />
               Riêng tư
             </MenuItem>
-            <MenuItem value="member">
+            <MenuItem value="workspace">
               <GroupsIcon fontSize="small" />
               Không gian làm việc
             </MenuItem>
