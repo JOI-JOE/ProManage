@@ -59,6 +59,7 @@ import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import {
   useCardActions,
   useCardById,
+  useCardSchedule,
   useGetMemberInCard,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
@@ -103,8 +104,10 @@ import useAttachments from "../../../../../../../../../hooks/useAttachment.js";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
-const CardModal = ({}) => {
+const CardModal = ({ }) => {
   const { cardId, title } = useParams();
+  const { data: schedule } = useCardSchedule(cardId);//date
+
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -144,6 +147,11 @@ const CardModal = ({}) => {
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
+  const formatDate = (dateString) => {
+    if (!dateString) return "Không có";
+    const date = new Date(dateString);
+    return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+  }
 
   const [coverImage, setCoverImage] = useState(
     localStorage.getItem(`coverImage-${cardId}`) || null
@@ -151,6 +159,8 @@ const CardModal = ({}) => {
   const [coverColor, setCoverColor] = useState(
     localStorage.getItem(`coverColor-${cardId}`) || null
   );
+
+
 
   // const handleCoverImageChange = (newImage) => {
   //   setCoverImage(newImage);
@@ -963,7 +973,7 @@ const CardModal = ({}) => {
         </DialogTitle>
 
         {/* NGÀY */}
-        {dateInfo && (
+        {schedule && (
           <>
             <Typography sx={{ fontWeight: "bold", mb: 0, ml: 3 }}>
               Ngày
@@ -977,14 +987,13 @@ const CardModal = ({}) => {
                 ml: 3,
                 p: 1,
               }}
-              onClick={openDateModal}
+              // onClick={openDateModal}
+              onClick={() => setIsDateModalOpen(true)}
             >
-              <AccessTime />
-              {dateInfo.startDate !== "Không có" && (
-                <Typography>{dateInfo.startDate.split(" ")[0]} -</Typography>
-              )}
-              <Typography>{dateInfo.endDate.split(" ")[1]}</Typography>
-              <Typography>{dateInfo.endDate.split(" ")[0]}</Typography>
+              <Typography>{formatDate(schedule.start_date)} -</Typography>
+
+              <Typography>{formatDate(schedule.end_date)}</Typography>
+              <Typography>{schedule.end_time}</Typography>
               {/* Kiểm tra trạng thái deadline */}
               {isOverdue() && (
                 <Chip
@@ -1161,127 +1170,127 @@ const CardModal = ({}) => {
                 {attachments?.data?.some(
                   (item) => !/\.(png|jpg|jpeg|gif|pdf)$/i.test(item.path_url)
                 ) && (
-                  <Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontSize: "12px", // Giảm font size để tiết kiệm không gian
-                        ml: "20px",
-                        mt: "5px",
-                        mb: "3px", // Giảm khoảng cách với các mục bên dưới
-                      }}
-                    >
-                      Liên kết
-                    </Typography>
-                    <List>
-                      {attachments.data
-                        .filter(
-                          (file) =>
-                            !/\.(png|jpg|jpeg|gif|pdf)$/i.test(file.path_url)
-                        ) // Lọc các "liên kết"
-                        .map((file) => {
-                          const domain = new URL(
-                            file.path_url
-                          ).hostname.replace(/^www\./, "");
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontSize: "12px", // Giảm font size để tiết kiệm không gian
+                          ml: "20px",
+                          mt: "5px",
+                          mb: "3px", // Giảm khoảng cách với các mục bên dưới
+                        }}
+                      >
+                        Liên kết
+                      </Typography>
+                      <List>
+                        {attachments.data
+                          .filter(
+                            (file) =>
+                              !/\.(png|jpg|jpeg|gif|pdf)$/i.test(file.path_url)
+                          ) // Lọc các "liên kết"
+                          .map((file) => {
+                            const domain = new URL(
+                              file.path_url
+                            ).hostname.replace(/^www\./, "");
 
-                          return (
-                            <ListItem
-                              key={file.id}
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                paddingRight: "40px",
-                                mb: "4px",
-                                ml: "10px",
-                                cursor: "pointer",
-                                height: "30px",
-                                width: "100%",
-
-                                border: "1px solid #F2F2F4",
-                                backgroundColor: "#F2F2F4",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              {/* Hiển thị favicon và link cùng một hàng */}
-                              <Box
+                            return (
+                              <ListItem
+                                key={file.id}
                                 sx={{
                                   display: "flex",
                                   alignItems: "center",
-                                  gap: "8px",
-                                  flexGrow: 1,
+                                  paddingRight: "40px",
+                                  mb: "4px",
+                                  ml: "10px",
+                                  cursor: "pointer",
+                                  height: "30px",
+                                  width: "100%",
+
+                                  border: "1px solid #F2F2F4",
+                                  backgroundColor: "#F2F2F4",
+                                  borderRadius: "4px",
                                 }}
                               >
-                                <img
-                                  src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`}
-                                  alt="favicon"
-                                  style={{
-                                    width: "16px",
-                                    height: "16px",
-                                  }}
-                                />
-                                <a
-                                  href={file.path_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  title={file.path_url}
-                                  style={{
-                                    color: "#5795EC",
-                                    fontSize: "15px",
-                                    textDecoration: "none",
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    maxWidth: "300px",
-                                    display: "inline-block",
+                                {/* Hiển thị favicon và link cùng một hàng */}
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                    flexGrow: 1,
                                   }}
                                 >
-                                  {file.file_name_defaut || domain}
-                                </a>
-                              </Box>
+                                  <img
+                                    src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`}
+                                    alt="favicon"
+                                    style={{
+                                      width: "16px",
+                                      height: "16px",
+                                    }}
+                                  />
+                                  <a
+                                    href={file.path_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={file.path_url}
+                                    style={{
+                                      color: "#5795EC",
+                                      fontSize: "15px",
+                                      textDecoration: "none",
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      maxWidth: "300px",
+                                      display: "inline-block",
+                                    }}
+                                  >
+                                    {file.file_name_defaut || domain}
+                                  </a>
+                                </Box>
 
-                              <IconButton
-                                onClick={(e) => handleMenuOpen1(e, file)}
-                                sx={{ ml: "auto" }}
-                              >
-                                <MoreVertIcon />
-                                <Menu
-                                  anchorEl={anchorEl1}
-                                  open={Boolean(anchorEl1)}
-                                  onClose={handleMenuClose1}
-                                  anchorOrigin={{
-                                    vertical: "bottom",
-                                    horizontal: "left",
-                                  }}
-                                  transformOrigin={{
-                                    vertical: "top",
-                                    horizontal: "left",
-                                  }}
+                                <IconButton
+                                  onClick={(e) => handleMenuOpen1(e, file)}
+                                  sx={{ ml: "auto" }}
                                 >
-                                  <MenuItem
-                                    onClick={() => {
-                                      handleEdit();
-                                      handleMenuClose1();
+                                  <MoreVertIcon />
+                                  <Menu
+                                    anchorEl={anchorEl1}
+                                    open={Boolean(anchorEl1)}
+                                    onClose={handleMenuClose1}
+                                    anchorOrigin={{
+                                      vertical: "bottom",
+                                      horizontal: "left",
+                                    }}
+                                    transformOrigin={{
+                                      vertical: "top",
+                                      horizontal: "left",
                                     }}
                                   >
-                                    Sửa
-                                  </MenuItem>
-                                  <MenuItem>Nhận xét</MenuItem>
-                                  <MenuItem
-                                    onClick={() => {
-                                      handleDelete(file.id);
-                                      // handleMenuClose1();
-                                    }}
-                                  >
-                                    Xóa
-                                  </MenuItem>
-                                </Menu>
-                              </IconButton>
-                            </ListItem>
-                          );
-                        })}
-                    </List>
-                  </Box>
-                )}
+                                    <MenuItem
+                                      onClick={() => {
+                                        handleEdit();
+                                        handleMenuClose1();
+                                      }}
+                                    >
+                                      Sửa
+                                    </MenuItem>
+                                    <MenuItem>Nhận xét</MenuItem>
+                                    <MenuItem
+                                      onClick={() => {
+                                        handleDelete(file.id);
+                                        // handleMenuClose1();
+                                      }}
+                                    >
+                                      Xóa
+                                    </MenuItem>
+                                  </Menu>
+                                </IconButton>
+                              </ListItem>
+                            );
+                          })}
+                      </List>
+                    </Box>
+                  )}
 
                 {/* Popover chỉnh sửa */}
                 <Popover
@@ -1364,103 +1373,103 @@ const CardModal = ({}) => {
                     file.path_url
                   )
                 ) && (
-                  <Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontSize: "12px",
-                        ml: "20px",
-                        mt: "5px",
-                        mb: "-15px",
-                      }}
-                    >
-                      Tệp
-                    </Typography>
-                    <List>
-                      {attachments.data
-                        .filter((file) =>
-                          /\.(png|jpg|jpeg|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|sql)$/i.test(
-                            file.path_url
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontSize: "12px",
+                          ml: "20px",
+                          mt: "5px",
+                          mb: "-15px",
+                        }}
+                      >
+                        Tệp
+                      </Typography>
+                      <List>
+                        {attachments.data
+                          .filter((file) =>
+                            /\.(png|jpg|jpeg|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|sql)$/i.test(
+                              file.path_url
+                            )
                           )
-                        )
-                        .map((file) => {
-                          const fileExt =
-                            file.path_url
-                              .match(/\.([a-zA-Z0-9]+)$/i)?.[1]
-                              .toLowerCase() || "default";
-                          const isImage = [
-                            "png",
-                            "jpg",
-                            "jpeg",
-                            "gif",
-                          ].includes(fileExt);
-                          const fileIcons = {
-                            png: "https://img.icons8.com/color/24/000000/image.png",
-                            jpg: "https://img.icons8.com/color/24/000000/image.png",
-                            jpeg: "https://img.icons8.com/color/24/000000/image.png",
-                            gif: "https://img.icons8.com/color/24/000000/image.png",
-                            pdf: "https://img.icons8.com/color/24/000000/pdf.png",
-                            doc: "https://img.icons8.com/color/24/000000/microsoft-word-2019.png",
-                            docx: "https://img.icons8.com/color/24/000000/microsoft-word-2019.png",
-                            xls: "https://img.icons8.com/color/24/000000/microsoft-excel-2019.png",
-                            xlsx: "https://img.icons8.com/color/24/000000/microsoft-excel-2019.png",
-                            ppt: "https://img.icons8.com/color/24/000000/microsoft-powerpoint-2019.png",
-                            pptx: "https://img.icons8.com/color/24/000000/microsoft-powerpoint-2019.png",
-                            sql: "https://img.icons8.com/color/24/000000/sql.png",
-                            default:
-                              "https://img.icons8.com/color/24/000000/file.png",
-                          };
+                          .map((file) => {
+                            const fileExt =
+                              file.path_url
+                                .match(/\.([a-zA-Z0-9]+)$/i)?.[1]
+                                .toLowerCase() || "default";
+                            const isImage = [
+                              "png",
+                              "jpg",
+                              "jpeg",
+                              "gif",
+                            ].includes(fileExt);
+                            const fileIcons = {
+                              png: "https://img.icons8.com/color/24/000000/image.png",
+                              jpg: "https://img.icons8.com/color/24/000000/image.png",
+                              jpeg: "https://img.icons8.com/color/24/000000/image.png",
+                              gif: "https://img.icons8.com/color/24/000000/image.png",
+                              pdf: "https://img.icons8.com/color/24/000000/pdf.png",
+                              doc: "https://img.icons8.com/color/24/000000/microsoft-word-2019.png",
+                              docx: "https://img.icons8.com/color/24/000000/microsoft-word-2019.png",
+                              xls: "https://img.icons8.com/color/24/000000/microsoft-excel-2019.png",
+                              xlsx: "https://img.icons8.com/color/24/000000/microsoft-excel-2019.png",
+                              ppt: "https://img.icons8.com/color/24/000000/microsoft-powerpoint-2019.png",
+                              pptx: "https://img.icons8.com/color/24/000000/microsoft-powerpoint-2019.png",
+                              sql: "https://img.icons8.com/color/24/000000/sql.png",
+                              default:
+                                "https://img.icons8.com/color/24/000000/file.png",
+                            };
 
-                          const iconSrc =
-                            fileIcons[fileExt] || fileIcons.default;
+                            const iconSrc =
+                              fileIcons[fileExt] || fileIcons.default;
 
-                          return (
-                            <ListItem
-                              key={file.id}
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                paddingRight: "40px",
-                                mb: "-8px",
-                                ml: "10px",
-                                cursor: "pointer",
-                              }}
-                            >
-                              {/* Hình ảnh hoặc icon */}
-                              <Box
-                                component="img"
-                                src={isImage ? file.path_url : iconSrc}
-                                alt={
-                                  isImage
-                                    ? file.file_name_defaut
-                                    : `${fileExt}-icon`
-                                }
+                            return (
+                              <ListItem
+                                key={file.id}
                                 sx={{
-                                  width: 50,
-                                  height: 50,
-                                  borderRadius: "8px",
-                                  objectFit: isImage ? "cover" : "contain",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  paddingRight: "40px",
+                                  mb: "-8px",
+                                  ml: "10px",
+                                  cursor: "pointer",
                                 }}
-                                onClick={() => handleOpen(file.path_url)}
-                              />
-
-                              {/* Nội dung tên và thời gian */}
-                              <Box sx={{ flexGrow: 1, ml: "10px" }}>
-                                <Typography
-                                  sx={{ fontWeight: "bold", fontSize: "13px" }}
+                              >
+                                {/* Hình ảnh hoặc icon */}
+                                <Box
+                                  component="img"
+                                  src={isImage ? file.path_url : iconSrc}
+                                  alt={
+                                    isImage
+                                      ? file.file_name_defaut
+                                      : `${fileExt}-icon`
+                                  }
+                                  sx={{
+                                    width: 50,
+                                    height: 50,
+                                    borderRadius: "8px",
+                                    objectFit: isImage ? "cover" : "contain",
+                                  }}
                                   onClick={() => handleOpen(file.path_url)}
-                                >
-                                  {file.file_name_defaut || "Không có tên"}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color="textSecondary"
-                                  sx={{ fontSize: "13px" }}
-                                >
-                                  Đã thêm{" "}
-                                  {file.created_at
-                                    ? new Date(file.created_at).toLocaleString(
+                                />
+
+                                {/* Nội dung tên và thời gian */}
+                                <Box sx={{ flexGrow: 1, ml: "10px" }}>
+                                  <Typography
+                                    sx={{ fontWeight: "bold", fontSize: "13px" }}
+                                    onClick={() => handleOpen(file.path_url)}
+                                  >
+                                    {file.file_name_defaut || "Không có tên"}
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    color="textSecondary"
+                                    sx={{ fontSize: "13px" }}
+                                  >
+                                    Đã thêm{" "}
+                                    {file.created_at
+                                      ? new Date(file.created_at).toLocaleString(
                                         "vi-VN",
                                         {
                                           hour: "2-digit",
@@ -1470,36 +1479,36 @@ const CardModal = ({}) => {
                                           year: "numeric",
                                         }
                                       )
-                                    : "Không xác định"}
-                                  {file.is_cover && (
-                                    <Box component="span" sx={{ ml: 1 }}>
-                                      <img
-                                        src="https://img.icons8.com/material-outlined/24/000000/image.png"
-                                        alt="cover-icon"
-                                        style={{
-                                          width: "16px",
-                                          verticalAlign: "middle",
-                                        }}
-                                      />{" "}
-                                      Ảnh bìa
-                                    </Box>
-                                  )}
-                                </Typography>
-                              </Box>
+                                      : "Không xác định"}
+                                    {file.is_cover && (
+                                      <Box component="span" sx={{ ml: 1 }}>
+                                        <img
+                                          src="https://img.icons8.com/material-outlined/24/000000/image.png"
+                                          alt="cover-icon"
+                                          style={{
+                                            width: "16px",
+                                            verticalAlign: "middle",
+                                          }}
+                                        />{" "}
+                                        Ảnh bìa
+                                      </Box>
+                                    )}
+                                  </Typography>
+                                </Box>
 
-                              {/* Menu tác vụ */}
-                              <IconButton
-                                onClick={(e) => handleMenuOpen2(e, file.id)}
-                                sx={{ ml: "auto" }}
-                              >
-                                <MoreVertIcon />
-                              </IconButton>
-                            </ListItem>
-                          );
-                        })}
-                    </List>
-                  </Box>
-                )}
+                                {/* Menu tác vụ */}
+                                <IconButton
+                                  onClick={(e) => handleMenuOpen2(e, file.id)}
+                                  sx={{ ml: "auto" }}
+                                >
+                                  <MoreVertIcon />
+                                </IconButton>
+                              </ListItem>
+                            );
+                          })}
+                      </List>
+                    </Box>
+                  )}
 
                 {/* Menu con */}
                 <Menu
@@ -2240,13 +2249,13 @@ const CardModal = ({}) => {
                             ) : (
                               <Typography component="span" fontWeight="normal">
                                 {item.properties &&
-                                item.properties.file_path &&
-                                item.properties.file_name
+                                  item.properties.file_path &&
+                                  item.properties.file_name
                                   ? renderDescriptionWithLink(
-                                      actionText,
-                                      item.properties.file_path,
-                                      item.properties.file_name
-                                    )
+                                    actionText,
+                                    item.properties.file_path,
+                                    item.properties.file_name
+                                  )
                                   : actionText}
                               </Typography>
                             )}
@@ -2504,7 +2513,7 @@ const CardModal = ({}) => {
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-          // onSave={handleAddTask}
+        // onSave={handleAddTask}
         />
 
         {/* Component Label List */}
@@ -2544,7 +2553,7 @@ const CardModal = ({}) => {
           open={isCoverPhotoOpen}
           handleClose={() => setIsCoverPhotoOpen(false)}
           onCoverImageChange={handleCoverImageChange} // Pass the handler to CoverPhoto
-          // onCoverColorChange={handleCoverColorChange} // Pass the handler to CoverPhoto
+        // onCoverColorChange={handleCoverColorChange} // Pass the handler to CoverPhoto
         />
 
         <DateModal

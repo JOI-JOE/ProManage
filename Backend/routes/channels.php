@@ -58,3 +58,7 @@ Broadcast::channel('user.{id}', function ($user, $id) {
     return (string) $user->id === (string) $id;
 });
 
+// Channel cho các sự kiện liên quan đến Board
+Broadcast::channel('boards.{boardId}', function ($user, $boardId) {
+    return true;
+});

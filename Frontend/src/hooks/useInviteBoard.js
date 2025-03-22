@@ -7,7 +7,10 @@ import { toast } from "react-toastify";
 
 
 export const useGetBoardMembers = (boardId) => {
-    return useQuery({
+
+    const queryClient = useQueryClient();
+
+    const boardMembers=  useQuery({
         queryKey: ["boardMembers", boardId], // Cache theo boardId
         queryFn: () => getBoardMembers(boardId),
         enabled: !!boardId, // Chỉ fetch khi có boardId
@@ -16,6 +19,32 @@ export const useGetBoardMembers = (boardId) => {
         retry: 2, // Tự động thử lại 2 lần nếu lỗi
         refetchOnWindowFocus: false, // Không fetch lại khi chuyển tab
     });
+
+    useEffect(() => {
+        if (!boardId || !echoInstance) return;
+    
+        const channel = echoInstance.channel(`boards.${boardId}`);
+        // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
+    
+    
+       
+        channel.listen(".BoardUpdateRole", (data) => {
+            console.log('Realtime archive changed: ', data);
+           
+            queryClient.invalidateQueries(['boardMembers']);
+      
+          });
+    
+        return () => {
+          channel.stopListening(".BoardUpdateRole");
+        //   channel.stopListening(".CardDelete");
+          echoInstance.leave(`boards.${boardId}`);
+        };
+      }, [boardId, queryClient]);
+    
+    
+
+    return boardMembers;
 };
 
 
@@ -55,7 +84,7 @@ export const useUpdateRoleMemberInBoards = () => {
                 console.log("Vai trò đã được cập nhật thành công:", data.message);
 
                 // Cập nhật lại dữ liệu trong cache (nếu cần)
-                queryClient.invalidateQueries(['boardMembers']); // Thay 'boardMembers' bằng key thực tế
+                // queryClient.invalidateQueries(['boardMembers']); // Thay 'boardMembers' bằng key thực tế
             }
         },
         onError: (error) => {

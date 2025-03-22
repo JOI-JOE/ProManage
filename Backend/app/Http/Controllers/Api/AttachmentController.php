@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\AttachmentUploaded;
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
 use App\Models\Card;
+use App\Notifications\AttachmentUploadedNotification;
 use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Activitylog\Models\Activity;
 
 class AttachmentController extends Controller
 {
@@ -79,10 +82,18 @@ class AttachmentController extends Controller
             ])
             ->log("{$user_name} đã đính kèm tập tin {$attachment->file_name_defaut} vào thẻ này");
 
+        $activity = Activity::where('subject_type', Card::class)
+            ->where('subject_id', $cardId)
+            ->latest()
+            ->first();
+
+        broadcast(new AttachmentUploaded($attachment, $activity, $user_name));
+
+
         // Gửi thông báo
         $users = $card->users()->where('id', '!=', auth()->id())->get();
         foreach ($users as $user) {
-            $user->notify(new CardNotification('uploaded_attachment', $card, [], $user_name));
+            $user->notify(new AttachmentUploadedNotification($card, $attachment, $user_name));
         }
 
         return response()->json([
@@ -208,25 +219,25 @@ class AttachmentController extends Controller
         try {
             // Ghi log để kiểm tra dữ liệu nhận được
             Log::info('Request update file name:', ['cardId' => $cardId, 'attachmentId' => $attachmentId, 'data' => $request->all()]);
-    
+
             // Kiểm tra đầu vào hợp lệ
             $validatedData = $request->validate([
                 'file_name_defaut' => 'required|string|max:255',
             ]);
-    
+
             // Tìm attachment theo ID và kiểm tra có thuộc card không
             $attachment = Attachment::where('id', $attachmentId)
-                                    ->where('card_id', $cardId)
-                                    ->first();
-    
+                ->where('card_id', $cardId)
+                ->first();
+
             if (!$attachment) {
                 return response()->json(['error' => 'Tệp đính kèm không tồn tại hoặc không thuộc thẻ này'], 404);
             }
-    
+
             // Cập nhật tên file
             $attachment->file_name_defaut = $validatedData['file_name_defaut'];
             $attachment->save();
-    
+
             return response()->json([
                 'message' => 'Cập nhật tên tệp thành công',
                 'attachment' => $attachment
@@ -238,5 +249,5 @@ class AttachmentController extends Controller
             return response()->json(['error' => 'Lỗi khi cập nhật tên tệp'], 500);
         }
     }
-    
+
 }

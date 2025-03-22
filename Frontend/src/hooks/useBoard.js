@@ -1,13 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createBoard,
+import {
+  createBoard,
   getBoardById,
+  getBoardClosed,
   getBoardMarked,
+  getBoardsAllByClosed,
   getRecentBoards,
   getUnsplashImages,
   logBoardAccess,
   showBoardByWorkspaceId,
+  toggleBoardClosed,
   toggleBoardMarked,
-  updateBoardName
+  updateBoardName,
+  updateBoardVisibility
 } from "../api/models/boardsApi";
 import { useCallback } from "react";
 
@@ -69,7 +74,6 @@ export const useBoardByWorkspaceId = (workspaceId) => {
 };
 
 export const useBoards = (boardId) => {
-
   const boardsQuery = useQuery({
     queryKey: ["boardLists", boardId],
     queryFn: () => getBoardById(boardId),
@@ -105,25 +109,23 @@ export const useRecentBoardAccess = () => {
   });
 };
 
-
 /**
  * Hook để cập nhật tên bảng
  * @returns {object} - Object chứa mutate để gọi API cập nhật tên bảng
  */
 export const useUpdateBoardName = () => {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: ({ boardId, name }) => updateBoardName(boardId, name),
-        onSuccess: (_, { boardId }) => {
-            queryClient.invalidateQueries({ queryKey: ["board", boardId] });
-            queryClient.invalidateQueries(["boards"]);
-
-        },
-        onError: (error) => {
-            console.error("Lỗi khi cập nhật tên bảng:", error);
-        },
-    });
+  return useMutation({
+    mutationFn: ({ boardId, name }) => updateBoardName(boardId, name),
+    onSuccess: (_, { boardId }) => {
+      queryClient.invalidateQueries({ queryKey: ["board", boardId] });
+      queryClient.invalidateQueries(["boards"]);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật tên bảng:", error);
+    },
+  });
 };
 
 export const useToggleBoardMarked = () => {
@@ -147,7 +149,9 @@ export const useToggleBoardMarked = () => {
           return {
             ...oldData,
             data: oldData.data.map((board) =>
-              board.id === boardId ? { ...board, is_marked: !board.is_marked } : board
+              board.id === boardId
+                ? { ...board, is_marked: !board.is_marked }
+                : board
             ),
           };
         });
@@ -173,7 +177,9 @@ export const useToggleBoardMarked = () => {
           return {
             ...oldData,
             data: oldData.data.map((board) =>
-              board.id === boardId ? { ...board, is_marked: data.is_marked } : board
+              board.id === boardId
+                ? { ...board, is_marked: data.is_marked }
+                : board
             ),
           };
         });
@@ -187,7 +193,6 @@ export const useToggleBoardMarked = () => {
   });
 };
 
-  
 export const useBoardMarked = () => {
   return useQuery({
     queryKey: ["boardMarked"],
@@ -206,3 +211,61 @@ export const useImageUnsplash = () => {
     cacheTime: 1000 * 60 * 30, // Dữ liệu được giữ trong cache tối đa 30 phút.
   });
 };
+
+export const useUpdateBoardVisibility = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ boardId, visibility }) => updateBoardVisibility(boardId, visibility),
+    onSuccess: (data, { boardId }) => {
+      // Optionally invalidate queries to ensure data is fresh
+      queryClient.invalidateQueries(["boards", boardId]); // Refresh board data
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật visibility của bảng:", error);
+    },
+  });
+};
+
+export const useToggleBoardClosed = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (boardId) => toggleBoardClosed(boardId),
+
+    // Xử lý khi API gọi thành công
+    onSuccess: (data, boardId) => {
+      console.log("✅ Đã cập nhật trạng thái board:", data);
+
+      // Cập nhật lại cache cho danh sách board
+      queryClient.invalidateQueries(["boards"]);
+      // queryClient.invalidateQueries(["board", boardId]);
+
+    },
+
+    // Xử lý khi có lỗi
+    onError: (error) => {
+      console.error("❌ Lỗi khi đóng/mở board:", error);
+    },
+  });
+};
+
+
+export const useClosedBoards = () => {
+
+  return useQuery({
+    queryKey: ["closedBoards"], // Key riêng cho danh sách board đã đóng
+    queryFn: getBoardClosed, // Gọi API lấy danh sách bảng đã đóng
+    staleTime: 1000 * 60 * 5, // Cache trong 5 phút trước khi "stale"
+    onSuccess: (data) => {
+      // Khi thành công, invalidate lại query để đồng bộ lại dữ liệu
+    },
+  });
+};
+
+
+
+
+
+
+
