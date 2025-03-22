@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class WorkspaceMembers extends Model
 {
     use HasFactory;
 
     public $incrementing = false; // Không sử dụng auto-increment
-    protected $keyType = 'string'; // UUID là kiểu string
+    protected $keyType = 'string'; // Sử dụng UUID thay vì số
 
     public $timestamps = false;
 
@@ -20,6 +21,7 @@ class WorkspaceMembers extends Model
     public static $PENDING = 'pending';
     // protected $primaryKey = ['workspace_id', 'user_id']; // Khóa chính kép
     protected $fillable = [
+        'id',
         'workspace_id',
         'user_id',
         'member_type',
@@ -28,6 +30,17 @@ class WorkspaceMembers extends Model
         'is_deactivated',
         'last_active',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (!$model->id) {
+                $model->id = (string) Str::uuid();
+            }
+        });
+    }
 
     // Ép kiểu dữ liệu
     protected $casts = [
@@ -54,7 +67,6 @@ class WorkspaceMembers extends Model
     {
         return $this->belongsTo(Workspace::class, 'workspace_id');
     }
-
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

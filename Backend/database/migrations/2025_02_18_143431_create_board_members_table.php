@@ -12,35 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('board_members', function (Blueprint $table) {
-          // Khóa chính là cặp (board_id, user_id)
-    $table->uuid('board_id');
-    $table->uuid('user_id');
-    $table->primary(['board_id', 'user_id']); // Thiết lập primary key
+            $table->uuid('id')->primary(); // ID riêng
+            $table->uuid('board_id');
+            $table->uuid('user_id');
 
-    // Khóa ngoại
-    $table->foreign('board_id')->references('id')->on('boards')->onDelete('cascade');
-    $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->enum('role', ['admin', 'member', 'viewer'])->default('member');
+            $table->boolean('is_unconfirmed')->default(false);
+            $table->boolean('joined')->default(false);
+            $table->boolean('is_deactivated')->default(false);
+            $table->uuid('referrer_id')->nullable();
+            $table->timestamp('last_active')->nullable();
 
-    // Loại thành viên: admin, member, viewer
-    $table->enum('role', ['admin', 'member', 'viewer'])->default('member');
+            // Đảm bảo không có user nào trùng trong cùng một board
+            $table->unique(['board_id', 'user_id']);
 
-    // Trạng thái xác nhận (confirmed/unconfirmed)
-    $table->boolean('is_unconfirmed')->default(false);
+            // Khóa ngoại
+            $table->foreign('board_id')->references('id')->on('boards')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('referrer_id')->references('id')->on('users')->onDelete('set null');
 
-    // Trạng thái tham gia (joined/not joined)
-    $table->boolean('joined')->default(false);
-
-    // Trạng thái vô hiệu hóa (deactivated)
-    $table->boolean('is_deactivated')->default(false);
-
-    // Người giới thiệu (có thể null)
-    $table->uuid('referrer_id')->nullable();
-    $table->foreign('referrer_id')->references('id')->on('users')->onDelete('set null');
-
-    // Thời gian hoạt động gần nhất
-    $table->timestamp('last_active')->nullable();
-
-    $table->timestamps();
+            $table->timestamps();
         });
     }
 

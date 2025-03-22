@@ -6,6 +6,7 @@ use App\Events\WorkspaceUpdate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+
 class Workspace extends Model
 {
     use HasFactory;
@@ -57,11 +58,6 @@ class Workspace extends Model
         return $username;
     }
 
-
-    // public function user()
-    // {
-    //     return $this->belongsTo(User::class, 'id_member_creator',);
-    // }
     public function users()
     {
         return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id');

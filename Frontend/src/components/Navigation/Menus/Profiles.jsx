@@ -19,12 +19,12 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "react-router-dom";
-
 import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
 
+export default function ProfileMenu({ fullName, email }) {
 
-export default function ProfileMenu({ email }) {
+  console.log(email)
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
   const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
@@ -89,7 +89,7 @@ export default function ProfileMenu({ email }) {
         <Tooltip title="Tài khoản">
           <IconButton onClick={handleClick} size="small">
             <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
-              {email?.charAt(0)?.toUpperCase() || ""}
+              {fullName?.charAt(0)?.toUpperCase() || ""}
             </Avatar>
           </IconButton>
         </Tooltip>
@@ -99,7 +99,7 @@ export default function ProfileMenu({ email }) {
           <Avatar
             sx={{ width: 40, height: 40, margin: "auto", bgcolor: "#00A3BF" }}
           >
-            {email?.charAt(0)?.toUpperCase() || ""}
+            {fullName?.charAt(0)?.toUpperCase() || ""}
           </Avatar>
           <Typography
             variant="subtitle1"

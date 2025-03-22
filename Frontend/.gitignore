@@ -12,7 +12,7 @@ creadential.json
 # Yarn cache
 .yarn/
 
-*.env
+.env
 
 node_modules
 dist

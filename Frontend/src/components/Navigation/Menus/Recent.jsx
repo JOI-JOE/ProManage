@@ -67,7 +67,7 @@ const Recent = () => {
   // Lấy dữ liệu từ useRecentBoards hook
   const { data: recentBoards, isLoading, error } = useRecentBoards();
   // console.log("🔍 Dữ liệu bảng gần đây:", recentBoards);
-  
+
 
   if (isLoading) {
     return <Box>Loading...</Box>;

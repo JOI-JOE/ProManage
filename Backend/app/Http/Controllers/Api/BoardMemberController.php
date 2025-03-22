@@ -129,7 +129,10 @@ class BoardMemberController extends Controller
         }
 
         // Thêm user vào board với role mặc định là 'member'
-        $board->members()->attach($user->id, ['role' => 'member']);
+        $board->members()->attach($user->id, [
+            'id' => Str::uuid(),
+            'role' => 'member'
+        ]);
 
         $user->notify(new BoardInvitationReceivedNotification($board, $inviter));
         // Gửi event tới chủ bảng
@@ -167,8 +170,8 @@ class BoardMemberController extends Controller
                 $request->role === 'member' &&
                 $board->countAdmins() === 1 &&
                 $board->members()->where('board_members.user_id', $request->user_id)
-                    ->where('board_members.role', 'admin')
-                    ->exists()
+                ->where('board_members.role', 'admin')
+                ->exists()
             ) {
                 return response()->json(['success' => false, 'message' => 'Cannot downgrade the last admin'], 400);
             }
@@ -176,7 +179,7 @@ class BoardMemberController extends Controller
             $board->members()->updateExistingPivot($request->user_id, ['role' => $request->role]);
 
             $targetUser = User::find($request->user_id);
-            
+
             $targetUser->notify(new BoardMemberRoleUpdatedNotification($board, $request->role, $currentUser));
 
             broadcast(new BoardMemberRoleUpdated($board->id, $request->user_id, $request->role))->toOthers();
@@ -219,8 +222,8 @@ class BoardMemberController extends Controller
             if (
                 $board->countAdmins() === 1 &&
                 $board->members()->where('board_members.user_id', $request->user_id)
-                    ->where('board_members.role', 'admin')
-                    ->exists()
+                ->where('board_members.role', 'admin')
+                ->exists()
             ) {
                 return response()->json([
                     'success' => false,

@@ -1,8 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createCard,
-  updateCardPositionsDiffCol,
-  updateCardPositionsSameCol,
   getCardById,
   updateDescription,
   updateCardTitle,
@@ -11,6 +9,7 @@ import {
   getCardArchivedByBoard,
   getMemberInCard,
   toggleCardMember,
+  updatePositionCard,
   updateCardDate,
   getDateByCard,
   addMemberToCard,
@@ -29,25 +28,17 @@ export const useCreateCard = () => {
   });
 };
 
-const updateCardPositionsGeneric = async (cards, updateFunction) => {
-  if (!Array.isArray(cards) || cards.length === 0) {
-    console.error("Invalid or empty cards data:", cards);
-    throw new Error("No valid card data to update.");
-  }
+export const useUpdateCardPosition = () => {
+  const queryClient = useQueryClient(); // Khởi tạo queryClient
 
-  try {
-    return await updateFunction({ cards });
-  } catch (error) {
-    console.error("Failed to update card positions:", error);
-    throw error;
-  }
+  return useMutation({
+    mutationFn: async ({ cardId, listId, position }) => {
+      return await updatePositionCard({ cardId, listId, position });
+    },
+    retry: 3,
+    retryDelay: 1000, // Thử lại sau 1 giây nếu lỗi
+  });
 };
-
-export const useCardPositionsInColumns = (cards) =>
-  updateCardPositionsGeneric(cards, updateCardPositionsSameCol);
-
-export const useCardPositionsOutColumns = (cards) =>
-  updateCardPositionsGeneric(cards, updateCardPositionsDiffCol);
 
 export const useCardById = (cardId) => {
   const queryClient = useQueryClient();
@@ -102,9 +93,6 @@ export const useCardById = (cardId) => {
       echoInstance.leave(`card.${cardId}`);
     };
   }, [cardId, queryClient]);
-
-
-
 
   const updateDescriptionMutation = useMutation({
     mutationFn: (description) => updateDescription(cardId, description), // Gọi API cập nhật mô tả
@@ -233,7 +221,6 @@ export const useGetMemberInCard = (cardId) => {
     enabled: !!cardId, // Chỉ gọi API khi có cardId hợp lệ.
   });
 
-
   useEffect(() => {
     if (!cardId || !echoInstance) return;
 
@@ -280,7 +267,7 @@ export const useCardSchedule = (cardId) => {
     queryKey: ["cardSchedule", cardId],
     queryFn: () => getDateByCard(cardId),
     staleTime: 1000 * 60 * 5, // Dữ liệu cũ sau 5 phút
-    cacheTime: 1000 * 60 * 30, // Lưu trong cache 30 phút
+    cacheTime: 1000 * 60 * 30, 
     enabled: !!cardId, // Chỉ gọi API nếu cardId tồn tại
 
   });

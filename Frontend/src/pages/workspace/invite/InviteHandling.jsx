@@ -10,7 +10,6 @@ const InviteHandling = () => {
         if (inviteToken && workspaceId) {
             // Tạo chuỗi mời và mã hóa dấu `/` thành `%3A`
             const invitationData = encodeURIComponent(`workspace:${workspaceId}:${inviteToken}`);
-
             // Lưu vào cookie (7 ngày)
             Cookies.set("invitation", invitationData, { expires: 7, path: "/" });
         }
