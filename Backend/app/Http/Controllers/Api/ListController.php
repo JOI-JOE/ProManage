@@ -4,16 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\ListCreated;
 use App\Http\Requests\ListUpdateNameRequest;
-use App\Jobs\BroadcastListCreated;
 use App\Models\Board;
 use App\Models\ListBoard;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use Pusher\Pusher;
 
 class ListController extends Controller
 {
@@ -50,24 +46,18 @@ class ListController extends Controller
 
         $user = Auth::user();
 
-        $hasAccess = false;
+        // $hasAccess = false;
+        // if ($board->visibility === 'public') {
+        //     $hasAccess = true;
+        // } elseif ($board->visibility === 'workspace') {
+        //     $hasAccess = $board->workspace->members->contains($user->id);
+        // } elseif ($board->visibility === 'private') {
+        //     $hasAccess = $board->members->contains($user->id);
+        // }
 
-        if ($board->visibility === 'public') {
-            $hasAccess = true;
-        } elseif ($board->visibility === 'workspace') {
-            // Kiểm tra workspace có null không trước khi truy cập members
-            if ($board->workspace && $board->workspace->members) {
-                $hasAccess = $board->workspace->members->contains($user->id);
-            }
-        } elseif ($board->visibility === 'private') {
-            // Kiểm tra members có null không trước khi truy cập
-            if ($board->members) {
-                // $hasAccess = $board->members->contains($user->id);
-            }
-        }
-        if (!$hasAccess) {
-            return response()->json(['error' => 'Access denied'], 403);
-        }
+        // if (!$hasAccess) {
+        //     return response()->json(['message' => 'Access Denied'], 403);
+        // }
 
         $responseData = [
             'id' => $board->id,

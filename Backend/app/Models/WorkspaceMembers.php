@@ -63,6 +63,7 @@ class WorkspaceMembers extends Model
         return $this->member_type === self::$ADMIN;
     }
 
+
     public function workspace()
     {
         return $this->belongsTo(Workspace::class, 'workspace_id');
