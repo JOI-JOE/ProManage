@@ -103,15 +103,15 @@ export const updateClosed = async (listId) => {
   }
 };
 
-export const updatePositionList = async ({ boardId, position, listId }) => {
+export const updatePositionList = async ({ listId, position }) => {
   try {
-    const response = await authClient.put(`/lists/${boardId}`, {
-      position: position, // Vị trí bạn muốn cập nhật
-      listId: listId, // ID của list cần cập nhật
-    });
-    return response.data;
+    const { data } = await authClient.put(`/lists/${listId}`, { position });
+    return data;
   } catch (error) {
-    console.error("Lỗi khi cập nhật vị trí list_board:", error);
+    console.error(
+      "❌ Lỗi khi cập nhật vị trí list_board:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };

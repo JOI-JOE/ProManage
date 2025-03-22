@@ -193,9 +193,8 @@ const BoardContent = () => {
       console.log("Dragged Column:", draggedColumn);
 
       updatePositionListMutation.mutate({
-        listId: active.id,
+        listId: draggedColumn.id,
         position: newPosition,
-        boardId: board.id,
       });
 
       setOrderedColumns(updatedColumns);
