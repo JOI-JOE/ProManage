@@ -46,18 +46,24 @@ class ListController extends Controller
 
         $user = Auth::user();
 
-        // $hasAccess = false;
-        // if ($board->visibility === 'public') {
-        //     $hasAccess = true;
-        // } elseif ($board->visibility === 'workspace') {
-        //     $hasAccess = $board->workspace->members->contains($user->id);
-        // } elseif ($board->visibility === 'private') {
-        //     $hasAccess = $board->members->contains($user->id);
-        // }
+        $hasAccess = false;
 
-        // if (!$hasAccess) {
-        //     return response()->json(['message' => 'Access Denied'], 403);
-        // }
+        if ($board->visibility === 'public') {
+            $hasAccess = true;
+        } elseif ($board->visibility === 'workspace') {
+            // Kiểm tra workspace có null không trước khi truy cập members
+            if ($board->workspace && $board->workspace->members) {
+                $hasAccess = $board->workspace->members->contains($user->id);
+            }
+        } elseif ($board->visibility === 'private') {
+            // Kiểm tra members có null không trước khi truy cập
+            if ($board->members) {
+                // $hasAccess = $board->members->contains($user->id);
+            }
+        }
+        if (!$hasAccess) {
+            return response()->json(['error' => 'Access denied'], 403);
+        }
 
         $responseData = [
             'id' => $board->id,
