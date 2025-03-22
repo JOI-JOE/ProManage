@@ -8,6 +8,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class ListUpdated implements ShouldBroadcastNow
 {
@@ -48,13 +49,16 @@ class ListUpdated implements ShouldBroadcastNow
      */
     public function broadcastWith()
     {
-        return [
+        $data = [
             'updatedList' => [
-                'id' => $this->list->id,
-                'boardId' => $this->list->board_id,
-                'title' => $this->list->name, // Cập nhật tên list
-                'position' => (int) $this->list->position, // Cập nhật vị trí list
+                'id'       => $this->list->id,
+                'boardId'  => $this->list->board_id,
+                'title'    => $this->list->name,
+                'position' => (int) $this->list->position,
             ]
         ];
+
+        Log::info('Broadcasting list.updated event', $data);
+        return $data;
     }
 }

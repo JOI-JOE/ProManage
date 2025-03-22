@@ -21,9 +21,37 @@ export const useLists = (boardId) => {
     queryKey: ["lists", boardId],
     queryFn: () => getListByBoardId(boardId),
     enabled: !!boardId,
-    staleTime: 0, // ⚠ Luôn lấy dữ liệu mới từ API
+    staleTime: 0, // Luôn lấy dữ liệu mới
     cacheTime: 1000 * 60 * 30, // 30 phút
   });
+
+  useEffect(() => {
+    if (!boardId) return;
+    // Kết nối đến kênh riêng của board
+    const channel = echoInstance.private(`board.${boardId}`);
+    // Lắng nghe sự kiện "list.updated"
+    channel.listen(".list.updated", (event) => {
+      console.log("Received list.updated event:", event);
+      // Log dữ liệu cập nhật nhận được từ server
+      console.log("Updated List Data:", event.updatedList);
+      // Cập nhật cache của query "lists" dựa trên dữ liệu mới
+      queryClient.setQueryData(["lists", boardId], (oldData) => {
+        console.log("Old Data:", oldData);
+        if (!oldData || !Array.isArray(oldData)) return oldData;
+        const newData = oldData.map((list) =>
+          list.id === event.updatedList.id
+            ? { ...list, ...event.updatedList }
+            : list
+        );
+        console.log("New Data after update:", newData);
+        return newData;
+      });
+    });
+
+    return () => {
+      channel.stopListening(".list.updated");
+    };
+  }, [boardId, queryClient]);
 
   return query;
 };
@@ -34,31 +62,24 @@ export const useUpdatePositionList = () => {
 
   return useMutation({
     mutationFn: async ({ boardId, position, listId }) => {
-      console.log("📡 Gọi API cập nhật vị trí:", { boardId, position, listId });
       return await updatePositionList({ boardId, position, listId });
     },
     onMutate: async ({ boardId, position, listId }) => {
-      // ✅ Lưu dữ liệu cũ để rollback nếu API lỗi
       const previousLists = queryClient.getQueryData(["lists", boardId]) || [];
-
-      queryClient.setQueryData(["lists", boardId], (oldData) => {
-        if (!Array.isArray(oldData)) return []; // Đảm bảo oldData luôn là mảng
-        return oldData.map((list) =>
-          list.id === listId ? { ...list, position } : list
-        );
-      });
-
       return { previousLists };
     },
-    onError: (error, _, context) => {
+    onError: (error, variables, context) => {
       console.error("❌ Lỗi cập nhật vị trí:", error);
-      // 🔄 Rollback lại dữ liệu cũ nếu có lỗi
+      // Rollback lại dữ liệu cũ nếu có lỗi (nếu bạn muốn rollback optimistic update)
       if (context?.previousLists) {
-        queryClient.setQueryData(["lists", boardId], context.previousLists);
+        queryClient.setQueryData(
+          ["lists", variables.boardId],
+          context.previousLists
+        );
       }
     },
     onSuccess: () => {
-      console.log("✅ Cập nhật thành công!");
+      console.log("✅ Cập nhật thành công! (Pusher sẽ tự động cập nhật cache)");
     },
   });
 };

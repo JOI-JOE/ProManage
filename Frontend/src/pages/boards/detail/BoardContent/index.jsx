@@ -24,6 +24,7 @@ import { moveCardBetweenDifferentColumns, moveCardWithinSameColumn } from "../..
 import { calculateItemPosition } from "../../../../../utils/calculateItemPosition";
 import { useUpdatePositionList } from "../../../../hooks/useList";
 import { useUpdateCardPosition } from "../../../../hooks/useCard";
+import { MIN_SPACING } from "../../../../../utils/position.constant";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -47,6 +48,8 @@ const BoardContent = () => {
   const [activeDragItemData, setActiveDragItemData] = useState(null); // Dữ liệu của item đang kéo
   const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null); // Column cũ khi kéo Card
   const [initialColumns, setInitialColumns] = useState([]); // Lưu trạng thái ban đầu của column trước khi kéo
+  const initialActiveRef = useRef(null);
+  const initialOverRef = useRef(null); // Thêm ref để lưu trữ over mới nhất
 
   useEffect(() => {
     if (!board?.columns?.length) return;
@@ -71,6 +74,12 @@ const BoardContent = () => {
     const { active } = event;
     if (!active) return;
 
+    // Lưu active ban đầu
+    // Lưu active ban đầu và mặc định initialOverRef là active
+    initialActiveRef.current = active;
+    initialOverRef.current = active;
+
+
     setActiveDragItemId(active.id);
     setActiveDragItemType(active?.data?.current?.columnId ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN);
     setActiveDragItemData(active?.data?.current);
@@ -86,10 +95,14 @@ const BoardContent = () => {
     const { active, over } = event;
     if (!active || !over) return;
 
+    // Nếu over hợp lệ (over.id khác active.id) thì cập nhật initialOverRef
+    if (over.id !== active.id) {
+      initialOverRef.current = over;
+    }
+
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
       handleCardDragOver(active, over);
-    }
-    if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
+    } else if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
       if (!initialColumns.length) {
         setInitialColumns([...orderedColumns]);
       }
@@ -99,18 +112,33 @@ const BoardContent = () => {
 
   const handleCardDragOver = (active, over) => {
     const activeColumn = findColumnByCardId(active.id);
-    const overColumn = findColumnByCardId(over.id);
-
+    // Ưu tiên tìm cột mục tiêu từ over.id; nếu không tìm thấy, dùng activeColumn
+    const overColumn = findColumnByCardId(over.id) || activeColumn;
     if (!activeColumn || !overColumn) return;
 
     if (activeColumn.id === overColumn.id) {
-      moveCardWithinSameColumn(activeColumn, active.id, over.id, setOrderedColumns).catch((error) =>
-        console.error("Error reordering cards:", error)
-      );
+      // Khi kéo thả trong cùng một cột, cập nhật UI ngay để sắp xếp lại các card
+      moveCardWithinSameColumn(activeColumn, active.id, over.id, setOrderedColumns)
+        .then(() => {
+        })
+        .catch((error) =>
+          console.error("Error reordering cards:", error)
+        );
     } else {
-      moveCardBetweenDifferentColumns(overColumn, over.id, activeColumn, active.id, active.data.current, setOrderedColumns).catch((error) =>
-        console.error("Error moving card:", error)
-      );
+      // Khi chuyển card sang cột khác, cập nhật UI ngay bằng cách chuyển card
+      moveCardBetweenDifferentColumns(
+        overColumn,
+        over.id,
+        activeColumn,
+        active.id,
+        active.data.current,
+        setOrderedColumns
+      )
+        .then(() => {
+        })
+        .catch((error) =>
+          console.error("Error moving card:", error)
+        );
     }
   };
 
@@ -124,33 +152,33 @@ const BoardContent = () => {
     setOrderedColumns(tempColumns);
   };
 
-
   const handleDragEnd = (event) => {
     const { active, over } = event;
-    if (!active || !over) return;
-
-
-    // 🔍 Cập nhật lại `overId` để đảm bảo nó không bị thay đổi từ onDragOver
-    const overId = over.id === active.id ? null : over.id;
+    if (!over) return;
 
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
+      // Lấy effective active và effective over từ ref (ban đầu)
+      const effectiveActive = initialActiveRef.current;
+      const effectiveOver = initialOverRef.current;
+
       const activeColumn = findColumnByCardId(active.id);
-      const overColumn = findColumnByCardId(over.id) || orderedColumns.find(col => col.id === over.id);
 
-      if (!activeColumn || !overColumn) return;
+      console.log("Dữ liệu column", effectiveOver)
+      console.log("Dữ liệu card", effectiveActive)
 
-      const draggedCard = activeColumn.cards.find(c => c.id === active.id);
+      console.log("dữ liệu của card", activeColumn.cards)
+      const newIndex = activeColumn.cards.findIndex(c => c.id === effectiveActive.id);
 
-      // updateCardPositionMutation.mutate({
-      //   cardId: draggedCard.id,
-      //   listId: draggedCard.columnId,
-      //   position: draggedCard.position,
-      // });
+      const draggedCard = activeColumn.cards[newIndex]
+
+      updateCardPositionMutation.mutate({
+        cardId: draggedCard.id,
+        listId: draggedCard.columnId,
+        position: draggedCard.position,
+      });
     }
 
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-      console.log("🔄 Đang kéo thả column...");
-
       const previousIndex = initialColumns.findIndex(col => col.id === active.id);
       const newIndex = orderedColumns.findIndex(col => col.id === over.id);
 
@@ -158,11 +186,8 @@ const BoardContent = () => {
         console.log("⚠️ Vị trí không hợp lệ hoặc không thay đổi, bỏ qua...");
         return;
       }
-      // Hoán đổi vị trí của các column theo thứ tự ban đầu
       let updatedColumns = arrayMove([...initialColumns], previousIndex, newIndex);
-      // Lấy column đang kéo từ danh sách ban đầu
       const draggedColumn = initialColumns.find(col => col.id === active.id);
-      // Tính toán vị trí mới dựa trên updatedColumns và newIndex.
       const newPosition = calculateItemPosition(newIndex, updatedColumns, draggedColumn);
       console.log("New Position:", newPosition);
       console.log("Dragged Column:", draggedColumn);
@@ -182,6 +207,8 @@ const BoardContent = () => {
     setActiveDragItemData(null);
     setOldColumnDraggingCard(null);
     setInitialColumns([]);
+    initialActiveRef.current = null;
+    initialOverRef.current = null;
   };
 
   const customDropAnimation = {
