@@ -13,40 +13,38 @@ const Col_list = ({ columns = [], boardId }) => {
     const { createList, isSaving } = useCreateList(boardId);
 
     useEffect(() => {
-        setLocalColumns(columns);
+        if (JSON.stringify(localColumns) !== JSON.stringify(columns)) {
+            setLocalColumns(columns);
+        }
     }, [columns]);
 
     const saveList = useCallback(async (name) => {
         if (!name || isSaving) return;
 
-        const maxPosition = localColumns.length > 0
-            ? Math.max(...localColumns.map(col => col.position))
-            : 0;
+        setLocalColumns((prev) => {
+            const maxPosition = prev.length > 0 ? Math.max(...prev.map(col => col.position)) : 0;
+            const pos = maxPosition + SPACING;
+            const optimisticId = optimisticIdManager.generateOptimisticId("list");
 
-        // Đặt vị trí mới bằng vị trí lớn nhất + SPACING
-        const pos = maxPosition + SPACING;
-
-        // Tạo ID tạm thời
-        const optimisticId = optimisticIdManager.generateOptimisticId("list");
-
-        setLocalColumns((prev) => [
-            ...prev,
-            { id: optimisticId, board_id: boardId, title: name, position: pos },
-        ]);
+            return [
+                ...prev,
+                { id: optimisticId, board_id: boardId, title: name, position: pos },
+            ];
+        });
 
         try {
-            console.log(boardId)
-            console.log(name)
-            console.log(pos)
             await createList({ boardId, name, pos });
         } catch (error) {
             console.error("❌ Lỗi khi tạo danh sách:", error);
             setLocalColumns((prev) => prev.filter((col) => col.id !== optimisticId));
         }
-    }, [isSaving, localColumns, createList, boardId]);
+    }, [isSaving, createList, boardId]);
 
     return (
-        <SortableContext items={localColumns.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
+        <SortableContext
+            items={localColumns.map((c) => c.id).filter(Boolean)}
+            strategy={horizontalListSortingStrategy}
+        >
             <Box
                 sx={{
                     bgcolor: "inherit",

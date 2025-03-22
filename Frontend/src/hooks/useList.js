@@ -25,31 +25,44 @@ export const useLists = (boardId) => {
     cacheTime: 1000 * 60 * 30, // 30 phút
   });
 
-  // useEffect(() => {
-  //   if (!boardId) return;
-
-  //   const channel = echoInstance.channel(`board.${boardId}`);
-
-  //   // 📡 Khi có danh sách (list) mới được tạo
-  //   channel.listen(".list.created", (data) => {});
-  // }, [boardId, queryClient]);
-
   return query;
 };
-// Hook sử dụng useMutation để cập nhật vị trí của column
 
+// ✅ Hook cập nhật vị trí của list (column)
 export const useUpdatePositionList = () => {
-  const queryClient = useQueryClient(); // Đảm bảo có queryClient
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ boardId, position, listId }) => {
-      console.log("Gọi API với dữ liệu:", { boardId, position, listId });
+      console.log("📡 Gọi API cập nhật vị trí:", { boardId, position, listId });
       return await updatePositionList({ boardId, position, listId });
     },
-    retry: 3,
-    retryDelay: 1000,
+    onMutate: async ({ boardId, position, listId }) => {
+      // ✅ Lưu dữ liệu cũ để rollback nếu API lỗi
+      const previousLists = queryClient.getQueryData(["lists", boardId]) || [];
+
+      queryClient.setQueryData(["lists", boardId], (oldData) => {
+        if (!Array.isArray(oldData)) return []; // Đảm bảo oldData luôn là mảng
+        return oldData.map((list) =>
+          list.id === listId ? { ...list, position } : list
+        );
+      });
+
+      return { previousLists };
+    },
+    onError: (error, _, context) => {
+      console.error("❌ Lỗi cập nhật vị trí:", error);
+      // 🔄 Rollback lại dữ liệu cũ nếu có lỗi
+      if (context?.previousLists) {
+        queryClient.setQueryData(["lists", boardId], context.previousLists);
+      }
+    },
+    onSuccess: () => {
+      console.log("✅ Cập nhật thành công!");
+    },
   });
 };
+
 // export const useLists = (boardId) => {
 //   const queryClient = useQueryClient();
 
@@ -224,7 +237,6 @@ export const useCreateList = (boardId) => {
 
   return { createList: mutation.mutate, isSaving: mutation.isPending };
 };
-
 
 // Hook lấy danh sách list đã đóng (archived)
 export const useListsClosed = (boardId) => {

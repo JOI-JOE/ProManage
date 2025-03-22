@@ -27,8 +27,6 @@ import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
 import useAttachments from "../../../../../hooks/useAttachment";
 
 const C_ard = ({ card }) => {
-  // console.log(card.labels);
-  // console.log(card.checklists);
   const {
     data: cardDetail,
     isLoading,
@@ -89,18 +87,17 @@ const C_ard = ({ card }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: card.id, data: { ...card } }); //id: là của thư viện, id:là của DB
+  } = useSortable({ id: card.id, data: card }); // Không cần spread object
 
   const cardStyle = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : undefined,
-    border: isDragging ? "1px solid #2ecc71" : undefined,
+    transform: transform ? CSS.Translate.toString(transform) : "none",
+    transition: transition || "transform 200ms ease",
+    opacity: isDragging ? 0.5 : 1,
   };
 
   const showCardActions = () => {
     return (
-      // !!card?.memberIds?.length ||
+      !!card?.memberIds?.length ||
       !!comments?.length ||
       !!attachments?.data?.length ||
       !!cardDetail?.description ||
