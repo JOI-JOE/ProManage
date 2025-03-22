@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Dialog,
   DialogActions,
@@ -14,75 +14,156 @@ import {
   Typography,
   CircularProgress,
   ListItemButton,
+  // PictureAsPdf,
+  // // Image,
+  // Link,
+  // VideoLibrary,
+  // InsertDriveFile,
+  // Description,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import useAttachments from "../../../../../../../../../../hooks/useAttachment";
+import { useParams } from "react-router-dom";
+// import MoreVertIcon from "@mui/icons-material/MoreVert";
+//  import EditIcon from "@mui/icons-material/Edit";
+//  import DeleteIcon from "@mui/icons-material/Delete";
+
+const getFileType = (attachment) => {
+  if (!attachment.path_url) return { type: "unknown", icon: <Description /> };
+  const fileExtension = attachment.path_url.split(".").pop().toLowerCase();
+
+  if (attachment.path_url.startsWith("http")) {
+    if (
+      attachment.path_url.includes("youtube.com") ||
+      attachment.path_url.includes("youtu.be")
+    ) {
+      return {
+        type: "youtube",
+        icon: <VideoLibrary sx={{ color: "#ff0000" }} />,
+      };
+    }
+    return { type: "link", icon: <Link sx={{ color: "#1976d2" }} /> };
+  }
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(fileExtension)) {
+    return { type: "image", icon: <Image sx={{ color: "#4caf50" }} /> };
+  }
+  if (["mp4", "mkv", "avi", "mov"].includes(fileExtension)) {
+    return { type: "video", icon: <VideoLibrary sx={{ color: "#ff9800" }} /> };
+  }
+  if (["pdf"].includes(fileExtension)) {
+    return { type: "pdf", icon: <PictureAsPdf sx={{ color: "red" }} /> };
+  }
+  if (["xls", "xlsx"].includes(fileExtension)) {
+    return {
+      type: "excel",
+      icon: <InsertDriveFile sx={{ color: "#2E7D32" }} />,
+    };
+  }
+  return { type: "file", icon: <Description /> };
+};
 
 const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
   const [newLink, setNewLink] = useState("");
   const [displayText, setDisplayText] = useState("");
   const [uploading, setUploading] = useState(false);
+  const { cardId } = useParams();
+  const { addAttachment } = useAttachments(cardId);
 
-  const recentFiles = [
-    { id: 1, name: "Báo cáo tuần", user: "Hồng Ngát", time: "3 giờ trước" },
-    { id: 2, name: "Tài liệu dự án", user: "Hồng Ngát", time: "5 giờ trước" },
-    { id: 3, name: "Hợp đồng A", user: "Hồng Ngát", time: "2 ngày trước" },
-    {
-      id: 4,
-      name: "Thất tịch",
-      user: "Không gian làm việc",
-      time: "2 ngày trước",
+  // const recentFiles = [
+  //   { id: 1, name: "Báo cáo tuần", user: "Hồng Ngát", time: "3 giờ trước" },
+  //   { id: 2, name: "Tài liệu dự án", user: "Hồng Ngát", time: "5 giờ trước" },
+  //   { id: 3, name: "Hợp đồng A", user: "Hồng Ngát", time: "2 ngày trước" },
+  //   {
+  //     id: 4,
+  //     name: "Thất tịch",
+  //     user: "Không gian làm việc",
+  //     time: "2 ngày trước",
+  //   },
+  //   { id: 5, name: "Test file", user: "", time: "1 tuần trước" },
+  // ];
+
+  // const isValidURL = (str) => {
+  //   const pattern = new RegExp(
+  //     "^(https?:\\/\\/)?([\\w-]+\\.)+[\\w-]+(\\/[\\w- ./?%&=]*)?$",
+  //     "i"
+  //   );
+  //   return pattern.test(str);
+  // };
+
+  // const handleInsert = () => {
+  //   if (isValidURL(newLink)) {
+  //     const newAttachment = {
+  //       id: Date.now(),
+  //       name: displayText || newLink,
+  //       url: newLink,
+  //       type: "link",
+  //       time: new Date().toISOString(),
+  //     };
+  //     onAddAttachment(newAttachment);
+  //     setNewLink("");
+  //     setDisplayText("");
+  //     onClose();
+  //   }
+  // };
+
+  // const handleFileSelect = (event) => {
+  //   const files = Array.from(event.target.files).map((file) => ({
+  //     id: Date.now() + Math.random(),
+  //     name: file.name,
+  //     url: URL.createObjectURL(file),
+  //     time: new Date().toISOString(),
+  //     type: "file",
+  //   }));
+
+  //   if (files.length > 0) {
+  //     setUploading(true);
+  //     setTimeout(() => {
+  //       onAddAttachment(files);
+  //       setUploading(false);
+  //       onClose();
+  //     }, 1500);
+  //   }
+  // };
+
+  // const filteredRecentFiles = !isValidURL(newLink)
+  //   ? recentFiles.filter((file) =>
+  //       file.name.toLowerCase().includes(newLink.toLowerCase())
+  //     )
+  //   : [];
+
+  const handleAddAttachment = useCallback(
+    async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const data = { cardId, file_name_defaut: file.name, file };
+      try {
+        await addAttachment(data);
+        alert("File đã được upload thành công!");
+      } catch (error) {
+        alert("Có lỗi xảy ra khi upload file: " + error.message);
+      } finally {
+        event.target.value = "";
+      }
     },
-    { id: 5, name: "Test file", user: "", time: "1 tuần trước" },
-  ];
+    [cardId, addAttachment]
+  );
 
-  const isValidURL = (str) => {
-    const pattern = new RegExp(
-      "^(https?:\\/\\/)?([\\w-]+\\.)+[\\w-]+(\\/[\\w- ./?%&=]*)?$",
-      "i"
-    );
-    return pattern.test(str);
-  };
-
-  const handleInsert = () => {
-    if (isValidURL(newLink)) {
-      const newAttachment = {
-        id: Date.now(),
-        name: displayText || newLink,
-        url: newLink,
-        type: "link",
-        time: new Date().toISOString(),
-      };
-      onAddAttachment(newAttachment);
-      setNewLink("");
-      setDisplayText("");
-      onClose();
+  const handleAddLinkAttachment = async () => {
+    if (!newLink.trim()) return;
+    const data = {
+      cardId,
+      file_name_defaut: displayText || "Liên kết không tên",
+      path_url: newLink,
+    };
+    try {
+      await addAttachment(data);
+    } catch (error) {
+      console.error("Lỗi khi thêm liên kết:", error);
     }
+    setNewLink("");
+    setDisplayText("");
   };
-
-  const handleFileSelect = (event) => {
-    const files = Array.from(event.target.files).map((file) => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      url: URL.createObjectURL(file),
-      time: new Date().toISOString(),
-      type: "file",
-    }));
-
-    if (files.length > 0) {
-      setUploading(true);
-      setTimeout(() => {
-        onAddAttachment(files);
-        setUploading(false);
-        onClose();
-      }, 1500);
-    }
-  };
-
-  const filteredRecentFiles = !isValidURL(newLink)
-    ? recentFiles.filter((file) =>
-        file.name.toLowerCase().includes(newLink.toLowerCase())
-      )
-    : [];
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
@@ -121,26 +202,6 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           onChange={(e) => setDisplayText(e.target.value)}
           sx={{ mb: 2 }}
         />
-        {!isValidURL(newLink) && filteredRecentFiles.length > 0 && (
-          <>
-            <Typography variant="body2" sx={{ fontWeight: "bold", mt: 2 }}>
-              Đã xem gần đây
-            </Typography>
-            <List sx={{ maxHeight: 150, overflowY: "auto" }}>
-              {filteredRecentFiles.map((file) => (
-                <ListItem key={file.id} disablePadding>
-                  <ListItemButton>
-                    <ListItemText
-                      primary={file.name}
-                      secondary={`${file.user} - ${file.time}`}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-            <Divider sx={{ my: 2 }} />
-          </>
-        )}
         <Button
           variant="contained"
           fullWidth
@@ -148,7 +209,7 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           disabled={uploading}
         >
           {uploading ? "Tệp đang tải lên..." : "Chọn tệp"}
-          <input type="file" hidden multiple onChange={handleFileSelect} />
+          <input type="file" hidden multiple onChange={handleAddAttachment} />
         </Button>
 
         {uploading && (
@@ -165,7 +226,7 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           Hủy
         </Button>
         {!uploading && (
-          <Button onClick={handleInsert} variant="contained">
+          <Button onClick={handleAddLinkAttachment} variant="contained">
             Chèn
           </Button>
         )}

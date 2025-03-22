@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Box,
   Drawer,
@@ -21,16 +21,19 @@ import AddIcon from "@mui/icons-material/Add";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import WorkspaceContext from "../../../../contexts/WorkspaceContext";
 
 const SideBar = () => {
-  const { currentWorkspace, isLoading, error } = useContext(WorkspaceContext); const [openSettings, setOpenSettings] = useState(false);
+  const { currentWorkspace, isLoading, error } = useContext(WorkspaceContext);
+  const [openSettings, setOpenSettings] = useState(false);
+  const navigate = useNavigate();
 
-  console.log(currentWorkspace)
+  console.log(currentWorkspace);
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
   };
-  
+
   return (
     <Drawer
       variant="permanent"
@@ -99,8 +102,7 @@ const SideBar = () => {
           <ListItemIcon sx={{ color: "white" }}>
             <SettingsIcon />
           </ListItemIcon>
-          <ListItemText
-            primary="Cài đặt Không gian làm việc" />
+          <ListItemText primary="Cài đặt Không gian làm việc" />
           {openSettings ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton>
 
@@ -113,7 +115,8 @@ const SideBar = () => {
               <ListItemText
                 component={Link}
                 to={`/w/${currentWorkspace?.name}/account}`}
-                primary="Cài đặt không gian làm việc" />
+                primary="Cài đặt không gian làm việc"
+              />
             </ListItemButton>
             <ListItemButton sx={{ pl: 4 }}>
               <ListItemIcon sx={{ color: "white" }}>
@@ -125,38 +128,54 @@ const SideBar = () => {
         </Collapse>
       </List>
 
-      <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
-        Các bảng của bạn
-      </Typography>
+      <Box>
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to={`/w/${currentWorkspace?.name}/calendar`}
+          >
+            <ListItemIcon sx={{ color: "white" }}>
+              <CalendarMonthIcon />
+            </ListItemIcon>
+            <ListItemText primary="Calendar" />
+          </ListItemButton>
+        </ListItem>
+      </Box>
 
-      <List sx={{ p: 0.5 }}>
-        {currentWorkspace?.boards?.map((board) => (
-          <ListItem key={board.id} disablePadding sx={{ p: 1 }}>
-            <ListItemButton
-              component={Link}
-              to={`/b/${board.id}/${board.name}`}
-              sx={{
-                backgroundColor:
-                  board.id === Number(board.id) ? "#ffffff33" : "transparent",
-                "&:hover": { backgroundColor: "#ffffff22" },
-                borderRadius: "6px",
-              }}
-            >
-              <ListItemIcon sx={{ color: "white" }}>
-                <FolderIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary={board.name}
+      <Box>
+        <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
+          Các bảng của bạn
+        </Typography>
+
+        <List sx={{ p: 0.5 }}>
+          {currentWorkspace?.boards?.map((board) => (
+            <ListItem key={board.id} disablePadding sx={{ p: 1 }}>
+              <ListItemButton
+                component={Link}
+                to={`/b/${board.id}/${board.name}`}
                 sx={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  backgroundColor:
+                    board.id === Number(board.id) ? "#ffffff33" : "transparent",
+                  "&:hover": { backgroundColor: "#ffffff22" },
+                  borderRadius: "6px",
                 }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+              >
+                <ListItemIcon sx={{ color: "white" }}>
+                  <FolderIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={board.name}
+                  sx={{
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
     </Drawer>
   );
 };

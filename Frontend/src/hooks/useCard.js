@@ -200,13 +200,43 @@ export const useGetMemberInCard = (cardId) => {
     enabled: !!cardId, // Chỉ gọi API khi có cardId hợp lệ.
   });
 
+
+  useEffect(() => {
+    if (!cardId || !echoInstance) return;
+
+    const channel = echoInstance.channel(`card.${cardId}`);
+    // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
+
+    channel.listen(".CardMemberUpdated", (event) => {
+      if (event?.card?.id === cardId) {
+          // console.log(`👥 Thành viên ${event.action}:`, event.user.full_name);
+
+
+          // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });
+          queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId]}); // Fetch lại sau khi API thành công
+          queryClient.invalidateQueries({ queryKey: ["activities"] });
+        
+      }
+  });
+
+    return () => {
+      channel.stopListening(".CardMemberUpdated");
+      echoInstance.leave(`card.${cardId}`);
+    };
+  }, [cardId, queryClient]);
+
+  
   // Mutation để thêm/xóa thành viên
   const mutation = useMutation({
     mutationFn: (userId) => toggleCardMember(cardId, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries(["membersInCard", cardId]); // Fetch lại sau khi API thành công
+   
     },
   });
+
+  
+
+
 
   return { ...membersQuery, toggleMember: mutation.mutate };
 };

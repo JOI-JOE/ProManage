@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Avatar,
   AvatarGroup,
@@ -21,7 +21,10 @@ import BoardMenu from "./BoardMenu";
 
 import { useUpdateBoardName } from "../../../../../hooks/useBoard";
 import BoardContext from "../../../../../contexts/BoardContext";
-
+import { useGetBoardMembers, useMemberJoinedListener } from "../../../../../hooks/useInviteBoard";
+import { useParams } from "react-router-dom";
+import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
+import { useUser } from "../../../../../hooks/useUser";
 
 const style = {
   border: "none",
@@ -37,8 +40,12 @@ const style = {
 };
 
 const BoardBar = () => {
+  const { boardId } = useParams();
+  const { board, isLoading, error } = useContext(BoardContext);
+  const { data: boardMembers } = useGetBoardMembers(boardId);
+  const { data: user } = useUser();
+  useMemberJoinedListener(user?.id)
 
-  const { board, isLoading, error } = useContext(BoardContext)
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
   const handleFilterDialogOpen = () => setOpenFilterDialog(true);
   const handleFilterDialogClose = () => setOpenFilterDialog(false);
@@ -80,7 +87,6 @@ const BoardBar = () => {
   // const { boardId } = useParams(); // Lấy boardId từ URL
   // // console.log("🔍 boardId từ useParams:", boardId);
 
-
   // const { data, isLoading, error } = useQuery({
   //   queryKey: ["board", boardId],
   //   queryFn: () => getBoardById(boardId),
@@ -89,7 +95,6 @@ const BoardBar = () => {
   // console.log(data)
 
   // // console.log("🔍 Dữ liệu board từ API:", data?.data);
-
 
   // const board = data?.data;
 
@@ -216,42 +221,42 @@ const BoardBar = () => {
             },
           }}
         >
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://preview.redd.it/ovfk3xy2o4q51.jpg?width=640&crop=smart&auto=webp&s=37b436dadb6283e9fafc0053bbaf44f737fe7b82"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJNffhE-2IRnlQ5P-43AtsQEy8yiJnnglJBw&s"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmyPS0TN6aIto3w_ndOpmfpjz8qbftut6bjWlE5-1s2IrrqK7OL2zqSiS3U84QH8KhW3E&usqp=CAU"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://upanh123.com/wp-content/uploads/2021/05/hinh-nen-doremon2-683x1024.jpg"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://ichef.bbci.co.uk/images/ic/480xn/p09f3ldp.jpg.webp"
-            />
-          </Tooltip>
-          <Tooltip title="Tooltip">
-            <Avatar
-              alt=""
-              src="https://genk.mediacdn.vn/2016/6-1476522724062.jpg"
-            />
-          </Tooltip>
+          {boardMembers?.data?.map((member) => (
+            <Tooltip key={member.id} title={member.full_name}>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                {/* Avatar với chữ cái đầu */}
+                <Avatar
+                  alt={member.full_name}
+                  src={member.avatar || ""}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    backgroundColor: "#1976d2",
+                    fontSize: "16px",
+                    fontWeight: "bold",
+                    position: "relative", // Để chứa icon bên trong
+                  }}
+                >
+                  {!member.avatar && member.full_name.charAt(0).toUpperCase()}
+
+                  {/* Icon vương miện nếu là admin */}
+                  {member.pivot.role === "admin" && (
+                    <ChevronDoubleDownIcon
+                      className="h-4 w-3 text-yellow-500"
+                      style={{
+                        position: "absolute",
+                        bottom: -5,
+                        right: 1,
+                        background: "",
+                        borderRadius: "50%",
+                        padding: "2px",
+                      }}
+                    />
+                  )}
+                </Avatar>
+              </div>
+            </Tooltip>
+          ))}
         </AvatarGroup>
         <Button
           variant="contained"
@@ -271,6 +276,8 @@ const BoardBar = () => {
 
       {/* Hộp thoại chia sẻ */}
       <ShareBoardDialog
+        boardMembers={boardMembers}
+        currentUser={user}
         open={openShareDialog}
         onClose={() => setOpenShareDialog(false)}
       />
