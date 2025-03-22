@@ -17,7 +17,6 @@ import {
   TextField,
   IconButton,
   Chip,
-  Stack,
   Popover,
   Modal,
 } from "@mui/material";
@@ -28,8 +27,6 @@ import MemberList from "./childComponent_CardDetail/member.jsx";
 import TaskModal from "./childComponent_CardDetail/Task.jsx";
 import LabelList from "./childComponent_CardDetail/Label.jsx";
 import AttachmentModal from "./childComponent_CardDetail/Attached.jsx";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
@@ -42,7 +39,6 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import NotesIcon from "@mui/icons-material/Notes";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import GroupIcon from "@mui/icons-material/Group";
 import LabelIcon from "@mui/icons-material/Label";
 import ChecklistIcon from "@mui/icons-material/Checklist";
@@ -69,7 +65,6 @@ import {
   useDeleteComment,
   useUpdateComment,
 } from "../../../../../../../../../hooks/useComment";
-import { useUser } from "../../../../../../../../../hooks/useUser";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { toast, ToastContainer } from "react-toastify";
@@ -91,13 +86,12 @@ import { ArrowDropDownIcon } from "@mui/x-date-pickers";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import dayjs from "dayjs";
-import LinkIcon from "@mui/icons-material/Link";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import { AccessTime, ArrowBack } from "@mui/icons-material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
-import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
+import { useMe } from "../../../../../../../../../contexts/MeContext.jsx";
 import ChecklistItemRow from "./childComponent_CardDetail/ChecklistItemRow.jsx";
 
 import useAttachments from "../../../../../../../../../hooks/useAttachment.js";
@@ -134,7 +128,6 @@ const CardModal = ({ }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [cardName, setCardName] = useState(title);
   const [previousCardName, setPreviousCardName] = useState(title);
-  const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
 
@@ -210,7 +203,7 @@ const CardModal = ({ }) => {
 
   // console.log(activities);
 
-  const { user } = useStateContext();
+  const { user } = useMe();
   const userId = user?.id;
 
   const combinedData = [

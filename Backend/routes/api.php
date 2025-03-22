@@ -2,6 +2,8 @@
 
 
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\WorkspaceInvitationsController;
+use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
@@ -20,8 +22,6 @@ use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Api\LabelController;
-use App\Http\Controllers\Api\WorkspaceInvitationsController;
-use App\Http\Controllers\Api\WorkspaceMembersController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
@@ -57,9 +57,12 @@ Route::middleware(['web'])->group(function () {
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
 Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
+Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getWorkspaceById']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
+    // Route::get('member/me', [AuthController::class, 'getUserData']);
+    Route::get('member/{id?}', [AuthController::class, 'getUserData']);
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
@@ -68,7 +71,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
         Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
-
         Route::post('workspaces', 'store');
         Route::delete('workspaces/{workspace}', 'destroy');
         Route::put('workspaces/{workspace}', 'updateWorkspaceInfo');
@@ -78,20 +80,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
         Route::get('/workspaces/{workspaceId}/invitationSecret', 'getInvitationSecret');
         Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
-        Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
-        // Function search
-        // https://trello.com/1/search/members?idOrganization=678b57031faba8dd978f0dee&query=ikn
-        // search/members?idWorkspace=92248292498298&query=hau
+        // Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
         Route::get('search/members', 'searchMembers');
-        // function để gửi email và cập nhật dữ liệu member trong workspace member
         Route::put('workspaces/{workspaceId}/members/{memberId}', 'confirmWorkspaceMembers');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
-        Route::post('/workspace/{workspaceId}/addMembers', 'addMembersToWorkspace');
-        Route::get('/workspaces/{workspaceId}/members/{memberId}',  'getValidateMemberInWorkspace');
+        Route::post('/workspace/{workspaceId}/addMembers', action: 'addMembersToWorkspace');
+        Route::post('/workspace/{workspaceId}/member/{memberId}',  'addMemberToWorkspaceDirection');
     });
-    Route::post('/send-mail', [EmailController::class, 'sendEmail']);
+
+    // Route::post('/send-mail', [EmailController::class, 'sendEmail']);
 
     Route::controller(BoardController::class)->group(function () {
         Route::get('boards/{boardId}', 'showBoardById');
@@ -99,8 +98,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::prefix('cards')->group(function () {
         Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
-        // Route::put('/update-position', [DragDropController::class, 'updateCardPosition']);
-        // Function tạo card
         Route::post('/', [CardController::class, 'store']);
 
         Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
@@ -118,16 +115,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     // Funtion kéo thả column
-    Route::put('/boards/update-column-position', [DragDropController::class, 'updateListPosition']);
-    Route::put('/boards/update-card-same-col', [DragDropController::class, 'updateCardPositionsSameColumn']);
-    Route::put('/boards/update-card-diff-col', [DragDropController::class, 'updateCardPositionsDifferentColumn']);
-
-    // Send Email
-
-
-    Route::get('lists/{boardId}', [ListController::class, 'index']);
-    
-    Route::get('/search', [SearchController::class, 'search']);
+    Route::controller(DragDropController::class)->group(function () {
+        Route::put('/lists/{listId}', action: 'updatePositionList');
+        Route::put('/cards/{cardId}', action: 'updatePositionCard');
+    });
 });
 
 
@@ -135,6 +126,7 @@ Route::get('/color', [ColorController::class, 'index']);
 Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
 
 Route::prefix('lists')->group(function () {
+    Route::get('/{boardId}', [ListController::class, 'index']);
     Route::post('/', [ListController::class, 'store']);
     Route::delete('{id}/destroy', [ListController::class, 'destroy']);
     Route::get('/{boardId}/listClosed', [ListController::class, 'getListClosed']);
@@ -195,8 +187,6 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
 
-Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
-
 // Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
@@ -228,7 +218,7 @@ Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
 
     Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail'])->name('card.addMember'); // thêm thành viên vào thẻ
     Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])->name('cards.removeMember'); // xóa thành viên ra khỏi thẻ
-    Route::get('/{cardId}/dates', [CardController::class, 'getSchedule']);// lấy danh sách ngày giờ theo card
+    Route::get('/{cardId}/dates', [CardController::class, 'getSchedule']); // lấy danh sách ngày giờ theo card
     Route::put('/{cardId}/dates', [CardController::class, 'updateDates']); // cập nhật ngày của thẻ
     Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']); // xóa ngày
     Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']); // danh sách nhãn trong thẻ

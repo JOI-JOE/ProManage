@@ -4,44 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\WorkspaceMembersResource;
+use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceMembers;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class WorkspaceMembersController extends Controller
 {
-    public function getValidateMemberInWorkspace($workspaceId, $memberId)
-    {
-        // Tìm thành viên trong bảng workspace_members
-        $member = WorkspaceMembers::where('user_id', $memberId)
-            ->where('workspace_id', $workspaceId) // Thêm điều kiện workspace_id
-            ->first(); // Lấy kết quả đầu tiên
-
-        if (!$member) {
-            // Nếu không tìm thấy thành viên
-            return response()->json([
-                'success' => false,
-                'message' => 'Thành viên không tồn tại trong workspace này.',
-            ], 404);
-        }
-
-        // Kiểm tra xem thành viên đã tham gia workspace hay chưa
-        if ($member->joined) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Thành viên đã tham gia workspace.',
-                'data' => $member,
-            ]);
-        } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Thành viên chưa tham gia workspace.',
-                'data' => $member,
-            ]);
-        }
-    }
-    // inviteMemberToWorkspace
     public function addMembersToWorkspace(Request $request, $workspaceId)
     {
         $memberIds = $request->input('members', []); // Danh sách ID thành viên từ FE
@@ -64,9 +35,10 @@ class WorkspaceMembersController extends Controller
         }
 
         $insertData = array_map(fn($userId) => [
+            'id' => Str::uuid(), // Thêm UUID thủ công
             'workspace_id' => $workspaceId,
             'user_id' => $userId,
-            'member_type' => 'pending', // Có thể tuỳ chỉnh role
+            'member_type' => WorkspaceMembers::$PENDING, // Dùng hằng số trong model
             'joined' => false,  // Chưa tham gia
         ], $newMembers);
 
@@ -74,6 +46,44 @@ class WorkspaceMembersController extends Controller
 
         return response()->json(['message' => 'Members added successfully', 'new_members' => $newMembers], 201);
     }
+
+    public function addMemberToWorkspaceDirection($workspaceId, $userId)
+    {
+        // Kiểm tra workspace có tồn tại không
+        $workspace = Workspace::find($workspaceId);
+        if (!$workspace) {
+            return response()->json(['error' => 'Workspace not found'], 404);
+        }
+
+        // Kiểm tra user có tồn tại không
+        $user = User::find($userId);
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        // Kiểm tra xem user đã là thành viên chưa
+        $isMember = DB::table('workspace_members')
+            ->where('workspace_id', $workspaceId)
+            ->where('user_id', $userId)
+            ->exists();
+
+        if ($isMember) {
+            return response()->json(['message' => 'User is already a member'], 200);
+        }
+
+        // Thêm user vào workspace
+        DB::table('workspace_members')->insert([
+            'id'            => Str::uuid(), // Thêm UUID thủ công
+            'workspace_id'  => $workspaceId,
+            'user_id'       => $userId,
+            'member_type'   => WorkspaceMembers::$NORMAL, // Dùng hằng số trong model
+            'joined'        => true
+        ]);
+
+        return response()->json(['message' => 'User added to workspace successfully'], 201);
+    }
+
+
     // // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/677ea51482b962a06bc469ac/deactivated
     // public function deactivateMember(Request $request, $idOrganization, $idMember)
     // {

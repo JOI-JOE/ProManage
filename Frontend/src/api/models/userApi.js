@@ -1,18 +1,94 @@
 import authClient from "../authClient";
 
-/**
- * File này giúp tương tác trực tiếp với dữ liệu
- * viết như này để độc lập với UI
- *
- * Tóm lại
- * File useUser.js (Hooks) sử dụng các hàm trong file userApi.js (Modules).
- * File userApi.js (Modules) cung cấp dữ liệu và logic cho file useUser.js (Hooks).
- */
+// Phần để tối ưu gọi api
 
-/**
- * Hàm này chịu trách nhiệm lấy thông tin người dùng từ API.
- * @returns {Promise<object>} - Promise chứa dữ liệu người dùng.
- */
+// dữ liệu chính
+const fetchUserDataWithParams = async (params, userId = "me") => {
+  try {
+    const queryParams = new URLSearchParams(params);
+    const response = await authClient.get(
+      `/member/${userId}?${queryParams.toString()}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+    throw error;
+  }
+};
+
+export const fetchUserProfile = () => {
+  return fetchUserDataWithParams({
+    fields: "id,user_name,full_name,email,image",
+    workspaces: "all",
+    workspace_fields: "id,name,display_name",
+  });
+};
+
+export const fetchUserDashboardData = () => {
+  return fetchUserDataWithParams({
+    // fields: "id,user_name,full_name,email,image,url",
+    boards: "open,starred",
+    board_memberships: "me",
+    board_stars: "true",
+    workspaces: "all",
+    workspace_fields: "id,name,display_name",
+  });
+};
+
+// Để làm gì -> Lấy danh sách Boards và nhóm theo Workspaces
+// Nơi dùng  -> Hiển thị danh sách bảng trong từng Workspace để so sách
+export const fetchUserBoardsWithWorkspaces = async (userId) => {
+  return fetchUserDataWithParams(
+    {
+      fields: "id",
+      boards: "open,starred",
+      board_fields: "id,name,closed,workspace_id",
+      board_workspace: "true",
+      board_workspace_fields: "id,name,display_name",
+      workspaces: "all",
+      workspace_fields: "id,display_name,name",
+    },
+    userId
+  );
+};
+
+// Để làm gì -> Lấy danh sách Workspaces của người dùng
+// Nơi dùng ->	Sidebar và mục "Các Không Gian Làm Việc Của Bạn"
+export const fetchUserWorkspaces = async () => {
+  try {
+    const params = {
+      workspaces: "all",
+      workspace_fields: "id,name,display_name",
+    };
+    const response = await authClient.get("/member/me", { params });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách Workspaces:", error);
+    throw error;
+  }
+};
+
+// Để làm gì -> Lấy danh sách Boards không nhóm theo Workspaces
+// Nơi dùng -> Hiển thị các bảng đã đánh dấu sao hoặc đã xem gần đây
+export const fetchUserBoards = async () => {
+  try {
+    const params = {
+      fields: "id",
+      boards: "open,starred",
+      board_fields: "id,name,closed,is_marked",
+      boardStars: "true",
+      board_memberships: "me",
+    };
+    const response = await authClient.get("/member/me", { params });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách Boards:", error);
+    throw error;
+  }
+};
+
+// END
+
 export const getUser = async () => {
   try {
     const response = await authClient.get("/users/me");
@@ -82,5 +158,3 @@ export const userRegister = async (userData) => {
     throw error;
   }
 };
-
-

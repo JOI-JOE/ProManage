@@ -77,7 +77,6 @@ const router = createBrowserRouter([
           },
           { path: "w/:workspaceName/members", element: <Member /> },
           { path: "w/:workspaceName/account", element: <Account /> },
-          { path: "w/:workspaceName/calendar", element: <Calendar /> },
         ],
       },
     ],

@@ -10,14 +10,7 @@ import {
   Switch,
   Avatar,
   Collapse,
-  Select,
-  FormControl,
-  InputLabel,
-  Menu,
-  MenuItem,
   CircularProgress,
-  Avatar,
-  Collapse,
 } from "@mui/material";
 import AppsIcon from "@mui/icons-material/Apps";
 import trelloLogo from "~/assets/trello.svg?react";
@@ -38,11 +31,12 @@ import useNotifications from "../../hooks/useNotification";
 import useSearch from "../../hooks/useSearch";
 // import useNotifications from "../../hooks/useNotification";
 import { formatTime } from "../../../utils/dateUtils";
-import useSearch from "../../hooks/useSearch";
+import { useMe } from "../../contexts/MeContext";
 
 
 const AppBar = ({ username, email }) => {
-  const { data: user } = useUser();
+  // const { data: user } = useUser();
+  const { user } = useMe();
   const userId = user?.id;
   const { notifications } = useNotifications(userId);
 
@@ -162,335 +156,337 @@ const AppBar = ({ username, email }) => {
       </Box>
 
       <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          marginLeft: "auto",
-        }}
-      >
-        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <TextField
-        autoComplete="off"
-        id="outlined-search"
-        label="Search..."
-        type="search"
-        size="small"
-        value={searchText}
-        onChange={handleSearchChange}
-        InputLabelProps={{
-          sx: { fontSize: '14px', color: 'white' }, // Giảm kích thước chữ label
-        }}
-        InputProps={{
-          sx: {
-            height: 40,
-            width: 280,
-            backgroundColor: '#1a1a1a', // Nền tối
-            borderRadius: '30px', // Viền bo tròn giống Trello
-            color: 'white',
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'transparent', // Ẩn viền mặc định
-
-            },
-            '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#00C2A0', // Màu viền khi hover
-            },
-            '& .MuiInputBase-input': {
-              fontSize: '14px',
-              padding: '8px 12px',
-            },
-          },
-        }}
-      />
-
-      {isLoading && <CircularProgress size={24} sx={{ color: 'white', marginTop: '10px' }} />}
-      {error && <p style={{ color: 'red' }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>}
-
-      {searchText && !isLoading && !error && searchResults && (
-        <Box sx={{ width: '100%', paddingTop: '20px', backgroundColor: '#2e2e2e', borderRadius: '10px', padding: '10px' }}>
-          <h3 style={{ color: 'white' }}>Kết quả tìm kiếm:</h3>
-
-          {/* Kiểm tra nếu boards tồn tại và có phần tử */}
-          {Array.isArray(searchResults.boards) && searchResults.boards.length > 0 && (
-            <Box sx={{ marginBottom: '15px' }}>
-              <h4 style={{ color: '#00C2A0' }}>Bảng:</h4>
-              <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-                {searchResults.boards.map((board) => (
-                  <li key={board.id} style={{ color: 'white', padding: '5px 0', borderBottom: '1px solid #444' }}>
-                    {board.name}
-                  </li>
-                ))}
-              </ul>
-            </Box>
-          )}
-
-          {/* Kiểm tra nếu cards tồn tại và có phần tử */}
-          {Array.isArray(searchResults.cards) && searchResults.cards.length > 0 && (
-            <Box sx={{ marginBottom: '15px' }}>
-              <h4 style={{ color: '#00C2A0' }}>Thẻ:</h4>
-              <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-                {searchResults.cards.map((card) => (
-                  <li key={card.id} style={{ color: 'white', padding: '5px 0', borderBottom: '1px solid #444' }}>
-                    {card.title}
-                  </li>
-                ))}
-              </ul>
-            </Box>
-          )}
-
-          {/* Kiểm tra nếu users tồn tại và có phần tử */}
-          {Array.isArray(searchResults.users) && searchResults.users.length > 0 && (
-            <Box sx={{ marginBottom: '15px' }}>
-              <h4 style={{ color: '#00C2A0' }}>Người dùng:</h4>
-              <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-                {searchResults.users.map((user) => (
-                  <li key={user.id} style={{ color: 'white', padding: '5px 0', borderBottom: '1px solid #444' }}>
-                    {user.user_name}
-                  </li>
-                ))}
-              </ul>
-            </Box>
-          )}
-
-          {/* Trường hợp không có kết quả tìm kiếm */}
-          {(!Array.isArray(searchResults.boards) || searchResults.boards.length === 0) &&
-           (!Array.isArray(searchResults.cards) || searchResults.cards.length === 0) &&
-           (!Array.isArray(searchResults.users) || searchResults.users.length === 0) && 
-            <p style={{ color: 'white' }}>Không tìm thấy kết quả nào.</p>}
-        </Box>
-      )}
-    </Box>
-
-
-        <Tooltip title="Notification">
-          <IconButton onClick={handleClick}>
-            <Badge
-              badgeContent={newNotificationsCount}
-              color="error"
-            >
-              <NotificationsNoneIcon sx={{ color: "white" }} />
-            </Badge>
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Help">
-          <HelpOutlineIcon
-            sx={{
-              fontSize: "medium",
-              cursor: "pointer",
-              color: "secondary.contrastText",
-            }}
-          />
-        </Tooltip>
-
-        <Profile email={email} />
-
-        <Popover
-          open={open}
-          anchorEl={anchorEl}
-          onClose={handleClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            marginLeft: "auto",
+          }}
         >
-          <Box sx={{ width: 400, p: 2 }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2,
-              }}
-            >
-              <Typography variant="h6" fontWeight="bold">
-                Thông báo
-              </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography fontSize={14}>Chỉ hiển thị chưa đọc</Typography>
-                <Switch
-                  checked={showUnread}
-                  onChange={() => setShowUnread(!showUnread)}
-                  size="small"
-                />
-              </Box>
-            </Box>
-
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <TextField
+              autoComplete="off"
+              id="outlined-search"
+              label="Search..."
+              type="search"
               size="small"
-              fullWidth
-              placeholder="Tìm kiếm thông báo..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              sx={{
-                mb: 2,
-                "& input": { fontSize: "14px" },
-                "& .MuiOutlinedInput-root": { borderRadius: 2 },
+              onChange={handleSearchChange}
+              InputLabelProps={{
+                sx: { fontSize: '14px', color: 'white' }, // Giảm kích thước chữ label
+              }}
+              InputProps={{
+                sx: {
+                  height: 40,
+                  width: 280,
+                  backgroundColor: '#1a1a1a', // Nền tối
+                  borderRadius: '30px', // Viền bo tròn giống Trello
+                  color: 'white',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'transparent', // Ẩn viền mặc định
+
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#00C2A0', // Màu viền khi hover
+                  },
+                  '& .MuiInputBase-input': {
+                    fontSize: '14px',
+                    padding: '8px 12px',
+                  },
+                },
               }}
             />
 
-            <Box
+            {isLoadingSearch && <CircularProgress size={24} sx={{ color: 'white', marginTop: '10px' }} />}
+            {errorSearch && <p style={{ color: 'red' }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>}
+
+            {searchText && !isLoadingSearch && !errorSearch && searchResults && (
+              <Box sx={{ width: '100%', paddingTop: '20px', backgroundColor: '#2e2e2e', borderRadius: '10px', padding: '10px' }}>
+                <h3 style={{ color: 'white' }}>Kết quả tìm kiếm:</h3>
+
+                {/* Kiểm tra nếu boards tồn tại và có phần tử */}
+                {Array.isArray(searchResults.boards) && searchResults.boards.length > 0 && (
+                  <Box sx={{ marginBottom: '15px' }}>
+                    <h4 style={{ color: '#00C2A0' }}>Bảng:</h4>
+                    <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                      {searchResults.boards.map((board) => (
+                        <li key={board.id} style={{ color: 'white', padding: '5px 0', borderBottom: '1px solid #444' }}>
+                          {board.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
+
+                {/* Kiểm tra nếu cards tồn tại và có phần tử */}
+                {Array.isArray(searchResults.cards) && searchResults.cards.length > 0 && (
+                  <Box sx={{ marginBottom: '15px' }}>
+                    <h4 style={{ color: '#00C2A0' }}>Thẻ:</h4>
+                    <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                      {searchResults.cards.map((card) => (
+                        <li key={card.id} style={{ color: 'white', padding: '5px 0', borderBottom: '1px solid #444' }}>
+                          {card.title}
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
+
+                {/* Kiểm tra nếu users tồn tại và có phần tử */}
+                {Array.isArray(searchResults.users) && searchResults.users.length > 0 && (
+                  <Box sx={{ marginBottom: '15px' }}>
+                    <h4 style={{ color: '#00C2A0' }}>Người dùng:</h4>
+                    <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                      {searchResults.users.map((user) => (
+                        <li key={user.id} style={{ color: 'white', padding: '5px 0', borderBottom: '1px solid #444' }}>
+                          {user.user_name}
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
+
+                {/* Trường hợp không có kết quả tìm kiếm */}
+                {(!Array.isArray(searchResults.boards) || searchResults.boards.length === 0) &&
+                  (!Array.isArray(searchResults.cards) || searchResults.cards.length === 0) &&
+                  (!Array.isArray(searchResults.users) || searchResults.users.length === 0) &&
+                  <p style={{ color: 'white' }}>Không tìm thấy kết quả nào.</p>}
+              </Box>
+            )}
+          </Box>
+
+
+          <Tooltip title="Notification">
+            <IconButton onClick={handleClick}>
+              <Badge
+                badgeContent={newNotificationsCount}
+                color="error"
+              >
+                <NotificationsNoneIcon sx={{ color: "white" }} />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Help">
+            <HelpOutlineIcon
               sx={{
-                maxHeight: 300,
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: 1,
+                fontSize: "medium",
+                cursor: "pointer",
+                color: "secondary.contrastText",
               }}
-            >
-              {Object.values(groupedNotifications || {}).length === 0 && (
-                <Typography textAlign="center" mt={4}>
-                  Không có thông báo
+            />
+          </Tooltip>
+
+          <Profile email={email} />
+
+          <Popover
+            open={open}
+            anchorEl={anchorEl}
+            onClose={handleClose}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+          >
+            <Box sx={{ width: 400, p: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" fontWeight="bold">
+                  Thông báo
                 </Typography>
-              )}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography fontSize={14}>Chỉ hiển thị chưa đọc</Typography>
+                  <Switch
+                    checked={showUnread}
+                    onChange={() => setShowUnread(!showUnread)}
+                    size="small"
+                  />
+                </Box>
+              </Box>
 
-              {Object.values(groupedNotifications || {}).map((group) => {
-                const firstNotification = group.notifications[0]; // Thông báo đầu tiên (mới nhất)
-                const remainingNotifications = group.notifications.slice(1); // Các thông báo còn lại
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Tìm kiếm thông báo..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                sx={{
+                  mb: 2,
+                  "& input": { fontSize: "14px" },
+                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                }}
+              />
 
-                return (
-                  <Box
-                    key={group.cardUrl}
-                    sx={{
-                      border: "1px solid #e0e0e0",
-                      borderRadius: 2,
-                      backgroundColor: "#f7faff",
-                      p: 1.5,
-                      mb: 2,
-                    }}
-                  >
+              <Box
+                sx={{
+                  maxHeight: 300,
+                  overflowY: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                }}
+              >
+                {Object.values(groupedNotifications || {}).length === 0 && (
+                  <Typography textAlign="center" mt={4}>
+                    Không có thông báo
+                  </Typography>
+                )}
+
+                {Object.values(groupedNotifications || {}).map((group) => {
+                  const firstNotification = group.notifications[0]; // Thông báo đầu tiên (mới nhất)
+                  const remainingNotifications = group.notifications.slice(1); // Các thông báo còn lại
+
+                  return (
                     <Box
+                      key={group.cardUrl}
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
+                        border: "1px solid #e0e0e0",
+                        borderRadius: 2,
+                        backgroundColor: "#f7faff",
+                        p: 1.5,
+                        mb: 2,
                       }}
                     >
-                      <Typography
-                        component="a"
-                        href={group.cardUrl}
-                        fontWeight="bold"
-                        fontSize={14}
-                        sx={{
-                          color: "#0c66e4",
-                          textDecoration: "none",
-                          "&:hover": { textDecoration: "underline" },
-                        }}
-                      >
-                        {group.cardTitle}
-                      </Typography>
-                      {remainingNotifications.length > 0 && ( // Chỉ hiển thị nút nếu có thông báo còn lại
-                        <IconButton
-                          onClick={() => toggleGroup(group.cardUrl)}
-                          size="small"
-                        >
-                          {expandedGroups[group.cardUrl] ? (
-                            <ExpandLessIcon />
-                          ) : (
-                            <ExpandMoreIcon />
-                          )}
-                        </IconButton>
-                      )}
-                    </Box>
-                    <Typography fontSize={12} color="gray" mb={1}>
-                      {group.boardName}: {group.listName}
-                    </Typography>
-
-                    {/* Luôn hiển thị thông báo đầu tiên */}
-                    {firstNotification && (
                       <Box
                         sx={{
                           display: "flex",
-                          gap: 1,
+                          justifyContent: "space-between",
                           alignItems: "center",
-                          mb: 1,
-                          borderBottom: "1px solid #eee",
-                          pb: 1,
                         }}
                       >
-                        <Avatar
+                        <Typography
+                          component="a"
+                          href={group.cardUrl}
+                          fontWeight="bold"
+                          fontSize={14}
                           sx={{
-                            width: 32,
-                            height: 32,
-                            bgcolor: "#5f6368",
-                            color: "white",
-                            fontWeight: "bold",
-                            fontSize: 14,
+                            color: "#0c66e4",
+                            textDecoration: "none",
+                            "&:hover": { textDecoration: "underline" },
                           }}
                         >
-                          {firstNotification.data.by_user?.full_name
-                            ?.charAt(0)
-                            .toUpperCase()}
-                        </Avatar>
-                        <Box>
-                          <Typography fontWeight="bold" fontSize={13}>
-                            {firstNotification.data.by_user?.full_name}
-                          </Typography>
-                          <Typography fontSize={12} color="text.secondary">
-                            {firstNotification.data.message} —{" "}
-                            {formatTime(firstNotification.created_at) ||
-                              "1 giờ trước"}
-                          </Typography>
-                        </Box>
+                          {group.cardTitle}
+                        </Typography>
+                        {remainingNotifications.length > 0 && ( // Chỉ hiển thị nút nếu có thông báo còn lại
+                          <IconButton
+                            onClick={() => toggleGroup(group.cardUrl)}
+                            size="small"
+                          >
+                            {expandedGroups[group.cardUrl] ? (
+                              <ExpandLessIcon />
+                            ) : (
+                              <ExpandMoreIcon />
+                            )}
+                          </IconButton>
+                        )}
                       </Box>
-                    )}
+                      <Typography fontSize={12} color="gray" mb={1}>
+                        {group.boardName}: {group.listName}
+                      </Typography>
 
-                    {/* Hiển thị các thông báo còn lại khi mở rộng */}
-                    {remainingNotifications.length > 0 && (
-                      <Collapse in={expandedGroups[group.cardUrl]}>
-                        {remainingNotifications.map((notif) => (
-                          <Box
-                            key={notif.id}
+                      {/* Luôn hiển thị thông báo đầu tiên */}
+                      {firstNotification && (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: 1,
+                            alignItems: "center",
+                            mb: 1,
+                            borderBottom: "1px solid #eee",
+                            pb: 1,
+                          }}
+                        >
+                          <Avatar
                             sx={{
-                              display: "flex",
-                              gap: 1,
-                              alignItems: "center",
-                              mb: 1,
-                              borderBottom: "1px solid #eee",
-                              pb: 1,
+                              width: 32,
+                              height: 32,
+                              bgcolor: "#5f6368",
+                              color: "white",
+                              fontWeight: "bold",
+                              fontSize: 14,
                             }}
                           >
-                            <Avatar
+                            {firstNotification.data.by_user?.full_name
+                              ?.charAt(0)
+                              .toUpperCase()}
+                          </Avatar>
+                          <Box>
+                            <Typography fontWeight="bold" fontSize={13}>
+                              {firstNotification.data.by_user?.full_name}
+                            </Typography>
+                            <Typography fontSize={12} color="text.secondary">
+                              {firstNotification.data.message} —{" "}
+                              {formatTime(firstNotification.created_at) ||
+                                "1 giờ trước"}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Hiển thị các thông báo còn lại khi mở rộng */}
+                      {remainingNotifications.length > 0 && (
+                        <Collapse in={expandedGroups[group.cardUrl]}>
+                          {remainingNotifications.map((notif) => (
+                            <Box
+                              key={notif.id}
                               sx={{
-                                width: 32,
-                                height: 32,
-                                bgcolor: "#5f6368",
-                                color: "white",
-                                fontWeight: "bold",
-                                fontSize: 14,
+                                display: "flex",
+                                gap: 1,
+                                alignItems: "center",
+                                mb: 1,
+                                borderBottom: "1px solid #eee",
+                                pb: 1,
                               }}
                             >
-                              {notif.data.by_user?.full_name
-                                ?.charAt(0)
-                                .toUpperCase()}
-                            </Avatar>
-                            <Box>
-                              <Typography fontWeight="bold" fontSize={13}>
-                                {notif.data.by_user?.full_name}
-                              </Typography>
-                              <Typography fontSize={12} color="text.secondary">
-                                {notif.data.message} —{" "}
-                                {formatTime(notif.created_at) || "1 giờ trước"}
-                              </Typography>
+                              <Avatar
+                                sx={{
+                                  width: 32,
+                                  height: 32,
+                                  bgcolor: "#5f6368",
+                                  color: "white",
+                                  fontWeight: "bold",
+                                  fontSize: 14,
+                                }}
+                              >
+                                {notif.data.by_user?.full_name
+                                  ?.charAt(0)
+                                  .toUpperCase()}
+                              </Avatar>
+                              <Box>
+                                <Typography fontWeight="bold" fontSize={13}>
+                                  {notif.data.by_user?.full_name}
+                                </Typography>
+                                <Typography fontSize={12} color="text.secondary">
+                                  {notif.data.message} —{" "}
+                                  {formatTime(notif.created_at) || "1 giờ trước"}
+                                </Typography>
+                              </Box>
                             </Box>
-                          </Box>
-                        ))}
-                      </Collapse>
-                    )}
-                  </Box>
-                );
-              })}
-            </Box>
+                          ))}
+                        </Collapse>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Box>
 
-            {/* <Box mt={2} textAlign="center">
+              {/* <Box mt={2} textAlign="center">
               <Button size="small" variant="text" sx={{ color: "#1976d2" }}>
                 Hiển Thị Hoạt Động Thẻ Trước
               </Button>
             </Box> */}
-          </Box>
-        </Popover>
+            </Box>
+          </Popover>
+        </Box>
       </Box>
     </Box>
   );
 };
+
 
 export default AppBar;
