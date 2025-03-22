@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+// use App\Models\Notification;
 
 class NotificationController extends Controller
 {
@@ -30,4 +31,13 @@ class NotificationController extends Controller
             'data' => $notifications,
         ]);
     }
+
+    // public function markAsRead(Request $request)
+    // {
+    //     $notification = Notification::find($request->id);
+    //     if ($notification) {
+    //         $notification->update(['read_at' => now()]);
+    //     }
+    //     return response()->json(['message' => 'Notification marked as read']);
+    // }
 }

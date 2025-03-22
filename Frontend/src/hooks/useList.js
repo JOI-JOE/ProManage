@@ -10,7 +10,8 @@ import {
   getListClosedByBoard,
   updatePositionList,
 } from "../api/models/listsApi";
-import { useEffect, useState } from "react";
+import { useEffect,useState } from "react";
+import { useNavigate } from "react-router-dom";
 import echoInstance from "./realtime/useRealtime";
 import { optimisticIdManager } from "./optimistic/optimisticIdManager";
 
@@ -68,21 +69,40 @@ import { optimisticIdManager } from "./optimistic/optimisticIdManager";
 
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [errorState, setErrorState] = useState(null);
 
   const query = useQuery({
     queryKey: ["lists", boardId],
-    queryFn: () => getListByBoardId(boardId),
+    queryFn: async () => {
+      const { data, error } = await getListByBoardId(boardId);
+
+      if (error) {
+        setErrorState(error);
+      }
+
+      return data;
+    },
     enabled: !!boardId,
-    staleTime: 0, // Luôn lấy dữ liệu mới từ API
-    cacheTime: 1000 * 60 * 30, // Cache 30 phút
+    staleTime: 0,
+    cacheTime: 1000 * 60 * 30,
   });
+
+  // Xử lý lỗi: nếu không có quyền hoặc không tìm thấy board
+  useEffect(() => {
+    if (errorState === "no_access" || errorState === "not_found") {
+      navigate("/404");
+    } else if (errorState === "unknown_error") {
+      console.error("Lỗi không xác định xảy ra!");
+    }
+  }, [errorState, navigate]);
 
   useEffect(() => {
     if (!boardId) return;
 
     const channel = echoInstance.channel(`board.${boardId}`);
 
-    // 📡 Khi danh sách (list) mới được tạo
+    // 📡 Nhận event khi tạo mới list
     channel.listen(".list.created", (data) => {
       console.log("📡 Nhận event từ Pusher: list.created", data);
 
@@ -100,7 +120,7 @@ export const useLists = (boardId) => {
       });
     });
 
-    // 📡 Khi danh sách được cập nhật
+    // 📡 Nhận event khi cập nhật list
     channel.listen(".list.updated", (data) => {
       console.log("📡 Nhận event từ Pusher: list.updated", data);
 
@@ -123,7 +143,7 @@ export const useLists = (boardId) => {
       });
     });
 
-    // 📡 Khi có card mới được tạo
+    // 📡 Nhận event khi tạo mới card
     channel.listen(".card.created", (data) => {
       console.log("📡 Nhận event từ Pusher: card.created", data);
 
@@ -145,7 +165,7 @@ export const useLists = (boardId) => {
       });
     });
 
-    // 📡 Khi card được cập nhật
+    // 📡 Nhận event khi card được cập nhật
     channel.listen(".card.updated", (data) => {
       console.log("📡 Nhận event từ Pusher: card.updated", data);
 

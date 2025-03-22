@@ -25,6 +25,7 @@ import { useCardById, useGetMemberInCard } from "../../../../../hooks/useCard";
 import { useCommentsByCard } from "../../../../../hooks/useComment";
 import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
 import useAttachments from "../../../../../hooks/useAttachment";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 
 const C_ard = ({ card }) => {
   const {
@@ -49,9 +50,12 @@ const C_ard = ({ card }) => {
     removeAttachment,
   } = useAttachments(card.id);
 
-  // useEffect(() => {
-  //   console.log("Members data:", members); // Kiểm tra dữ liệu members
-  // }, [members]);
+  const coverImageAttachment = attachments?.data?.find((file) => file.is_cover);
+  const coverImageBackGround = coverImageAttachment
+    ? coverImageAttachment.path_url
+    : null;
+
+
 
   const [open, setOpen] = useState(false); // State mở/đóng Dialog
   const navigate = useNavigate(); // Điều hướng URL
@@ -131,26 +135,20 @@ const C_ard = ({ card }) => {
           // height: "110px"
         }}
       >
-        {card?.cover && <CardMedia sx={{ height: 140 }} image={card?.cover} />}
-
-        {/* {card?.labels?.length > 0 && (
-                  <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap", mt: 1 }}>
-                      {card.labels.map((label, index) => (
-                          <Box
-                              key={index}
-                              sx={{
-                                  backgroundColor: label.color,
-                                  padding: "2px 8px",
-                                  borderRadius: "4px",
-                                  fontSize: "0.65rem",
-                                  color: "white",
-                              }}
-                          >
-                              {label.text}
-                          </Box>
-                      ))}
-                  </Box>
-              )} */}
+       {coverImageBackGround && (
+          <CardMedia sx={{ height: 140, mb: 2, justifyContent: "center" }}>
+            <LazyLoadImage
+              src={coverImageBackGround}
+              alt="Card Cover"
+              effect="blur" // Hiệu ứng mờ khi tải ảnh
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+              }}
+            />
+          </CardMedia>
+        )}
 
         <CardContent sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
           {cardLabels?.length > 0 && (

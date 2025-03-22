@@ -11,37 +11,59 @@ use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Pusher\Pusher;
 
 class ListController extends Controller
 {
+    
     public function index($boardId)
     {
-        $board = Board::with([
-            'listBoards' => function ($query) {
-                $query->where('closed', false)
-                    ->orderBy('position')
-                    ->with([
-                        'cards' => function ($cardQuery) {
-                            $cardQuery->orderBy('position')
-                                ->withCount('comments')
-                                ->with([
-                                    'checklists' => function ($checklistQuery) {
-                                        $checklistQuery->with('items');
-                                    },
-                                    'labels'
-                                ]);
-                        }
-                    ]);
-            }
-        ])->find($boardId);
+        $board = Board::where('id', $boardId)
+            ->with([
+                'listBoards' => function ($query) {
+                    $query->where('closed', false)
+                        ->orderBy('position')
+                        ->with([
+                            'cards' => function ($cardQuery) {
+                                $cardQuery->orderBy('position')
+                                    ->withCount('comments')
+                                    ->with([
+                                        'checklists' => function ($checklistQuery) {
+                                            $checklistQuery->with('items');
+                                        },
+                                        'labels' // Thêm mối quan hệ labels
+                                    ]);
+                            }
+                        ]);
+                },
+                'workspace.members', // Lấy danh sách thành viên của workspace
+                'members' // Lấy danh sách thành viên của board
+
+            ])
+            ->first();
 
         if (!$board) {
             return response()->json(['message' => 'Board not found'], 404);
         }
 
-        return response()->json([
+        $user = Auth::user();
+
+        $hasAccess = false;
+        if ($board->visibility === 'public') {
+            $hasAccess = true;
+        } elseif ($board->visibility === 'workspace') {
+            $hasAccess = $board->workspace->members->contains($user->id);
+        } elseif ($board->visibility === 'private') {
+            $hasAccess = $board->members->contains($user->id);
+        }
+        
+        if (!$hasAccess) {
+            return response()->json(['message' => 'Access Denied'], 403);
+        }
+
+        $responseData = [
             'id' => $board->id,
             'title' => $board->name,
             'description' => $board->description ?? '',
@@ -91,7 +113,8 @@ class ListController extends Controller
                     })->toArray(),
                 ];
             })->toArray(),
-        ]);
+        ];
+        return response()->json($responseData);
     }
 
     public function getListClosed($boardId)

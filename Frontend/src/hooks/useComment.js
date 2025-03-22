@@ -53,6 +53,7 @@ export const useCommentsByCard = (card_id) => {
             });
 
             queryClient.invalidateQueries({ queryKey: ["lists"] });
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
     
         });
 

@@ -56,6 +56,17 @@ class Board extends Model
         return $this->hasMany(ListBoard::class, 'board_id');
     }
 
+ // Đếm số lượng admin, chỉ định rõ board_members.role
+ public function countAdmins()
+ {
+     return $this->members()->where('board_members.role', 'admin')->count();
+ }
+
+    public function isCreator($userId)
+    {
+        return $this->created_by === $userId;
+    }
+
 
     public function members()
     {
@@ -69,9 +80,9 @@ class Board extends Model
             ->wherePivot('joined', true)
             ->wherePivot('is_deactivated', false);
     }
-    // Hậu thêm để test 
-    public function boardMembers()
+
+    public function cards()
     {
-        return $this->hasMany(BoardMember::class, 'board_id', 'id');
+        return $this->hasMany(Card::class);
     }
 }

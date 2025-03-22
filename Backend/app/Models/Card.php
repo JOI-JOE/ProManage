@@ -105,7 +105,11 @@ class Card extends Model
     //     }
     // }
 
-
+   /////  Quốc đã sửa tên function này từ members thành users để lầm được đính kèm(chiều ngày 18/3)
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'card_user');
+    }
     public function members()
     {
         return $this->belongsToMany(User::class, 'card_user');
@@ -127,5 +131,9 @@ class Card extends Model
     public function checklists()
     {
         return $this->hasMany(CheckList::class, 'card_id');
+    }
+    public function board()
+    {
+        return $this->belongsTo(Board::class);
     }
 }

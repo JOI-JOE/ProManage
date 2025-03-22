@@ -139,5 +139,51 @@ export const toggleCardMember = async (cardId, userId) => {
   } catch (error) {
     console.error("Lỗi khi thêm thành viên của card:", error);
     throw error;
+  }   
+}
+export const getDateByCard = async (cardId) => {
+  const response = await authClient.get(`/cards/${cardId}/dates`);
+  return response.data;
+};
+export const updateCardDate = async (cardId,startDate, endDate, endTime, reminder) => {
+  
+  try {
+    const response = await authClient.put(`cards/${cardId}/dates`, {
+      start_date:startDate,
+      end_date: endDate,
+      end_time: endTime,
+      reminder: reminder
+    });
+
+
+    return response.data;
+  } catch (error) {
+    console.error("Error updating card date:", error);
+    throw new Error(error.response?.data?.message || "Failed to update card date.");
   }
 };
+export const addMemberToCard = async ( cardId, email ) => {
+  console.log(cardId,email);
+  try {
+    const response = await authClient.post(`cards/${cardId}/members/email`, { email });
+    
+   
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi thêm thành viên vào thẻ", error);
+    throw error;
+  }   
+};
+export const removeMember = async ( cardId, userId ) => {
+
+  try {
+    const response = await authClient.delete(`cards/${cardId}/members/${userId}`);
+   
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi thêm thành viên vào thẻ", error);
+    throw error;
+  }   
+};
+
+

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Avatar,
   AvatarGroup,
@@ -21,12 +21,10 @@ import BoardMenu from "./BoardMenu";
 
 import { useUpdateBoardName } from "../../../../../hooks/useBoard";
 import BoardContext from "../../../../../contexts/BoardContext";
-import { useGetBoardMembers } from "../../../../../hooks/useInviteBoard";
+import { useGetBoardMembers, useMemberJoinedListener } from "../../../../../hooks/useInviteBoard";
 import { useParams } from "react-router-dom";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
-
-
-
+import { useUser } from "../../../../../hooks/useUser";
 
 const style = {
   border: "none",
@@ -43,8 +41,10 @@ const style = {
 
 const BoardBar = () => {
   const { boardId } = useParams();
-  const { board, isLoading, error } = useContext(BoardContext)
-  const { data: boardMembers } = useGetBoardMembers(boardId)
+  const { board, isLoading, error } = useContext(BoardContext);
+  const { data: boardMembers } = useGetBoardMembers(boardId);
+  const { data: user } = useUser();
+  useMemberJoinedListener(user?.id)
 
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
   const handleFilterDialogOpen = () => setOpenFilterDialog(true);
@@ -87,7 +87,6 @@ const BoardBar = () => {
   // const { boardId } = useParams(); // Lấy boardId từ URL
   // // console.log("🔍 boardId từ useParams:", boardId);
 
-
   // const { data, isLoading, error } = useQuery({
   //   queryKey: ["board", boardId],
   //   queryFn: () => getBoardById(boardId),
@@ -96,7 +95,6 @@ const BoardBar = () => {
   // console.log(data)
 
   // // console.log("🔍 Dữ liệu board từ API:", data?.data);
-
 
   // const board = data?.data;
 
@@ -143,6 +141,8 @@ const BoardBar = () => {
   if (isLoading) return <p>Loading board...</p>;
   if (error) return <p>Board not found</p>;
 
+  const boardVisibility = board?.visibility || "test"; // Default to "Private"
+
   return (
     <Box
       sx={{
@@ -188,12 +188,13 @@ const BoardBar = () => {
         {/* <StarButton isStarred={isStarred} onStarClick={handleStarClick} /> */}
         <Chip
           icon={<LockOpenIcon />}
-          label="Khả năng xem"
+          label={`Khả năng xem: ${boardVisibility}`} // Display the visibility status
           variant="outlined"
           clickable
           sx={style}
           onClick={handleViewPermissionsDialogOpen}
         />
+
         <Chip
           icon={<BoltIcon />}
           label="Tự động hóa"
@@ -259,7 +260,6 @@ const BoardBar = () => {
               </div>
             </Tooltip>
           ))}
-
         </AvatarGroup>
         <Button
           variant="contained"
@@ -279,6 +279,8 @@ const BoardBar = () => {
 
       {/* Hộp thoại chia sẻ */}
       <ShareBoardDialog
+        boardMembers={boardMembers}
+        currentUser={user}
         open={openShareDialog}
         onClose={() => setOpenShareDialog(false)}
       />

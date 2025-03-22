@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -17,34 +17,72 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
+import { useParams } from "react-router-dom";
+import { useCardSchedule, useUpdateCardDate } from "../../../../../../../../../../hooks/useCard";
 
 const DateModal = ({ open, onClose, onSave, initialData }) => {
-  const [isStartDateChecked, setIsStartDateChecked] = useState(false);
-  const [startDate, setStartDate] = useState(null);
-  const [isEndDateChecked, setIsEndDateChecked] = useState(true);
+  const { cardId } = useParams();
+  // console.log("Parent component re-rendered!");
+  const { data: schedule } = useCardSchedule(cardId, {
+    staleTime: 60000, // Chỉ refetch sau 1 phút
+    cacheTime: 300000, // Cache dữ liệu trong 5 phút
+    enabled: !!cardId, // Chỉ gọi API nếu có cardId hợp lệ
+  });
+  // console.log(schedule);
+  // const { data:batch } = useBatchData({ workspaceIds: [], boardIds: [], listIds: [], cardId });
+  // console.log(batch)
+  // const card = batch?.card;
+  const { mutate: updateCardDate } = useUpdateCardDate();
+  const [startDate, setStartDate] = useState(dayjs().startOf("day"));
   const [endDate, setEndDate] = useState(dayjs().startOf("day"));
-  const [endTime, setEndTime] = useState(dayjs().startOf("day"));
-  const [reminder, setReminder] = useState("Vào thời điểm ngày hết hạn");
+  const [endTime, setEndTime] = useState(null);
+  const [isStartDateChecked, setIsStartDateChecked] = useState(false);
+  const [isEndDateChecked, setIsEndDateChecked] = useState(true);
+  const [isEndTimeChecked, setIsEndTimeChecked] = useState(false);
+  // const [endDate, setEndDate] = useState(dayjs().startOf("day"));
+  // const [endTime, setEndTime] = useState(dayjs().startOf("day"));
+  const [reminder, setReminder] = useState("");
+
 
   // Load dữ liệu cũ khi mở modal
   useEffect(() => {
-    if (open && initialData) {
-      setIsStartDateChecked(initialData.startDate !== "Không có");
-      setStartDate(
-        initialData.startDate !== "Không có"
-          ? dayjs(initialData.startDate, "DD/MM/YYYY HH:mm")
-          : null
-      );
+  
+    if (schedule) {
+     
+        setIsStartDateChecked(!!schedule.start_date);
+        setStartDate(schedule.start_date ? dayjs(schedule.start_date) : null);
 
-      setIsEndDateChecked(initialData.endDate !== "Không có");
-      if (initialData.endDate !== "Không có") {
-        const [date, time] = initialData.endDate.split(" ");
-        setEndDate(dayjs(date, "DD/MM/YYYY"));
-        setEndTime(dayjs(time, "HH:mm"));
-      }
-      setReminder(initialData.reminder || "Vào thời điểm ngày hết hạn");
+        setIsEndDateChecked(!!schedule.end_date);
+        setEndDate(schedule.end_date ? dayjs(schedule.end_date) : null);
+
+        setIsEndTimeChecked(!!schedule.end_time);
+        // setEndTime(schedule.end_time ? dayjs(schedule.end_time, "HH:mm") : null);
+        setEndTime(schedule.end_time ? dayjs(schedule.end_time, "HH:mm") : null);
+
+        // Nếu có reminder, tính khoảng thời gian so với `endDateTime`
+        if (schedule.reminder && schedule.end_date && schedule.end_time) {
+            const endDateTime = dayjs(`${schedule.end_date} ${schedule.end_time}`, "YYYY-MM-DD HH:mm");
+            const reminderDateTime = dayjs(schedule.reminder, "YYYY-MM-DD HH:mm");
+            const diff = endDateTime.diff(reminderDateTime, "minute");
+
+            const reminderLabels = {
+                0: "Vào thời điểm ngày hết hạn",
+                5: "5 phút trước",
+                10: "10 phút trước",
+                15: "15 phút trước",
+                60: "1 giờ trước",
+                120: "2 giờ trước",
+                1440: "1 ngày trước",
+                2880: "2 ngày trước",
+            };
+
+            setReminder(reminderLabels[diff] || "Không có");
+        } else {
+            setReminder("Không có");
+        }
     }
-  }, [open, initialData]);
+}, [schedule]);
+console.log(schedule);
 
   // Đảm bảo ngày bắt đầu luôn <= ngày kết thúc
   useEffect(() => {
@@ -56,21 +94,56 @@ const DateModal = ({ open, onClose, onSave, initialData }) => {
   }, [startDate, endDate]);
 
   // Lưu dữ liệu
-  const handleSave = () => {
-    const data = {
-      startDate: isStartDateChecked
-        ? startDate?.format("DD/MM/YYYY HH:mm")
-        : "Không có",
-      endDate: isEndDateChecked
-        ? endDate?.format("DD/MM/YYYY") + " " + endTime?.format("HH:mm")
-        : "Không có",
-      reminder,
+  const handleSave = useCallback(async (e) => {
+    e.preventDefault();
+  
+    if (!isEndDateChecked || !endDate || !endTime) {
+        console.error("Ngày kết thúc chưa được chọn!");
+        return;
+    }
+  
+    let endDateTime = dayjs(`${endDate.format("YYYY-MM-DD")} ${endTime.format("HH:mm")}`);
+  
+    if (!endDateTime.isValid()) {
+        console.error("Lỗi: Ngày giờ kết thúc không hợp lệ!");
+        return;
+    }
+  
+    let reminderDateTime = null;
+    const reminderOptions = {
+        "Không có": null,
+        "Vào thời điểm ngày hết hạn": endDateTime,
+        "5 phút trước": endDateTime.subtract(5, "minute"),
+        "10 phút trước": endDateTime.subtract(10, "minute"),
+        "15 phút trước": endDateTime.subtract(15, "minute"),
+        "1 giờ trước": endDateTime.subtract(1, "hour"),
+        "2 giờ trước": endDateTime.subtract(2, "hour"),
+        "1 ngày trước": endDateTime.subtract(1, "day"),
+        "2 ngày trước": endDateTime.subtract(2, "day"),
     };
-
-    console.log("Dữ liệu được gửi về CardModal:", data);
-    onSave(data); // Gửi dữ liệu về CardModal.jsx
+  
+    reminderDateTime = reminderOptions[reminder] || null;
+  
+    const formattedStartDate = isStartDateChecked && startDate ? startDate.format("YYYY-MM-DD") : null;
+    const formattedEndDate = isEndDateChecked && endDate ? endDate.format("YYYY-MM-DD") : null;
+    const formattedEndTime = isEndDateChecked && endTime ? endTime.format("HH:mm") : null;
+    const formattedReminder = reminderDateTime ? reminderDateTime.format("YYYY-MM-DD HH:mm") : null;
+    // console.log(formattedReminder);
+  
+     updateCardDate({ 
+        cardId, 
+        startDate: formattedStartDate, 
+        endDate: formattedEndDate, 
+        endTime: formattedEndTime, 
+        reminder: formattedReminder,
+    });
+  
     onClose();
-  };
+  }, [
+    isEndDateChecked, endDate, endTime, reminder, 
+    isStartDateChecked, startDate, cardId, 
+    updateCardDate, onClose
+  ]);
 
   return (
     <Dialog

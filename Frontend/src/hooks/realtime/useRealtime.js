@@ -25,7 +25,7 @@ const echoInstance = new Echo({
   authEndpoint: `${BACKEND_URL}/broadcasting/auth`,
   auth: {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
+      Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
     },
   },
 });
