@@ -186,7 +186,14 @@ const C_ard = ({ card }) => {
               justifyContent: "space-between", // Ensure space between icons and avatars
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                flex: 1,
+              }}
+            >
               {!!card?.memberIds?.length && (
                 <Button
                   size="small"
@@ -290,15 +297,18 @@ const C_ard = ({ card }) => {
                   display: "flex",
                   gap: "4px",
                   zIndex: 1, // Ensure avatar is on top
+                  marginLeft: "auto", // Push avatars to the right
+                  flexWrap: "wrap", // Allow avatars to wrap to a new line
+                  justifyContent: "flex-end", // Align avatars to the right
                 }}
               >
                 {members?.data?.map((member, index) => (
                   <Tooltip key={index} title={member.full_name || "No name"}>
                     <Avatar
                       sx={{
-                        width: 24,
-                        height: 24,
-                        fontSize: "0.75rem",
+                        width: 22,
+                        height: 22,
+                        fontSize: "0.6rem",
                         bgcolor: "primary.main",
                       }}
                     >
