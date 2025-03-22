@@ -114,7 +114,7 @@ class User extends Authenticatable
         return $this->hasMany(WorkspaceMembers::class, 'user_id', 'id');
     }
 
-    public function boardMember()
+    public function boardMembers()
     {
         return $this->hasMany(BoardMember::class, 'user_id', 'id');
     }

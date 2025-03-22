@@ -282,4 +282,14 @@ class WorkspaceController extends Controller
             ], 500);
         }
     }
+    public function getGuestWorkspaces(Request $request)
+    {
+        $user = $request->user();
+        $guestWorkspaces = $user->guestWorkspaces()->get();
+
+        return response()->json([
+            'message' => 'Lấy thành công',
+            'data' => $guestWorkspaces,
+        ]);
+    }
 }

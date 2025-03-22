@@ -17,7 +17,7 @@ use Pusher\Pusher;
 
 class ListController extends Controller
 {
-    
+
     public function index($boardId)
     {
         $board = Board::where('id', $boardId)
@@ -51,16 +51,22 @@ class ListController extends Controller
         $user = Auth::user();
 
         $hasAccess = false;
+
         if ($board->visibility === 'public') {
             $hasAccess = true;
         } elseif ($board->visibility === 'workspace') {
-            $hasAccess = $board->workspace->members->contains($user->id);
+            // Kiểm tra workspace có null không trước khi truy cập members
+            if ($board->workspace && $board->workspace->members) {
+                $hasAccess = $board->workspace->members->contains($user->id);
+            }
         } elseif ($board->visibility === 'private') {
-            $hasAccess = $board->members->contains($user->id);
+            // Kiểm tra members có null không trước khi truy cập
+            if ($board->members) {
+                // $hasAccess = $board->members->contains($user->id);
+            }
         }
-        
         if (!$hasAccess) {
-            return response()->json(['message' => 'Access Denied'], 403);
+            return response()->json(['error' => 'Access denied'], 403);
         }
 
         $responseData = [

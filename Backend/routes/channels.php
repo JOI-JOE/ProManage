@@ -52,3 +52,10 @@ Broadcast::channel('user.{id}', function ($user, $id) {
 Broadcast::channel('boards.{boardId}', function ($user, $boardId) {
     return true;
 });
+
+Broadcast::channel('private-user.{userId}', function ($user, $userId) {
+    \Log::info("Auth user:", [$user->id]); // Ghi log kiểm tra user
+    \Log::info("Request userId:", [$userId]);
+
+    return (int) $user->id === (int) $userId;
+});

@@ -31,10 +31,12 @@ import useNotifications from "../../hooks/useNotification";
 import useSearch from "../../hooks/useSearch";
 // import useNotifications from "../../hooks/useNotification";
 import { formatTime } from "../../../utils/dateUtils";
+import { useMe } from "../../contexts/MeContext";
 
 
 const AppBar = ({ username, email }) => {
-  const { data: user } = useUser();
+  // const { data: user } = useUser();
+  const { user } = useMe();
   const userId = user?.id;
   const { notifications } = useNotifications(userId);
 
@@ -196,10 +198,10 @@ const AppBar = ({ username, email }) => {
               }}
             />
 
-            {isLoading && <CircularProgress size={24} sx={{ color: 'white', marginTop: '10px' }} />}
-            {error && <p style={{ color: 'red' }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>}
+            {isLoadingSearch && <CircularProgress size={24} sx={{ color: 'white', marginTop: '10px' }} />}
+            {errorSearch && <p style={{ color: 'red' }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>}
 
-            {searchText && !isLoading && !error && searchResults && (
+            {searchText && !isLoadingSearch && !errorSearch && searchResults && (
               <Box sx={{ width: '100%', paddingTop: '20px', backgroundColor: '#2e2e2e', borderRadius: '10px', padding: '10px' }}>
                 <h3 style={{ color: 'white' }}>Kết quả tìm kiếm:</h3>
 

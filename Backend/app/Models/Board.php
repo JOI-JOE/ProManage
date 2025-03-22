@@ -47,6 +47,11 @@ class Board extends Model
         return $this->hasMany(ListBoard::class, 'board_id');
     }
 
+    public function boardMembers()
+    {
+        return $this->hasMany(BoardMember::class, 'board_id');
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'user_id'); // 'created_by' là trường ngoại trong bảng 'boards'
@@ -56,23 +61,23 @@ class Board extends Model
         return $this->hasMany(ListBoard::class, 'board_id');
     }
 
- // Đếm số lượng admin, chỉ định rõ board_members.role
- public function countAdmins()
- {
-     return $this->members()->where('board_members.role', 'admin')->count();
- }
+    // Đếm số lượng admin, chỉ định rõ board_members.role
+    public function countAdmins()
+    {
+        return $this->members()->where('board_members.role', 'admin')->count();
+    }
 
     public function isCreator($userId)
     {
         return $this->created_by === $userId;
     }
 
-
     public function members()
     {
         return $this->belongsToMany(User::class, 'board_members', 'board_id', 'user_id')
             ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated');
     }
+    
     public function activeMembers()
     {
         return $this->members()

@@ -21,10 +21,12 @@ const Col_list = ({ columns = [], boardId }) => {
     const saveList = useCallback(async (name) => {
         if (!name || isSaving) return;
 
+        const optimisticId = optimisticIdManager.generateOptimisticId("list"); // Định nghĩa bên ngoài
+        let pos = 0;
+
         setLocalColumns((prev) => {
             const maxPosition = prev.length > 0 ? Math.max(...prev.map(col => col.position)) : 0;
-            const pos = maxPosition + SPACING;
-            const optimisticId = optimisticIdManager.generateOptimisticId("list");
+            pos = maxPosition + SPACING; // Cập nhật giá trị pos
 
             return [
                 ...prev,
