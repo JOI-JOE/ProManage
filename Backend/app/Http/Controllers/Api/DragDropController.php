@@ -14,32 +14,32 @@ use Illuminate\Support\Facades\Cache;
 
 class DragDropController extends Controller
 {
-    public function updatePositionList(Request $request, $boardId)
+    public function updatePositionList(Request $request, $listId)
     {
         // Lấy thông tin từ request và validate
         $validated = $request->validate([
-            'position' => 'required',  // Kiểm tra vị trí mới phải là một số nguyên
-            'listId' => 'required|exists:list_boards,id',  // Kiểm tra nếu id của list hợp lệ
+            'position' => 'required',  // Kiểm tra vị trí mới phải là số nguyên
         ]);
 
-        // Cập nhật vị trí mới trực tiếp mà không cần lấy bản ghi trước
-        $list_new_position = ListBoard::where('board_id', $boardId)
-            ->where('id', $validated['listId'])
-            ->update(['position' => $validated['position']]);
+        // Tìm list cần cập nhật
+        $list = ListBoard::find($listId);
 
-        // Nếu không tìm thấy list cần cập nhật, trả về lỗi 404
-        if (!$list_new_position) {
-            return response()->json(['error' => 'List not found or does not belong to this board'], 404);
+        // Nếu không tìm thấy list, trả về lỗi 404
+        if (!$list) {
+            return response()->json(['error' => 'List not found'], 404);
         }
 
-        // Lấy lại thông tin list đã cập nhật từ DB
-        $updatedList = ListBoard::find($validated['listId']);
+        // Cập nhật vị trí mới
+        $list->update(['position' => $validated['position']]);
 
-        // Gửi sự kiện broadcast
-        broadcast(new ListUpdated($updatedList))->toOthers();
+        // Lấy lại thông tin sau khi cập nhật
+        $list->refresh();
+
+        // Gửi sự kiện broadcast đến các client khác
+        broadcast(new ListUpdated($list))->toOthers();
 
         // Trả về kết quả sau khi cập nhật thành công
-        return response()->json($updatedList);
+        return response()->json(['updatedList' => $list]);
     }
 
     public function updatePositionCard(Request $request, $cardId)

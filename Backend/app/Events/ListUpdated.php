@@ -3,8 +3,7 @@
 namespace App\Events;
 
 use App\Models\ListBoard;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -12,13 +11,19 @@ use Illuminate\Support\Facades\Log;
 
 class ListUpdated implements ShouldBroadcastNow
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable, SerializesModels;
 
     public $list;
 
     public function __construct(ListBoard $list)
     {
         $this->list = $list;
+        Log::info('ListUpdated event created', [
+            'list_id'  => $list->id,
+            'board_id' => $list->board_id,
+            'title'    => $list->name,
+            'position' => (int)$list->position,
+        ]);
     }
 
     /**
@@ -28,8 +33,8 @@ class ListUpdated implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        // Thay đổi từ Channel sang PrivateChannel
-        return new PrivateChannel('board.' . $this->list->board_id);
+        // Sử dụng Channel để broadcast công khai (bất kỳ ai cũng có thể nhận sự kiện)
+        return new Channel('board.' . $this->list->board_id);
     }
 
     /**
@@ -54,7 +59,7 @@ class ListUpdated implements ShouldBroadcastNow
                 'id'       => $this->list->id,
                 'boardId'  => $this->list->board_id,
                 'title'    => $this->list->name,
-                'position' => (int) $this->list->position,
+                'position' => (int)$this->list->position,
             ]
         ];
 

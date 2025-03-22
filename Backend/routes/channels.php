@@ -18,15 +18,9 @@ use App\Models\ListBoard;
 */
 
 
-// Channel cho các sự kiện liên quan đến Board
 Broadcast::channel('board.{boardId}', function ($user, $boardId) {
-    return Board::find($boardId) !== null; // Kiểm tra xem Board có tồn tại không
+    return true;
 });
-
-Broadcast::channel('board.{boardId}', function ($user, $boardId) {
-    return $user->boards->contains('id', $boardId);
-});
-
 // Broadcast::channel('workspace-invite-{workspaceId}', function ($user, $workspaceId) {
 //     return $user->isMemberOfWorkspace($workspaceId);
 // });
@@ -44,4 +38,3 @@ Broadcast::channel('checklist-item.{checklistItemId}', function ($checklistItemI
     // Vì đây là public channel, ai cũng có thể đăng ký
     return true;
 });
-

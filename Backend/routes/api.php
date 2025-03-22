@@ -114,7 +114,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Funtion kéo thả column
     Route::controller(DragDropController::class)->group(function () {
-        Route::put('/lists/{boardId}', action: 'updatePositionList');
+        Route::put('/lists/{listId}', action: 'updatePositionList');
         Route::put('/cards/{cardId}', action: 'updatePositionCard');
     });
 });
