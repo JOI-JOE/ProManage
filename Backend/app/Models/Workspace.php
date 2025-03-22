@@ -68,7 +68,6 @@ class Workspace extends Model
         return $this->belongsTo(User::class, 'id_member_creator');
     }
 
-    /// git sửa 
     public function boards()
     {
         return $this->hasMany(Board::class, 'workspace_id');
