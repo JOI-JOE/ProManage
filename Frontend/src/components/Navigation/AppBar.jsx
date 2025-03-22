@@ -8,8 +8,6 @@ import {
   Popover,
   IconButton,
   Switch,
-  Avatar,
-  Collapse,
   Select,
   FormControl,
   InputLabel,
@@ -38,7 +36,6 @@ import useNotifications from "../../hooks/useNotification";
 import useSearch from "../../hooks/useSearch";
 // import useNotifications from "../../hooks/useNotification";
 import { formatTime } from "../../../utils/dateUtils";
-import useSearch from "../../hooks/useSearch";
 
 
 const AppBar = ({ username, email }) => {
@@ -125,7 +122,7 @@ const AppBar = ({ username, email }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: "secondary.main",
+        backgroundColor: "secondary.main"
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -161,7 +158,6 @@ const AppBar = ({ username, email }) => {
         </Box>
       </Box>
 
-      <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <Box
         sx={{
           display: "flex",
@@ -170,7 +166,7 @@ const AppBar = ({ username, email }) => {
           marginLeft: "auto",
         }}
       >
-        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <TextField
         autoComplete="off"
         id="outlined-search"
@@ -204,10 +200,10 @@ const AppBar = ({ username, email }) => {
         }}
       />
 
-      {isLoading && <CircularProgress size={24} sx={{ color: 'white', marginTop: '10px' }} />}
-      {error && <p style={{ color: 'red' }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>}
+      {isLoadingSearch && <CircularProgress size={24} sx={{ color: 'white', marginTop: '10px' }} />}
+      {errorSearch && <p style={{ color: 'red' }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>}
 
-      {searchText && !isLoading && !error && searchResults && (
+      {searchText && !isLoadingSearch && !errorSearch && searchResults && (
         <Box sx={{ width: '100%', paddingTop: '20px', backgroundColor: '#2e2e2e', borderRadius: '10px', padding: '10px' }}>
           <h3 style={{ color: 'white' }}>Kết quả tìm kiếm:</h3>
 
