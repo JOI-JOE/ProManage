@@ -40,11 +40,13 @@ const style = {
 };
 
 const BoardBar = () => {
+  
   const { boardId } = useParams();
   const { board, isLoading, error } = useContext(BoardContext);
   const { data: boardMembers } = useGetBoardMembers(boardId);
   const { data: user } = useUser();
   useMemberJoinedListener(user?.id)
+
 
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
   const handleFilterDialogOpen = () => setOpenFilterDialog(true);

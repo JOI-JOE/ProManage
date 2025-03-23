@@ -11,7 +11,10 @@ const Home = () => {
     { type: "image", src: "/img/sl1.webp" },
     { type: "image", src: "/img/pro manage.webp" },
     { type: "image", src: "/img/hi.webp" },
-  ];
+  ];  
+  console.log(user);
+  const token = localStorage.getItem("token");
+  console.log(token);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -19,6 +22,7 @@ const Home = () => {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+  console.log( user);
 
   // if (loading) {
   //   return (
