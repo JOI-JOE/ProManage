@@ -25,6 +25,12 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   const currentBoardId = boardId;
   const navigate = useNavigate();
 
+  console.log(currentUser);
+
+  console.log('Current board:',boardMembers);
+
+  
+
   // Hooks
   const { mutate: generateLink } = useGenerateInviteLink();
   const { mutate: updateRoleMemberInBoard } = useUpdateRoleMemberInBoards();
@@ -127,6 +133,7 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
 
   // Kiểm tra số lượng admin
   const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
+  console.log(adminCount);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -171,7 +178,12 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
 
         {boardMembers?.data?.map((member) => {
           const isCurrentUser = currentUser?.id === member.id;
+          // console.log(currentUser?.id)
+
           const currentUserBoard = currentUser?.boardMember?.find((board) => board.board_id === currentBoardId);
+
+          // console.log("currentUser boardMember:", currentUser?.boardMember);
+
           const isAdmin = currentUserBoard?.role === "admin";
           const canEdit = isAdmin;
           const isSelectedAdmin = member?.pivot.role === "admin";

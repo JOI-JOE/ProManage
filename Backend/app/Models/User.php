@@ -131,6 +131,11 @@ class User extends Authenticatable
             ->wherePivot('role', 'member');
     }
 
+    public function boardMember()
+    {
+        return $this->hasMany(BoardMember::class, 'user_id', 'id');
+    }
+
     // / Quan hệ với Workspaces chính thức (User là member)
     public function workspaces()
     {

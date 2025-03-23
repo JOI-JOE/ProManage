@@ -119,6 +119,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/lists/{listId}', action: 'updatePositionList');
         Route::put('/cards/{cardId}', action: 'updatePositionCard');
     });
+
+    // list board
+    Route::get('lists/{boardId}', [ListController::class, 'index']);
+
+    Route::get('/search', [SearchController::class, 'search']);
 });
 
 
@@ -126,7 +131,6 @@ Route::get('/color', [ColorController::class, 'index']);
 Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
 
 Route::prefix('lists')->group(function () {
-    Route::get('/{boardId}', [ListController::class, 'index']);
     Route::post('/', [ListController::class, 'store']);
     Route::delete('{id}/destroy', [ListController::class, 'destroy']);
     Route::get('/{boardId}/listClosed', [ListController::class, 'getListClosed']);
