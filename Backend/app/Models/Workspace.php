@@ -70,7 +70,7 @@ class Workspace extends Model
 
     public function boards()
     {
-        return $this->hasMany(Board::class,'workspace_id');
+        return $this->hasMany(Board::class, 'workspace_id');
     }
     public function markedBoards()
     {

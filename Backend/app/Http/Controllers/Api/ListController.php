@@ -4,16 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\ListCreated;
 use App\Http\Requests\ListUpdateNameRequest;
-use App\Jobs\BroadcastListCreated;
 use App\Models\Board;
 use App\Models\ListBoard;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use Pusher\Pusher;
 
 class ListController extends Controller
 {
