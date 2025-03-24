@@ -296,10 +296,10 @@ const C_ard = ({ card }) => {
                 sx={{
                   display: "flex",
                   gap: "4px",
-                  zIndex: 1, // Ensure avatar is on top
-                  marginLeft: "auto", // Push avatars to the right
-                  flexWrap: "wrap", // Allow avatars to wrap to a new line
-                  justifyContent: "flex-end", // Align avatars to the right
+                  zIndex: 1,
+                  marginLeft: "auto",
+                  flexWrap: "wrap",
+                  justifyContent: "flex-end",
                 }}
               >
                 {members?.data?.map((member, index) => (
