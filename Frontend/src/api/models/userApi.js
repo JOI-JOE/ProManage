@@ -13,73 +13,33 @@ const fetchUserDataWithParams = async (params, userId = "me") => {
   }
 };
 
-export const fetchUserProfile = () =>
+export const fetchUserInfoWithWorkspaces = () =>
   fetchUserDataWithParams({
-    fields: "id,user_name,full_name,email,image",
+    fields: "id,user_name,full_name,email,image,workspace_id,board_id",
     workspaces: "all",
     workspace_fields: "id,name,display_name",
   });
 
-export const fetchUserDashboardData = () =>
+export const fetchUserDashboardOverview = () =>
   fetchUserDataWithParams({
     boards: "open,starred",
     board_fields: "id,name",
     board_memberships: "me",
-    boardStars: "true", // 🔥 Fix tham số từ "board_stars" thành "boardStars" đúng với backend
+    boardStars: "true",
     workspaces: "all",
     workspace_fields: "id,name,display_name",
   });
 
-// Để làm gì -> Lấy danh sách Boards và nhóm theo Workspaces
-// Nơi dùng  -> Hiển thị danh sách bảng trong từng Workspace để so sách
-export const fetchUserBoardsWithWorkspaces = async (userId) => {
+export const fetUserBoardStar = (userId) => {
   return fetchUserDataWithParams(
     {
       fields: "id",
-      boards: "open,starred",
-      board_fields: "id,name,closed,workspace_id",
-      board_workspace: "true",
-      board_workspace_fields: "id,name,display_name",
-      workspaces: "all",
-      workspace_fields: "id,display_name,name",
+      boards: "all",
+      board_fields: "id,closed",
+      boardStars: "true",
     },
     userId
   );
-};
-
-// Để làm gì -> Lấy danh sách Workspaces của người dùng
-// Nơi dùng ->	Sidebar và mục "Các Không Gian Làm Việc Của Bạn"
-export const fetchUserWorkspaces = async () => {
-  try {
-    const params = {
-      workspaces: "all",
-      workspace_fields: "id,name,display_name",
-    };
-    const response = await authClient.get("/member/me", { params });
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách Workspaces:", error);
-    throw error;
-  }
-};
-
-// Để làm gì -> Lấy danh sách Boards không nhóm theo Workspaces
-// Nơi dùng -> Hiển thị các bảng đã đánh dấu sao hoặc đã xem gần đây
-export const fetchUserBoards = async () => {
-  try {
-    const params = {
-      fields: "id",
-      boards: "open,starred",
-      board_fields: "id,name,closed,is_marked",
-      boardStars: "true",
-      board_memberships: "me",
-    };
-    const response = await authClient.get("/member/me", { params });
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách Boards:", error);
-    throw error;
-  }
 };
 
 // END

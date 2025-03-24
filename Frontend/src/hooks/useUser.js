@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import {
-  fetchUserBoardsWithWorkspaces,
-  fetchUserDashboardData,
-  fetchUserProfile,
+  // fetchUserBoardsWithWorkspaces,
+  fetchUserDashboardOverview,
+  fetchUserInfoWithWorkspaces,
+  fetUserBoardStar,
   forgotPassword,
   getUser,
   userRegister,
@@ -11,40 +12,75 @@ import {
 import { loginUser } from "../api/models/userApi";
 import { logoutUser } from "../api/models/userApi";
 
-export const useUserData = () => {
+export const useUserOverviewData = () => {
   const {
-    data: userProfile,
-    isLoading: loadingProfile,
-    error: errorProfile,
+    data: userInfo,
+    isLoading: isLoadingUserInfo,
+    error: errorUserInfo,
   } = useQuery({
-    queryKey: ["userProfile"],
-    queryFn: fetchUserProfile,
+    queryKey: ["userInfo"], // Tạo query key để lưu cache
+    queryFn: fetchUserInfoWithWorkspaces, // API call để lấy thông tin user
+    onError: (error) => {
+      console.error("Error loading user data:", error); // In lỗi nếu có
+    },
   });
 
   const {
     data: userDashboard,
-    isLoading: loadingDashboard,
+    isLoading: isLoadingDashboard,
     error: errorDashboard,
   } = useQuery({
-    queryKey: ["userDashboard"],
-    queryFn: fetchUserDashboardData,
+    queryKey: ["userDashboard"], // Tạo query key để lưu cache cho dashboard
+    queryFn: fetchUserDashboardOverview, // API call để lấy thông tin user dashboard
+    onError: (error) => {
+      console.error("Error loading user dashboard data:", error); // In lỗi nếu có
+    },
   });
 
+  // Tính toán trạng thái loading tổng thể
+  const isLoading = isLoadingUserInfo || isLoadingDashboard;
+
   return {
-    userProfile,
+    userInfo,
     userDashboard,
-    isLoading: loadingProfile || loadingDashboard,
-    error: errorProfile || errorDashboard,
+    isLoading,
+    error: errorUserInfo || errorDashboard, // Lỗi từ userInfo hoặc dashboard
   };
 };
 
-export const useFetchUserBoardsWithWorkspaces = (userId) => {
-  return useQuery({
-    queryKey: ["userBoardsWithWorkspaces", userId], // Cache theo từng userId
-    queryFn: () => fetchUserBoardsWithWorkspaces(userId), // Gọi API
-    enabled: !!userId, // Chỉ fetch khi có userId hợp lệ
-  });
+export const useUserBoardStar = (userId) => {
+  const [loading, setLoading] = useState(true); // Trạng thái loading
+  const [error, setError] = useState(null); // Trạng thái lỗi
+  const [boardStars, setBoardStars] = useState([]); // Lưu trữ kết quả trả về từ API
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null); // Reset error khi bắt đầu lại gọi API
+
+      try {
+        const data = await fetUserBoardStar(userId); // Sử dụng hàm fetUserBoardStar để lấy dữ liệu
+        setBoardStars(data); // Lưu kết quả vào state
+      } catch (err) {
+        setError("Lỗi khi lấy dữ liệu board stars"); // Cập nhật lỗi nếu có
+      } finally {
+        setLoading(false); // Dừng trạng thái loading khi API đã gọi xong
+      }
+    };
+
+    fetchData();
+  }, [userId]); // Chạy lại nếu userId thay đổi
+
+  return { loading, error, boardStars };
 };
+
+// export const useFetchUserBoardsWithWorkspaces = (userId) => {
+//   return useQuery({
+//     queryKey: ["userBoardsWithWorkspaces", userId], // Cache theo từng userId
+//     queryFn: () => fetchUserBoardsWithWorkspaces(userId), // Gọi API
+//     enabled: !!userId, // Chỉ fetch khi có userId hợp lệ
+//   });
+// };
 
 export const useUser = () => {
   return useQuery({

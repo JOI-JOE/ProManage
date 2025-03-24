@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo } from "react";
-import { useUserData } from "../hooks/useUser";
+import { useUserOverviewData } from "../hooks/useUser";
 
 // Tạo Context với giá trị mặc định
 const MeContext = createContext({
@@ -14,7 +14,7 @@ const MeContext = createContext({
 export const useMe = () => useContext(MeContext);
 
 export const MeProvider = ({ children }) => {
-    const { userProfile, userDashboard, isLoading, error } = useUserData();
+    const { userProfile, userDashboard, isLoading, error } = useUserOverviewData();
     const user = userProfile?.user;
 
     // Tối ưu hóa giá trị context bằng useMemo

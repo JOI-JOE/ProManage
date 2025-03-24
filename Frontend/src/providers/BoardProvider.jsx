@@ -19,7 +19,6 @@ const BoardProvider = ({ children }) => {
       if (error) setError(error);
       else setLists(data);
     };
-
     fetchLists();
   }, [boardId]);
 

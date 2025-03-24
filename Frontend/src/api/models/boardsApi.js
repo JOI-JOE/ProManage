@@ -129,7 +129,9 @@ export const updateBoardVisibility = async (boardId, visibility) => {
   }
 
   try {
-    const response = await authClient.patch(`/boards/${boardId}/visibility`, { visibility });
+    const response = await authClient.patch(`/boards/${boardId}/visibility`, {
+      visibility,
+    });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật visibility của bảng:", error);
@@ -156,11 +158,3 @@ export const getBoardClosed = async () => {
     throw error;
   }
 };
-
-
-
-
-
-
-
-

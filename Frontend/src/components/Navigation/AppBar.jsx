@@ -40,7 +40,7 @@ import { useMe } from "../../contexts/MeContext";
 
 const AppBar = ({ username, email }) => {
   // const { data: user } = useUser();
-  const { user } = useMe();
+  const { user, } = useMe();
   const userId = user?.id;
   const { notifications } = useNotifications(userId);
 

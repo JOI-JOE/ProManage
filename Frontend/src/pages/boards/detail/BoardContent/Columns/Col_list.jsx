@@ -4,8 +4,8 @@ import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortabl
 import Col from "./Col";
 import Col_new from "./Col_new";
 import { useCreateList } from "../../../../../hooks/useList";
-import { optimisticIdManager } from "../../../../../hooks/optimistic/optimisticIdManager";
 import { SPACING } from "../../../../../../utils/position.constant";
+import { optimisticIdManager } from "../../../../../../utils/optimisticIdManager";
 
 const Col_list = ({ columns = [], boardId }) => {
     const [openColumn, setOpenColumn] = useState(false);

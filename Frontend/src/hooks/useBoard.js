@@ -12,14 +12,40 @@ import {
   toggleBoardClosed,
   toggleBoardMarked,
   updateBoardName,
-  updateBoardVisibility
+  updateBoardVisibility,
 } from "../api/models/boardsApi";
 import { useCallback } from "react";
+import { fetUserBoardStar } from "../api/models/userApi";
+import { useDispatch } from "react-redux";
 
 /**
  * Hook useBoard để tạo bảng mới.
  * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
  */
+
+export const useUserBoardStar = () => {
+  const userId = useSelector((state) => state.user.user?.id); // Truy xuất userId từ Redux store
+  const dispatch = useDispatch();
+
+  return useQuery(
+    ["userBoardStar", userId], // query key sẽ bao gồm userId để cache riêng biệt cho từng user
+    () => fetUserBoardStar(userId), // Gọi API với userId
+    {
+      enabled: !!userId, // Chỉ gọi API nếu có userId
+      onError: (error) => {
+        console.error("Error fetching user board stars:", error);
+      },
+      onSuccess: (data) => {
+        // Lưu kết quả vào Redux khi API trả về thành công
+        dispatch(setStarredBoards(data));
+        console.log("Fetched user board stars:", data);
+      },
+      cacheTime: 1000 * 60 * 10, // Cấu hình cache cho dữ liệu
+      staleTime: 1000 * 60 * 5, // Dữ liệu sẽ được coi là tươi trong 5 phút
+    }
+  );
+};
+
 export const useCreateBoard = () => {
   const queryClient = useQueryClient();
 
@@ -216,7 +242,8 @@ export const useUpdateBoardVisibility = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ boardId, visibility }) => updateBoardVisibility(boardId, visibility),
+    mutationFn: ({ boardId, visibility }) =>
+      updateBoardVisibility(boardId, visibility),
     onSuccess: (data, { boardId }) => {
       // Optionally invalidate queries to ensure data is fresh
       queryClient.invalidateQueries(["boards", boardId]); // Refresh board data
@@ -240,7 +267,6 @@ export const useToggleBoardClosed = () => {
       // Cập nhật lại cache cho danh sách board
       queryClient.invalidateQueries(["boards"]);
       // queryClient.invalidateQueries(["board", boardId]);
-
     },
 
     // Xử lý khi có lỗi
@@ -250,9 +276,7 @@ export const useToggleBoardClosed = () => {
   });
 };
 
-
 export const useClosedBoards = () => {
-
   return useQuery({
     queryKey: ["closedBoards"], // Key riêng cho danh sách board đã đóng
     queryFn: getBoardClosed, // Gọi API lấy danh sách bảng đã đóng
@@ -262,10 +286,3 @@ export const useClosedBoards = () => {
     },
   });
 };
-
-
-
-
-
-
-

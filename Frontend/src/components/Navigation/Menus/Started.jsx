@@ -13,7 +13,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
-import { useMe } from "../../../contexts/MeContext";
+import { useSelector } from "react-redux";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -40,7 +40,15 @@ const StyledMenu = styled((props) => (
 }));
 
 const Started = () => {
-  const { userDashboard, isLoading, isError } = useMe();
+  const starredBoards = useSelector((state) => state.starredBoards.starredBoards);
+  const boards = useSelector((state) => state.boards.boards)
+
+  const starredBoardDetails = boards
+    .filter((board) =>
+      starredBoards.some((starredBoard) => starredBoard.board_id === board.id)
+    )
+    .sort((a, b) => a.position - b.position); // Sắp xếp theo position
+
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
@@ -51,23 +59,6 @@ const Started = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
-
-  const boardStars = userDashboard?.boardStars || [];
-
-  // Lấy danh sách boards, chuyển thành object { id: { name, ... } }
-  const boardsMap = (userDashboard?.boards || []).reduce((acc, board) => {
-    acc[board.id] = board; // Map id của board để dễ tìm kiếm
-    return acc;
-  }, {});
-
-  // Kết hợp boardStars với thông tin của board
-  const starredBoards = boardStars.map((star) => ({
-    ...star,
-    name: boardsMap[star.board_id]?.name || "Không xác định", // Dùng board_id để lấy thông tin
-    thumbnail: boardsMap[star.board_id]?.thumbnail || "", // Hình ảnh nếu có
-  }));
-
-  console.log(starredBoards);
 
   return (
     <Box>
@@ -92,21 +83,14 @@ const Started = () => {
         open={open}
         onClose={handleClose}
       >
-        {isLoading ? (
-          <MenuItem disabled>
-            <CircularProgress size={20} />
-            <Typography ml={1}>Đang tải...</Typography>
-          </MenuItem>
-        ) : isError ? (
-          <MenuItem disabled>Lỗi khi tải dữ liệu</MenuItem>
-        ) : starredBoards.length === 0 ? (
+        {starredBoardDetails.length === 0 ? (
           <MenuItem disabled>Không có bảng nào</MenuItem>
         ) : (
-          starredBoards.map((board) => (
+          starredBoardDetails.map((board) => (
             <MenuItem
               component={Link}
-              to={`/b/${board.idBoard}/${board.name}`}
-              key={board.id}
+              to={`/b/${board.id}/${board.name}`} // Sửa lại đường dẫn
+              key={board.id} // Sử dụng idBoard làm key duy nhất
               onClick={handleClose}
               sx={{
                 display: "flex",
@@ -131,10 +115,7 @@ const Started = () => {
                         : `url(${board.thumbnail}) center/cover no-repeat`
                       : "#1693E1",
                   }}
-                >
-                  {!board.thumbnail && board.name.charAt(0).toUpperCase()}
-                </Avatar>
-
+                />
                 <Box>
                   <Typography variant="body1" fontWeight={500}>
                     {board.name}

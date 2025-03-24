@@ -13,7 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import echoInstance from "./realtime/useRealtime";
-import { optimisticIdManager } from "./optimistic/optimisticIdManager";
+import { optimisticIdManager } from "../../utils/optimisticIdManager";
 
 // export const useLists = (boardId) => {
 //   const queryClient = useQueryClient();
@@ -221,7 +221,6 @@ export const useCreateList = (boardId) => {
       // console.log(newList);
       return await createListAPI(newList); // Gọi API để tạo danh sách
     },
-
     onMutate: async (newList) => {
       await queryClient.cancelQueries({ queryKey: ["lists", boardId] });
 

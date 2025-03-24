@@ -9,7 +9,7 @@ import { Box, SvgIcon } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useMe } from "../../../contexts/MeContext";
 import { useGetInvitationSecretByReferrer } from "../../../hooks/useWorkspaceInvite";
-import { useFetchUserBoardsWithWorkspaces } from "../../../hooks/useUser";
+// import { useFetchUserBoardsWithWorkspaces } from "../../../hooks/useUser";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -48,7 +48,7 @@ const AcceptTeam = () => {
         { enabled: !!invitation?.workspaceId && !!invitation?.inviteToken }
     );
 
-    const { data: userWorkspaces, isLoading: isLoadingUser } = useFetchUserBoardsWithWorkspaces(idMember);
+    // const { data: userWorkspaces, isLoading: isLoadingUser } = useFetchUserBoardsWithWorkspaces(idMember);
     useEffect(() => {
         if (!idMember || !inviteData) return;
 
