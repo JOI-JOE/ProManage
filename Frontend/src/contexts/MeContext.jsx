@@ -1,20 +1,36 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import { useUserData } from "../hooks/useUser";
 
-// Tạo Context
-const MeContext = createContext({ user: null, userProfile: null, userDashboard: null });
+// Tạo Context với giá trị mặc định
+const MeContext = createContext({
+    user: null,
+    userProfile: null,
+    userDashboard: null,
+    isLoading: true,
+    error: null,
+});
 
 // Hook custom để dễ dàng sử dụng context
 export const useMe = () => useContext(MeContext);
 
-// Provider chính
 export const MeProvider = ({ children }) => {
-
     const { userProfile, userDashboard, isLoading, error } = useUserData();
-    const user = userProfile?.user
-    const workspace = userDashboard
+    const user = userProfile?.user;
+
+    // Tối ưu hóa giá trị context bằng useMemo
+    const contextValue = useMemo(
+        () => ({
+            user,
+            userProfile,
+            userDashboard,
+            isLoading,
+            error,
+        }),
+        [user, userProfile, userDashboard, isLoading, error]
+    );
+
     return (
-        <MeContext.Provider value={{ user, userProfile, userDashboard }}>
+        <MeContext.Provider value={contextValue}>
             {children}
         </MeContext.Provider>
     );

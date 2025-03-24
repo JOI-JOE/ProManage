@@ -7,6 +7,7 @@ import InvalidInvitation from "./handle/InvalidInvitation";
 import loadingLogo from "~/assets/loading.svg?react";
 import { Box, SvgIcon } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useMe } from "../../../contexts/MeContext";
 import { useGetInvitationSecretByReferrer } from "../../../hooks/useWorkspaceInvite";
 import { useFetchUserBoardsWithWorkspaces } from "../../../hooks/useUser";
 
@@ -14,6 +15,7 @@ const isAuthenticated = () => !!localStorage.getItem("token");
 
 const AcceptTeam = () => {
     const navigate = useNavigate();
+    const { user } = useMe
     const [invitation, setInvitation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [idMember, setIdMember] = useState(null);

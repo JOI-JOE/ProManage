@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Typography, Container, Paper, Button } from "@mui/material";
-// import { useUser, loading, error } from "../contexts/userContext";
 import { useMe } from "../contexts/MeContext";
 
 const Home = () => {
@@ -11,18 +10,18 @@ const Home = () => {
     { type: "image", src: "/img/sl1.webp" },
     { type: "image", src: "/img/pro manage.webp" },
     { type: "image", src: "/img/hi.webp" },
-  ];  
-  console.log(user);
-  const token = localStorage.getItem("token");
-  console.log(token);
+  ];
+  // // console.log(user);
+  // // const token = localStorage.getItem("token");
+  // // console.log(token);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-  console.log( user);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
+  //   }, 3000);
+  //   return () => clearInterval(interval);
+  // }, []);
+  // console.log(user);
 
   // if (loading) {
   //   return (

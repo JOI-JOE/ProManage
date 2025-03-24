@@ -2,8 +2,6 @@ import {
   Avatar,
   Box,
   CircularProgress,
-  ListItemIcon,
-  ListItemText,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
@@ -11,17 +9,11 @@ import { styled } from "@mui/material/styles";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import EditIcon from "@mui/icons-material/Edit";
-import Divider from "@mui/material/Divider";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import FileCopyIcon from "@mui/icons-material/FileCopy";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { useBoardMarked } from "../../../hooks/useBoard";
-
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { useMe } from "../../../contexts/MeContext";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -44,35 +36,38 @@ const StyledMenu = styled((props) => (
     color: "rgb(55, 65, 81)",
     boxShadow:
       "rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px",
-    "& .MuiMenu-list": {
-      padding: "4px 0",
-    },
-    "& .MuiMenuItem-root": {
-      "& .MuiSvgIcon-root": {
-        fontSize: 18,
-        color: "#000",
-        marginRight: theme.spacing(1.5),
-      },
-      "&:active": {},
-    },
-    ...theme.applyStyles("dark", {
-      color: theme.palette.grey[300],
-    }),
   },
 }));
 
 const Started = () => {
+  const { userDashboard, isLoading, isError } = useMe();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleClose = () => {
     setAnchorEl(null);
   };
 
-  const { data: boardsMarked, isLoading, isError } = useBoardMarked();
-  const boardList = boardsMarked?.data || []; // Lấy danh sách mảng từ `data`
+  const boardStars = userDashboard?.boardStars || [];
+
+  // Lấy danh sách boards, chuyển thành object { id: { name, ... } }
+  const boardsMap = (userDashboard?.boards || []).reduce((acc, board) => {
+    acc[board.id] = board; // Map id của board để dễ tìm kiếm
+    return acc;
+  }, {});
+
+  // Kết hợp boardStars với thông tin của board
+  const starredBoards = boardStars.map((star) => ({
+    ...star,
+    name: boardsMap[star.board_id]?.name || "Không xác định", // Dùng board_id để lấy thông tin
+    thumbnail: boardsMap[star.board_id]?.thumbnail || "", // Hình ảnh nếu có
+  }));
+
+  console.log(starredBoards);
 
   return (
     <Box>
@@ -81,7 +76,6 @@ const Started = () => {
         aria-controls={open ? "demo-customized-menu" : undefined}
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
-        // variant="contained"
         disableElevation
         onClick={handleClick}
         endIcon={<KeyboardArrowDownIcon />}
@@ -105,13 +99,13 @@ const Started = () => {
           </MenuItem>
         ) : isError ? (
           <MenuItem disabled>Lỗi khi tải dữ liệu</MenuItem>
-        ) : boardList.length === 0 ? (
+        ) : starredBoards.length === 0 ? (
           <MenuItem disabled>Không có bảng nào</MenuItem>
         ) : (
-          boardList.map((board) => (
+          starredBoards.map((board) => (
             <MenuItem
               component={Link}
-              to={`/b/${board.id}/${board.name}`}
+              to={`/b/${board.idBoard}/${board.name}`}
               key={board.id}
               onClick={handleClose}
               sx={{
@@ -145,14 +139,8 @@ const Started = () => {
                   <Typography variant="body1" fontWeight={500}>
                     {board.name}
                   </Typography>
-                  <Typography variant="body2" color="gray">
-                    {board.workspace.display_name}
-                  </Typography>
                 </Box>
               </Box>
-
-              {/* Khoảng trống ở giữa */}
-              <Box flexGrow={1} />
 
               {/* Bên phải: Icon ngôi sao */}
               <FontAwesomeIcon

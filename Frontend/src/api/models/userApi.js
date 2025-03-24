@@ -2,13 +2,10 @@ import authClient from "../authClient";
 
 // Phần để tối ưu gọi api
 
-// dữ liệu chính
 const fetchUserDataWithParams = async (params, userId = "me") => {
   try {
     const queryParams = new URLSearchParams(params);
-    const response = await authClient.get(
-      `/member/${userId}?${queryParams.toString()}`
-    );
+    const response = await authClient.get(`/member/${userId}?${queryParams}`);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy dữ liệu người dùng:", error);
@@ -16,24 +13,22 @@ const fetchUserDataWithParams = async (params, userId = "me") => {
   }
 };
 
-export const fetchUserProfile = () => {
-  return fetchUserDataWithParams({
+export const fetchUserProfile = () =>
+  fetchUserDataWithParams({
     fields: "id,user_name,full_name,email,image",
     workspaces: "all",
     workspace_fields: "id,name,display_name",
   });
-};
 
-export const fetchUserDashboardData = () => {
-  return fetchUserDataWithParams({
-    // fields: "id,user_name,full_name,email,image,url",
+export const fetchUserDashboardData = () =>
+  fetchUserDataWithParams({
     boards: "open,starred",
+    board_fields: "id,name",
     board_memberships: "me",
-    board_stars: "true",
+    boardStars: "true", // 🔥 Fix tham số từ "board_stars" thành "boardStars" đúng với backend
     workspaces: "all",
     workspace_fields: "id,name,display_name",
   });
-};
 
 // Để làm gì -> Lấy danh sách Boards và nhóm theo Workspaces
 // Nơi dùng  -> Hiển thị danh sách bảng trong từng Workspace để so sách

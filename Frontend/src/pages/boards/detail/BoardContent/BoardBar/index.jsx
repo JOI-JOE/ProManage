@@ -24,7 +24,7 @@ import BoardContext from "../../../../../contexts/BoardContext";
 import { useGetBoardMembers, useMemberJoinedListener } from "../../../../../hooks/useInviteBoard";
 import { useParams } from "react-router-dom";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
-import { useUser } from "../../../../../hooks/useUser";
+import { useMe } from "../../../../../contexts/MeContext";
 
 const style = {
   border: "none",
@@ -40,11 +40,12 @@ const style = {
 };
 
 const BoardBar = () => {
-  
+
   const { boardId } = useParams();
   const { board, isLoading, error } = useContext(BoardContext);
   const { data: boardMembers } = useGetBoardMembers(boardId);
-  const { data: user } = useUser();
+  // const { data: user } = useUser();
+  const { data: user } = useMe();
   useMemberJoinedListener(user?.id)
 
 
