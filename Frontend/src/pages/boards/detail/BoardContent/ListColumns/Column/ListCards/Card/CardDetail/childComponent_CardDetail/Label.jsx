@@ -345,7 +345,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                     </IconButton>
                   </Box>
                 }
-                // sx={{ width: "100%" }}
+              // sx={{ width: "100%" }}
               />
               <IconButton
                 size="small"

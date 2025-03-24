@@ -82,9 +82,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-
-
-    protected $appends = ['similarity']; // Thêm trường similarity vào output JSON
+    // protected $appends = ['similarity']; // Thêm trường similarity vào output JSON
 
     public function getSimilarityAttribute()
     {
@@ -106,22 +104,20 @@ class User extends Authenticatable
     // {
     //     return $this->hasMany(Workspace::class, 'id_member_creator');
     // }
-    
+
     public function boards()
     {
         return $this->hasMany(Board::class, 'created_by');
     }
-
     public function workspaceMember()
     {
         return $this->hasMany(WorkspaceMembers::class, 'user_id', 'id');
     }
 
-    public function boardMember()
+    public function boardMembers()
     {
         return $this->hasMany(BoardMember::class, 'user_id', 'id');
     }
-
 
     public function comments()
     {
@@ -131,17 +127,22 @@ class User extends Authenticatable
     public function boardsMember()
     {
         return $this->belongsToMany(Board::class, 'board_members', 'user_id', 'board_id')
-        ->withPivot('role')
-        ->wherePivot('role', 'member');
+            ->withPivot('role')
+            ->wherePivot('role', 'member');
     }
 
-     // / Quan hệ với Workspaces chính thức (User là member)
-     public function workspaces()
-     {
-         return $this->belongsToMany(Workspace::class, 'workspace_members', 'user_id', 'workspace_id')
-             ->withPivot('member_type'); // Nếu có cột role
-     }
- 
+    public function boardMember()
+    {
+        return $this->hasMany(BoardMember::class, 'user_id', 'id');
+    }
+
+    // / Quan hệ với Workspaces chính thức (User là member)
+    public function workspaces()
+    {
+        return $this->belongsToMany(Workspace::class, 'workspace_members', 'user_id', 'workspace_id')
+            ->withPivot('member_type'); // Nếu có cột role
+    }
+
 
     // Quan hệ để lấy Guest Workspaces
     //    / Trong User.php
@@ -170,6 +171,4 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(ChecklistItem::class, 'checklist_item_user', 'user_id', 'checklist_item_id');
     }
-
-
 }

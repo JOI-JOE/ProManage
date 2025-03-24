@@ -14,8 +14,6 @@ export const useLabels = (boardId) => {
 
     useEffect(() => {
         if (!boardId) return;
-
-
         const channel = echoInstance.channel(`board.${boardId}`);
         // console.log(`📡 Đang lắng nghe kênh: board.${boardId}`);
 

@@ -40,11 +40,13 @@ const style = {
 };
 
 const BoardBar = () => {
+  
   const { boardId } = useParams();
   const { board, isLoading, error } = useContext(BoardContext);
   const { data: boardMembers } = useGetBoardMembers(boardId);
   const { data: user } = useUser();
   useMemberJoinedListener(user?.id)
+
 
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
   const handleFilterDialogOpen = () => setOpenFilterDialog(true);
@@ -141,6 +143,8 @@ const BoardBar = () => {
   if (isLoading) return <p>Loading board...</p>;
   if (error) return <p>Board not found</p>;
 
+  const boardVisibility = board?.visibility || "test"; // Default to "Private"
+
   return (
     <Box
       sx={{
@@ -186,12 +190,13 @@ const BoardBar = () => {
         {/* <StarButton isStarred={isStarred} onStarClick={handleStarClick} /> */}
         <Chip
           icon={<LockOpenIcon />}
-          label="Khả năng xem"
+          label={`Khả năng xem: ${boardVisibility}`} // Display the visibility status
           variant="outlined"
           clickable
           sx={style}
           onClick={handleViewPermissionsDialogOpen}
         />
+
         <Chip
           icon={<BoltIcon />}
           label="Tự động hóa"

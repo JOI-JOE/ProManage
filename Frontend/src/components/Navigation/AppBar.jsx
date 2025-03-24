@@ -8,6 +8,12 @@ import {
   Popover,
   IconButton,
   Switch,
+  Select,
+  FormControl,
+  InputLabel,
+  Menu,
+  MenuItem,
+  CircularProgress,
   Avatar,
   Collapse,
 } from "@mui/material";
@@ -20,17 +26,26 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import Profile from "./Menus/Profiles";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Workspace from "./Menus/Workspace";
 import Recent from "./Menus/Recent";
 import Started from "./Menus/Started";
 import Template from "./Menus/Template";
 import { useUser } from "../../hooks/useUser";
 import useNotifications from "../../hooks/useNotification";
+import useSearch from "../../hooks/useSearch";
+// import useNotifications from "../../hooks/useNotification";
 import { formatTime } from "../../../utils/dateUtils";
+
 
 const AppBar = ({ username, email }) => {
   const { data: user } = useUser();
+
+  console.log(user);
+
+  console.log(user?.email);
+
+
   const userId = user?.id;
   const { notifications } = useNotifications(userId);
 
@@ -44,6 +59,29 @@ const AppBar = ({ username, email }) => {
   useEffect(() => {
     setUnreadCount(notifications?.data?.length || 0);
   }, [notifications]);
+
+  const [query, setQuery] = useState('');
+
+  const { searchResults, isLoadingSearch, errorSearch } = useSearch(searchText, userId);
+  const searchRef = useRef(null);
+
+  
+  const handleSearchChange = (e) => {
+    setSearchText(e.target.value);
+  };
+
+  const handleClickOutside = (e) => {
+    // Kiểm tra nếu click ngoài vùng search thì đóng kết quả
+    if (searchRef.current && !searchRef.current.contains(e.target)) {
+      setSearchText("");
+    }
+  };
+  
+  useEffect(() => {
+    // Cập nhật kết quả tìm kiếm khi có thay đổi trong searchText
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
 
   const open = Boolean(anchorEl);
@@ -102,7 +140,7 @@ const AppBar = ({ username, email }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: "secondary.main",
+        backgroundColor: "secondary.main"
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -138,29 +176,134 @@ const AppBar = ({ username, email }) => {
         </Box>
       </Box>
 
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, ml: "auto" }}>
-        <TextField
-          autoComplete="off"
-          label="Search..."
-          size="small"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          InputLabelProps={{ sx: { fontSize: "14px", color: "white" } }}
-          InputProps={{
-            sx: {
-              height: 35,
-              width: 210,
-              backgroundColor: "black",
-              borderRadius: "8px",
-              color: "white",
-              "& .MuiOutlinedInput-notchedOutline": { borderColor: "white" },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "primary.main",
-              },
-              "& .MuiInputBase-input": { fontSize: "13px" },
-            },
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          marginLeft: "auto",
+        }}
+      >
+        {/* Bọc ô tìm kiếm và kết quả trong một box có position: relative */}
+        <Box sx={{ position: "relative", width: "280px" }} ref={searchRef}>
+      <TextField
+        autoComplete="off"
+        id="outlined-search"
+        label="Search..."
+        type="search"
+        size="small"
+        value={searchText}
+        onChange={handleSearchChange}
+        InputLabelProps={{ sx: { fontSize: "14px", color: "white" } }}
+        InputProps={{
+          sx: {
+            height: 40,
+            width: 280,
+            backgroundColor: "#1a1a1a",
+            borderRadius: "30px",
+            color: "white",
+            "& .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+            "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#00C2A0" },
+            "& .MuiInputBase-input": { fontSize: "14px", padding: "8px 12px" },
+          },
+        }}
+      />
+
+      {isLoadingSearch && <CircularProgress size={24} sx={{ color: "white", marginTop: "10px" }} />}
+      {errorSearch && <p style={{ color: "red" }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>}
+
+      {searchText && !isLoadingSearch && !errorSearch && searchResults && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            width: "100%",
+            backgroundColor: "#2e2e2e",
+            borderRadius: "10px",
+            padding: "10px",
+            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.5)",
+            zIndex: 10,
           }}
-        />
+        >
+          <h3 style={{ color: "white" }}>Kết quả tìm kiếm:</h3>
+
+          {Array.isArray(searchResults.boards) && searchResults.boards.length > 0 && (
+            <Box sx={{ marginBottom: "15px" }}>
+              <h4 style={{ color: "#00C2A0" }}>Bảng:</h4>
+              <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                {searchResults.boards.map((board) => (
+                  <li
+                    key={board.id}
+                    style={{
+                      color: "white",
+                      padding: "5px 0",
+                      borderBottom: "1px solid #444",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => setSearchText("")} // Đóng kết quả sau khi chọn
+                  >
+                    {board.name}
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
+
+          {Array.isArray(searchResults.cards) && searchResults.cards.length > 0 && (
+            <Box sx={{ marginBottom: "15px" }}>
+              <h4 style={{ color: "#00C2A0" }}>Thẻ:</h4>
+              <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                {searchResults.cards.map((card) => (
+                  <li
+                    key={card.id}
+                    style={{
+                      color: "white",
+                      padding: "5px 0",
+                      borderBottom: "1px solid #444",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => setSearchText("")}
+                  >
+                    {card.title}
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
+
+          {Array.isArray(searchResults.users) && searchResults.users.length > 0 && (
+            <Box sx={{ marginBottom: "15px" }}>
+              <h4 style={{ color: "#00C2A0" }}>Người dùng:</h4>
+              <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                {searchResults.users.map((user) => (
+                  <li
+                    key={user.id}
+                    style={{
+                      color: "white",
+                      padding: "5px 0",
+                      borderBottom: "1px solid #444",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => setSearchText("")}
+                  >
+                    {user.user_name}
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
+
+          {(!Array.isArray(searchResults.boards) || searchResults.boards.length === 0) &&
+            (!Array.isArray(searchResults.cards) || searchResults.cards.length === 0) &&
+            (!Array.isArray(searchResults.users) || searchResults.users.length === 0) && (
+              <p style={{ color: "white" }}>Không tìm thấy kết quả nào.</p>
+            )}
+        </Box>
+      )}
+    </Box>
+
+
 
         <Tooltip title="Notification">
           <IconButton onClick={handleClick}>
@@ -183,7 +326,7 @@ const AppBar = ({ username, email }) => {
           />
         </Tooltip>
 
-        <Profile email={email} />
+        <Profile email={user?.email} />
 
         <Popover
           open={open}
@@ -390,6 +533,6 @@ const AppBar = ({ username, email }) => {
       </Box>
     </Box>
   );
-};
+}; 
 
 export default AppBar;

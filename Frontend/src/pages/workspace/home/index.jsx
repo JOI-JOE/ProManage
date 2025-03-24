@@ -152,6 +152,7 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
                 board={board}
                 id={`recent-board-${board.id}`}
               />
+              ...
             </ListItem>
           ))
         ) : (

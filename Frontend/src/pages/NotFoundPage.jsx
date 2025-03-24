@@ -1,9 +1,10 @@
 import { Box, Typography, Link } from "@mui/material";
 import { useStateContext } from "../contexts/ContextProvider";
+import { useMe } from "../contexts/MeContext";
 
 const NotFoundPage = () => {
-    const { user, token } = useStateContext(); // Lấy user và token từ context
-
+    const { token } = useStateContext(); // Lấy user và token từ context
+    const { user } = useMe();
     return (
         <Box
             sx={{

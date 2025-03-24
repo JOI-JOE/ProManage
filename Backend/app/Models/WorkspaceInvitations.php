@@ -45,8 +45,8 @@ class WorkspaceInvitations extends Model
         return $this->belongsTo(Workspace::class, 'workspace_id');
     }
 
-    // public function invitedBy()
-    // {
-    //     return $this->belongsTo(User::class, 'id_invited_by_member');
-    // }
+    public function inviter()
+    {
+        return $this->belongsTo(User::class, 'invited_by_member_id');
+    }
 }

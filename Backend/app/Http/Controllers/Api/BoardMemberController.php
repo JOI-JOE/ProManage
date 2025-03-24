@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\BoardMemberRoleUpdated;
 use App\Events\MemberJoinedBoard;
 use App\Events\MemberRemovedFromBoard;
 use App\Http\Controllers\Controller;
@@ -10,6 +11,7 @@ use App\Models\BoardInvitation;
 use App\Models\BoardMember;
 use App\Models\User;
 use App\Notifications\BoardInvitationReceivedNotification;
+use App\Notifications\BoardMemberRoleUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +47,7 @@ class BoardMemberController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'lấy thành viên của bảng thành công',
-                'data' =>  $board->members
+                'data' => $board->members
 
             ]);
         } catch (\Throwable $th) {
@@ -127,7 +129,10 @@ class BoardMemberController extends Controller
         }
 
         // Thêm user vào board với role mặc định là 'member'
-        $board->members()->attach($user->id, ['role' => 'member']);
+        $board->members()->attach($user->id, [
+            'id' => Str::uuid(),
+            'role' => 'member'
+        ]);
 
         $user->notify(new BoardInvitationReceivedNotification($board, $inviter));
         // Gửi event tới chủ bảng
@@ -152,9 +157,11 @@ class BoardMemberController extends Controller
             $currentUser = auth()->user();
 
             // Kiểm tra quyền admin
-            if (!$board->members()->where('board_members.user_id', $currentUser->id)
-                ->where('board_members.role', 'admin')
-                ->exists()) {
+            if (
+                !$board->members()->where('board_members.user_id', $currentUser->id)
+                    ->where('board_members.role', 'admin')
+                    ->exists()
+            ) {
                 return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
             }
 
@@ -170,6 +177,13 @@ class BoardMemberController extends Controller
             }
 
             $board->members()->updateExistingPivot($request->user_id, ['role' => $request->role]);
+
+            $targetUser = User::find($request->user_id);
+
+            $targetUser->notify(new BoardMemberRoleUpdatedNotification($board, $request->role, $currentUser));
+
+            broadcast(new BoardMemberRoleUpdated($board->id, $request->user_id, $request->role))->toOthers();
+
             // Trả thêm thông tin để client biết có mở menu rời bảng không
             $isCreator = $board->isCreator($currentUser->id);
             $canLeave = $isCreator && $board->countAdmins() > 1;
@@ -196,9 +210,11 @@ class BoardMemberController extends Controller
             $currentUser = auth()->user();
 
             // Kiểm tra quyền admin, chỉ định rõ ràng bảng board_members
-            if (!$board->members()->where('board_members.user_id', $currentUser->id)
-                ->where('board_members.role', 'admin')
-                ->exists()) {
+            if (
+                !$board->members()->where('board_members.user_id', $currentUser->id)
+                    ->where('board_members.role', 'admin')
+                    ->exists()
+            ) {
                 return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
             }
 
@@ -216,6 +232,8 @@ class BoardMemberController extends Controller
             }
 
             $board->members()->detach($request->user_id);
+
+
 
             // Gửi event realtime
             event(new MemberRemovedFromBoard($request->user_id, $request->board_id));

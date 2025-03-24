@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import InviteWithToken from "./child/InviteWithToken";
 import InviteWithoutToken from "./child/InviteWithoutToken";
@@ -6,38 +6,68 @@ import MissingInvitation from "./handle/MissingInvitation";
 import InvalidInvitation from "./handle/InvalidInvitation";
 import loadingLogo from "~/assets/loading.svg?react";
 import { Box, SvgIcon } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { useGetInvitationSecretByReferrer } from "../../../hooks/useWorkspaceInvite";
+import { useFetchUserBoardsWithWorkspaces } from "../../../hooks/useUser";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
 const AcceptTeam = () => {
-    const [invitation, setInvitation] = useState({ workspaceId: null, inviteToken: null });
-    const [loading, setLoading] = useState(true); // Loading khi đang đọc cookie
+    const navigate = useNavigate();
+    const [invitation, setInvitation] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [idMember, setIdMember] = useState(null);
 
     useEffect(() => {
         const storedInvitation = Cookies.get("invitation");
+
         if (storedInvitation) {
             const decodedInvitation = decodeURIComponent(storedInvitation);
             const parts = decodedInvitation.split(":");
 
             if (parts.length === 3 && parts[0] === "workspace") {
-                setInvitation({ workspaceId: parts[1], inviteToken: parts[2] });
+                setInvitation({
+                    workspaceId: parts[1].trim(),
+                    inviteToken: parts[2].trim(),
+                });
             }
         }
-        setLoading(false); // Xong giai đoạn lấy dữ liệu từ cookie
+        setLoading(false);
     }, []);
 
-    const { workspaceId, inviteToken } = invitation;
+    useEffect(() => {
+        const memberId = Cookies.get("idMember");
+        setIdMember(memberId);
+    }, []);
 
-    // Giữ giá trị stable trước khi gọi hook
-    const stableWorkspaceId = useMemo(() => workspaceId, [workspaceId]);
-    const stableInviteToken = useMemo(() => inviteToken, [inviteToken]);
+    const { data: inviteData, isLoading, isError } = useGetInvitationSecretByReferrer(
+        invitation?.workspaceId,
+        invitation?.inviteToken,
+        { enabled: !!invitation?.workspaceId && !!invitation?.inviteToken }
+    );
 
-    // Gọi API kiểm tra lời mời (luôn được gọi để tránh vi phạm quy tắc hooks)
-    const { data, isLoading, isError } = useGetInvitationSecretByReferrer(stableWorkspaceId, stableInviteToken);
+    const { data: userWorkspaces, isLoading: isLoadingUser } = useFetchUserBoardsWithWorkspaces(idMember);
+    useEffect(() => {
+        if (!idMember || !inviteData) return;
 
-    // Loading khi đang lấy dữ liệu từ cookie hoặc API
-    if (loading || isLoading) {
+        // 1️⃣ Nếu người gửi tự mời chính họ, điều hướng về workspace của họ
+        if (idMember === inviteData?.memberInviter?.id) {
+            navigate(`/w/${inviteData?.workspace?.name}`);
+            return;
+        }
+
+        // 2️⃣ Nếu người nhận đã là thành viên của workspace, điều hướng về workspace
+        const isAlreadyMember = userWorkspaces?.workspaces?.some(
+            (workspace) => workspace.id === inviteData?.workspace?.id
+        );
+
+        if (isAlreadyMember) {
+            navigate(`/w/${inviteData?.workspace?.name}`);
+        }
+    }, [inviteData, idMember, userWorkspaces, navigate]);
+
+    // Nếu đang load từ cookies hoặc API, hiển thị loading
+    if (loading || isLoading || isLoadingUser) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
                 <SvgIcon
@@ -50,16 +80,18 @@ const AcceptTeam = () => {
         );
     }
 
-    // Nếu không có workspaceId hoặc inviteToken
-    if (!workspaceId || !inviteToken) {
+    // Nếu không có dữ liệu hợp lệ từ cookies, hiển thị MissingInvitation
+    if (!invitation?.workspaceId || !invitation?.inviteToken) {
         return <MissingInvitation />;
     }
 
-    // Nếu API trả về lỗi hoặc lời mời không hợp lệ
-    if (isError) {
+    // Nếu API trả về lỗi hoặc không có dữ liệu, hiển thị InvalidInvitation
+    if (isError || !inviteData) {
         return <InvalidInvitation />;
     }
-    return isAuthenticated() ? <InviteWithToken /> : <InviteWithoutToken />;
+
+    // Nếu có dữ liệu hợp lệ, hiển thị giao diện phù hợp
+    return isAuthenticated() ? <InviteWithToken inviteData={inviteData} /> : <InviteWithoutToken inviteData={inviteData} />;
 };
 
 export default AcceptTeam;

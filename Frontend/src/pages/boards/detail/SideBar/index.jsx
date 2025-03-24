@@ -11,6 +11,9 @@ import {
   Typography,
   Avatar,
   Collapse,
+  IconButton,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
@@ -23,15 +26,37 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import WorkspaceContext from "../../../../contexts/WorkspaceContext";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import CloseIcon from "@mui/icons-material/Close";
+import { useToggleBoardClosed } from "../../../../hooks/useBoard";
 
 const SideBar = () => {
-  const { currentWorkspace, isLoading, error } = useContext(WorkspaceContext);
-  const [openSettings, setOpenSettings] = useState(false);
-  const navigate = useNavigate();
+  const { currentWorkspace} = useContext(WorkspaceContext); const [openSettings, setOpenSettings] = useState(false);
 
   console.log(currentWorkspace);
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
+  };
+  
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [selectedBoardId, setSelectedBoardId] = useState(null);
+  
+  const handleMenuOpen = (event, boardId) => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedBoardId(boardId);
+  };
+  
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setSelectedBoardId(null);
+  };
+
+  const { mutate: toggleBoardClosed } = useToggleBoardClosed(); // Use hook
+  
+  const handleCloseBoard = (boardId) => {
+    toggleBoardClosed(boardId); // Gọi hook để thay đổi trạng thái đóng bảng
+    handleMenuClose();
   };
 
   return (
@@ -142,40 +167,115 @@ const SideBar = () => {
         </ListItem>
       </Box>
 
-      <Box>
         <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
           Các bảng của bạn
         </Typography>
 
-        <List sx={{ p: 0.5 }}>
-          {currentWorkspace?.boards?.map((board) => (
-            <ListItem key={board.id} disablePadding sx={{ p: 1 }}>
-              <ListItemButton
-                component={Link}
-                to={`/b/${board.id}/${board.name}`}
-                sx={{
-                  backgroundColor:
-                    board.id === Number(board.id) ? "#ffffff33" : "transparent",
-                  "&:hover": { backgroundColor: "#ffffff22" },
-                  borderRadius: "6px",
-                }}
-              >
-                <ListItemIcon sx={{ color: "white" }}>
-                  <FolderIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary={board.name}
-                  sx={{
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Box>
+      <List sx={{ p: 0.5 }}>
+      {currentWorkspace?.boards?.map((board) => (
+  <ListItem key={board.id} disablePadding sx={{ p: 1, display: "flex", alignItems: "center" }}>
+    {/* Phần tên bảng dẫn link */}
+    <ListItemButton
+      component={Link}
+      to={`/b/${board.id}/${board.name}`}
+      sx={{
+        flexGrow: 1,
+        backgroundColor: board.id === Number(board.id) ? "#ffffff33" : "transparent",
+        "&:hover": { backgroundColor: "#ffffff22" },
+        borderRadius: "6px",
+      }}
+    >
+      <ListItemIcon sx={{ color: "white" }}>
+        <FolderIcon />
+      </ListItemIcon>
+      <ListItemText
+        primary={board.name}
+        sx={{
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      />
+    </ListItemButton>
+
+    {/* Nút ... mở dropdown, tách riêng hoàn toàn */}
+    <IconButton
+      onClick={(e) => handleMenuOpen(e, board.id)}
+      sx={{ color: "white", ml: "auto" }}
+    >
+      <MoreVertIcon />
+    </IconButton>
+
+    {/* Dropdown menu của từng bảng */}
+    <Menu
+      anchorEl={menuAnchor}
+      open={selectedBoardId === board.id}
+      onClose={handleMenuClose}
+      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      transformOrigin={{ vertical: "top", horizontal: "left" }}
+      sx={{
+        "& .MuiPaper-root": {
+          backgroundColor: "#2e2e2e",
+          color: "white",
+          borderRadius: "8px",
+          minWidth: "300px",
+        },
+      }}
+    >
+      <MenuItem
+        disabled
+        sx={{
+          fontWeight: "bold",
+          fontSize: "1rem",
+          opacity: 1,
+          textAlign: "center",
+          justifyContent: "center",
+          color: "#fff",
+          padding: "12px 16px",
+        }}
+      >
+        {board.name}
+      </MenuItem>
+
+      {[
+      { text: "Rời khỏi bảng", icon: <ExitToAppIcon />, color: "#ff4d4d" }
+      ].map((item, index) => (
+        <MenuItem
+          key={index}
+          onClick={() => console.log(item.text)}
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "10px 16px",
+            "&:hover": { backgroundColor: item.color, color: "white" },
+          }}
+        >
+          {item.text}
+          {item.icon}
+        </MenuItem>
+      ))}
+      {[
+        { text: "Đóng bảng", icon: <CloseIcon />, color: "#ff4d4d" }
+      ].map((item, index) => (
+        <MenuItem
+          key={index}
+          onClick={() => handleCloseBoard(board.id)}
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "10px 16px",
+            "&:hover": { backgroundColor: item.color, color: "white" },
+          }}
+        >
+          {item.text}
+          {item.icon}
+        </MenuItem>
+      ))}
+    </Menu>
+  </ListItem>
+))}
+
+      </List>
     </Drawer>
   );
 };

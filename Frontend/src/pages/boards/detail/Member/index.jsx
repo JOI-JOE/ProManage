@@ -23,7 +23,6 @@ import {
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
-import LinkIcon from "@mui/icons-material/Link";
 import CloseIcon from "@mui/icons-material/Close";
 import { useParams } from "react-router-dom";
 import loadingLogo from "~/assets/loading.svg?react";

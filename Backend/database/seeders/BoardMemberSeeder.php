@@ -5,8 +5,10 @@ namespace Database\Seeders;
 use App\Models\Board;
 use App\Models\BoardMember;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class BoardMemberSeeder extends Seeder
 {
@@ -15,27 +17,35 @@ class BoardMemberSeeder extends Seeder
      */
     public function run(): void
     {
-        $users = User::all();
-        $boards = Board::all();
+        $userIds = DB::table('users')->pluck('id')->toArray();
+        
+        // Lấy danh sách board IDs có sẵn
+        $boardIds = DB::table('boards')->pluck('id')->toArray();
 
-        foreach ($boards as $board) {
-            foreach ($users as $user) {
-                BoardMember::create([
-                    'board_id' => $board->id,
-                    'user_id' => $user->id,
-                    'role' => $this->getRandomRole(),
-                    'is_unconfirmed' => rand(0, 1),
-                    'joined' => rand(0, 1),
-                    'is_deactivated' => rand(0, 1),
-                    'referrer_id' => $users->random()->id,
-                    'last_active' => now()->subDays(rand(0, 10)),
+        // Kiểm tra nếu chưa có board hoặc user thì không seed
+        if (empty($userIds) || empty($boardIds)) {
+            return;
+        }
+
+        // Gán mỗi user vào ít nhất một board
+        foreach ($userIds as $userId) {
+            $assignedBoards = (array) array_rand(array_flip($boardIds), random_int(1, min(5, count($boardIds))));
+
+            foreach ($assignedBoards as $boardId) {
+                DB::table('board_members')->insert([
+                    'board_id' => $boardId,
+                    'user_id' => $userId,
+                    'role' => ['admin', 'member', 'viewer'][array_rand(['admin', 'member', 'viewer'])],
+                    'is_unconfirmed' => (bool)random_int(0, 1),
+                    'joined' => true,
+                    'is_deactivated' => false,
+                    'referrer_id' => random_int(0, 1) ? $userIds[array_rand($userIds)] : null,
+                    'last_active' => Carbon::now()->subDays(random_int(0, 30)),
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
                 ]);
             }
         }
     }
-    private function getRandomRole()
-    {
-        $roles = ['admin', 'member', 'viewer'];
-        return $roles[array_rand($roles)];
-    }
+    
 }

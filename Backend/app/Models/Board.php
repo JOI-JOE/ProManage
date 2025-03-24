@@ -25,9 +25,6 @@ class Board extends Model
         'visibility',     // Tính công khai (public hoặc private)
         'workspace_id',   // ID của workspace liên quan
     ];
-
-
-
     protected static function boot()
     {
         parent::boot();
@@ -42,12 +39,17 @@ class Board extends Model
      */
     public function workspace()
     {
-        return $this->belongsTo(Workspace::class, 'workspace_id');  // Liên kết với model Workspace
+        return $this->belongsTo(Workspace::class, 'workspace_id');
     }
 
     public function listBoards()
     {
         return $this->hasMany(ListBoard::class, 'board_id');
+    }
+
+    public function boardMembers()
+    {
+        return $this->hasMany(BoardMember::class, 'board_id');
     }
 
     public function creator()
@@ -59,37 +61,33 @@ class Board extends Model
         return $this->hasMany(ListBoard::class, 'board_id');
     }
 
- // Đếm số lượng admin, chỉ định rõ board_members.role
- public function countAdmins()
- {
-     return $this->members()->where('board_members.role', 'admin')->count();
- }
+    // Đếm số lượng admin, chỉ định rõ board_members.role
+    public function countAdmins()
+    {
+        return $this->members()->where('board_members.role', 'admin')->count();
+    }
 
     public function isCreator($userId)
     {
         return $this->created_by === $userId;
     }
 
-
-    // public function members()
-    // {
-    //     return $this->belongsToMany(User::class, 'board_members', 'board_id', 'user_id')
-    //         ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated')
-    //         ->withTimestamps();
-    // }
-
     public function members()
     {
         return $this->belongsToMany(User::class, 'board_members', 'board_id', 'user_id')
-                    ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated');
+            ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated');
     }
-
-
+    
     public function activeMembers()
     {
         return $this->members()
             ->wherePivot('is_unconfirmed', false)
             ->wherePivot('joined', true)
             ->wherePivot('is_deactivated', false);
+    }
+
+    public function cards()
+    {
+        return $this->hasMany(Card::class);
     }
 }

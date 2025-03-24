@@ -8,16 +8,19 @@ use App\Events\CommentUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\CommentCard;
+use App\Notifications\CardCommentNotification;
 use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class CommentCardController extends Controller
 {
     //
     public function index($cardId)
     {
+
         $card = Card::find($cardId);
         if (!$card) {
             return response()->json(['message' => 'Card không tồn tại!'], 404);
@@ -30,7 +33,6 @@ class CommentCardController extends Controller
 
         return response()->json($comments);
     }
-
     public function addCommentIntoCard(Request $request)
     {
         $rules = [
@@ -59,8 +61,18 @@ class CommentCardController extends Controller
             'content' => $request->content,
         ]);
 
+
         // $comment = CommentCard::with('user')->find($newComment->id);
         broadcast(new CardCommentAdded($comment))->toOthers();
+
+        $users = $card->members; // Lấy danh sách thành viên liên quan trong card
+
+        foreach ($users as $user) {
+            // Không gửi cho người vừa comment
+            if ($user->id !== Auth::id()) {
+                $user->notify(new CardCommentNotification($comment));
+            }
+        }
 
         return response()->json([
             'status' => 'success',
@@ -81,8 +93,17 @@ class CommentCardController extends Controller
             return response()->json(['message' => 'Bạn không có quyền xóa bình luận này'], 403);
         }
 
+        // Xóa notification liên quan đến comment
+
+
         $cardId = $comment->card_id; // Lưu lại cardId trước khi xóa
         $commentId = $comment->id;
+
+        // Xóa notification liên quan đến comment
+        \DB::table('notifications')
+            ->whereJsonContains('data->comment_id', $commentId)
+            ->delete();
+            
         $comment->delete();
 
         broadcast(new CommentDeleted($commentId, $cardId))->toOthers();
@@ -120,7 +141,4 @@ class CommentCardController extends Controller
             'comment' => $comment
         ], 200);
     }
-
-
-
 }

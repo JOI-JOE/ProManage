@@ -4,19 +4,36 @@ export const getListByBoardId = async (boardId) => {
   try {
     if (!boardId) {
       console.error("Lỗi: boardId không được cung cấp.");
-      return [];
+      return { data: [], error: "missing_board_id" };
     }
-    const response = await authClient.get(`/lists/${boardId}`);
 
-    return response.data; // Trả về danh sách columns
+    const response = await authClient.get(`/lists/${boardId}`);
+    return { data: response.data, error: null };
   } catch (error) {
     console.error(
       `Lỗi khi lấy danh sách các list của board với ID: ${boardId}`,
       error
     );
-    return [];
+
+    if (error.response) {
+      const status = error.response.status;
+
+      if (status === 403) {
+        console.error("Lỗi 403: Người dùng không có quyền truy cập board này.");
+        return { data: [], error: "no_access" };
+      }
+
+      if (status === 404) {
+        console.error("Lỗi 404: Không tìm thấy board hoặc danh sách.");
+        return { data: [], error: "not_found" };
+      }
+    }
+
+    console.error("Lỗi không xác định:", error);
+    return { data: [], error: "unknown_error" };
   }
 };
+
 export const getListClosedByBoard = async (boardId) => {
   try {
     if (!boardId) {
@@ -61,17 +78,20 @@ export const getListDetail = async (listId) => {
   }
 };
 
-export const createList = async ({ newColumn }) => {
+export const createListAPI = async ({ boardId, name, pos }) => {
   try {
-    // Gọi API để tạo danh sách mới
-    const createResponse = await authClient.post(`/lists`, {
-      newColumn,
+    const response = await authClient.post(`/lists`, {
+      boardId,
+      name,
+      pos,
     });
-
-    return createResponse.data;
+    if (response.status !== 201 || !response.data?.id) {
+      throw new Error("API trả về dữ liệu không hợp lệ");
+    }
+    return response.data;
   } catch (error) {
     console.error("❌ Lỗi khi tạo danh sách:", error);
-    throw error;
+    throw error; // Để mutation xử lý lỗi này
   }
 };
 
@@ -92,8 +112,7 @@ export const updateListName = async (listId, newName) => {
 
 export const updateClosed = async (listId) => {
   try {
-    const response = await authClient.patch(`/lists/${listId}/closed`, {
-    });
+    const response = await authClient.patch(`/lists/${listId}/closed`, {});
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
@@ -101,15 +120,15 @@ export const updateClosed = async (listId) => {
   }
 };
 
-export const updateColPosition = async ({ columns }) => {
+export const updatePositionList = async ({ listId, position }) => {
   try {
-    const response = await authClient.put(`/boards/update-column-position`, {
-      columns,
-    });
-
-    return response.data;
+    const { data } = await authClient.put(`/lists/${listId}`, { position });
+    return data;
   } catch (error) {
-    console.error("Lỗi khi cập nhật vị trí list_board:", error);
+    console.error(
+      "❌ Lỗi khi cập nhật vị trí list_board:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
