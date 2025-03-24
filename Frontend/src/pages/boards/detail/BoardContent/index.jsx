@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { cloneDeep, isEmpty, isEqual } from "lodash";
+import { cloneDeep, isEmpty, isEqual, over } from "lodash";
 import {
   DndContext,
   MouseSensor,
@@ -8,11 +8,7 @@ import {
   useSensors,
   DragOverlay,
   defaultDropAnimationSideEffects,
-  closestCorners,
   pointerWithin,
-  getFirstCollision,
-  rectIntersection,
-  closestCenter,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -23,9 +19,12 @@ import { generatePlaceholderCard } from "../../../../../utils/formatters";
 import { useParams } from "react-router-dom";
 import C_ard from "./Cards/C_ard";
 import { mapOrder } from "../../../../../utils/sort";
-import { useUpdateColumnPosition } from "../../../../hooks/useList";
-import { useCardPositionsInColumns, useCardPositionsOutColumns } from "../../../../hooks/useCard";
 import BoardContext from "../../../../contexts/BoardContext";
+import { moveCardBetweenDifferentColumns, moveCardWithinSameColumn } from "../../../../../utils/moveCardInList";
+import { calculateItemPosition } from "../../../../../utils/calculateItemPosition";
+import { useUpdatePositionList } from "../../../../hooks/useList";
+import { useUpdateCardPosition } from "../../../../hooks/useCard";
+import { MIN_SPACING } from "../../../../../utils/position.constant";
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -35,29 +34,22 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 const BoardContent = () => {
   const { boardId } = useParams();
   const { board } = useContext(BoardContext);
-  const updateColumnPosition = useUpdateColumnPosition(); // ✅ Gọi hook ngay trong body của component
+  const updatePositionListMutation = useUpdatePositionList();
+  const updateCardPositionMutation = useUpdateCardPosition();
 
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 0 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 0 } })
+  );
 
-  // console.log(board)
-  const mouseSensor = useSensor(MouseSensor, {
-    activationConstraint: { distance: 10 },
-  });
-
-  const touchSensor = useSensor(TouchSensor, {
-    activationConstraint: { delay: 250, tolerance: 5 },
-  });
-
-  const sensors = useSensors(mouseSensor, touchSensor);
-
-  const [orderedColumns, setOrderedColumns] = useState([]);
-
-  const [activeDragItemId, setActiveDragItemId] = useState(null);
-  const [activeDragItemType, setActiveDragItemType] = useState(null);
-  const [activeDragItemData, setActiveDragItemData] = useState(null);
-  const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null);
-
-  const lastOverId = useRef(null);
-  // const columnOrderIds = []
+  const [orderedColumns, setOrderedColumns] = useState([]); // Lưu danh sách cột
+  const [activeDragItemId, setActiveDragItemId] = useState(null); // ID của item đang kéo
+  const [activeDragItemType, setActiveDragItemType] = useState(null); // Loại item đang kéo (CARD | COLUMN)
+  const [activeDragItemData, setActiveDragItemData] = useState(null); // Dữ liệu của item đang kéo
+  const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null); // Column cũ khi kéo Card
+  const [initialColumns, setInitialColumns] = useState([]); // Lưu trạng thái ban đầu của column trước khi kéo
+  const initialActiveRef = useRef(null);
+  const initialOverRef = useRef(null); // Thêm ref để lưu trữ over mới nhất
 
   useEffect(() => {
     if (!board?.columns?.length) return;
@@ -68,466 +60,175 @@ const BoardContent = () => {
     setOrderedColumns(prevColumns => (isEqual(prevColumns, newOrder) ? prevColumns : newOrder));
   }, [board, board?.columnOrderIds]);
 
-
   // Tìm column theo cardId
   const findColumnByCardId = (cardId) => {
     if (!cardId || !Array.isArray(orderedColumns)) return null;
-    return orderedColumns.find((column) =>
-      column?.cards?.some((card) => card.id === cardId)
+
+    return (
+      orderedColumns.find(col => col.id === cardId) ||
+      orderedColumns.find(col => col.cards.some(card => card.id === cardId))
     );
-  };
-
-  //Bắt đầu kéo một phần tử
-  const moveCardBetweenDifferentColumns = (
-    overColumn,
-    overCardId,
-    active,
-    over,
-    activeColumn,
-    activeCardId,
-    activeCardData
-  ) => {
-    return new Promise((resolve) => {
-      setOrderedColumns((prevColumns) => {
-        // Clone mảng orderedColumns cũ để xử lý
-        const nextColumns = cloneDeep(prevColumns);
-
-        // Tìm column hiện tại và column mới
-        const nextActiveColumn = nextColumns.find(
-          (column) => column.id === activeColumn.id
-        );
-
-        const nextOverColumn = nextColumns.find(
-          (column) => column.id === overColumn.id
-        );
-
-        if (!nextActiveColumn || !nextOverColumn) return prevColumns;
-
-        // Xóa card đang kéo khỏi column hiện tại
-        nextActiveColumn.cards = nextActiveColumn.cards.filter(
-          (card) => card.id !== activeCardId
-        );
-
-        // Nếu column hiện tại không còn card nào, thêm placeholder card
-        if (isEmpty(nextActiveColumn.cards)) {
-          nextActiveColumn.cards = [generatePlaceholderCard(nextActiveColumn)];
-        }
-
-        // Cập nhật lại cardOrderIds của column hiện tại
-        nextActiveColumn.cardOrderIds = nextActiveColumn.cards.map(
-          (card) => card.id
-        );
-
-        // Tính toán vị trí mới của card trong column mới
-        const overCardIndex = nextOverColumn.cards.findIndex(
-          (card) => card.id === overCardId
-        );
-
-        let newCardIndex;
-        if (overCardIndex >= 0) {
-          const isBelowOverItem =
-            active.rect.current.translated &&
-            active.rect.current.translated.top >
-            over.rect.top + over.rect.height;
-          newCardIndex = overCardIndex + (isBelowOverItem ? 1 : 0);
-        } else {
-          newCardIndex = nextOverColumn.cards.length;
-        }
-
-        // Thêm card đang kéo vào column mới tại vị trí mới
-        const rebuild_activeCardData = {
-          ...activeCardData,
-          columnId: nextOverColumn.id,
-          position: newCardIndex, // Sử dụng chỉ số mảng làm position
-        };
-
-        nextOverColumn.cards = nextOverColumn.cards.toSpliced(
-          newCardIndex,
-          0,
-          rebuild_activeCardData
-        );
-
-        // Loại bỏ placeholder card nếu có
-        nextOverColumn.cards = nextOverColumn.cards.filter(
-          (card) => !card.FE_PlaceholderCard
-        );
-
-        // Cập nhật lại cardOrderIds của column mới
-        nextOverColumn.cardOrderIds = nextOverColumn.cards.map(
-          (card) => card.id
-        );
-
-        // Xác định các card đã thay đổi
-        const changedCardsMap = new Map();
-
-        // Thêm card đang kéo vào danh sách thay đổi
-        changedCardsMap.set(activeCardId, {
-          id: activeCardId,
-          position: newCardIndex, // Sử dụng chỉ số mảng làm position
-          list_board_id: nextOverColumn.id,
-        });
-
-        // Thêm các card khác trong column hiện tại (nếu có)
-        nextActiveColumn.cards.forEach((card, index) => {
-          if (!card.FE_PlaceholderCard) {
-            changedCardsMap.set(card.id, {
-              id: card.id,
-              position: index, // Sử dụng chỉ số mảng làm position
-              list_board_id: nextActiveColumn.id,
-            });
-          }
-        });
-
-        // Thêm các card khác trong column mới (nếu có)
-        nextOverColumn.cards.forEach((card, index) => {
-          if (card.id !== activeCardId) {
-            // Tránh thêm lại card đang kéo
-            changedCardsMap.set(card.id, {
-              id: card.id,
-              position: index, // Sử dụng chỉ số mảng làm position
-              list_board_id: nextOverColumn.id,
-            });
-          }
-        });
-
-        // Chuyển Map thành mảng
-        const uniqueChangedCards = Array.from(changedCardsMap.values());
-
-        // Trả về mảng chứa dữ liệu card thay đổi
-        resolve(uniqueChangedCards);
-
-        return nextColumns;
-      });
-    });
   };
 
   const handleDragStart = (event) => {
-    setActiveDragItemId(event?.active?.id);
+    const { active } = event;
+    if (!active) return;
 
-    setActiveDragItemType(
-      event?.active?.data?.current?.columnId
-        ? ACTIVE_DRAG_ITEM_TYPE.CARD
-        : ACTIVE_DRAG_ITEM_TYPE.COLUMN
-    );
+    // Lưu active ban đầu
+    // Lưu active ban đầu và mặc định initialOverRef là active
+    initialActiveRef.current = active;
+    initialOverRef.current = active;
 
-    setActiveDragItemData(event?.active?.data?.current);
 
-    //Nếu kéo Card thì mới set giá trị oldColumn
-    if (event?.active?.data?.current?.columnId) {
-      setOldColumnDraggingCard(findColumnByCardId(event?.active?.id));
+    setActiveDragItemId(active.id);
+    setActiveDragItemType(active?.data?.current?.columnId ? ACTIVE_DRAG_ITEM_TYPE.CARD : ACTIVE_DRAG_ITEM_TYPE.COLUMN);
+    setActiveDragItemData(active?.data?.current);
+
+    if (active?.data?.current?.columnId) {
+      setOldColumnDraggingCard(findColumnByCardId(active.id));
+    } else {
+      setInitialColumns(cloneDeep(orderedColumns)); // Dùng cloneDeep để tránh mutation
     }
   };
 
-  // Trong quá trình kéo một phần tử
   const handleDragOver = (event) => {
     const { active, over } = event;
     if (!active || !over) return;
 
-    const {
-      id: activeItemId,
-      data: { current: activeItemData },
-    } = active;
-    const { id: overItemId } = over;
-
-    if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-      const activeColumnIndex = orderedColumns.findIndex(
-        (c) => c.id === activeItemId
-      );
-      const overColumnIndex = orderedColumns.findIndex(
-        (c) => c.id === overItemId
-      );
-      // .log("📌 Đang kéo column:", activeItemId, "➡ Column target:", overItemId);
-
-      if (
-        activeColumnIndex !== -1 &&
-        overColumnIndex !== -1 &&
-        activeColumnIndex !== overColumnIndex
-      ) {
-        const dndOrderedColumns = arrayMove(
-          orderedColumns,
-          activeColumnIndex,
-          overColumnIndex
-        );
-
-        setOrderedColumns(dndOrderedColumns);
-      }
-      return;
+    // Nếu over hợp lệ (over.id khác active.id) thì cập nhật initialOverRef
+    if (over.id !== active.id) {
+      initialOverRef.current = over;
     }
-    // Tìm column theo cardId
-    const activeColumn = findColumnByCardId(activeItemId);
-    const overColumn =
-      findColumnByCardId(overItemId) ||
-      orderedColumns.find((col) => col.id === overItemId);
 
-    if (!activeColumn || !overColumn) return;
-
-    if (activeColumn.id !== overColumn.id) {
-      moveCardBetweenDifferentColumns(
-        overColumn,
-        overItemId,
-        active,
-        over,
-        activeColumn,
-        activeItemId,
-        activeItemData
-      );
+    if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
+      handleCardDragOver(active, over);
+    } else if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
+      if (!initialColumns.length) {
+        setInitialColumns([...orderedColumns]);
+      }
+      handleColumnDragOver(active, over);
     }
   };
 
-  // Kết thúc kéo một phần tử
-  const handleDragEnd = async (event) => {
-    // console.log("handleDragEnd:", event);
+  const handleCardDragOver = (active, over) => {
+    const activeColumn = findColumnByCardId(active.id);
+    // Ưu tiên tìm cột mục tiêu từ over.id; nếu không tìm thấy, dùng activeColumn
+    const overColumn = findColumnByCardId(over.id) || activeColumn;
+    if (!activeColumn || !overColumn) return;
+
+    if (activeColumn.id === overColumn.id) {
+      // Khi kéo thả trong cùng một cột, cập nhật UI ngay để sắp xếp lại các card
+      moveCardWithinSameColumn(activeColumn, active.id, over.id, setOrderedColumns)
+        .then(() => {
+        })
+        .catch((error) =>
+          console.error("Error reordering cards:", error)
+        );
+    } else {
+      // Khi chuyển card sang cột khác, cập nhật UI ngay bằng cách chuyển card
+      moveCardBetweenDifferentColumns(
+        overColumn,
+        over.id,
+        activeColumn,
+        active.id,
+        active.data.current,
+        setOrderedColumns
+      )
+        .then(() => {
+        })
+        .catch((error) =>
+          console.error("Error moving card:", error)
+        );
+    }
+  };
+
+  const handleColumnDragOver = (active, over) => {
+    if (!over || !active) return;
+    const activeColumnIndex = orderedColumns.findIndex(col => col.id === active.id);
+    const overColumnIndex = orderedColumns.findIndex(col => col.id === over.id);
+    if (activeColumnIndex === -1 || overColumnIndex === -1 || activeColumnIndex === overColumnIndex) return;
+    // Chỉ hoán đổi vị trí UI tạm thời để hoạt ảnh mượt hơn
+    const tempColumns = arrayMove([...orderedColumns], activeColumnIndex, overColumnIndex);
+    setOrderedColumns(tempColumns);
+  };
+
+  const handleDragEnd = (event) => {
     const { active, over } = event;
+    if (!over) return;
 
-    if (!active || !over) return;
-    // Xử lý kéo thả Card
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
-      const {
-        id: activeCardId, // activeCard: Card đang được kéo
-        data: { current: activeCardData }, // current: activeCardData: Là active.data.current
-      } = active;
-      const { id: overCardId } = over; // overCard: Là card đang tương tác trên, dưới với card đang được kéo
-      // Tìm column theo cardId
-      const activeColumn = findColumnByCardId(activeCardId);
-      const overColumn = findColumnByCardId(overCardId);
+      // Lấy effective active và effective over từ ref (ban đầu)
+      const effectiveActive = initialActiveRef.current;
+      const effectiveOver = initialOverRef.current;
 
-      if (!activeColumn || !overColumn) return;
-      if (oldColumnDraggingCard.id !== overColumn.id) {
-        // Kéo thả Card giữa 2 column
-        moveCardBetweenDifferentColumns(
-          overColumn,
-          overCardId,
-          active,
-          over,
-          activeColumn,
-          activeCardId,
-          activeCardData
-        ).then(async (changedCards) => {
-          // Thêm async vào đây
-          await useCardPositionsOutColumns(changedCards); // Sử dụng await
-          // console.log("Dữ liệu card thay đổi:", changedCards);
-        });
-      } else {
-        // START - KÉO THẢ CARD CÙNG MỘT COLUMN
-        // Kéo thả Card cùng 1 column
-        // Lấy vị trí cũ từ oldColumnDraggingCard
-        const oldCardIndex = oldColumnDraggingCard?.cards?.findIndex(
-          (c) => c.id === activeCardId
-        );
-        // Lấy vị trí mới từ OverColumn
-        const newCardIndex = overColumn?.cards.findIndex(
-          (c) => c.id === overCardId
-        );
-        // Kiểm tra nếu vị trí cũ hoặc mới không hợp lệ
-        if (oldCardIndex === -1 || newCardIndex === -1) {
-          // console.warn("Vị trí card không hợp lệ.");
-          return;
-        }
+      const activeColumn = findColumnByCardId(active.id);
 
-        // Kiểm tra nếu vị trí card không thay đổi
-        if (oldCardIndex === newCardIndex) {
-          // console.log("Card không thay đổi vị trí.");
-          return; // Không cần cập nhật database hoặc state local
-        }
+      console.log("Dữ liệu column", effectiveOver)
+      console.log("Dữ liệu card", effectiveActive)
 
-        // Sắp xếp lại mảng cards
-        const dndOrderedCards = arrayMove(
-          oldColumnDraggingCard.cards,
-          oldCardIndex,
-          newCardIndex
-        );
-        // Cập nhật lại giá trị position của các card
-        const updatedCards = dndOrderedCards.map((card, index) => ({
-          ...card,
-          position: (index + 1) * 1000, // Cập nhật position với khoảng cách 1000
-        }));
+      console.log("dữ liệu của card", activeColumn.cards)
+      const newIndex = activeColumn.cards.findIndex(c => c.id === effectiveActive.id);
 
-        const filteredCards = updatedCards.map((card) => ({
-          list_board_id: card.columnId, // Cột ID (list_board_id)
-          position: card.position, // Vị trí
-          id: card.id, // ID của card
-        }));
+      const draggedCard = activeColumn.cards[newIndex]
 
-        console.log("FilteredCards data:", filteredCards); // Sửa lại thành filteredCards
-        // Cập nhật state local
-        setOrderedColumns((prevColumns) => {
-          // Clone mảng orderedColumns cũ ra để xử lý data rồi return cập nhập lại orderedColumns mới
-          const nextColumns = cloneDeep(prevColumns);
-
-          // Tìm column cần cập nhật
-          const targetColumn = nextColumns.find(
-            (column) => column.id === overColumn.id
-          );
-
-          // Cập nhật lại cards và cardOrderIds
-          targetColumn.cards = updatedCards;
-          targetColumn.cardOrderIds = updatedCards.map((card) => card.id);
-
-          return nextColumns;
-        });
-        // Gọi API để cập nhật dữ liệu lên database
-        try {
-          // Gọi hàm cập nhật vị trí card
-          await useCardPositionsInColumns(filteredCards);
-
-          // console.log("Cập nhật thành công:", filteredCards); // Sửa lại thành filteredCards
-        } catch (error) {
-          // console.error("Lỗi khi cập nhật database:", error);
-
-          // Rollback state local nếu có lỗi
-          setOrderedColumns((prevColumns) => {
-            const rollbackColumns = cloneDeep(prevColumns);
-            const targetColumn = rollbackColumns.find(
-              (column) => column.id === overColumn.id
-            );
-            targetColumn.cards = oldColumnDraggingCard.cards;
-            targetColumn.cardOrderIds = oldColumnDraggingCard.cards.map(
-              (card) => card.id
-            );
-            return rollbackColumns;
-          });
-        }
-        // END - KÉO THẢ CARD CÙNG MỘT COLUMN
-      }
+      updateCardPositionMutation.mutate({
+        cardId: draggedCard.id,
+        listId: draggedCard.columnId,
+        position: draggedCard.position,
+      });
     }
 
-    // Xử lý kéo thả Column
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-      // Hàm hỗ trợ để tìm index của column dựa trên id
-      const findColumnIndex = (id) => {
-        const index = orderedColumns.findIndex((c) => c.id === id);
-        // console.log(`Tìm thấy column có id: ${id}, index: ${index}`);
-        return index;
-      };
-      // Lấy vị trí cũ từ active
-      const oldColumnIndex = findColumnIndex(active.id);
+      const previousIndex = initialColumns.findIndex(col => col.id === active.id);
+      const newIndex = orderedColumns.findIndex(col => col.id === over.id);
 
-      // Nếu over không tồn tại (kéo đến đầu danh sách), đặt vị trí mới là 0
-      const newColumnIndex = over ? findColumnIndex(over.id) : 0;
-      // Kiểm tra nếu index hợp lệ
-      if (oldColumnIndex === -1) {
-        // console.warn("Invalid column index. Cannot perform reordering.");
+      if (previousIndex === -1 || newIndex === -1 || previousIndex === newIndex) {
+        console.log("⚠️ Vị trí không hợp lệ hoặc không thay đổi, bỏ qua...");
         return;
       }
-      // Sắp xếp lại mảng column ban đầu
-      const dndOrderedColumns = arrayMove(
-        orderedColumns,
-        oldColumnIndex,
-        newColumnIndex
-      );
+      let updatedColumns = arrayMove([...initialColumns], previousIndex, newIndex);
+      const draggedColumn = initialColumns.find(col => col.id === active.id);
+      const newPosition = calculateItemPosition(newIndex, updatedColumns, draggedColumn);
+      console.log("New Position:", newPosition);
+      console.log("Dragged Column:", draggedColumn);
 
-      // Cập nhật lại giá trị position dựa trên vị trí mới, bắt đầu từ 0
-      const updatedColumns = dndOrderedColumns.map((column, index) => ({
-        ...column,
-        position: (index + 1) * 1000,
-        boardId,
-      }));
+      updatePositionListMutation.mutate({
+        listId: draggedColumn.id,
+        position: newPosition,
+      });
 
-      // Cập nhật state local
       setOrderedColumns(updatedColumns);
-
-      // Gọi mutation để cập nhật dữ liệu trên server
-      updateColumnPosition.mutate(updatedColumns); // ✅ Dùng `.mutate()`
     }
+
 
     setActiveDragItemId(null);
     setActiveDragItemType(null);
     setActiveDragItemData(null);
     setOldColumnDraggingCard(null);
+    setInitialColumns([]);
+    initialActiveRef.current = null;
+    initialOverRef.current = null;
   };
 
   const customDropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
       styles: {
         active: {
-          opacity: "0.5",
+          transition: 'none',
+        },
+        dragOverlay: {
+          transition: 'none',
         },
       },
     }),
   };
-
-  // //Sử lý va chạm khi kéo thả
-  const collisionDetectionStrategy = useCallback(
-    (args) => {
-      // Xử lý kéo thả column
-      if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-        return closestCorners({ ...args });
-      }
-
-      // Xử lý kéo thả card
-      if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
-        // Xác định các phần tử nằm dưới con trỏ
-        const pointerIntersections = pointerWithin(args);
-        const intersections =
-          pointerIntersections.length > 0
-            ? pointerIntersections
-            : rectIntersection(args);
-
-        // Lấy ID của phần tử đầu tiên va chạm
-        let overId = getFirstCollision(intersections, "id");
-
-        // Nếu không tìm thấy overId, trả về lastOverId (nếu có)
-        if (!overId) {
-          return lastOverId.current ? [{ id: lastOverId.current }] : [];
-        }
-        // Kiểm tra nếu overId là một column
-        const checkColumn = orderedColumns.find((column) => column.id === overId);
-        if (checkColumn) {
-          // Nếu column trống, trả về column đó
-          if (checkColumn.cards.length === 0) {
-            lastOverId.current = overId;
-            return [{ id: overId }];
-          }
-
-          // Nếu column không trống, tìm phần tử gần nhất trong column
-          const closestIntersection = closestCenter({
-            ...args,
-            droppableContainers: args.droppableContainers.filter((container) => {
-              return (
-                container.id !== overId &&
-                checkColumn?.cardOrderIds?.includes(container.id)
-              );
-            }),
-          })[0];
-
-          if (closestIntersection) {
-            overId = closestIntersection.id;
-          }
-
-          // Kiểm tra xem card đang kéo có nằm ở phía trên card đầu tiên của column hay không
-          const firstCardInColumn = checkColumn.cards[0];
-          if (firstCardInColumn) {
-            const firstCardRect = document
-              .getElementById(firstCardInColumn.id)
-              ?.getBoundingClientRect();
-            const draggedCardRect = args.collisionRect;
-
-            if (draggedCardRect && firstCardRect) {
-              // Nếu card đang kéo nằm ở phía trên card đầu tiên
-              if (draggedCardRect.top < firstCardRect.top) {
-                overId = checkColumn.id; // Chèn vào đầu column
-              }
-            }
-          }
-        }
-
-        // Cập nhật lastOverId và trả về kết quả
-        lastOverId.current = overId;
-        return [{ id: overId }];
-      }
-
-      // Trường hợp mặc định (nếu có)
-      return [];
-    },
-    [activeDragItemType, orderedColumns]
-  );
 
   return (
     <>
       <BoardBar />
       <DndContext
         sensors={sensors}
-        collisionDetection={collisionDetectionStrategy}
+        collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -549,6 +250,7 @@ const BoardContent = () => {
         >
           <Col_list columns={orderedColumns} boardId={boardId} />
           <DragOverlay dropAnimation={customDropAnimation}>
+            {/* <DragOverlay> */}
             {!activeDragItemType && null}
             {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN && (
               <Col column={activeDragItemData} />

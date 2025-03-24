@@ -17,7 +17,7 @@ use Pusher\Pusher;
 
 class ListController extends Controller
 {
-    
+
     public function index($boardId)
     {
         $board = Board::where('id', $boardId)
@@ -51,16 +51,22 @@ class ListController extends Controller
         $user = Auth::user();
 
         $hasAccess = false;
+
         if ($board->visibility === 'public') {
             $hasAccess = true;
         } elseif ($board->visibility === 'workspace') {
-            $hasAccess = $board->workspace->members->contains($user->id);
+            // Kiểm tra workspace có null không trước khi truy cập members
+            // if ($board->workspace && $board->workspace->members) {
+                $hasAccess = $board->workspace->members->contains($user->id);
+            // }
         } elseif ($board->visibility === 'private') {
-            $hasAccess = $board->members->contains($user->id);
+            // Kiểm tra members có null không trước khi truy cập
+            // if ($board->members) {
+                $hasAccess = $board->members->contains($user->id);
+            // }
         }
-        
         if (!$hasAccess) {
-            return response()->json(['message' => 'Access Denied'], 403);
+            return response()->json(['error' => 'Access denied'], 403);
         }
 
         $responseData = [
@@ -162,44 +168,18 @@ class ListController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'newColumn' => 'required|array',
-            'newColumn.board_id' => 'required|exists:boards,id',
-            'newColumn.title' => 'required|string',
-            'newColumn.position' => 'nullable|integer',
+            'boardId' => 'required|exists:boards,id',
+            'name' => 'required|string',
+            'pos' => 'required',
         ]);
 
-        $newColumn = $validated['newColumn'];
-        $boardId = $newColumn['board_id'];
-
-        // Cache vị trí lớn nhất
-        $cacheKey = "board_{$boardId}_max_position";
-        $maxPosition = Cache::get($cacheKey);
-
-        if (is_null($maxPosition)) {
-            $maxPosition = ListBoard::where('board_id', $boardId)
-                ->max('position') ?? 0;
-            $maxPosition += 1000;
-            Cache::put($cacheKey, $maxPosition, 60);
-        }
-
-        $position = $newColumn['position'] ?? $maxPosition;
-
-        // Transaction để đảm bảo toàn vẹn dữ liệu
-        $list = DB::transaction(function () use ($newColumn, $boardId, $position) {
-            return ListBoard::create([
-                'name' => $newColumn['title'],
-                'closed' => false,
-                'position' => $position,
-                'board_id' => $boardId,
-            ]);
-        });
-
-        // Cập nhật max_position trong cache
-        Cache::put($cacheKey, $list->position + 1000, 60);
-
-        // $job = dispatch(new BroadcastListCreated($list));
-        broadcast(new ListCreated($list))->toOthers(); // Gửi WebSocket ngay lập tức
-
+        $list = ListBoard::create([
+            'board_id' =>  $validated['boardId'],
+            'name' => $validated['name'],
+            'position' => $validated['pos'],
+        ]);
+        // Phát sự kiện WebSocket
+        broadcast(new ListCreated($list))->toOthers();
 
         return response()->json([
             'id' => $list->id,

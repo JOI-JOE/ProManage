@@ -105,7 +105,6 @@ const Col = ({ column }) => {
         }
     };
 
-
     const {
         attributes,
         listeners,
@@ -197,7 +196,7 @@ const Col = ({ column }) => {
     }, [localCards, cardOrderIds]);
 
     return (
-        <div ref={setNodeRef} style={columnStyle} {...attributes}>
+        <div ref={setNodeRef} style={columnStyle} {...attributes} >
             <Box
                 {...listeners}
                 sx={{
@@ -350,7 +349,7 @@ const Col = ({ column }) => {
                 onClose={() => setOpenDeleteDialog(false)}
                 onConfirm={handleDeleteConfirm}
             />
-        </div>
+        </div >
     );
 };
 

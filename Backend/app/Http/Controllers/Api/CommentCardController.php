@@ -13,12 +13,14 @@ use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class CommentCardController extends Controller
 {
     //
     public function index($cardId)
     {
+
         $card = Card::find($cardId);
         if (!$card) {
             return response()->json(['message' => 'Card không tồn tại!'], 404);
@@ -31,7 +33,6 @@ class CommentCardController extends Controller
 
         return response()->json($comments);
     }
-
     public function addCommentIntoCard(Request $request)
     {
         $rules = [
@@ -140,7 +141,4 @@ class CommentCardController extends Controller
             'comment' => $comment
         ], 200);
     }
-
-
-
 }

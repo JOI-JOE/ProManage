@@ -1,17 +1,71 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  getListDetail,
-  updateListName,
+  // getListDetail,
+  // updateListName,
   updateClosed,
-  createList,
+  createListAPI,
   getListByBoardId,
-  updateColPosition,
+  // updateColPosition,
   deleteList,
   getListClosedByBoard,
+  updatePositionList,
 } from "../api/models/listsApi";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import echoInstance from "./realtime/useRealtime";
+import { optimisticIdManager } from "./optimistic/optimisticIdManager";
+
+// export const useLists = (boardId) => {
+//   const queryClient = useQueryClient();
+
+//   const query = useQuery({
+//     queryKey: ["lists", boardId],
+//     queryFn: () => getListByBoardId(boardId),
+//     enabled: !!boardId,
+//     staleTime: 0, // Luôn lấy dữ liệu mới từ API
+//     cacheTime: 1000 * 60 * 30, // Cache 30 phút
+//   });
+
+//   useEffect(() => {
+//     if (!boardId) return;
+
+//     // Sử dụng Public Channel để mọi người đều có thể nhận được sự kiện
+//     const channel = echoInstance.channel(`board.${boardId}`);
+
+//     // Lắng nghe sự kiện "list.updated"
+//     channel.listen(".list.updated", (event) => {
+//       console.log("Received list.updated event:", event);
+//       console.log("Updated List Data:", event.updatedList);
+
+//       // Cập nhật cache của query "lists" dựa trên dữ liệu mới
+//       queryClient.setQueryData(["lists", boardId], (oldData) => {
+//         console.log("Old Data:", oldData);
+
+//         if (!oldData || !oldData.columns || !Array.isArray(oldData.columns)) {
+//           console.warn(
+//             "Old data does not have a valid 'columns' array, returning unchanged."
+//           );
+//           return oldData;
+//         }
+
+//         const newColumns = oldData.columns.map((list) =>
+//           list.id === event.updatedList.id
+//             ? { ...list, ...event.updatedList }
+//             : list
+//         );
+//         const newData = { ...oldData, columns: newColumns };
+//         console.log("New Data after update:", newData.columns);
+//         return newData;
+//       });
+//     });
+
+//     return () => {
+//       channel.stopListening(".list.updated");
+//     };
+//   }, [boardId, queryClient]);
+
+//   return query;
+// };
 
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();
@@ -149,67 +203,73 @@ export const useLists = (boardId) => {
   return query;
 };
 
-export const useCreateList = () => {
+export const useUpdatePositionList = () => {
   return useMutation({
-    mutationFn: createList,
-    onError: (error) => {
-      console.error("❌ Lỗi khi tạo list:", error);
+    mutationFn: async ({ listId, position }) => {
+      return await updatePositionList({ listId, position });
     },
+    retry: 3,
+    retryDelay: 1000,
   });
 };
 
-export const useUpdateColumnPosition = () => {
+export const useCreateList = (boardId) => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (columns) => updateColPosition({ columns }),
+  const mutation = useMutation({
+    mutationFn: async (newList) => {
+      // console.log(newList);
+      return await createListAPI(newList); // Gọi API để tạo danh sách
+    },
 
-    onMutate: async (columns) => {
-      await queryClient.cancelQueries(["lists", columns.board_id]);
+    onMutate: async (newList) => {
+      await queryClient.cancelQueries({ queryKey: ["lists", boardId] });
 
-      const previousLists = queryClient.getQueryData([
-        "lists",
-        columns.board_id,
-      ]);
+      // 🆕 Tạo ID tạm thời
+      const optimisticId = optimisticIdManager.generateOptimisticId("List");
+      const previousLists = queryClient.getQueryData(["lists", boardId]) || [];
 
-      queryClient.setQueryData(["lists", columns.board_id], (oldLists) => {
-        const listsArray = Array.isArray(oldLists) ? oldLists : [];
-        return listsArray.map((list) => {
-          const updatedColumn = columns.find((col) => col.id === list.id);
-          return updatedColumn ? { ...list, ...updatedColumn } : list;
-        });
+      // 🌟 Cập nhật danh sách tạm thời (UI phản hồi ngay lập tức)
+      queryClient.setQueryData(["lists", boardId], (old) => {
+        const safeOld = Array.isArray(old) ? old : []; // Đảm bảo old luôn là mảng
+        return [...safeOld, { id: optimisticId, ...newList, temporary: true }];
       });
 
-      return { previousLists };
+      return { previousLists, optimisticId };
     },
 
-    onError: (error, variables, context) => {
-      console.error("Lỗi khi cập nhật vị trí cột:", error);
-      if (context?.previousLists) {
-        queryClient.setQueryData(
-          ["lists", variables.board_id],
-          context.previousLists
-        );
+    onSuccess: (data, newList, context) => {
+      if (!data?.id) {
+        console.error("❌ API không trả về ID hợp lệ, rollback danh sách.");
+        queryClient.setQueryData(["lists", boardId], context.previousLists);
+        return;
       }
+
+      // 🔄 Cập nhật danh sách với ID thực (thay thế ID lạc quan)
+      queryClient.setQueryData(["lists", boardId], (old = []) =>
+        old.map((list) =>
+          list.id === context.optimisticId ? { ...list, id: data.id } : list
+        )
+      );
+
+      // Liên kết ID lạc quan với ID thực
+      optimisticIdManager.resolveId(context.optimisticId, data.id);
     },
 
-    onSuccess: (data, variables) => {
-      // Kiểm tra nếu data là một mảng trước khi sử dụng .find()
-      if (Array.isArray(data)) {
-        queryClient.setQueryData(["lists", variables.board_id], (oldLists) => {
-          const listsArray = Array.isArray(oldLists) ? oldLists : [];
-          return listsArray.map((list) => {
-            const updatedColumn = data.find((col) => col.id === list.id);
-            return updatedColumn ? { ...list, ...updatedColumn } : list;
-          });
-        });
-      } else {
-        console.warn("Dữ liệu trả về không phải là một mảng:", data);
-      }
+    onError: (error, newList, context) => {
+      console.error("❌ Lỗi khi tạo danh sách:", error);
+      queryClient.setQueryData(["lists", boardId], context.previousLists);
     },
 
-    onSettled: (data, error, variables) => {},
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["lists", boardId],
+        exact: true,
+      });
+    },
   });
+
+  return { createList: mutation.mutate, isSaving: mutation.isPending };
 };
 
 // Hook lấy danh sách list đã đóng (archived)

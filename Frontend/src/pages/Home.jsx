@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Typography, Container, Paper, Button } from "@mui/material";
 // import { useUser, loading, error } from "../contexts/userContext";
-import { useStateContext } from "../contexts/ContextProvider";
+import { useMe } from "../contexts/MeContext";
 
 const Home = () => {
-  const { user, loading, error } = useStateContext(); // Dùng context để lấy user
+  const { user } = useMe(); // Dùng context để lấy user
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  console.log(user);
   const slides = [
     { type: "image", src: "/img/sl1.webp" },
     { type: "image", src: "/img/pro manage.webp" },
     { type: "image", src: "/img/hi.webp" },
-  ];
-
+  ];  
+  console.log(user);
   const token = localStorage.getItem("token");
   console.log(token);
 
@@ -23,38 +22,39 @@ const Home = () => {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+  console.log( user);
 
-  if (loading) {
-    return (
-      <Container
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          color: "white",
-        }}
-      >
-        Đang tải thông tin người dùng...
-      </Container>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <Container
+  //       sx={{
+  //         display: "flex",
+  //         justifyContent: "center",
+  //         alignItems: "center",
+  //         height: "100vh",
+  //         color: "white",
+  //       }}
+  //     >
+  //       Đang tải thông tin người dùng...
+  //     </Container>
+  //   );
+  // }
 
-  if (error) {
-    return (
-      <Container
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          color: "red",
-        }}
-      >
-        Lỗi: {error.message}
-      </Container>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <Container
+  //       sx={{
+  //         display: "flex",
+  //         justifyContent: "center",
+  //         alignItems: "center",
+  //         height: "100vh",
+  //         color: "red",
+  //       }}
+  //     >
+  //       Lỗi: {error.message}
+  //     </Container>
+  //   );
+  // }
 
   return (
     <Container
