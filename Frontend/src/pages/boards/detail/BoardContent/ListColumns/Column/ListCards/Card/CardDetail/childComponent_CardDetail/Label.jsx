@@ -323,6 +323,9 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                             "& fieldset": {
                               border: "none",
                             },
+                            "& input": {
+                              color: "#fff ", // Ensure text color is white
+                            },
                           },
                         }}
                       />
