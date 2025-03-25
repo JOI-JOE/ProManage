@@ -177,7 +177,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const handleEditLabel = (id, title) => {
     setEditLabelId(id);
     setIsEditingLabel(true);
-    setUpdatedLabelName("");
+    setUpdatedLabelName(title); // Set the current title to the input field
   };
 
   // const handleSaveLabelName = () => {
@@ -304,16 +304,9 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "0 8px",
-                      "&:hover::after": {
-                        content: `"${label.title}"`,
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        color: "#fff",
-                        fontSize: "0.6rem",
-                        fontWeight: "bold",
-                      },
+                      color: "#fff", // Always display the label title
+                      fontSize: "0.578rem",
+                      fontWeight: "bold",
                     }}
                   >
                     {isEditingLabel && editLabelId === label.id ? (
@@ -333,7 +326,9 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                           },
                         }}
                       />
-                    ) : null}
+                    ) : (
+                      label.title // Display the label title
+                    )}
                     <IconButton
                       size="small"
                       onClick={() => {
@@ -345,7 +340,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                     </IconButton>
                   </Box>
                 }
-              // sx={{ width: "100%" }}
+                // sx={{ width: "100%" }}
               />
               <IconButton
                 size="small"
