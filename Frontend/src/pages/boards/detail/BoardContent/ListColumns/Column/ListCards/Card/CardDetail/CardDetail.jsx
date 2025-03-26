@@ -52,6 +52,7 @@ import ShareIcon from "@mui/icons-material/Share";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import CloseIcon from "@mui/icons-material/Close";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import { v4 as uuidv4 } from 'uuid';
 import {
   useCardActions,
   useCardById,
@@ -131,6 +132,9 @@ const CardModal = ({ }) => {
   const [isFollowing, setIsFollowing] = useState(true);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
 
+  const [checklistItems, setChecklistItems] = useState([]);
+  const [newItem, setNewItem] = useState("");
+
   const [memberListConfig, setMemberListConfig] = useState({
     open: false,
     type: null,
@@ -139,7 +143,7 @@ const CardModal = ({ }) => {
   // const [activity, setActivity] = useState("");
 
   const [items, setItems] = useState([]);
-  const [newItem, setNewItem] = useState("");
+  // const [newItem, setNewItem] = useState("");
   const formatDate = (dateString) => {
     if (!dateString) return "Không có";
     const date = new Date(dateString);
@@ -270,6 +274,7 @@ const CardModal = ({ }) => {
 
   const handleArchiveCard = (cardId) => {
     archiveCard(cardId);
+    navigate(-1);
   };
 
   const handleDescriptionClick = () => {
@@ -342,7 +347,7 @@ const CardModal = ({ }) => {
     if (itemName.trim() === "") return;
 
     addCheckListItem(
-      { checklist_id: checklistId, name: itemName }, // Gửi request API
+      { checklist_id: checklistId, name: itemName, cardId: cardId }, // Gửi request API
       {
         onSuccess: () => {
           console.log(`✅ Đã thêm mục: ${itemName}`);
@@ -356,43 +361,61 @@ const CardModal = ({ }) => {
   };
 
   const toggleItemCompletion = (id) => {
+    // Tìm trạng thái hiện tại để rollback sau nếu lỗi
+
+    // Optimistic update: cập nhật UI trước
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, is_completed: !item.is_completed } : item
       )
     );
 
-    toggleItemStatus(id, {
+    // Gọi API
+    toggleItemStatus({ itemId: id, cardId: cardId }, {
       onSuccess: () => {
         console.log("✅ Cập nhật trạng thái thành công");
-        // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
-        // queryClient.invalidateQueries({ queryKey: ["activities"] });
+        // Không invalidate nếu đã update local state
       },
       onError: () => {
         console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
+        // Rollback về trạng thái ban đầu
         setItems((prevItems) =>
           prevItems.map((item) =>
-            item.id === id
-              ? { ...item, is_completed: !item.is_completed }
-              : item
+            item.id === id ? { ...item, is_completed: originalStatus } : item
           )
         );
       },
     });
   };
 
+
+  // const handleDeleteTask = (checklistId) => {
+  //   removeCheckList(checklistId, {
+  //     onSuccess: () => {
+  //       console.log("✅ Checklist đã bị xóa thành công!");
+  //       // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
+  //       // // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] }); // Cập nhật lại danh sách checklist
+  //       // queryClient.invalidateQueries({ queryKey: ["activities"] });
+  //     },
+  //     onError: (error) => {
+  //       console.error("❌ Lỗi khi xóa checklist:", error);
+  //     },
+  //   });
+  // };
+
+  // {card_id: cardId, name: taskName },
   const handleDeleteTask = (checklistId) => {
-    removeCheckList(checklistId, {
-      onSuccess: () => {
-        console.log("✅ Checklist đã bị xóa thành công!");
-        // queryClient.invalidateQueries({queryKey: ["checklists", cardId]});
-        // // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] }); // Cập nhật lại danh sách checklist
-        // queryClient.invalidateQueries({ queryKey: ["activities"] });
-      },
-      onError: (error) => {
-        console.error("❌ Lỗi khi xóa checklist:", error);
-      },
-    });
+    removeCheckList(
+      { checklistId: checklistId, cardId: cardId }, // ✅ Truyền đầy đủ object với checklistId và cardId
+      {
+        onSuccess: () => {
+          console.log("✅ Checklist đã bị xóa thành công!");
+        },
+        onError: (error) => {
+          console.error("❌ Lỗi khi xóa checklist:", error);
+        },
+      }
+    );
   };
 
   const [editingTaskId, setEditingTaskId] = useState(null);
@@ -411,7 +434,7 @@ const CardModal = ({ }) => {
     if (!editedTaskName.trim()) return;
 
     updateCheckList(
-      { id, name: editedTaskName },
+      { id: id, name: editedTaskName, cardId: cardId },
       {
         onSuccess: () => {
           setEditingTaskId(null); // Thoát chế độ chỉnh sửa sau khi cập nhật
@@ -440,7 +463,7 @@ const CardModal = ({ }) => {
     if (!editedItemName.trim()) return;
 
     updateCheckListItemName(
-      { itemId: id, name: editedItemName },
+      { itemId: id, name: editedItemName, cardId:cardId },
       {
         onSuccess: () => {
           setEditingItemId(null); // Thoát chế độ chỉnh sửa sau khi cập nhật
@@ -461,7 +484,7 @@ const CardModal = ({ }) => {
   const [selectedItemId, setSelectedItemId] = useState(null);
 
   const handleDeleteItem = (id) => {
-    deleteItem(id, {
+    deleteItem( { id: id, cardId:cardId }, {
       onSuccess: () => {
         console.log(`✅ Xóa thành công ChecklistItem ID: ${id}`);
         handleMenuClose();
@@ -525,8 +548,8 @@ const CardModal = ({ }) => {
         setCommentToDelete(null);
 
         // queryClient.invalidateQueries(["comments", cardId]);
-        queryClient.invalidateQueries({ queryKey: ["comments"] });
-        queryClient.invalidateQueries({ queryKey: ["lists"] });
+        // queryClient.invalidateQueries({ queryKey: ["comments"] });
+        // queryClient.invalidateQueries({ queryKey: ["lists"] });
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa bình luận:", error);

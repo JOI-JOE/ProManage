@@ -62,7 +62,7 @@ export const deleteCheckListItem = async (id) => {
 
 export const toggleCheckListItemMember = async (itemId, userId) => {
     try {
-        console.log("Sending toggle member for checklist item:", itemId, "user:", userId);
+        // console.log("Sending toggle member for checklist item:", itemId, "user:", userId);
         const response = await authClient.post(`/checklist-items/${itemId}/toggle-member`, {
             user_id: userId,
         });

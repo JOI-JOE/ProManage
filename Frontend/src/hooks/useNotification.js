@@ -22,7 +22,7 @@ const useNotifications = (userId) => {
     const channel = echoInstance.private(`App.Models.User.${userId}`);
     
     channel.notification((notification) => {
-      console.log("📥 New notification: ", notification);
+      // console.log("📥 New notification: ", notification);
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
     });
   

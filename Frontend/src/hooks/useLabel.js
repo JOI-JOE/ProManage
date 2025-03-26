@@ -24,7 +24,9 @@ export const useLabels = (boardId) => {
                 return oldData ? [...oldData, event.label] : [event.label];
             });
 
-            queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
+            // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
+            queryClient.invalidateQueries({ queryKey: ["labels", boardId], exact: true });
+            // queryClient.invalidateQueries({ queryKey: ["lists"] });
         });
 
         channel.listen(".label.nameUpdated", (event) => {
@@ -57,12 +59,11 @@ export const useLabels = (boardId) => {
                 if (!oldLabels) return [];
 
                 return oldLabels.filter((label) => label.id !== event.labelId);
-            });
+            }); 
+            //  queryClient.invalidateQueries({ queryKey: ["lists"] });
 
-            queryClient.invalidateQueries({ queryKey: ["labels"] });
-
-          
-            queryClient.invalidateQueries({ queryKey: ["cardLabels"] });
+            queryClient.invalidateQueries({ queryKey: ["labels", boardId], exact: true });
+            // queryClient.invalidateQueries({ queryKey: ["labels"] });
 
           
         });
@@ -88,7 +89,7 @@ export const useCreateLabel = () => {
         mutationFn: ({ boardId, data }) => createLabel(boardId, data), // 🟢 Sử dụng mutationFn thay vì truyền trực tiếp function
 
         onSuccess: (newLabel, { boardId }) => {
-            // 🟢 Thay `variables.boardId` bằng `boardId`
+            queryClient.invalidateQueries({ queryKey: ["labels", boardId], exact: true });
         },
 
         onError: (error) => {
@@ -124,7 +125,7 @@ export const useCardLabels = (cardId) => {
             });
 
 
-            queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] }); // 🟢 Đảm bảo dữ liệu được làm mới
+            queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId], exact: true });
 
             queryClient.invalidateQueries({ queryKey: ["labels"] });
 
@@ -151,6 +152,8 @@ export const useUpdateCardLabel = () => {
         onSuccess: (_, { cardId, labelId, action, boardId }) => {
             // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] })
             queryClient.invalidateQueries({ queryKey: ["lists"] });
+            queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId], exact: true });
+
         },
     });
 };
@@ -159,32 +162,40 @@ export const useUpdateLabelName = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ labelId, data }) => updateLabelName(labelId, data), // 🟢 Gọi hàm updateLabel
-        onError: (error) => {
-            console.error("Lỗi khi cập nhật tên nhãn:", error.response?.data || error.message);
+        mutationFn: ({ labelId, data }) => updateLabelName(labelId, data), // Gọi API cập nhật tên label
+        onSuccess: (_, { boardId }) => {
+            // Invalidate lại dữ liệu để cập nhật UI
+            queryClient.invalidateQueries({ queryKey: ["labels", boardId], exact: true });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
-        onSuccess: () => {
-            // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] })
-            // queryClient.invalidateQueries({ queryKey: ["lists"] });
+        onError: (error) => {
+            console.error("❌ Lỗi khi cập nhật tên nhãn:", error.response?.data || error.message);
         },
     });
 };
-
 
 export const useDeleteLabelByBoard = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ labelId }) => deleteLabelByBoard(labelId), // Xóa label chỉ cần labelId
-        onSuccess: () => {
-           
+        mutationFn: ({ labelId }) => deleteLabelByBoard(labelId),
+        onSuccess: (_, variables) => {
+            const { boardId, cardId } = variables || {};
             queryClient.invalidateQueries({ queryKey: ["lists"] });
-          
+
+            if (boardId) {
+                queryClient.invalidateQueries({ queryKey: ["labels", boardId], exact: true });
+            }
+
+            if (cardId) {
+                queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId], exact: true });
+            }
         },
         onError: (error) => {
-            console.error("Lỗi khi xóa nhãn:", error);
+            console.error("❌ Lỗi khi xóa nhãn:", error.response?.data || error.message);
         },
     });
 };
+
 
 

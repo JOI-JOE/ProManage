@@ -99,7 +99,8 @@ export const useCardById = (cardId) => {
     onSuccess: (data) => {
       console.log("Mô tả đã được cập nhật:", data);
 
-      queryClient.invalidateQueries(["cardDetail", cardId]);
+      queryClient.invalidateQueries({ queryKey: ["cardDetail", cardId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật mô tả:", error);
@@ -156,13 +157,13 @@ export const useCardActions = (boardId) => {
 
     channel.listen(".CardArchiveToggled", (data) => {
       // console.log('Realtime archive changed: ', data);
-     
+
       queryClient.invalidateQueries(["lists"]);
 
     });
     channel.listen(".CardDelete", (data) => {
       // console.log('Realtime archive changed: ', data);
-     
+
       queryClient.invalidateQueries(["lists"]);
 
     });
@@ -180,7 +181,8 @@ export const useCardActions = (boardId) => {
   const archiveCard = useMutation({
     mutationFn: updateArchivedCard,
     onSuccess: () => {
-      queryClient.invalidateQueries(["cardsArchivedByBoard"]);
+      queryClient.invalidateQueries({ queryKey: ["cardsArchivedByBoard"], exact: true });
+      queryClient.invalidateQueries(["lists"]);
       toast.success("Đổi trạng thái thẻ thành công!");
     },
     onError: (error) => {
@@ -233,8 +235,11 @@ export const useGetMemberInCard = (cardId) => {
 
 
         // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });
-        queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] }); // Fetch lại sau khi API thành công
+        // queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] }); // Fetch lại sau khi API thành công
+        queryClient.invalidateQueries({ queryKey: ["card", cardId], exact: true });
+        queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] });
         queryClient.invalidateQueries({ queryKey: ["activities"] });
+        queryClient.invalidateQueries({ queryKey: ["lists"] });
 
       }
     });
@@ -250,7 +255,10 @@ export const useGetMemberInCard = (cardId) => {
   const mutation = useMutation({
     mutationFn: (userId) => toggleCardMember(cardId, userId),
     onSuccess: () => {
-
+      queryClient.invalidateQueries({ queryKey: ["card", cardId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
   });
 
@@ -267,7 +275,7 @@ export const useCardSchedule = (cardId) => {
     queryKey: ["cardSchedule", cardId],
     queryFn: () => getDateByCard(cardId),
     staleTime: 1000 * 60 * 5, // Dữ liệu cũ sau 5 phút
-    cacheTime: 1000 * 60 * 30, 
+    cacheTime: 1000 * 60 * 30,
     enabled: !!cardId, // Chỉ gọi API nếu cardId tồn tại
 
   });
@@ -280,7 +288,8 @@ export const useUpdateCardDate = () => {
       updateCardDate(cardId, startDate, endDate, endTime, reminder),
     onSuccess: (data, variables) => {
 
-      queryClient.invalidateQueries(["cardSchedule"], variables.cardId);
+      queryClient.invalidateQueries({ queryKey: ["cardSchedule", variables.cardId], exact: true });
+      // queryClient.invalidateQueries({ queryKey: ["cardDetail", cardId], exact: true });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật ngày card:", error);
