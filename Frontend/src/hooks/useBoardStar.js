@@ -1,10 +1,6 @@
 import { useDispatch } from "react-redux";
-import {
-  fetchBoardStars,
-  // starBoard,
-  // unstarBoard,
-} from "../api/models/boardStarApi";
-import { useQuery } from "@tanstack/react-query";
+import { fetchBoardStars } from "../api/models/boardStarApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 export const useBoardStars = () => {
   return useQuery({

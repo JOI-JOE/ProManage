@@ -1,45 +1,47 @@
-import React, { useState } from "react";
-import { Box, IconButton, Rating, Typography } from "@mui/material";
-import PeopleIcon from "@mui/icons-material/People";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Box, Typography } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { starBoard, unstarBoard } from "../redux/slices/starredBoardsSlice";
+import { starBoard, unstarBoard, updateStarredBoard } from "../redux/slices/starredBoardsSlice";
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import StarOutlineRoundedIcon from '@mui/icons-material/StarOutlineRounded';
+import { optimisticIdManager } from "../../utils/optimisticIdManager";
+import { Link } from "react-router-dom";
+import { addStarToBoard, unStarToBoard } from "../api/models/boardStarApi";
+import { useMe } from "../contexts/MeContext";
 
 const MyBoard = ({ board }) => {
-  const dispatch = useDispatch()
-  const [isStar, setStar] = useState(board.starred); // Trạng thái sao (true/false)
+  const dispatch = useDispatch();
+  const { user } = useMe(); // Fetch user from context
+  const [optimisticId] = useState(optimisticIdManager.generateOptimisticId('StarBoard')); // Generate optimistic ID
 
   const handleToggleMarked = async (e) => {
-    e.stopPropagation(); // Ngăn sự kiện lan ra ngoài (ngăn bấm vào Link)
+    e.stopPropagation(); // Prevent event from propagating
+
+    const starred = {
+      star_id: optimisticId,  // Initially use the optimistic ID
+      board_id: board.id,
+      name: board.name,
+      thumbnail: board.thumbnail,
+      starred: 1,
+    };
+
     try {
-      // Toggle trạng thái sao
-      const newIsStar = !isStar;
-      setStar(newIsStar); // Cập nhật trạng thái sao trong component
-
-      const starred = {
-        board_id: board.id,
-        board_name: board.name,
-        board_thumbnail: board.thumbnail,
-      };
-      // Kiểm tra trạng thái sao hiện tại
-      if (newIsStar) {
-        // Nếu board được đánh dấu sao (thêm vào danh sách)
-        console.log(starred);
-        dispatch(starBoard({ board: starred }));
+      if (isStar) {
+        if (starId) {
+          dispatch(unstarBoard({ board: starred, optimisticId }));
+          const response = await unStarToBoard(user.id, board.id); // Pass the real `star_id` for unstar
+        }
       } else {
-        // Nếu board bị bỏ dấu sao (xóa khỏi danh sách)
-        console.log(starred);
-        dispatch(unstarBoard({ board: starred })); // Gọi action unstarBoard
+        dispatch(starBoard({ board: starred, optimisticId }));
+        const response = await addStarToBoard(user.id, board.id);
+        console.log(response)
+        dispatch(updateStarredBoard({ boardId: response.board_id, newStarId: response.id }));
       }
-
     } catch (error) {
-      console.error("Lỗi khi cập nhật trạng thái sao:", error);
-      // Nếu có lỗi, bạn có thể khôi phục lại trạng thái trước đó
-      setStar(isStar); // Khôi phục lại trạng thái ban đầu nếu có lỗi
+      console.error("Có lỗi xảy ra khi thao tác với sao", error);
     }
   };
+
 
   return (
     <div key={board.id}>
@@ -50,7 +52,6 @@ const MyBoard = ({ board }) => {
           "&:hover .star-icon": {
             opacity: 1, // Hiển thị sao khi hover vào board
             transform: "scale(1.1)", // Hiển thị nguyên kích thước
-            // marginRight: "6px",
           },
         }}
       >

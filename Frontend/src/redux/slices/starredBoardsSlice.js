@@ -33,9 +33,18 @@ const starredBoardsSlice = createSlice({
         state.starred.board_stars.splice(boardIndex, 1);
       }
     },
+    updateStarredBoard: (state, action) => {
+      const { boardId, newStarId } = action.payload;
+      const board = state.starred.board_stars.find(
+        (b) => b.board_id === boardId
+      );
+      if (board) {
+        board.star_id = newStarId;
+      }
+    },
   },
 });
 
-export const { setStarredBoards, starBoard, unstarBoard } =
+export const { setStarredBoards, starBoard, unstarBoard, updateStarredBoard } =
   starredBoardsSlice.actions;
 export default starredBoardsSlice.reducer;

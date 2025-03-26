@@ -73,7 +73,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::prefix('boardstars')->group(function () {
             Route::get('/',  'index');
         });
+        Route::post('member/{userId}/boardStars', 'starBoard');
+        Route::delete('member/{userId}/boardStars/{boardId}', 'unstarBoard');
     });
+
+    Route::controller(BoardStarController::class)->group(function () {});
+
 
     // Function lấy dữ liệu của workspace 
     Route::controller(WorkspaceController::class)->group(function () {
@@ -133,10 +138,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/cards/{cardId}', action: 'updatePositionCard');
     });
 
-    Route::controller(BoardStarController::class)->group(function () {
-        Route::post('/member/{boardId}/boardStars', 'starBoard');
-        Route::delete('/member/{boardId}/boardStars/{boardStarId}', 'unstarBoard');
-    });
 
     // list board
     Route::get('lists/{boardId}', [ListController::class, 'index']);

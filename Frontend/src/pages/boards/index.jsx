@@ -1,12 +1,10 @@
-import { useGetWorkspaces } from "../../hooks/useWorkspace";
+import { useWorkspace } from "../../contexts/WorkspaceContext";
 import HomeBoard from "./home";
 
 const Boards = () => {
-    const { data = {}, isLoading, isError } = useGetWorkspaces();
-    const { workspaces = [], id: userId } = data; // Destructure trực tiếp
-
+    const { data } = useWorkspace();
     return (
-        <HomeBoard workspaces={workspaces} userId={userId} />
+        <HomeBoard workspaces={data?.workspaces || []} />
     )
 }
 export default Boards;

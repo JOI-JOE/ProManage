@@ -4,6 +4,7 @@ import AppBar from "../Navigation/AppBar";
 import { MeProvider } from "../../contexts/MeContext";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { useDispatch } from "react-redux";
+import { WorkspaceProvider } from "../../contexts/WorkspaceContext";
 
 
 const DefaultLayout = () => {
@@ -17,8 +18,10 @@ const DefaultLayout = () => {
 
     return (
         <MeProvider>
-            <AppBar />
-            <Outlet />
+            <WorkspaceProvider>
+                <AppBar />
+                <Outlet />
+            </WorkspaceProvider>
         </MeProvider>
     );
 };

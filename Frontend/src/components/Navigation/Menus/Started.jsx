@@ -80,7 +80,6 @@ const Started = () => {
             <LogoLoading scale={0.4} /> {/* Tùy chỉnh scale nếu cần */}
           </MenuItem>
         ) : (!listStar || listStar.length === 0) ? (
-          // Nếu board_stars là undefined hoặc không có bảng nào đã đánh dấu sao
           <MenuItem disabled>Không có bảng nào</MenuItem>
         ) : (
           listStar.map((board) => (
@@ -100,22 +99,22 @@ const Started = () => {
               {/* Bên trái: Avatar + Nội dung */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  src={board.board_thumbnail || ""}
-                  alt={board.board_name}
+                  src={board.thumbnail || ""}
+                  alt={board.name}
                   sx={{
                     width: 40,
                     height: 40,
                     borderRadius: "4px",
-                    background: board.board_thumbnail
-                      ? board.board_thumbnail.startsWith("#")
-                        ? board.board_thumbnail
-                        : `url(${board.board_thumbnail}) center/cover no-repeat`
+                    background: board.thumbnail
+                      ? board.thumbnail.startsWith("#")
+                        ? board.thumbnail
+                        : `url(${board.thumbnail}) center/cover no-repeat`
                       : "#1693E1", // Nếu không có ảnh thì sẽ có màu nền mặc định
                   }}
                 />
                 <Box>
                   <Typography variant="body1" fontWeight={500}>
-                    {board.board_name} {/* Sử dụng tên board */}
+                    {board.name} {/* Sử dụng tên board */}
                   </Typography>
                 </Box>
               </Box>

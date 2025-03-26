@@ -1,13 +1,27 @@
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useMemo } from "react";
+import { useGetWorkspaces } from "../hooks/useWorkspace";
 
-const WorkspaceContext = createContext(null)
+const WorkspaceContext = createContext({
+    workspaces: null,
+    boards: null,
+    isLoading: true,
+    error: null,
+});
 
-export const useWorkspace = () => {
-    const context = useContext(WorkspaceContext)
-    if (!context) {
-        throw new Error("useWorkspace() phải được xử dụng trong WorkspaceProvider")
-    }
-    return context
-}
+export const useWorkspace = () => useContext(WorkspaceContext);
 
-export default WorkspaceContext
+export const WorkspaceProvider = ({ children }) => {
+    const { data, isLoading, error } = useGetWorkspaces();
+
+    const contextValue = useMemo(() => ({
+        data,
+        isLoading,
+        error,
+    }), [data, isLoading, error]);
+
+    return (
+        <WorkspaceContext.Provider value={contextValue}>
+            {children}
+        </WorkspaceContext.Provider>    
+    );
+};

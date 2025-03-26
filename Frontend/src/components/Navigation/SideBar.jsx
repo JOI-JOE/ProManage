@@ -14,10 +14,12 @@ import HomeIcon from "@mui/icons-material/Home";
 import { Link } from "react-router-dom";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useMe } from "../../contexts/MeContext";
+import { useWorkspace } from "../../contexts/WorkspaceContext";
 
 
 const SideBar = ({ workspaces }) => {
     const { user } = useMe()
+    const { data } = useWorkspace()
     return (
         <Drawer
             variant="permanent"
@@ -70,7 +72,7 @@ const SideBar = ({ workspaces }) => {
             </Typography>
 
             {/* Truyền workspace vào WorkspaceMenu */}
-            {workspaces?.map((item) => (
+            {data?.workspaces?.map((item) => (
                 <div key={item.id}>
                     <WorkspaceMenu workspace={item} />
                 </div>

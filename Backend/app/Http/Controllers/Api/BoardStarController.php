@@ -31,8 +31,9 @@ class BoardStarController extends Controller
             ->select([
                 'bs.id as star_id',
                 'bs.board_id',
-                'b.name as board_name',
-                'b.thumbnail as board_thumbnail',
+                'b.name as name',
+                'b.thumbnail as thumbnail',
+                DB::raw('TRUE as starred'),
                 'bs.created_at',
             ])
             ->orderByDesc('bs.created_at') // Lấy dữ liệu mới nhất trước
@@ -45,58 +46,57 @@ class BoardStarController extends Controller
     /**
      * Thêm sao vào board
      */
-    public function starBoard($boardId)
+    public function starBoard(Request $request, $userId)
     {
-        $user = Auth::user();
+        $boardId = $request->input('boardId'); // hoặc $request->query('user_id')
 
-        // Kiểm tra xem board_id có tồn tại trong bảng boards không
-        $board = Board::find($boardId);  // Tìm board theo boardId
+        $board = Board::findOrFail($boardId);
 
-        if (!$board) {
-            return response()->json(['message' => 'Board not found', 'starred' => false], 404); // Board không tồn tại
-        }
+        $existingStar = BoardStar::where('user_id', $userId)->where('board_id', $boardId)->first();
 
-        $conditions = ['user_id' => $user->id, 'board_id' => $boardId];
-
-        // Kiểm tra xem đã đánh dấu sao chưa, nếu chưa thì tạo mới
-        $deleted = BoardStar::where($conditions)->delete();  // Cố gắng xóa nếu có tồn tại
-
-        if ($deleted) {
+        if ($existingStar) {
+            $existingStar->delete(); // Xóa sao khỏi board
             return response()->json(['message' => 'Board unstarred successfully', 'starred' => false]);
         }
-
-        // Nếu không xóa được (nghĩa là chưa tồn tại), thì tạo mới
-        BoardStar::create([
+        // Nếu chưa có sao, tạo mới một sao
+        $star = BoardStar::create([
             'id' => Str::uuid(),
-            'user_id' => $user->id,
+            'user_id' => $userId,
             'board_id' => $boardId,
         ]);
-        return response()->json(['message' => 'Board starred successfully', 'starred' => true]);
-    }
 
+        return response()->json(
+            $star
+        );
+    }
     /**
      * Xóa sao khỏi board
      */
-    public function unstarBoard($boardId, $boardStarId)
+    public function unstarBoard($userId, $boardId)
     {
-        $user = Auth::user();
+        try {
+            // Tìm board_star dựa trên board_id và user_id
+            $boardStar = DB::table('board_stars')
+                ->where('board_id', $boardId)
+                ->where('user_id', $userId)
+                ->first();
 
-        // Kiểm tra xem board_id có tồn tại trong bảng boards không
-        $board = Board::find($boardId);  // Tìm board theo boardId
-
-        if (!$board) {
-            return response()->json(['message' => 'Board not found', 'starred' => false], 404); // Board không tồn tại
+            // Kiểm tra nếu không tìm thấy bản ghi
+            if (!$boardStar) {
+                return response()->json([
+                    'message' => 'Board star not found or you do not have permission to unstar this board',
+                ], 404);
+            }
+            DB::table('board_stars')->where('id', $boardStar->id)->delete();
+            return response()->json([
+                'message' => 'Board unstarred successfully',
+                'board_star_id' => $boardStar->id,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while unstarring the board',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        $conditions = ['user_id' => $user->id, 'board_id' => $boardId];
-
-        // Nếu là DELETE và có boardStarId, tức là yêu cầu xóa một sao cụ thể
-        $boardStar = BoardStar::where($conditions)->where('id', $boardStarId)->first();
-        if ($boardStar) {
-            $boardStar->delete();
-            return response()->json(['message' => 'Board unstarred successfully', 'starred' => false]);
-        }
-
-        return response()->json(['message' => 'Star not found', 'starred' => false], 404);
     }
 }

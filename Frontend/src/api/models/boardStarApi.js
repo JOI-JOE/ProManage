@@ -11,11 +11,11 @@ export const fetchBoardStars = async () => {
   }
 };
 
-export const starBoard = async (userId, boardId) => {
+export const addStarToBoard = async (userId, boardId) => {
   try {
-    // Gửi request POST để star board
-    const response = await authClient.post(`/member/${userId}/boardStars`, {
-      board_id: boardId, // Thêm boardId vào request body
+    // Gửi request POST để star board với boardId
+    const response = await authClient.post(`member/${userId}/boardStars`, {
+      boardId: boardId, // Thêm userId vào request body nếu cần thiết
     });
     return response.data;
   } catch (error) {
@@ -24,12 +24,10 @@ export const starBoard = async (userId, boardId) => {
   }
 };
 
-// Hàm để "unstar" board với userId và boardStarId
-export const unstarBoard = async (userId, boardStarId) => {
+export const unStarToBoard = async (userId, boardId) => {
   try {
-    // Gửi request DELETE để unstar board
     const response = await authClient.delete(
-      `/member/${userId}/boardStars/${boardStarId}`
+      `/member/${userId}/boardStars/${boardId}`
     );
     return response.data;
   } catch (error) {

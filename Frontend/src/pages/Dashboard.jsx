@@ -5,7 +5,7 @@ import SideBar from '../components/Navigation/SideBar';
 import { Outlet } from "react-router-dom";
 
 const Dashboard = () => {
-
+    
     return (
         <Container disableGutters maxWidth={false} sx={{ height: "100vh" }}>
             <Box sx={{ display: "flex" }}>
