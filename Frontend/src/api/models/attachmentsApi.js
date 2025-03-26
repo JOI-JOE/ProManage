@@ -13,7 +13,7 @@ export const getAttachmentsByCard = async (cardId) => {
 
 export const createAttachments = async (cardId, data) => {
   try {
-    console.log("📥 Dữ liệu nhận được trong createAttachments:", {  data });
+    // console.log("📥 Dữ liệu nhận được trong createAttachments:", {  data });
     const formData = new FormData();
 
     if (data.file) {
@@ -22,11 +22,11 @@ export const createAttachments = async (cardId, data) => {
       formData.append("file_name_defaut", data.file.name); // Tên file mặc định
       formData.append("card_id", cardId); // Gửi card_id để backend xử lý
 
-      console.log("📤 Gửi file:", {
-        file_name: data.file.name,
-        file_type: data.file.type,
-        file_size: (data.file.size / 1024).toFixed(2) + "KB",
-      });
+      // console.log("📤 Gửi file:", {
+      //   file_name: data.file.name,
+      //   file_type: data.file.type,
+      //   file_size: (data.file.size / 1024).toFixed(2) + "KB",
+      // });
     } else if (data.path_url) {
       // Nếu là link
       formData.append("path_url", data.path_url);
@@ -37,7 +37,7 @@ export const createAttachments = async (cardId, data) => {
     }
 
     // Debug dữ liệu gửi lên
-    console.log("📤 Dữ liệu gửi lên backend:", Object.fromEntries(formData.entries()));
+    // console.log("📤 Dữ liệu gửi lên backend:", Object.fromEntries(formData.entries()));
 
     const response = await authClient.post(`/${cardId}/attachments/upload`, formData, {
       headers: {
@@ -45,7 +45,7 @@ export const createAttachments = async (cardId, data) => {
       },
     });
 
-    console.log("✅ Phản hồi từ backend:", response.data);
+    // console.log("✅ Phản hồi từ backend:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Lỗi khi tạo đính kèm:", {

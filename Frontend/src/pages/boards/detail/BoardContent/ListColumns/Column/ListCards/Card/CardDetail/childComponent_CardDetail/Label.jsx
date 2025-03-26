@@ -99,7 +99,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
     if (!NewUpdatedLabelName.trim()) alert("Tên nhãn không được để trống!");
 
     updateLabelNameMutation.mutate(
-      { labelId: editLabelId, data: { title: NewUpdatedLabelName } },
+      { labelId: editLabelId,   boardId: boardId, data: { title: NewUpdatedLabelName } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["labels"] });
@@ -150,7 +150,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   };
   const handleDeleteLabel = (labelId) => {
     deleteLabelMutation.mutate(
-      { labelId },
+      { labelId, cardId:cardId, boardId: boardId },
       {
         onSuccess: () => {
           // queryClient.invalidateQueries({ queryKey: ["labels"] });
