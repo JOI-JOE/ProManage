@@ -100,10 +100,10 @@ class User extends Authenticatable
      */
 
 
-    // public function workspaces()
-    // {
-    //     return $this->hasMany(Workspace::class, 'id_member_creator');
-    // }
+    public function workspaces_2()
+    {
+        return $this->hasMany(Workspace::class, 'id_member_creator');
+    }
 
     public function boards()
     {

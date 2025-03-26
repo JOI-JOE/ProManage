@@ -5,16 +5,17 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
-class CardFactory extends Factory
+class AttachmentFactory extends Factory
 {
     public function definition()
     {
+        $fileName = $this->faker->word() . '.pdf';
         return [
             'id' => Str::uuid(),
-            'title' => $this->faker->sentence(4),
-            'position' => 1,
-            'is_completed' => false,
-            'is_archived' => false,
+            'path_url' => '/storage/attachments/' . $fileName,
+            'file_name_defaut' => $fileName,
+            'file_name' => $fileName,
+            'is_cover' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ];

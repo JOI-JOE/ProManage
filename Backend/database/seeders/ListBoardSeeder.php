@@ -27,7 +27,7 @@ class ListBoardSeeder extends Seeder
         }
 
         // Tạo 30 lists
-        for ($i = 0; $i < 30; $i++) {
+        for ($i = 0; $i < 5; $i++) {
             DB::table('list_boards')->insert([
                 'id' => Str::uuid(),
                 'name' => 'List ' . ($i + 1),
