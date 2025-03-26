@@ -3,7 +3,6 @@ import React, { useEffect } from 'react';
 import { Box, Container } from "@mui/material";
 import SideBar from '../components/Navigation/SideBar';
 import { Outlet } from "react-router-dom";
-import { useGetWorkspaces } from "../hooks/useWorkspace";
 
 const Dashboard = () => {
 

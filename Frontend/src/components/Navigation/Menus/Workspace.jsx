@@ -76,7 +76,6 @@ const Workspace = () => {
   const handleClose = () => setAnchorEl(null);
 
   const { data: data, isLoading, isError } = useGetWorkspaces();
-  console.log(data?.workspaces)
   // const { data: guestWorkspace } = useGetGuestWorkspaces();
 
   // const InviteBoard = useMemo(() => {

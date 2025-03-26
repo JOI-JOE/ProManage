@@ -1,19 +1,14 @@
-import {
-  Avatar,
-  Box,
-  CircularProgress,
-  Typography,
-} from "@mui/material";
+import { Box, Button, MenuItem, Avatar, Typography } from "@mui/material";
 import { useState } from "react";
 import { styled } from "@mui/material/styles";
-import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { useMe } from "../../../contexts/MeContext";
 import { useSelector } from "react-redux";
+import LogoLoading from "../../LogoLoading";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -40,11 +35,12 @@ const StyledMenu = styled((props) => (
 }));
 
 const Started = () => {
-  const starredBoards = useSelector((state) => state.starredBoards.starredBoards);
-  console.log(starredBoards);
-
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+
+  const { isLoading } = useMe(); // Lấy trạng thái loading từ context
+  const starredBoards = useSelector((state) => state.starredBoards.starred);
+  const listStar = starredBoards?.board_stars || [];  // Sử dụng mảng rỗng nếu không có dữ liệu
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -68,6 +64,7 @@ const Started = () => {
       >
         Đã đánh dấu sao
       </Button>
+
       <StyledMenu
         id="demo-customized-menu-workspace"
         MenuListProps={{
@@ -77,15 +74,20 @@ const Started = () => {
         open={open}
         onClose={handleClose}
       >
-        {Array.isArray(starredBoards) && starredBoards.length === 0 ? (
+        {isLoading ? (
+          // Nếu đang loading, hiển thị LogoLoading
+          <MenuItem disabled>
+            <LogoLoading scale={0.4} /> {/* Tùy chỉnh scale nếu cần */}
+          </MenuItem>
+        ) : (!listStar || listStar.length === 0) ? (
+          // Nếu board_stars là undefined hoặc không có bảng nào đã đánh dấu sao
           <MenuItem disabled>Không có bảng nào</MenuItem>
         ) : (
-          Array.isArray(starredBoards) &&
-          starredBoards.map((board) => (
+          listStar.map((board) => (
             <MenuItem
               component={Link}
               to={`/b/${board.board_id}/${board.name}`} // Đảm bảo sử dụng đúng board id và name
-              key={board.board_id} // Sử dụng board_id làm key duy nhất
+              key={board.star_id} // Sử dụng board_id làm key duy nhất
               onClick={handleClose}
               sx={{
                 display: "flex",
@@ -98,22 +100,22 @@ const Started = () => {
               {/* Bên trái: Avatar + Nội dung */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Avatar
-                  src={board.thumbnail || ""}
-                  alt={board.name}
+                  src={board.board_thumbnail || ""}
+                  alt={board.board_name}
                   sx={{
                     width: 40,
                     height: 40,
                     borderRadius: "4px",
-                    background: board.thumbnail
-                      ? board.thumbnail.startsWith("#")
-                        ? board.thumbnail
-                        : `url(${board.thumbnail}) center/cover no-repeat`
-                      : "#1693E1",
+                    background: board.board_thumbnail
+                      ? board.board_thumbnail.startsWith("#")
+                        ? board.board_thumbnail
+                        : `url(${board.board_thumbnail}) center/cover no-repeat`
+                      : "#1693E1", // Nếu không có ảnh thì sẽ có màu nền mặc định
                   }}
                 />
                 <Box>
-                  <Typography variant="body1" f ontWeight={500}>
-                    {board.name} {/* Sử dụng tên board */}
+                  <Typography variant="body1" fontWeight={500}>
+                    {board.board_name} {/* Sử dụng tên board */}
                   </Typography>
                 </Box>
               </Box>

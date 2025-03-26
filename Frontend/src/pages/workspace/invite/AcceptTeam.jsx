@@ -69,7 +69,7 @@ const AcceptTeam = () => {
     }, [inviteData, idMember, userWorkspaces, navigate]);
 
     // Nếu đang load từ cookies hoặc API, hiển thị loading
-    if (loading || isLoading || isLoadingUser) {
+    if (loading || isLoading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
                 <SvgIcon

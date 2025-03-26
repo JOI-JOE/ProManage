@@ -11,7 +11,6 @@ import {
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
-
 import MyBoard from "../../../components/MyBoard";
 import CreateBoard from "../../../components/CreateBoard";
 

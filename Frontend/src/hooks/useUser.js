@@ -16,8 +16,8 @@ export const useUserData = () => {
       {
         queryKey: ["userInfo"],
         queryFn: fetchUserData,
-        staleTime: 60 * 1000, // 1 phút
-        cacheTime: 5 * 60 * 1000, // 5 phút để giảm số lần fetch
+        staleTime: 5 * 60 * 1000, // 5 phút (300,000ms)
+        cacheTime: 15 * 60 * 1000, // 15 phút (900,000ms)
         retry: 1, // Giảm số lần retry để tránh API bị spam
       },
     ],

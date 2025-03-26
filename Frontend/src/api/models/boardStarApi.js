@@ -1,6 +1,16 @@
 import authClient from "../authClient";
 
-// Hàm để "star" board với userId
+export const fetchBoardStars = async () => {
+  try {
+    // Gửi request POST để star board
+    const response = await authClient.get(`boardstars`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi thực hiện star board:", error);
+    throw error;
+  }
+};
+
 export const starBoard = async (userId, boardId) => {
   try {
     // Gửi request POST để star board

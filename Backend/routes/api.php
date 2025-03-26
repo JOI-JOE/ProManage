@@ -60,14 +60,22 @@ Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [Workspac
 Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getWorkspaceById']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    // Function lấy dữ liệu user
     Route::controller(AuthController::class)->group(function () {
         Route::prefix('member')->group(function () {
             Route::get('/me',  'index');
         });
     });
 
+    // Function lấy dữ liệu của star
+    Route::controller(BoardStarController::class)->group(function () {
+        Route::prefix('boardstars')->group(function () {
+            Route::get('/',  'index');
+        });
+    });
 
-    // Function của workspace 
+    // Function lấy dữ liệu của workspace 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::prefix('workspaces')->group(function () {
             Route::get('/', 'index');

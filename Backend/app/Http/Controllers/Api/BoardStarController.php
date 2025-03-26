@@ -8,9 +8,40 @@ use App\Models\Board; // Import Model Board
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class BoardStarController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth'); // Đảm bảo user phải đăng nhập
+    }
+    // 
+    public function index()
+    {
+        $userId = Auth::id();
+
+        if (!$userId) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        // Truy vấn trực tiếp từ DB để tăng tốc
+        $boardStars = DB::table('board_stars as bs')
+            ->join('boards as b', 'bs.board_id', '=', 'b.id') // Join để lấy dữ liệu từ bảng boards
+            ->where('bs.user_id', $userId)
+            ->select([
+                'bs.id as star_id',
+                'bs.board_id',
+                'b.name as board_name',
+                'b.thumbnail as board_thumbnail',
+                'bs.created_at',
+            ])
+            ->orderByDesc('bs.created_at') // Lấy dữ liệu mới nhất trước
+            ->get();
+
+        return response()->json([
+            'board_stars' => $boardStars,
+        ], 200);
+    }
     /**
      * Thêm sao vào board
      */
