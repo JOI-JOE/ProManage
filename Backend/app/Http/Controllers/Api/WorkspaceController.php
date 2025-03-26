@@ -28,7 +28,7 @@ class WorkspaceController extends Controller
             }
 
             // Lấy tất cả workspace mà user này đã tạo
-            $workspaces = $user->workspaces;
+            $workspaces = $user->workspaces_2;
 
             return WorkspaceResource::collection($workspaces);
         } catch (\Exception $e) {

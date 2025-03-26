@@ -25,9 +25,9 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   const currentBoardId = boardId;
   const navigate = useNavigate();
 
-  console.log(currentUser);
+  // console.log(currentUser);
 
-  console.log('Current board:',boardMembers);
+  // console.log('Current board:',boardMembers);
 
   
 
@@ -133,7 +133,7 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
 
   // Kiểm tra số lượng admin
   const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
-  console.log(adminCount);
+  // console.log(adminCount);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
