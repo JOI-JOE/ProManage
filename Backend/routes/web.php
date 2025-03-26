@@ -67,4 +67,3 @@ Route::middleware('admin')->prefix('admin')->as('admin.')->group(function(){
         });
 });
 
-

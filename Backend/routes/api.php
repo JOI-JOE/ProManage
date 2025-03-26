@@ -270,7 +270,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/checklists/{id}', [ChecklistController::class, 'deleteChecklist']); // Xóa checklist
 
     // Checklist Item routes
-    Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'getChecklistItems']); // Lấy danh sách checklist item theo checklist
+    Route::get('/checklist-items/{id}/item', [ChecklistItemController::class, 'getChecklistItems']); // Lấy danh sách checklist item theo checklist
     Route::post('/checklist-items', [ChecklistItemController::class, 'store']); // Thêm mới checklist item
     Route::post('/checklist-items/{id}/toggle-member', [ChecklistItemMemberController::class, 'toggleMember']);
     Route::get('/checklist-items/{id}/members', [ChecklistItemMemberController::class, 'getMembers']);
