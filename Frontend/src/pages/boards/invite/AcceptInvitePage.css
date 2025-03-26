@@ -1,0 +1,50 @@
+.invite-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-image: url("https://i.pinimg.com/736x/3f/3e/66/3f3e668a472c84e334395992bdd0d9fb.jpg");
+  background-size: cover;
+  background-position: center;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.loading {
+  font-size: 24px;
+  color: #555;
+}
+
+.error-message {
+  color: red;
+  font-size: 18px;
+}
+
+.invite-title {
+  font-size: 32px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.invite-description {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.join-button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.join-button:hover {
+  background-color: #0056b3;
+}
