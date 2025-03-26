@@ -17,32 +17,27 @@ import {
 } from "@mui/material";
 import { Restore, Delete, Archive } from "@mui/icons-material";
 import MyWorkspace from "../../../components/MyWorkspace";
-import { useGetWorkspaces } from "../../../hooks/useWorkspace";
 import { useClosedBoards, useToggleBoardClosed } from "../../../hooks/useBoard";
 
-const HomeBoard = () => {
-  const { data: workspaces, isLoading, isError } = useGetWorkspaces();
+const HomeBoard = ({ workspaces }) => {
 
   const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
-  
+
   const [openClosedBoards, setOpenClosedBoards] = useState(false);
-
   const { mutate: toggleBoardClosed } = useToggleBoardClosed();
-
-  if (isLoading) return <p>Đang tải workspaces...</p>;
-  if (isError) return <p>Lỗi khi tải workspaces!</p>;
 
   const handleOpenClosedBoards = () => setOpenClosedBoards(true);
   const handleCloseClosedBoards = () => setOpenClosedBoards(false);
 
+  console.log(workspaces)
   // Hàm mở lại board
-  const handleReopenBoard = (boardId) => {
-    toggleBoardClosed(boardId);
-  };
+  // const handleReopenBoard = (boardId) => {
+  //   toggleBoardClosed(boardId);
+  // };
 
-  // Hàm xóa hoàn toàn board
-  const handleDeleteBoard = async (boardId) => {
-  };
+  // // Hàm xóa hoàn toàn board
+  // const handleDeleteBoard = async (boardId) => {
+  // };
   return (
     <Box
       sx={{
@@ -65,16 +60,20 @@ const HomeBoard = () => {
         CÁC KHÔNG GIAN LÀM VIỆC CỦA BẠN
       </Typography>
       <div id="myBoardInWorkspace">
-        {workspaces?.map((workspace) => (
-          <MyWorkspace
-            key={workspace.display_name}
-            workspace={workspace}
-            boards={workspace.boards}
-          />
-        ))}
+        {workspaces?.length > 0 ? (
+          workspaces.map((workspace) => (
+            <MyWorkspace
+              key={workspace.id} // Sử dụng id làm key để đảm bảo tính duy nhất
+              workspace={workspace}
+              boards={workspace.boards || []} // Đảm bảo boards luôn là mảng, tránh lỗi nếu boards là undefined
+            />
+          ))
+        ) : (
+          null
+        )}
       </div>
 
-        
+
       {/* Nút xem tất cả bảng đã đóng */}
       <Button
         variant="outlined"
@@ -91,7 +90,7 @@ const HomeBoard = () => {
       </Button>
 
       {/* Popup hiển thị danh sách bảng đã đóng */}
-      <Dialog open={openClosedBoards} onClose={handleCloseClosedBoards} fullWidth>
+      {/* <Dialog open={openClosedBoards} onClose={handleCloseClosedBoards} fullWidth>
         <DialogTitle fontWeight="bold">📌 Các bảng đã đóng</DialogTitle>
         <DialogContent>
           {loadingClosed ? (
@@ -140,7 +139,7 @@ const HomeBoard = () => {
             Đóng
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
     </Box>
   );
 };

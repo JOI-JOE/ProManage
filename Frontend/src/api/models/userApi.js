@@ -1,58 +1,16 @@
 import authClient from "../authClient";
 
 // Phần để tối ưu gọi api
-
-const fetchUserDataWithParams = async (params, userId = "me") => {
+export const fetchUserData = async () => {
   try {
-    const queryParams = new URLSearchParams(params);
-    const response = await authClient.get(`/member/${userId}?${queryParams}`);
+    const response = await authClient.get(`/member/me`);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy dữ liệu người dùng:", error);
     throw error;
   }
 };
-
-export const fetchUserInfoWithWorkspaces = () =>
-  fetchUserDataWithParams({
-    fields: "id,user_name,full_name,email,image,workspace_id,board_id",
-    workspaces: "all",
-    workspace_fields: "id,name,display_name",
-  });
-
-export const fetchUserDashboardOverview = () =>
-  fetchUserDataWithParams({
-    boards: "open,starred",
-    board_fields: "id,name",
-    board_memberships: "me",
-    boardStars: "true",
-    workspaces: "all",
-    workspace_fields: "id,name,display_name",
-  });
-
-export const fetUserBoardStar = (userId) => {
-  return fetchUserDataWithParams(
-    {
-      fields: "id",
-      boards: "all",
-      board_fields: "id,closed",
-      boardStars: "true",
-    },
-    userId
-  );
-};
-
 // END
-
-export const getUser = async () => {
-  try {
-    const response = await authClient.get("/users/me");
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy dữ liệu người dùng:", error);
-    throw error;
-  }
-};
 
 /**
  * Hàm này chịu trách nhiệm đăng nhập người dùng.

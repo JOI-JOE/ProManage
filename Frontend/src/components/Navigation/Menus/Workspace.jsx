@@ -75,19 +75,20 @@ const Workspace = () => {
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
 
-  const { data: workspaces, isLoading, isError } = useGetWorkspaces();
-  const { data: guestWorkspace } = useGetGuestWorkspaces();
+  const { data: data, isLoading, isError } = useGetWorkspaces();
+  console.log(data?.workspaces)
+  // const { data: guestWorkspace } = useGetGuestWorkspaces();
 
-  const InviteBoard = useMemo(() => {
-    return guestWorkspace?.data?.flatMap((workspaceGuest) =>
-      workspaceGuest.boards.map((board) => ({
-        id: board.id,
-        name: board.name,
-        workspaceId: board.workspace_id,
-        workspaceName: workspaceGuest.display_name
-      }))
-    ) || [];
-  }, [guestWorkspace?.data]);
+  // const InviteBoard = useMemo(() => {
+  //   return guestWorkspace?.data?.flatMap((workspaceGuest) =>
+  //     workspaceGuest.boards.map((board) => ({
+  //       id: board.id,
+  //       name: board.name,
+  //       workspaceId: board.workspace_id,
+  //       workspaceName: workspaceGuest.display_name
+  //     }))
+  //   ) || [];
+  // }, [guestWorkspace?.data]);
 
   return (
     <Box>
@@ -115,23 +116,23 @@ const Workspace = () => {
           Các không gian làm việc
         </Typography>
         <Divider />
-        {isLoading && (
+        {/* {isLoading && (
           <MenuItem>
             <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải...
           </MenuItem>
-        )}
-        {isError && <MenuItem sx={{ color: "red" }}>Lỗi tải dữ liệu</MenuItem>}
-        {workspaces?.map((workspace) => (
+        )} */}
+        {/* {isError && <MenuItem sx={{ color: "red" }}>Lỗi tải dữ liệu</MenuItem>} */}
+        {/* {workspaces?.map((workspace) => (
           <WorkspaceItem key={workspace.id} workspace={workspace} onClose={handleClose} />
-        ))}
+        ))} */}
         <Divider sx={{ my: 1 }} />
         <Typography variant="body1" sx={{ fontWeight: "bold", px: 2, py: 1, color: "#172B4D" }}>
           Không gian làm việc khách
         </Typography>
         <Divider />
-        {InviteBoard?.map((board) => (
+        {/* {InviteBoard?.map((board) => (
           <WorkspaceItem key={board.id} workspace={board} onClose={handleClose} isGuest />
-        ))}
+        ))} */}
       </StyledMenu>
     </Box>
   );

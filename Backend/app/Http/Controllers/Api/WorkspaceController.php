@@ -17,25 +17,113 @@ use Illuminate\Support\Facades\DB;
 
 class WorkspaceController extends Controller
 {
-
+    // 1 Workspace - N Board
+    // 
+    /// Tối ưu cách lấy dữ liệu trong workspace
     public function index()
     {
-        try {
-            $user = Auth::user(); // Lấy user hiện tại
+        $userId = Auth::id();
 
-            if (!$user) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
-
-            // Lấy tất cả workspace mà user này đã tạo
-            $workspaces = $user->workspaces;
-
-            return WorkspaceResource::collection($workspaces);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+        if (!$userId) {
+            return response()->json([
+                'message' => 'Unauthorized',
+            ], 401);
         }
+
+        $workspaces = DB::table('workspaces')
+            ->leftJoin('workspace_members', function ($join) use ($userId) {
+                $join->on('workspace_members.workspace_id', '=', 'workspaces.id')
+                    ->where('workspace_members.user_id', $userId);
+            })
+            ->select(
+                'workspaces.id',
+                'workspaces.name',
+                'workspaces.display_name',
+                'workspaces.id_member_creator',
+                DB::raw('(SELECT COUNT(*) FROM workspace_members wm WHERE wm.workspace_id = workspaces.id) AS member_count'),
+                DB::raw("IF(workspace_members.user_id IS NOT NULL, TRUE, FALSE) AS joined"),
+                DB::raw("IF(workspaces.id_member_creator = '$userId', TRUE, FALSE) AS is_creator")
+            )
+            ->where(function ($query) use ($userId) {
+                $query->whereNotNull('workspace_members.user_id')
+                    ->orWhere('workspaces.id_member_creator', $userId);
+            })
+            ->groupBy(
+                'workspaces.id',
+                'workspaces.name',
+                'workspaces.display_name',
+                'workspaces.id_member_creator',
+                'workspace_members.user_id'
+            )
+            ->get();
+
+        if ($workspaces->isEmpty()) {
+            return response()->json([
+                'workspaces' => [],
+                'id' => $userId
+            ], 200);
+        }
+
+        // Lấy danh sách ID của workspaces
+        $workspaceIds = $workspaces->pluck('id')->toArray();
+
+        // Lấy danh sách boards mà user đã tham gia hoặc là người tạo, tối đa 5 boards mỗi workspace
+        $boards = DB::table('boards')
+            ->select(
+                'boards.id',
+                'boards.name',
+                'boards.workspace_id',
+                'boards.thumbnail',
+                DB::raw("EXISTS (SELECT 1 FROM board_stars bs WHERE bs.board_id = boards.id AND bs.user_id = '$userId') as starred")
+            )
+            ->whereIn('boards.workspace_id', $workspaceIds)
+            ->where(function ($query) use ($userId) {
+                $query->whereExists(function ($subQuery) use ($userId) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('board_members as bm')
+                        ->whereRaw('bm.board_id = boards.id')
+                        ->where('bm.user_id', '=', $userId);
+                })
+                    ->orWhere('boards.created_by', '=', $userId);
+            })
+            ->orderBy('boards.created_at', 'desc')
+            ->get()
+            ->groupBy('workspace_id');
+
+
+        // Gộp danh sách boards vào từng workspace (tối đa 5 boards mỗi workspace)
+        $workspaces->transform(function ($workspace) use ($boards) {
+            $workspace->boards = $boards->get($workspace->id, collect()); // Lấy toàn bộ boards của workspace
+            return $workspace;
+        });
+
+        return response()->json([
+            'workspaces' => $workspaces,
+            'id' => $userId
+        ], 200);
     }
 
+
+
+    //-----------------------------------------------------------
+
+    // public function index()
+    // {
+    //     try {
+    //         $user = Auth::user(); // Lấy user hiện tại
+
+    //         if (!$user) {
+    //             return response()->json(['error' => 'Unauthorized'], 401);
+    //         }
+
+    //         // Lấy tất cả workspace mà user này đã tạo
+    //         $workspaces = $user->workspaces;
+
+    //         return WorkspaceResource::collection($workspaces);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+    //     }
+    // }
     public function showWorkspaceByName($workspaceName)
     {
         try {

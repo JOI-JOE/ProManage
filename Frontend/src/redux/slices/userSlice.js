@@ -2,9 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 // Initial state
 const initialState = {
-  user: null, // Dữ liệu user
-  boardId: [], // Mảng chứa boardId
-  workspaceId: [], // Mảng chứa workspaceId
+  user: [], // Dữ liệu user
   workspaces: [], // Dữ liệu workspaces
   isLoading: false, // Trạng thái loading
   error: null, // Trạng thái lỗi
@@ -21,12 +19,6 @@ const userSlice = createSlice({
     setWorkspaces(state, action) {
       state.workspaces = action.payload; // Cập nhật workspaces
     },
-    setWorkspaceId(state, action) {
-      state.workspaceId = action.payload; // Cập nhật workspaceId
-    },
-    setBoardId(state, action) {
-      state.boardId = action.payload; // Cập nhật boardId
-    },
     setLoading(state, action) {
       state.isLoading = action.payload; // Cập nhật trạng thái loading
     },
@@ -36,13 +28,7 @@ const userSlice = createSlice({
   },
 });
 
-export const {
-  setUser,
-  setWorkspaces,
-  setWorkspaceId,
-  setBoardId,
-  setLoading,
-  setError,
-} = userSlice.actions;
+export const { setUser, setWorkspaces, setLoading, setError } =
+  userSlice.actions;
 
 export default userSlice.reducer;

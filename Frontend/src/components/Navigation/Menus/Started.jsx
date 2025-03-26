@@ -41,13 +41,7 @@ const StyledMenu = styled((props) => (
 
 const Started = () => {
   const starredBoards = useSelector((state) => state.starredBoards.starredBoards);
-  const boards = useSelector((state) => state.boards.boards)
-
-  const starredBoardDetails = boards
-    .filter((board) =>
-      starredBoards.some((starredBoard) => starredBoard.board_id === board.id)
-    )
-    .sort((a, b) => a.position - b.position); // Sắp xếp theo position
+  console.log(starredBoards);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -83,14 +77,15 @@ const Started = () => {
         open={open}
         onClose={handleClose}
       >
-        {starredBoardDetails.length === 0 ? (
+        {Array.isArray(starredBoards) && starredBoards.length === 0 ? (
           <MenuItem disabled>Không có bảng nào</MenuItem>
         ) : (
-          starredBoardDetails.map((board) => (
+          Array.isArray(starredBoards) &&
+          starredBoards.map((board) => (
             <MenuItem
               component={Link}
-              to={`/b/${board.id}/${board.name}`} // Sửa lại đường dẫn
-              key={board.id} // Sử dụng idBoard làm key duy nhất
+              to={`/b/${board.board_id}/${board.name}`} // Đảm bảo sử dụng đúng board id và name
+              key={board.board_id} // Sử dụng board_id làm key duy nhất
               onClick={handleClose}
               sx={{
                 display: "flex",
@@ -117,8 +112,8 @@ const Started = () => {
                   }}
                 />
                 <Box>
-                  <Typography variant="body1" fontWeight={500}>
-                    {board.name}
+                  <Typography variant="body1" f ontWeight={500}>
+                    {board.name} {/* Sử dụng tên board */}
                   </Typography>
                 </Box>
               </Box>

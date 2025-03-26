@@ -1,37 +1,33 @@
-import { useMutation } from "react-query";
-import { starBoard, unstarBoard } from "../api/models/boardStarApi";
 import { useDispatch } from "react-redux";
-import { toggleStarBoard } from "../redux/slices/starredBoardsSlice";
+import { starBoard, unstarBoard } from "../api/models/boardStarApi";
 
 export const useBoardStar = () => {
   const dispatch = useDispatch();
 
-  const starMutation = useMutation({
-    mutationFn: ({ userId, boardId }) => starBoard(userId, boardId),
-    onMutate: async ({ boardId }) => {
-      dispatch(toggleStarBoard(boardId));
-    },
-    onError: (error, variables) => {
-      console.error("❌ Lỗi khi đánh dấu sao board:", error);
-      dispatch(toggleStarBoard(variables.boardId));
-    },
-  });
+  // Hàm gọi API và cập nhật trạng thái khi đánh dấu sao board
+  const handleStarBoard = async (boardId) => {
+    try {
+      // Gọi API để đánh dấu sao board
+      const response = await starBoard(boardId);
+      console.log("Board starred successfully:", response.data);
+    } catch (error) {
+      console.error("Error starring board:", error);
+    }
+  };
 
-  const unstarMutation = useMutation({
-    mutationFn: ({ userId, boardStarId }) => unstarBoard(userId, boardStarId),
-    onMutate: async ({ boardId }) => {
-      dispatch(toggleStarBoard(boardId));
-    },
-    onError: (error, variables) => {
-      console.error("❌ Lỗi khi bỏ đánh dấu sao board:", error);
-      dispatch(toggleStarBoard(variables.boardId));
-    },
-  });
+  // Hàm gọi API và cập nhật trạng thái khi bỏ đánh dấu sao board
+  const handleUnstarBoard = async (userId, boardStarId) => {
+    try {
+      // Gọi API để bỏ đánh dấu sao board
+      const response = await unstarBoard(userId, boardStarId);
+      console.log("Board unstarred successfully:", response.data);
+    } catch (error) {
+      console.error("Error unstarring board:", error);
+    }
+  };
 
   return {
-    starBoard: (variables) => starMutation.mutateAsync(variables),
-    unstarBoard: (variables) => unstarMutation.mutateAsync(variables),
-    isLoading: starMutation.isLoading || unstarMutation.isLoading,
-    error: starMutation.error || unstarMutation.error,
+    starBoard: handleStarBoard,
+    unstarBoard: handleUnstarBoard,
   };
 };

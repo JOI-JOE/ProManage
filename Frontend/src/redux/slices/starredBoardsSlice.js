@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  starredBoards: [],
+  starredBoards: [], // Chỉ lưu ID của board được đánh dấu sao
 };
 
 const starredBoardsSlice = createSlice({
@@ -10,16 +10,16 @@ const starredBoardsSlice = createSlice({
   reducers: {
     toggleStarBoard: (state, action) => {
       const boardId = action.payload;
-      if (state.starredBoards.includes(boardId)) {
-        state.starredBoards = state.starredBoards.filter(
-          (id) => id !== boardId
-        );
-      } else {
+      const index = state.starredBoards.indexOf(boardId);
+
+      if (index === -1) {
         state.starredBoards.push(boardId);
+      } else {
+        state.starredBoards.splice(index, 1);
       }
     },
     setStarredBoards: (state, action) => {
-      state.starredBoards = action.payload;
+      state.starredBoards = action.payload; // Cập nhật danh sách ID từ API
     },
   },
 });

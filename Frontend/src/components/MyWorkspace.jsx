@@ -17,7 +17,6 @@ import CreateBoard from "./CreateBoard";
 
 const MyWorkspace = ({ workspace, boards }) => {
 
-    const activeBoards = boards.filter(board => board.closed === 0);
     return (
         <div>
             <ListItem
@@ -32,10 +31,10 @@ const MyWorkspace = ({ workspace, boards }) => {
                 {/* Avatar & Tiêu đề */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <Avatar sx={{ bgcolor: "#5D87FF" }}>
-                        {workspace.name.charAt(0).toUpperCase()}
+                        {workspace.display_name.charAt(0).toUpperCase()}
                     </Avatar>
                     <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
-                        {workspace.name.length > 10 ? workspace.name.substring(0, 20) + "..." : workspace.name}
+                        {workspace.display_name.length > 10 ? workspace.display_name.substring(0, 20) + "..." : workspace.name}
                     </Typography>
                 </Box>
 
@@ -97,7 +96,7 @@ const MyWorkspace = ({ workspace, boards }) => {
                         }}
                     >
                         <PeopleIcon fontSize="small" />
-                        Thành viên ({workspace.members?.length || 0})
+                        Thành viên ({workspace.member_count || 0})
                     </Button>
 
                     <Button
@@ -139,16 +138,15 @@ const MyWorkspace = ({ workspace, boards }) => {
             </ListItem>
 
             {/* Danh sách bảng Trello */}
-            {/* <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+            <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {boards?.map((board) => (
                     <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
                         <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
                     </ListItem>
                 ))}
-
-                <CreateBoard />
-            </List> */}
-            <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+                {/* <CreateBoard /> */}
+            </List>
+            {/* <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {activeBoards.length > 0 ? (
                     activeBoards.map((board) => (
                         <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
@@ -162,8 +160,8 @@ const MyWorkspace = ({ workspace, boards }) => {
                 )}
 
                 <CreateBoard />
-            </List>
-        </div>  
+            </List> */}
+        </div>
     );
 };
 

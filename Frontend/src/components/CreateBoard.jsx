@@ -29,11 +29,7 @@ const CreateBoard = React.memo(() => {
   const [selectedBg, setSelectedBg] = useState("");
   const [workspace, setWorkspace] = useState("");
   const [viewPermission, setViewPermission] = useState("");
-  // const [colorList, setColorList] = useState([]); // State lưu danh sách màu
-  // const userId = localStorage.getItem("user_id"); // ID được lưu sau khi đăng nhập
 
-  // Sử dụng hook useCreateBoard
-  // Sử dụng hook useCreateBoard
   const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
   const {
     mutate: fetchUnsplashImages,
@@ -68,7 +64,6 @@ const CreateBoard = React.memo(() => {
       alert("Vui lòng nhập tiêu đề bảng!");
       return;
     }
-
     const boardData = {
       name: boardTitle,
       thumbnail: selectedBg,

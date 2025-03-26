@@ -10,6 +10,7 @@ import { Provider } from "react-redux"
 import "react-toastify/dist/ReactToastify.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { ContextProvider } from "./contexts/ContextProvider";
 import theme from "./theme";
 // import router from "./router/index";
@@ -18,14 +19,8 @@ import store from "./redux/store";
 import "../index.css";
 import router from "./router";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: false
-    }
-  }
-});
+const queryClient = new QueryClient()
+// import { queryClient } from "../utils/queryClient";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>

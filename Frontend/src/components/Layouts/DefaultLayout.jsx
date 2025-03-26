@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import AppBar from "../Navigation/AppBar";
 import { MeProvider } from "../../contexts/MeContext";
 import { useStateContext } from "../../contexts/ContextProvider";
+import { useDispatch } from "react-redux";
 
 
 const DefaultLayout = () => {

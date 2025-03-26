@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
 use App\Http\Controllers\Api\ChecklistItemMemberController;
-use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\api\CardMemberController;
 use App\Http\Controllers\Api\ChecklistController;
@@ -25,6 +24,7 @@ use App\Http\Controllers\Api\LabelController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\BoardStarController;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -60,20 +60,25 @@ Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [Workspac
 Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getWorkspaceById']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get("users/me", [AuthController::class, 'getUser']);
-    // Route::get('member/me', [AuthController::class, 'getUserData']);
-    Route::get('member/{id?}', [AuthController::class, 'getUserData']);
+    Route::controller(AuthController::class)->group(function () {
+        Route::prefix('member')->group(function () {
+            Route::get('/me',  'index');
+        });
+    });
 
+
+    // Function của workspace 
     Route::controller(WorkspaceController::class)->group(function () {
-        Route::get('workspaces', 'index');
-        Route::get('guestWorkspace', 'getGuestWorkspaces');
-
-        Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
-        Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
-        Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
-        Route::post('workspaces', 'store');
-        Route::delete('workspaces/{workspace}', 'destroy');
-        Route::put('workspaces/{workspace}', 'updateWorkspaceInfo');
+        Route::prefix('workspaces')->group(function () {
+            Route::get('/', 'index');
+            Route::get('/guest', 'getGuestWorkspaces');
+            Route::get('/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
+            Route::get('/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên
+            Route::get('/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy board đã đánh dấu theo tên
+            Route::post('/', 'store');
+            Route::put('/{workspace}', 'updateWorkspaceInfo');
+            Route::delete('/{workspace}', 'destroy');
+        });
     });
 
     Route::controller(WorkspaceInvitationsController::class)->group(callback: function () {
@@ -120,9 +125,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/cards/{cardId}', action: 'updatePositionCard');
     });
 
+    Route::controller(BoardStarController::class)->group(function () {
+        Route::post('/member/{boardId}/boardStars', 'starBoard');
+        Route::delete('/member/{boardId}/boardStars/{boardStarId}', 'unstarBoard');
+    });
+
     // list board
     Route::get('lists/{boardId}', [ListController::class, 'index']);
-
     Route::get('/search', [SearchController::class, 'search']);
 });
 

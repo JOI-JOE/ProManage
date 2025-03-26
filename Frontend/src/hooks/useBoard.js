@@ -15,36 +15,11 @@ import {
   updateBoardVisibility,
 } from "../api/models/boardsApi";
 import { useCallback } from "react";
-import { fetUserBoardStar } from "../api/models/userApi";
-import { useDispatch } from "react-redux";
 
 /**
  * Hook useBoard để tạo bảng mới.
  * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
  */
-
-export const useUserBoardStar = () => {
-  const userId = useSelector((state) => state.user.user?.id); // Truy xuất userId từ Redux store
-  const dispatch = useDispatch();
-
-  return useQuery(
-    ["userBoardStar", userId], // query key sẽ bao gồm userId để cache riêng biệt cho từng user
-    () => fetUserBoardStar(userId), // Gọi API với userId
-    {
-      enabled: !!userId, // Chỉ gọi API nếu có userId
-      onError: (error) => {
-        console.error("Error fetching user board stars:", error);
-      },
-      onSuccess: (data) => {
-        // Lưu kết quả vào Redux khi API trả về thành công
-        dispatch(setStarredBoards(data));
-        console.log("Fetched user board stars:", data);
-      },
-      cacheTime: 1000 * 60 * 10, // Cấu hình cache cho dữ liệu
-      staleTime: 1000 * 60 * 5, // Dữ liệu sẽ được coi là tươi trong 5 phút
-    }
-  );
-};
 
 export const useCreateBoard = () => {
   const queryClient = useQueryClient();

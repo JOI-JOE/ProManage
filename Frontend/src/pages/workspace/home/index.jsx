@@ -143,7 +143,6 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
       </ListItem>
 
       <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        {/* Bảng Trello của tôi */}
         {workspace.boards && workspace.boards.length > 0 ? (
           workspace.boards.map((board) => (
             <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
@@ -161,7 +160,6 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
           </Typography>
         )}
 
-        {/* Tạo bảng mới */}
         <CreateBoard />
       </List>
     </Box>

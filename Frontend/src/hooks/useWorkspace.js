@@ -9,24 +9,14 @@ import {
   getGuestWorkspace,
 } from "../api/models/workspacesApi";
 
-/**
- * Custom hook để lấy danh sách workspaces mà user tham gia.
- * @returns {object} - Kết quả từ useQuery (data, isLoading, isError, ...)
- */
 export const useGetWorkspaces = () => {
   return useQuery({
-    queryKey: ["workspaces"],
+    queryKey: ["getWorkspace"],
     queryFn: getWorkspacesAll,
-    staleTime: 5 * 60 * 1000, // 5 phút: dữ liệu "tươi" trong 5 phút
-    cacheTime: 10 * 60 * 1000, // 10 phút: giữ cache 10 phút sau khi không dùng
+    staleTime: 5 * 60 * 1000, // Giữ dữ liệu "tươi" trong 5 phút
+    cacheTime: 10 * 60 * 1000, // Giữ cache trong 10 phút
     refetchOnWindowFocus: false, // Không refetch khi focus lại tab
-    retry: 2, // Thử lại 2 lần nếu lỗi
-    onSuccess: (data) => {
-      console.log("Danh sách workspaces:", data); // Log dữ liệu thực tế
-    },
-    onError: (error) => {
-      console.error("Lỗi khi lấy danh sách workspaces:", error);
-    },
+    retry: 2, // Thử lại tối đa 2 lần nếu lỗi
   });
 };
 
@@ -41,7 +31,6 @@ export const useGetGuestWorkspaces = () => {
     onError: (error) => {
       console.error("Lỗi khi lấy danh sách workspaces khách:", error);
     },
-
   });
 };
 
