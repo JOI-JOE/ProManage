@@ -9,58 +9,10 @@ import {
   Typography,
   CircularProgress,
   IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-  ListItemIcon,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
-import LinkIcon from "@mui/icons-material/Link";
-import ImageIcon from "@mui/icons-material/Image";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import DescriptionIcon from "@mui/icons-material/Description";
 import useAttachments from "../../../../../../../../../../hooks/useAttachment";
 import { useParams } from "react-router-dom";
-
-// Hàm xác định loại file & icon
-const getFileType = (url) => {
-  if (!url) return { type: "unknown", icon: <DescriptionIcon /> };
-
-  const fileExtension = url.split(".").pop().toLowerCase();
-
-  if (url.startsWith("http")) {
-    if (url.includes("youtube.com") || url.includes("youtu.be")) {
-      return {
-        type: "youtube",
-        icon: <VideoLibraryIcon sx={{ color: "#ff0000" }} />,
-      };
-    }
-    if (url.includes("vimeo.com")) {
-      return {
-        type: "vimeo",
-        icon: <VideoLibraryIcon sx={{ color: "#1ab7ea" }} />,
-      };
-    }
-    return { type: "link", icon: <LinkIcon sx={{ color: "#1976d2" }} /> };
-  }
-
-  if (["jpg", "jpeg", "png", "gif", "webp"].includes(fileExtension)) {
-    return { type: "image", icon: <ImageIcon sx={{ color: "#4caf50" }} /> };
-  }
-  if (["mp4", "mkv", "avi", "mov"].includes(fileExtension)) {
-    return {
-      type: "video",
-      icon: <VideoLibraryIcon sx={{ color: "#ff9800" }} />,
-    };
-  }
-  if (fileExtension === "pdf") {
-    return { type: "pdf", icon: <PictureAsPdfIcon sx={{ color: "red" }} /> };
-  }
-  return { type: "file", icon: <InsertDriveFileIcon /> };
-};
 
 // Hàm lấy tiêu đề từ link
 const fetchTitleFromURL = async (url) => {
@@ -91,43 +43,55 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
   const { cardId } = useParams();
   const { addAttachment } = useAttachments(cardId);
 
+  // Xử lý upload file
   const handleAddAttachment = useCallback(
     async (event) => {
       const file = event.target.files[0];
       if (!file) return;
 
+      setUploading(true);
       const data = { cardId, file_name_defaut: file.name, file };
 
       try {
         await addAttachment(data);
+        onClose(); // ✅ Đóng modal khi upload xong
       } catch (error) {
         console.error("Lỗi khi upload file:", error);
       } finally {
+        setUploading(false);
         event.target.value = "";
       }
     },
-    [cardId, addAttachment]
+    [cardId, addAttachment, onClose]
   );
 
+  // Xử lý chèn liên kết
   const handleAddLinkAttachment = async () => {
     if (!newLink.trim()) return;
 
-    let fileName = displayText || newLink;
-    fileName = await fetchTitleFromURL(newLink);
-
-    const data = {
-      cardId,
-      file_name_defaut: fileName,
-      path_url: newLink,
-    };
-
+    setUploading(true);
     try {
+      let fileName = displayText || newLink;
+      if (!displayText) {
+        fileName = await fetchTitleFromURL(newLink);
+      }
+
+      const data = {
+        cardId,
+        file_name_defaut: fileName,
+        path_url: newLink,
+      };
+
       await addAttachment(data);
+      // ✅ Reset form và đóng modal khi thêm link thành công
+      setNewLink("");
+      setDisplayText("");
+      onClose();
     } catch (error) {
       console.error("Lỗi khi thêm liên kết:", error);
+    } finally {
+      setUploading(false);
     }
-    setNewLink("");
-    setDisplayText("");
   };
 
   return (
@@ -177,7 +141,7 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           disabled={uploading}
         >
           {uploading ? "Tệp đang tải lên..." : "Chọn tệp"}
-          <input type="file" hidden multiple onChange={handleAddAttachment} />
+          <input type="file" hidden onChange={handleAddAttachment} />
         </Button>
 
         {uploading && (
@@ -185,7 +149,7 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
             variant="body2"
             sx={{ mt: 2, display: "flex", alignItems: "center" }}
           >
-            <CircularProgress size={20} sx={{ mr: 1 }} /> Tệp đang tải lên...
+            <CircularProgress size={20} sx={{ mr: 1 }} /> Đang xử lý...
           </Typography>
         )}
       </DialogContent>
@@ -194,11 +158,13 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
         <Button onClick={onClose} disabled={uploading}>
           Hủy
         </Button>
-        {!uploading && (
-          <Button onClick={handleAddLinkAttachment} variant="contained">
-            Chèn
-          </Button>
-        )}
+        <Button
+          onClick={handleAddLinkAttachment}
+          variant="contained"
+          disabled={uploading}
+        >
+          Chèn
+        </Button>
       </DialogActions>
     </Dialog>
   );

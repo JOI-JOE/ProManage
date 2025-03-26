@@ -102,6 +102,7 @@ import ChecklistItemRow from "./childComponent_CardDetail/ChecklistItemRow.jsx";
 import useAttachments from "../../../../../../../../../hooks/useAttachment.js";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
+import InputAdornment from "@mui/material/InputAdornment";
 
 const CardModal = ({}) => {
   const { cardId, title } = useParams();
@@ -683,18 +684,28 @@ const CardModal = ({}) => {
     // console.log('kokokok');
   };
   const [setLinkItems] = useState([]);
+  const [updateTrigger, setUpdateTrigger] = useState(false);
 
   const handleSave1 = () => {
-    const updatedLinks = linkItems.map((item) =>
-      item.id === editingLinkId
-        ? { ...item, path_url: editedUrl, file_name_defaut: editedDisplayText }
-        : item
-    );
-    setLinkItems(updatedLinks);
+    if (editingLinkId !== null) {
+      const target = linkItems.find((item) => item.id === editingLinkId);
+      if (target) {
+        target.path_url = editedUrl;
+        target.file_name_defaut = editedDisplayText;
+      }
+      // Reset state sau khi sửa xong
+      setEditingLinkId(null);
+      setEditedUrl("");
+      setEditedDisplayText("");
+      // Không cần setLinkItems vì object đã tham chiếu cùng bộ nhớ
+    }
   };
-  const [files, setFiles] = useState([]);
+
+  //tệp
   const [showAll, setShowAll] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [editAnchorEl, setEditAnchorEl] = useState(null);
+  const [newFileName, setNewFileName] = useState("");
 
   // Mở ảnh trong tab mới với tiêu đề là tên ảnh
   const openInNewTab = (file) => {
@@ -716,9 +727,6 @@ const CardModal = ({}) => {
     document.body.removeChild(link);
   };
 
-  const [editAnchorEl, setEditAnchorEl] = useState(null);
-  const [newFileName, setNewFileName] = useState("");
-
   const handleMenuOpen2 = (event, file) => {
     setAnchorEl2(event.currentTarget);
     setSelectedFile(file);
@@ -729,19 +737,18 @@ const CardModal = ({}) => {
   };
 
   // Hàm mở Popover (có thể gọi ở nút "Sửa")
-  const handleOpenPopover = () => {
+  const handleOpenPopover = (anchorEl, fileId) => {
+    setEditAnchorEl(anchorEl);
+    setSelectedFile(fileId);
     setNewFileName(
-      attachments.data.find((file) => file.id === selectedFile)
-        ?.file_name_defaut || ""
+      fileItems.find((file) => file.id === fileId)?.file_name_defaut || ""
     );
-
-    setEditAnchorEl(true); // Gán vị trí anchor từ menu con
-    handleMenuClose2(); // Đóng menu con
   };
 
   // Hàm đóng Popover
   const handleClosePopover = () => {
     setEditAnchorEl(null);
+    setNewFileName("");
   };
 
   // Hàm đổi tên file (logic đổi tên sẽ được bạn tùy chỉnh)
@@ -759,18 +766,6 @@ const CardModal = ({}) => {
     removeAttachment(selectedFile);
     handleMenuClose2(); // Đóng menu sau khi xóa
   };
-
-  // const handleDownloadFile = (file) => {
-  //   if (!file || !file.url) return;
-
-  //   // Tạo một thẻ <a> ẩn để tải file
-  //   const link = document.createElement("a");
-  //   link.href = file.url;
-  //   link.setAttribute("download", file.name || "download"); // Đặt tên file khi tải về
-  //   document.body.appendChild(link);
-  //   link.click();
-  //   document.body.removeChild(link);
-  // };
 
   return (
     <Dialog
@@ -1169,7 +1164,9 @@ const CardModal = ({}) => {
                 {/* ///////////////////// CHECK LENGTH////////////////////////////// */}
                 {/* Liên kết */}
                 {linkItems?.length > 0 && (
-                  <Box>
+                  <Box key={updateTrigger}>
+                    {" "}
+                    {/* Key để ép re-render khi update link */}
                     <Typography
                       variant="h6"
                       sx={{
@@ -1248,7 +1245,7 @@ const CardModal = ({}) => {
                               </a>
                             </Box>
                             <IconButton
-                              onClick={(e) => handleMenuOpen1(e, file)} // Lưu file vào state khi mở menu
+                              onClick={(e) => handleMenuOpen1(e, file)}
                             >
                               <MoreVertIcon />
                             </IconButton>
@@ -1256,7 +1253,6 @@ const CardModal = ({}) => {
                         );
                       })}
                     </List>
-
                     {/* Nút ẩn hiện */}
                     {linkItems.length > 4 && (
                       <Button
@@ -1292,13 +1288,15 @@ const CardModal = ({}) => {
                   >
                     Sửa
                   </MenuItem>
-
                   <MenuItem>Nhận xét</MenuItem>
                   <MenuItem
                     onClick={() => {
-                      handleDelete();
-                      handleMenuClose1();
+                      if (currentFile) {
+                        handleDelete(currentFile.id);
+                        handleMenuClose1();
+                      }
                     }}
+                    sx={{ color: "red" }}
                   >
                     Xóa
                   </MenuItem>
@@ -1312,46 +1310,68 @@ const CardModal = ({}) => {
                   transformOrigin={{ vertical: "top", horizontal: "left" }}
                 >
                   <Box sx={{ padding: 2, width: 300 }}>
-                    <IconButton onClick={() => setPopoverAnchorEl(null)}>
-                      <ArrowBack />
-                    </IconButton>
-                    <Typography variant="h6" sx={{ textAlign: "center" }}>
-                      Sửa tệp đính kèm
-                    </Typography>
+                    {/* Title and Back Icon in same row */}
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                      <IconButton
+                        onClick={() => setPopoverAnchorEl(null)}
+                        size="small"
+                      >
+                        <ArrowBack />
+                      </IconButton>
+                      <Typography
+                        variant="h6"
+                        sx={{ flexGrow: 1, textAlign: "center" }}
+                      >
+                        Sửa tệp đính kèm
+                      </Typography>
+                    </Box>
+
                     <Typography variant="subtitle2">
                       Tìm kiếm hoặc dán liên kết
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <TextField
-                        fullWidth
-                        value={editedUrl}
-                        onChange={(e) => setEditedUrl(e.target.value)}
-                        margin="normal"
-                        placeholder="Nhập URL"
-                      />
-                      {editedUrl && (
-                        <IconButton onClick={() => setEditedUrl("")}>
-                          <CloseIcon />
-                        </IconButton>
-                      )}
-                    </Box>
+                    <TextField
+                      fullWidth
+                      value={editedUrl}
+                      onChange={(e) => setEditedUrl(e.target.value)}
+                      margin="normal"
+                      placeholder="Nhập URL"
+                      InputProps={{
+                        endAdornment: editedUrl && (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setEditedUrl("")}
+                              size="small"
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+
                     <Typography variant="subtitle2" sx={{ marginTop: "10px" }}>
                       Văn bản hiển thị (không bắt buộc)
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <TextField
-                        fullWidth
-                        value={editedDisplayText}
-                        onChange={(e) => setEditedDisplayText(e.target.value)}
-                        margin="normal"
-                        placeholder="Nhập văn bản hiển thị"
-                      />
-                      {editedDisplayText && (
-                        <IconButton onClick={() => setEditedDisplayText("")}>
-                          <CloseIcon />
-                        </IconButton>
-                      )}
-                    </Box>
+                    <TextField
+                      fullWidth
+                      value={editedDisplayText}
+                      onChange={(e) => setEditedDisplayText(e.target.value)}
+                      margin="normal"
+                      placeholder="Nhập văn bản hiển thị"
+                      InputProps={{
+                        endAdornment: editedDisplayText && (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setEditedDisplayText("")}
+                              size="small"
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+
                     <Box
                       sx={{
                         display: "flex",
@@ -1374,6 +1394,7 @@ const CardModal = ({}) => {
                     </Box>
                   </Box>
                 </Popover>
+
                 {/* Tệp */}
                 {fileItems?.length > 0 && (
                   <Box>
@@ -1428,31 +1449,33 @@ const CardModal = ({}) => {
                             key={file.id}
                             sx={{
                               display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
+                              alignItems: "flex-start",
                               mb: "-8px",
                               ml: "10px",
+                              pr: "40px",
                               cursor: "pointer",
+                              gap: "12px", // <<< GIẢI QUYẾT DÍNH NHAU
                             }}
                           >
-                            {/* Avatar hoặc Icon */}
+                            {/* Thumbnail hoặc icon */}
                             {isImage ? (
                               <Box
                                 component="img"
                                 src={file.path_url}
                                 alt={file.file_name_defaut}
                                 sx={{
-                                  width: "50px",
-                                  height: "50px",
+                                  width: 50,
+                                  height: 50,
                                   objectFit: "cover",
                                   borderRadius: "8px",
+                                  flexShrink: 0,
                                 }}
                               />
                             ) : (
                               <Box
                                 sx={{
-                                  width: "50px",
-                                  height: "50px",
+                                  width: 50,
+                                  height: 50,
                                   backgroundColor: "#E1E3E6",
                                   color: "#374151",
                                   fontWeight: "bold",
@@ -1468,13 +1491,15 @@ const CardModal = ({}) => {
                               </Box>
                             )}
 
-                            {/* Thông tin file */}
-                            <Box sx={{ flexGrow: 1, ml: "10px" }}>
+                            {/* Nội dung file */}
+                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                               <Typography
                                 sx={{
                                   fontWeight: "bold",
                                   fontSize: "14px",
                                   cursor: "pointer",
+                                  wordBreak: "break-word",
+                                  whiteSpace: "normal",
                                 }}
                                 onClick={() => handleOpen(file.path_url)}
                               >
@@ -1514,9 +1539,10 @@ const CardModal = ({}) => {
                               </Typography>
                             </Box>
 
-                            {/* Action */}
+                            {/* Icon 3 chấm */}
                             <IconButton
                               onClick={(e) => handleMenuOpen2(e, file.id)}
+                              sx={{ ml: "auto" }}
                             >
                               <MoreVertIcon />
                             </IconButton>
@@ -1544,8 +1570,19 @@ const CardModal = ({}) => {
                   open={Boolean(anchorEl2)}
                   onClose={handleMenuClose2}
                 >
-                  <MenuItem onClick={handleOpenPopover}>Sửa</MenuItem>
-                  <MenuItem onClick={() => handleDownloadFile(selectedFile)}>
+                  <MenuItem
+                    onClick={(e) => {
+                      handleOpenPopover(e.currentTarget, selectedFile);
+                      handleMenuClose2(); // Đóng menu 3 chấm
+                      setTimeout(() => {
+                        setEditAnchorEl(anchorEl2); // Mở popover sửa
+                      }, 0);
+                    }}
+                  >
+                    Sửa
+                  </MenuItem>
+
+                  <MenuItem onClick={() => downloadFile(selectedFile)}>
                     Tải xuống
                   </MenuItem>
                   <MenuItem>Nhận xét</MenuItem>
@@ -1563,10 +1600,10 @@ const CardModal = ({}) => {
                 </Menu>
                 {/* Edit Popover */}
                 <Popover
-                  open={editAnchorEl}
+                  open={Boolean(editAnchorEl)}
                   anchorEl={editAnchorEl}
                   onClose={handleClosePopover}
-                  anchorOrigin={{ vertical: "top", horizontal: "left" }}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                   transformOrigin={{ vertical: "top", horizontal: "left" }}
                 >
                   <Box sx={{ padding: "16px", minWidth: "200px" }}>
@@ -1584,6 +1621,18 @@ const CardModal = ({}) => {
                       value={newFileName}
                       onChange={(e) => setNewFileName(e.target.value)}
                       placeholder="Nhập tên mới"
+                      InputProps={{
+                        endAdornment: newFileName && (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setNewFileName("")}
+                              size="small"
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
                     />
 
                     <Box
