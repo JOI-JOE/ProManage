@@ -60,6 +60,7 @@ import { v4 as uuidv4 } from "uuid";
 import {
   useCardActions,
   useCardById,
+  useCardSchedule,
   useGetMemberInCard,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
@@ -107,6 +108,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 
 const CardModal = ({}) => {
   const { cardId, title } = useParams();
+  const { data: schedule } = useCardSchedule(cardId);
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -1008,7 +1010,7 @@ const CardModal = ({}) => {
         </DialogTitle>
 
         {/* NGÀY */}
-        {dateInfo && (
+        {schedule && (
           <>
             <Typography sx={{ fontWeight: "bold", mb: 0, ml: 3 }}>
               Ngày
@@ -1025,11 +1027,10 @@ const CardModal = ({}) => {
               onClick={openDateModal}
             >
               <AccessTime />
-              {dateInfo.startDate !== "Không có" && (
-                <Typography>{dateInfo.startDate.split(" ")[0]} -</Typography>
-              )}
-              <Typography>{dateInfo.endDate.split(" ")[1]}</Typography>
-              <Typography>{dateInfo.endDate.split(" ")[0]}</Typography>
+              <Typography>{formatDate(schedule.start_date)} -</Typography>
+
+              <Typography>{formatDate(schedule.end_date)}</Typography>
+              <Typography>{schedule.end_time}</Typography>
               {/* Kiểm tra trạng thái deadline */}
               {isOverdue() && (
                 <Chip
@@ -1863,7 +1864,6 @@ const CardModal = ({}) => {
                                 handleMenuOpen={handleMenuOpen}
                                 setMemberListConfig={setMemberListConfig}
                                 setDateConfig={setDateConfig}
-
                               />
                             ))}
                           </List>
@@ -2510,17 +2510,12 @@ const CardModal = ({}) => {
                       <ListItemText
                         primary="Ngày"
                         onClick={() => {
-                          setDateConfig({                          
+                          setDateConfig({
                             open: true,
                             type: "card",
                             targetId: cardId,
-
-                          })
-                        }
-
-
-                        }
-
+                          });
+                        }}
                       />
                     </ListItemButton>
                   </ListItem>
@@ -2687,10 +2682,11 @@ const CardModal = ({}) => {
 
         <DateModal
           open={dateConfig.open}
-          onClose={() => setDateConfig({ open: false, type: null, targetId: null })}
+          onClose={() =>
+            setDateConfig({ open: false, type: null, targetId: null })
+          }
           type={dateConfig.type}
           targetId={dateConfig.targetId}
-
         />
 
         <Dialog
