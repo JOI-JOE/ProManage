@@ -56,7 +56,7 @@ import ShareIcon from "@mui/icons-material/Share";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import CloseIcon from "@mui/icons-material/Close";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import {
   useCardActions,
   useCardById,
@@ -99,7 +99,7 @@ import { useActivityByCardId } from "../../../../../../../../../hooks/useActivit
 import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
 import ChecklistItemRow from "./childComponent_CardDetail/ChecklistItemRow.jsx";
-
+import { useMe } from "../../../../../../../../../contexts/MeContext.jsx";
 import useAttachments from "../../../../../../../../../hooks/useAttachment.js";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
@@ -153,7 +153,7 @@ const CardModal = ({}) => {
     if (!dateString) return "Không có";
     const date = new Date(dateString);
     return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
-  }
+  };
 
   const [coverImage, setCoverImage] = useState(
     localStorage.getItem(`coverImage-${cardId}`) || null
@@ -210,7 +210,8 @@ const CardModal = ({}) => {
 
   // console.log(activities);
 
-  const { user } = useStateContext();
+  const { user } = useMe();
+
   const userId = user?.id;
 
   const combinedData = [
@@ -306,6 +307,7 @@ const CardModal = ({}) => {
   // Xử lý tham gia/rời khỏi card
   const handleJoinCard = () => {
     toggleMember(userId);
+    // console.log(userId);
   };
 
   const isMember = members?.data?.some((m) => m.id === userId);
@@ -374,23 +376,25 @@ const CardModal = ({}) => {
     );
 
     // Gọi API
-    toggleItemStatus({ itemId: id, cardId: cardId }, {
-      onSuccess: () => {
-        console.log("✅ Cập nhật trạng thái thành công");
-        // Không invalidate nếu đã update local state
-      },
-      onError: () => {
-        console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
-        // Rollback về trạng thái ban đầu
-        setItems((prevItems) =>
-          prevItems.map((item) =>
-            item.id === id ? { ...item, is_completed: originalStatus } : item
-          )
-        );
-      },
-    });
+    toggleItemStatus(
+      { itemId: id, cardId: cardId },
+      {
+        onSuccess: () => {
+          console.log("✅ Cập nhật trạng thái thành công");
+          // Không invalidate nếu đã update local state
+        },
+        onError: () => {
+          console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
+          // Rollback về trạng thái ban đầu
+          setItems((prevItems) =>
+            prevItems.map((item) =>
+              item.id === id ? { ...item, is_completed: originalStatus } : item
+            )
+          );
+        },
+      }
+    );
   };
-
 
   // const handleDeleteTask = (checklistId) => {
   //   removeCheckList(checklistId, {
@@ -466,7 +470,7 @@ const CardModal = ({}) => {
     if (!editedItemName.trim()) return;
 
     updateCheckListItemName(
-      { itemId: id, name: editedItemName, cardId:cardId },
+      { itemId: id, name: editedItemName, cardId: cardId },
       {
         onSuccess: () => {
           setEditingItemId(null); // Thoát chế độ chỉnh sửa sau khi cập nhật
@@ -487,15 +491,18 @@ const CardModal = ({}) => {
   const [selectedItemId, setSelectedItemId] = useState(null);
 
   const handleDeleteItem = (id) => {
-    deleteItem( { id: id, cardId:cardId }, {
-      onSuccess: () => {
-        console.log(`✅ Xóa thành công ChecklistItem ID: ${id}`);
-        handleMenuClose();
-      },
-      onError: (error) => {
-        console.error("❌ Lỗi khi xóa:", error);
-      },
-    });
+    deleteItem(
+      { id: id, cardId: cardId },
+      {
+        onSuccess: () => {
+          console.log(`✅ Xóa thành công ChecklistItem ID: ${id}`);
+          handleMenuClose();
+        },
+        onError: (error) => {
+          console.error("❌ Lỗi khi xóa:", error);
+        },
+      }
+    );
   };
 
   const [menuAnchor, setMenuAnchor] = useState(null);
