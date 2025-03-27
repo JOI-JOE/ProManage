@@ -82,7 +82,7 @@ const DateModal = ({ open, onClose, onSave, initialData }) => {
         }
     }
 }, [schedule]);
-console.log(schedule);
+
 
   // Đảm bảo ngày bắt đầu luôn <= ngày kết thúc
   useEffect(() => {

@@ -40,9 +40,9 @@ import { formatTime } from "../../../utils/dateUtils";
 const AppBar = ({ username, email }) => {
   const { data: user } = useUser();
 
-  console.log(user);
+  // console.log(user);
 
-  console.log(user?.email);
+  // console.log(user?.email);
 
   const userId = user?.id;
   const { notifications } = useNotifications(userId);

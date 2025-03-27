@@ -99,7 +99,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
     if (!NewUpdatedLabelName.trim()) alert("Tên nhãn không được để trống!");
 
     updateLabelNameMutation.mutate(
-      { labelId: editLabelId, data: { title: NewUpdatedLabelName } },
+      { labelId: editLabelId,   boardId: boardId, data: { title: NewUpdatedLabelName } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["labels"] });
@@ -150,7 +150,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   };
   const handleDeleteLabel = (labelId) => {
     deleteLabelMutation.mutate(
-      { labelId },
+      { labelId, cardId:cardId, boardId: boardId },
       {
         onSuccess: () => {
           // queryClient.invalidateQueries({ queryKey: ["labels"] });
@@ -177,7 +177,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const handleEditLabel = (id, title) => {
     setEditLabelId(id);
     setIsEditingLabel(true);
-    setUpdatedLabelName("");
+    setUpdatedLabelName(title); // Set the current title to the input field
   };
 
   // const handleSaveLabelName = () => {
@@ -304,16 +304,9 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "0 8px",
-                      "&:hover::after": {
-                        content: `"${label.title}"`,
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        color: "#fff",
-                        fontSize: "0.6rem",
-                        fontWeight: "bold",
-                      },
+                      color: "#fff", // Always display the label title
+                      fontSize: "0.578rem",
+                      fontWeight: "bold",
                     }}
                   >
                     {isEditingLabel && editLabelId === label.id ? (
@@ -330,10 +323,15 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                             "& fieldset": {
                               border: "none",
                             },
+                            "& input": {
+                              color: "#fff ", // Ensure text color is white
+                            },
                           },
                         }}
                       />
-                    ) : null}
+                    ) : (
+                      label.title // Display the label title
+                    )}
                     <IconButton
                       size="small"
                       onClick={() => {
@@ -345,7 +343,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                     </IconButton>
                   </Box>
                 }
-              // sx={{ width: "100%" }}
+                // sx={{ width: "100%" }}
               />
               <IconButton
                 size="small"

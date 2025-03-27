@@ -21,19 +21,29 @@ const useAttachments = (cardId) => {
     // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
 
 
-   
+
     channel.listen(".attachment.uploaded", (data) => {
-        console.log('Realtime archive changed: ', data);
-       
-        // queryClient.invalidateQueries(['boardMembers']);
-        queryClient.invalidateQueries({ queryKey: ["attachments", cardId] });
-        queryClient.invalidateQueries({ queryKey: ["activities"] });
-  
-      });
+      // console.log('Realtime archive changed: ', data);
+
+      // queryClient.invalidateQueries(['boardMembers']);
+      queryClient.invalidateQueries({ queryKey: ["attachments", cardId] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+
+    });
+
+    channel.listen(".attachment.deleted_with_activity", (data) => {
+      console.log('Realtime archive changed: ', data);
+
+
+      queryClient.invalidateQueries({ queryKey: ["attachments"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+
+    });
 
     return () => {
       channel.stopListening(".attachment.uploaded");
-    //   channel.stopListening(".CardDelete");
+      channel.stopListening(".attachment.deleted_with_activity");
+      //   channel.stopListening(".CardDelete");
       echoInstance.leave(`card.${cardId}`);
     };
   }, [cardId, queryClient]);
@@ -79,21 +89,21 @@ const useAttachments = (cardId) => {
   const removeAttachmentMutation = useMutation({
     mutationFn: (attachmentId) => deleteAttachment(cardId, attachmentId),
     onSuccess: () => {
-      queryClient.invalidateQueries(["attachments",cardId]);
+      queryClient.invalidateQueries(["attachments", cardId]);
 
     },
   });
 
-   const setCoverImageMutation = useMutation({
+  const setCoverImageMutation = useMutation({
     mutationFn: (attachmentId) => setCoverImage(cardId, attachmentId),
     onMutate: async (attachmentId) => {
       await queryClient.cancelQueries(["attachments", cardId]);
       const previousAttachments = queryClient.getQueryData(["attachments", cardId]) || [];
-  
+
       queryClient.setQueryData(["attachments", cardId], (oldData) => {
         const currentData = Array.isArray(oldData) ? oldData : [];
         const isAlreadyCover = currentData.some((file) => file.id === attachmentId && file.is_cover);
-  
+
         if (isAlreadyCover) {
           // Nếu đã là ảnh bìa, bỏ trạng thái ảnh bìa
           return currentData.map((file) =>
@@ -108,7 +118,7 @@ const useAttachments = (cardId) => {
           );
         }
       });
-  
+
       return { previousAttachments };
     },
     onSuccess: () => {
@@ -133,7 +143,7 @@ const useAttachments = (cardId) => {
     addAttachment: addAttachmentMutation.mutate,
     updateAttachment: updateFileNameAttachmentMutation.mutate,
     removeAttachment: removeAttachmentMutation.mutate,
-    
+
     setCoverImages: setCoverImageMutation.mutate, // Thêm hàm để gọi từ component
   };
 };

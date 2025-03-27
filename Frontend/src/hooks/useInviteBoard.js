@@ -29,9 +29,9 @@ export const useGetBoardMembers = (boardId) => {
     
        
         channel.listen(".BoardUpdateRole", (data) => {
-            console.log('Realtime archive changed: ', data);
+            // console.log('Realtime archive changed: ', data);
            
-            queryClient.invalidateQueries(['boardMembers']);
+            queryClient.invalidateQueries( ['boardMembers']);
       
           });
     
@@ -81,7 +81,7 @@ export const useUpdateRoleMemberInBoards = () => {
         mutationFn: ({ boardId, userId, role }) => updateRoleMemberInBoards(boardId, userId, role),
         onSuccess: (data) => {
             if (data.success) {
-                console.log("Vai trò đã được cập nhật thành công:", data.message);
+                // console.log("Vai trò đã được cập nhật thành công:", data.message);
 
                 // Cập nhật lại dữ liệu trong cache (nếu cần)
                 // queryClient.invalidateQueries(['boardMembers']); // Thay 'boardMembers' bằng key thực tế
@@ -104,7 +104,7 @@ export const useRemoveMemberFromBoard = (currentUserId) => {
         mutationFn: ({ boardId, userId }) => removeMemberFromBoard(boardId, userId),
         onSuccess: (data) => {
             if (data.success) {
-                console.log("Thành viên đã được xóa khỏi bảng:", data.message);
+                // console.log("Thành viên đã được xóa khỏi bảng:", data.message);
                 queryClient.invalidateQueries(['boardMembers']); // Làm mới danh sách thành viên
             }
         },
@@ -144,7 +144,7 @@ export const useMemberJoinedListener = (currentUserId) => {
         channel.listen('MemberJoinedBoard', (data) => {
             // Hiển thị toast
             toast.success(data.message);
-            console.log('helloo')
+            // console.log('helloo')
             // Làm mới danh sách BoardMember
             queryClient.invalidateQueries(['boardMembers', data.board_id]);
         });

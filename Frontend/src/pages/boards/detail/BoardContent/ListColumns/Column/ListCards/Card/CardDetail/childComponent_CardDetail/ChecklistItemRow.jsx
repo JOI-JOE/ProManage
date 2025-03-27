@@ -26,6 +26,7 @@ const ChecklistItemRow = ({
   setMemberListConfig,
 }) => {
   const { data: checklistItemMembers } = useGetMemberInCheckListItem(item.id); // nếu không phải checklist-item thì trả về rỗng
+  // const { data: checklistItem } = useChecklistsItemByCheckListItem(item.id); // nếu không phải checklist-item thì trả về rỗng
 
   
   const hasMembers = checklistItemMembers?.data?.length > 0;
@@ -146,4 +147,4 @@ const ChecklistItemRow = ({
   );
 };
 
-export default ChecklistItemRow;
+export default React.memo(ChecklistItemRow);
