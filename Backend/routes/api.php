@@ -68,6 +68,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
     });
 
+    // Function board thì có để ở ngoài vì nó có chế độ public
+    Route::controller(BoardController::class)->group(function () {
+        Route::get('boards/{boardId}', 'show');
+    });
+
     // Function lấy dữ liệu của star
     Route::controller(BoardStarController::class)->group(function () {
         Route::prefix('boardstars')->group(function () {
@@ -76,8 +81,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('member/{userId}/boardStars', 'starBoard');
         Route::delete('member/{userId}/boardStars/{boardId}', 'unstarBoard');
     });
-
-    Route::controller(BoardStarController::class)->group(function () {});
 
 
     // Function lấy dữ liệu của workspace 
@@ -108,12 +111,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/workspace/{workspaceId}/member/{memberId}',  'addMemberToWorkspaceDirection');
     });
 
-    // Route::post('/send-mail', [EmailController::class, 'sendEmail']);
-
-    Route::controller(BoardController::class)->group(function () {
-        Route::get('boards/{boardId}', 'showBoardById');
-    });
-
     Route::prefix('cards')->group(function () {
         Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
         Route::post('/', [CardController::class, 'store']);
@@ -138,12 +135,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/cards/{cardId}', action: 'updatePositionCard');
     });
 
-
     // list board
     Route::get('lists/{boardId}', [ListController::class, 'index']);
     Route::get('/search', [SearchController::class, 'search']);
 });
-
 
 Route::get('/color', [ColorController::class, 'index']);
 Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
@@ -167,16 +162,17 @@ Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::delete('{boardId}', [BoardController::class, 'closeBoard']);
 });
 
-Route::delete('/boards/{boardId}', [BoardController::class, 'toggleBoardClosed']);
 
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
+Route::delete('/boards/{boardId}', [BoardController::class, 'toggleBoardClosed']);
 
 
 
-Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
-Route::get('/board/{id}', [BoardController::class, 'getBoard']);
-Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
+// Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
+// Route::get('/board/{id}', [BoardController::class, 'getBoard']);
+// Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
+
 
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 
@@ -217,8 +213,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route cho bảng đã xóa
     Route::get('closed', [BoardController::class, 'closed']);
 });
-
-
 
 
 Route::middleware('auth:sanctum')->prefix('cards')->group(function () {

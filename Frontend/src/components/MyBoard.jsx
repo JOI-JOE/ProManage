@@ -11,7 +11,7 @@ import { useMe } from "../contexts/MeContext";
 
 const MyBoard = ({ board }) => {
   const dispatch = useDispatch();
-  const { user } = useMe(); // Fetch user from context
+  const { user } = useMe();
   const [optimisticId] = useState(optimisticIdManager.generateOptimisticId('StarBoard')); // Generate optimistic ID
   const starredBoards = useSelector((state) => state.starredBoards.starred); // Get starred boards from Redux store
   const isStar = starredBoards?.board_stars?.some((b) => b.board_id === board.id);
@@ -58,7 +58,9 @@ const MyBoard = ({ board }) => {
           },
         }}
       >
-        <Link to={`/b/${board.id}/${board.name}`} style={{ textDecoration: "none" }}>
+        <Link to={`/b/${board.id}/${board.name}`}
+          state={{ workspaceId: board.workspace_id }}
+          style={{ textDecoration: "none" }}>
           <Box
             sx={{
               width: "180px",

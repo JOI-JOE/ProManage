@@ -13,10 +13,11 @@ export const useGetWorkspaces = () => {
   return useQuery({
     queryKey: ["getWorkspace"],
     queryFn: getWorkspacesAll,
-    staleTime: 5 * 60 * 1000, // Giữ dữ liệu "tươi" trong 5 phút
-    cacheTime: 10 * 60 * 1000, // Giữ cache trong 10 phút
-    refetchOnWindowFocus: false, // Không refetch khi focus lại tab
-    retry: 2, // Thử lại tối đa 2 lần nếu lỗi
+    staleTime: 10 * 60 * 1000, // 10 phút
+    cacheTime: 60 * 60 * 1000, // 60 phút
+    refetchOnWindowFocus: false, // Không fetch lại khi focus tab
+    refetchOnReconnect: false, // Không fetch khi mạng thay đổi
+    retry: 1, // Giảm số lần thử lại nếu lỗi
   });
 };
 

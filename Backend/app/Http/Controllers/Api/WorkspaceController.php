@@ -29,10 +29,13 @@ class WorkspaceController extends Controller
             ], 401);
         }
 
+        // Lấy danh sách workspaces mà user tham gia hoặc tạo
         $workspaces = DB::table('workspaces')
             ->leftJoin('workspace_members', function ($join) use ($userId) {
                 $join->on('workspace_members.workspace_id', '=', 'workspaces.id')
-                    ->where('workspace_members.user_id', $userId);
+                    ->where('workspace_members.user_id', '=', $userId)
+                    ->where('workspace_members.joined', '=', 1) // Chỉ lấy workspace mà user đã tham gia
+                    ->where('workspace_members.is_deactivated', '=', 0); // Không lấy thành viên bị vô hiệu hóa
             })
             ->select(
                 'workspaces.id',
@@ -40,26 +43,49 @@ class WorkspaceController extends Controller
                 'workspaces.display_name',
                 'workspaces.id_member_creator',
                 'workspaces.permission_level',
+                'workspace_members.member_type', // Quyền của user (admin hoặc normal)
+                'workspace_members.joined', // Trạng thái tham gia (luôn là 1)
                 DB::raw('(SELECT COUNT(*) FROM workspace_members wm WHERE wm.workspace_id = workspaces.id) AS member_count'),
-                DB::raw("IF(workspace_members.user_id IS NOT NULL, TRUE, FALSE) AS joined"),
                 DB::raw("IF(workspaces.id_member_creator = '$userId', TRUE, FALSE) AS is_creator")
             )
             ->where(function ($query) use ($userId) {
-                $query->whereNotNull('workspace_members.user_id')
-                    ->orWhere('workspaces.id_member_creator', $userId);
+                $query->whereNotNull('workspace_members.user_id') // User đã tham gia
+                    ->orWhere('workspaces.id_member_creator', '=', $userId); // Hoặc user là người tạo
             })
-            ->groupBy(
-                'workspaces.id',
-                'workspaces.name',
-                'workspaces.display_name',
-                'workspaces.id_member_creator',
-                'workspace_members.user_id'
-            )
+            ->distinct()
             ->get();
 
         if ($workspaces->isEmpty()) {
+            // Nếu không có workspace, vẫn lấy các bảng cá nhân (Personal Boards)
+            $personalBoards = DB::table('boards')
+                ->leftJoin('board_members', function ($join) use ($userId) {
+                    $join->on('board_members.board_id', '=', 'boards.id')
+                        ->where('board_members.user_id', '=', $userId);
+                })
+                ->select(
+                    'boards.id',
+                    'boards.name',
+                    'boards.workspace_id',
+                    'boards.thumbnail',
+                    'boards.visibility',
+                    'boards.created_by',
+                    'boards.created_at',
+                    DB::raw("EXISTS (SELECT 1 FROM board_stars bs WHERE bs.board_id = boards.id AND bs.user_id = '$userId') AS starred"),
+                    DB::raw('(SELECT COUNT(*) FROM board_members bm WHERE bm.board_id = boards.id) AS member_count')
+                )
+                ->where(function ($query) use ($userId) {
+                    $query->where('boards.created_by', '=', $userId) // User là người tạo
+                        ->orWhereNotNull('board_members.user_id'); // User là thành viên bảng
+                })
+                ->where('boards.closed', '=', 0)
+                ->whereNull('boards.workspace_id') // Chỉ lấy bảng không thuộc workspace
+                ->orderByRaw('starred DESC')
+                ->orderBy('boards.created_at', 'desc')
+                ->get();
+
             return response()->json([
                 'workspaces' => [],
+                'personal_boards' => $personalBoards,
                 'id' => $userId
             ], 200);
         }
@@ -67,36 +93,58 @@ class WorkspaceController extends Controller
         // Lấy danh sách ID của workspaces
         $workspaceIds = $workspaces->pluck('id')->toArray();
 
-        // Lấy danh sách boards mà user đã tham gia hoặc là người tạo, tối đa 5 boards mỗi workspace
+        // Lấy tất cả boards mà user tham gia hoặc tạo (bao gồm cả Personal Boards)
         $boards = DB::table('boards')
+            ->leftJoin('board_members', function ($join) use ($userId) {
+                $join->on('board_members.board_id', '=', 'boards.id')
+                    ->where('board_members.user_id', '=', $userId);
+            })
             ->select(
                 'boards.id',
                 'boards.name',
                 'boards.workspace_id',
                 'boards.thumbnail',
-                DB::raw("EXISTS (SELECT 1 FROM board_stars bs WHERE bs.board_id = boards.id AND bs.user_id = '$userId') as starred")
+                'boards.visibility',
+                'boards.created_by',
+                'boards.created_at',
+                DB::raw("EXISTS (SELECT 1 FROM board_stars bs WHERE bs.board_id = boards.id AND bs.user_id = '$userId') AS starred"),
+                DB::raw('(SELECT COUNT(*) FROM board_members bm WHERE bm.board_id = boards.id) AS member_count'),
+                DB::raw("IF(boards.workspace_id IN ('" . implode("','", $workspaceIds) . "'), TRUE, FALSE) AS in_workspace")
             )
-            ->whereIn('boards.workspace_id', $workspaceIds)
             ->where(function ($query) use ($userId) {
-                $query->whereExists(function ($subQuery) use ($userId) {
-                    $subQuery->select(DB::raw(1))
-                        ->from('board_members as bm')
-                        ->whereRaw('bm.board_id = boards.id')
-                        ->where('bm.user_id', '=', $userId);
-                })
-                    ->orWhere('boards.created_by', '=', $userId);
+                $query->where('boards.created_by', '=', $userId) // User là người tạo
+                    ->orWhereNotNull('board_members.user_id'); // User là thành viên bảng
             })
+            ->where('boards.closed', '=', 0)
+            ->orderByRaw('starred DESC')
             ->orderBy('boards.created_at', 'desc')
-            ->get()
-            ->groupBy('workspace_id');
+            ->get();
 
-        $workspaces->transform(function ($workspace) use ($boards) {
-            $workspace->boards = $boards->get($workspace->id, collect()); // Lấy toàn bộ boards của workspace
+        // Phân loại boards
+        $groupedBoards = [
+            'in_workspace' => [],
+            'personal' => []
+        ];
+
+        foreach ($boards as $board) {
+            if ($board->in_workspace) {
+                // Bảng thuộc workspace
+                $groupedBoards['in_workspace'][$board->workspace_id][] = $board;
+            } else {
+                // Bảng không thuộc workspace (Personal Boards)
+                $groupedBoards['personal'][] = $board;
+            }
+        }
+
+        // Gắn boards vào workspaces
+        $workspaces->transform(function ($workspace) use ($groupedBoards) {
+            $workspace->boards = collect($groupedBoards['in_workspace'][$workspace->id] ?? []);
             return $workspace;
         });
 
         return response()->json([
             'workspaces' => $workspaces,
+            'personal_boards' => $groupedBoards['personal'],
             'id' => $userId
         ], 200);
     }

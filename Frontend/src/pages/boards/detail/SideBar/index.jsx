@@ -29,10 +29,9 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
-import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 
-const SideBar = () => {
-  const [openSettings, setOpenSettings] = useState();
+const SideBar = ({ workspace }) => {
+  const [openSettings, setOpenSettings] = useState(false);
 
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
@@ -94,14 +93,14 @@ const SideBar = () => {
         <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
         <Box>
           <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-            {currentWorkspace?.display_name}
+            {workspace?.display_name}
           </Typography>
         </Box>
       </Box>
 
       <List>
         <ListItem disablePadding>
-          <ListItemButton component={Link} to={`/w/${currentWorkspace?.name}`}>
+          <ListItemButton component={Link} to={`/w/${workspace?.name}`}>
             <ListItemIcon sx={{ color: "white" }}>
               <DashboardIcon />
             </ListItemIcon>
@@ -112,7 +111,7 @@ const SideBar = () => {
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to={`/w/${currentWorkspace?.name}/members`}
+            to={`/w/${workspace?.name}/members`}
           >
             <ListItemIcon sx={{ color: "white" }}>
               <PeopleIcon />
@@ -138,7 +137,7 @@ const SideBar = () => {
               </ListItemIcon>
               <ListItemText
                 component={Link}
-                to={`/w/${currentWorkspace?.name}/account}`}
+                to={`/w/${workspace?.name}/account}`}
                 primary="Cài đặt không gian làm việc"
               />
             </ListItemButton>
@@ -156,7 +155,7 @@ const SideBar = () => {
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to={`/w/${currentWorkspace?.name}/calendar`}
+            to={`/w/${workspace?.name}/calendar`}
           >
             <ListItemIcon sx={{ color: "white" }}>
               <CalendarMonthIcon />
@@ -171,7 +170,7 @@ const SideBar = () => {
       </Typography>
 
       <List sx={{ p: 0.5 }}>
-        {currentWorkspace?.boards?.map((board) => (
+        {workspace?.boards?.map((board) => (
           <ListItem key={board.id} disablePadding sx={{ p: 1, display: "flex", alignItems: "center" }}>
             {/* Phần tên bảng dẫn link */}
             <ListItemButton

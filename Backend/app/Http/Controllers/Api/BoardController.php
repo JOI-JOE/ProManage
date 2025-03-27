@@ -3,11 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\MeResource;
 use App\Models\Board;
 use App\Models\BoardMember;
-use App\Models\User;
-use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +12,190 @@ use Illuminate\Support\Facades\Log;
 
 class BoardController extends Controller
 {
+    // Hậu - Tối ưu lại dữ liệu của board
+    public function show($boardId)
+    {
+        $userId = Auth::id();
+
+        // Lấy thông tin board
+        $board = DB::table('boards')
+            ->where('id', $boardId)
+            ->first();
+
+        // Trường hợp 1: Board không tồn tại
+        if (!$board) {
+            return response()->json([
+                'message' => 'Board not found'
+            ], 404);
+        }
+
+        // Lấy danh sách thành viên của board (sẽ dùng ở nhiều trường hợp)
+        $members = DB::table('board_members')
+            ->join('users', 'board_members.user_id', '=', 'users.id')
+            ->where('board_members.board_id', $boardId)
+            ->select('users.id', 'users.user_name', 'users.initials', 'users.email', 'board_members.role')
+            ->get();
+
+        // Kiểm tra xem user có phải là thành viên của board không
+        $isBoardMember = DB::table('board_members')
+            ->where('board_id', $boardId)
+            ->where('user_id', $userId)
+            ->exists();
+
+        // Trường hợp 2: User đã tham gia board (board member) → Có quyền truy cập đầy đủ
+        if ($isBoardMember) {
+            $workspace = $this->getWorkspaceData($board->workspace_id);
+            return response()->json([
+                'board' => [
+                    'id' => $board->id,
+                    'name' => $board->name,
+                    'description' => $board->description,
+                    'visibility' => $board->visibility,
+                    'workspace_id' => $board->workspace_id
+                ],
+                'members' => $members,
+                'workspace' => $workspace,
+                'message' => 'You are a member of this board. You have full access.',
+                'isEditable' => true,
+                'canJoin' => false // Đã là thành viên, không cần tham gia lại
+            ], 200);
+        }
+
+        // Trường hợp 3: User chưa tham gia board (not a board member)
+        // Kiểm tra workspace membership nếu board thuộc workspace
+        $isWorkspaceMember = false;
+        $workspace = null;
+        if ($board->workspace_id) {
+            $workspace = DB::table('workspaces')
+                ->where('id', $board->workspace_id)
+                ->select('workspaces.id', 'workspaces.display_name', 'workspaces.name', 'workspaces.permission_level')
+                ->first();
+
+            if ($workspace) {
+                $isWorkspaceMember = DB::table('workspace_members')
+                    ->where('workspace_id', $board->workspace_id)
+                    ->where('user_id', $userId)
+                    ->exists();
+            } else {
+                return response()->json([
+                    'message' => 'Workspace not found for this board.'
+                ], 404);
+            }
+        }
+
+        // Chuẩn bị dữ liệu workspace cho response
+        $workspaceData = $this->getWorkspaceData($board->workspace_id);
+
+        // Trường hợp 4: Board là Public
+        if ($board->visibility === 'public') {
+            $workspaceData = $workspace && $workspace->permission_level === 'public'
+                ? [
+                    'id' => $workspace->id,
+                    'display_name' => $workspace->display_name,
+                    'name' => $workspace->name,
+                    'permission_level' => $workspace->permission_level
+                ]
+                : ($workspace ? 'private' : null);
+
+            return response()->json([
+                'board' => [
+                    'id' => $board->id,
+                    'name' => $board->name,
+                    'description' => $board->description,
+                    'visibility' => $board->visibility,
+                    'workspace_id' => $board->workspace_id
+                ],
+                'members' => $members,
+                'workspace' => $workspaceData,
+                'message' => 'This is a public board. You can view but cannot edit unless you are a member.',
+                'isEditable' => false,
+                'canJoin' => true // Cho phép yêu cầu tham gia board
+            ], 200);
+        }
+
+        // Trường hợp 5: Board là Private
+        if ($board->visibility === 'private') {
+            return response()->json([
+                'message' => 'This is a private board. You need to be invited to view or edit.'
+            ], 403);
+        }
+
+        // Trường hợp 6: Board thuộc Workspace
+        if ($board->visibility === 'workspace') {
+            // Trường hợp 6.1: User đã tham gia workspace
+            if ($isWorkspaceMember) {
+                return response()->json([
+                    'board' => [
+                        'id' => $board->id,
+                        'name' => $board->name,
+                        'description' => $board->description,
+                        'visibility' => $board->visibility,
+                        'workspace_id' => $board->workspace_id
+                    ],
+                    'members' => $members,
+                    'workspace' => $workspaceData,
+                    'message' => 'You are a member of the workspace. You can view this board but cannot edit unless you are a board member.',
+                    'isEditable' => false,
+                    'canJoin' => true // Cho phép yêu cầu tham gia board
+                ], 200);
+            }
+
+            // Trường hợp 6.2: User chưa tham gia workspace
+            // Kiểm tra xem workspace có public không
+            if ($workspace->permission_level === 'public') {
+                return response()->json([
+                    'board' => [
+                        'id' => $board->id,
+                        'name' => $board->name,
+                        'description' => $board->description,
+                        'visibility' => $board->visibility,
+                        'workspace_id' => $board->workspace_id
+                    ],
+                    'members' => $members,
+                    'workspace' => $workspaceData,
+                    'message' => 'This board belongs to a public workspace. You can view but cannot edit unless you join the workspace and board.',
+                    'isEditable' => false,
+                    'canJoinWorkspace' => true, // Cho phép yêu cầu tham gia workspace
+                    'canJoin' => false
+                ], 200);
+            }
+
+            // Trường hợp 6.3: Workspace là Private và user không phải thành viên
+            return response()->json([
+                'message' => 'This board belongs to a private workspace. You need to join the workspace to view or edit.'
+            ], 403);
+        }
+
+        // Trường hợp 7: Visibility không hợp lệ
+        return response()->json([
+            'message' => 'Invalid board visibility setting.'
+        ], 400);
+    }
+
+    private function getWorkspaceData($workspaceId)
+    {
+        if (!$workspaceId) {
+            return null;
+        }
+
+        $workspace = DB::table('workspaces')
+            ->where('id', $workspaceId)
+            ->select('workspaces.id', 'workspaces.display_name', 'workspaces.name', 'workspaces.permission_level')
+            ->first();
+
+        if (!$workspace) {
+            return null;
+        }
+
+        return [
+            'id' => $workspace->id,
+            'display_name' => $workspace->display_name,
+            'name' => $workspace->name,
+            'permission_level' => $workspace->permission_level
+        ];
+    }
+
+    //----------------------------------------------
     public function index()
     {
         $board = Board::where('closed', 0)->get();
@@ -33,7 +214,6 @@ class BoardController extends Controller
             // Tìm board theo ID
             $board = Board::with('creator')->findOrFail($boardId);
             // $creator = $board->creator()->first(); // Lấy thông tin người tạo
-
             // Trả về kết quả nếu tìm thấy
             return response()->json([
                 'result' => true,
@@ -110,22 +290,22 @@ class BoardController extends Controller
     {
         $user = Auth::user();
 
-    if (!$user) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
 
-    // Lấy các bảng đã đóng, kiểm tra xem người dùng có phải là thành viên trong bảng board_members đó không
-    $closedBoards = Board::where('closed', 1) // Lọc các bảng đã đóng
-        ->whereHas('members', function ($query) use ($user) {
-            $query->where('user_id', $user->id); // Kiểm tra user_id
-        })
-        ->with(['workspace', 'members']) // Eager load thông tin workspace và board_members
-        ->get();
+        // Lấy các bảng đã đóng, kiểm tra xem người dùng có phải là thành viên trong bảng board_members đó không
+        $closedBoards = Board::where('closed', 1) // Lọc các bảng đã đóng
+            ->whereHas('members', function ($query) use ($user) {
+                $query->where('user_id', $user->id); // Kiểm tra user_id
+            })
+            ->with(['workspace', 'members']) // Eager load thông tin workspace và board_members
+            ->get();
 
-    return response()->json([
-        'result' => true,
-        'data' => $closedBoards
-    ]);
+        return response()->json([
+            'result' => true,
+            'data' => $closedBoards
+        ]);
     }
 
     public function store(Request $request)
@@ -230,26 +410,26 @@ class BoardController extends Controller
     }
 
 
-    public function show($workspaceId, $boardId)
-    {
-        try {
-            // Kiểm tra quyền truy cập
-            $workspace = Workspace::findOrFail($workspaceId);
-            if ($workspace->user_id != auth()->id()) {
-                return response()->json(['error' => 'Unauthorized'], 403);
-            }
+    // public function show($workspaceId, $boardId)
+    // {
+    //     try {
+    //         // Kiểm tra quyền truy cập
+    //         $workspace = Workspace::findOrFail($workspaceId);
+    //         if ($workspace->user_id != auth()->id()) {
+    //             return response()->json(['error' => 'Unauthorized'], 403);
+    //         }
 
-            // Lấy thông tin board 
-            $board = $workspace->boards()->firstOrFail();
+    //         // Lấy thông tin board 
+    //         $board = $workspace->boards()->firstOrFail();
 
-            return response()->json([
-                'success' => true,
-                'data' => $board,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
-        }
-    }
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => $board,
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+    //     }
+    // }
 
 
     /**

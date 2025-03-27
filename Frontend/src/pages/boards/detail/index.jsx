@@ -1,24 +1,24 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, Container } from "@mui/material";
-import { Outlet, useParams } from "react-router-dom";
+import { Outlet, useLocation, useParams } from "react-router-dom";
 import SideBar from "./SideBar";
 import BoardProvider from "../../../providers/BoardProvider";
+import { useWorkspace } from "../../../contexts/WorkspaceContext";
 
 const BoardDetail = () => {
-  const { boardId } = useParams(); // Lấy boardId từ URL
-  const { data } = useWorkspace(); // Lấy danh sách workspaces từ API
+  const { data } = useWorkspace();
+  const location = useLocation();
+  const workspaceId = location.state?.workspaceId;
 
-  // Tìm workspace chứa board hiện tại
-  const currentWorkspace = useMemo(() => {
-    return data?.workspaces?.find((ws) =>
-      ws.boards.some((board) => board.id === boardId)
-    );
-  }, [boardId, data]);
+  const foundWorkspace = data.workspaces.find((ws) =>
+    ws.id == workspaceId
+  )
 
   return (
     <Container disableGutters maxWidth={false}>
       <Box sx={{ display: "flex" }}>
-        <SideBar />
+        {/* Truyền workspace vào SideBar */}
+        <SideBar workspace={foundWorkspace} />
         <Box sx={{ width: "81%" }}>
           <BoardProvider>
             <Outlet />

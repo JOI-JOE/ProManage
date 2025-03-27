@@ -103,7 +103,7 @@ const HomeWorkspace = ({ workspace }) => {
           onCancel={toggleFormVisibility} // Truyền hàm đóng form
         />
       )}
-      {filteredStarredBoards?.length > 0 && (
+      {filteredStarredBoards.length > 0 && (
         <>
           <ListItem>
             <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
