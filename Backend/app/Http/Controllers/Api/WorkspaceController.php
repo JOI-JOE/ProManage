@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class WorkspaceController extends Controller
@@ -40,6 +39,7 @@ class WorkspaceController extends Controller
                 'workspaces.name',
                 'workspaces.display_name',
                 'workspaces.id_member_creator',
+                'workspaces.permission_level',
                 DB::raw('(SELECT COUNT(*) FROM workspace_members wm WHERE wm.workspace_id = workspaces.id) AS member_count'),
                 DB::raw("IF(workspace_members.user_id IS NOT NULL, TRUE, FALSE) AS joined"),
                 DB::raw("IF(workspaces.id_member_creator = '$userId', TRUE, FALSE) AS is_creator")
@@ -90,8 +90,6 @@ class WorkspaceController extends Controller
             ->get()
             ->groupBy('workspace_id');
 
-
-        // Gộp danh sách boards vào từng workspace (tối đa 5 boards mỗi workspace)
         $workspaces->transform(function ($workspace) use ($boards) {
             $workspace->boards = $boards->get($workspace->id, collect()); // Lấy toàn bộ boards của workspace
             return $workspace;

@@ -13,6 +13,10 @@ const MyBoard = ({ board }) => {
   const dispatch = useDispatch();
   const { user } = useMe(); // Fetch user from context
   const [optimisticId] = useState(optimisticIdManager.generateOptimisticId('StarBoard')); // Generate optimistic ID
+  const starredBoards = useSelector((state) => state.starredBoards.starred); // Get starred boards from Redux store
+  const isStar = starredBoards?.board_stars?.some((b) => b.board_id === board.id);
+  const existingStar = starredBoards?.board_stars?.find((b) => b.board_id === board.id);
+  const starId = existingStar ? existingStar.star_id : null;
 
   const handleToggleMarked = async (e) => {
     e.stopPropagation(); // Prevent event from propagating
@@ -28,13 +32,12 @@ const MyBoard = ({ board }) => {
     try {
       if (isStar) {
         if (starId) {
-          dispatch(unstarBoard({ board: starred, optimisticId }));
-          const response = await unStarToBoard(user.id, board.id); // Pass the real `star_id` for unstar
+          dispatch(unstarBoard({ board: starred }));
+          await unStarToBoard(user.id, board.id); // Pass the real `star_id` for unstar
         }
       } else {
-        dispatch(starBoard({ board: starred, optimisticId }));
+        dispatch(starBoard({ board: starred }));
         const response = await addStarToBoard(user.id, board.id);
-        console.log(response)
         dispatch(updateStarredBoard({ boardId: response.board_id, newStarId: response.id }));
       }
     } catch (error) {

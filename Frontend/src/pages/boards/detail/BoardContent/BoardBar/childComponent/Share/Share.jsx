@@ -25,13 +25,6 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   const currentBoardId = boardId;
   const navigate = useNavigate();
 
-  console.log(currentUser);
-
-  console.log('Current board:',boardMembers);
-
-  
-
-  // Hooks
   const { mutate: generateLink } = useGenerateInviteLink();
   const { mutate: updateRoleMemberInBoard } = useUpdateRoleMemberInBoards();
   const removeMember = useRemoveMemberFromBoard(currentUser?.id); // Sử dụng hook với currentUserId

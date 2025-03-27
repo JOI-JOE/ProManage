@@ -1,4 +1,4 @@
-import { Box, Button, MenuItem, Avatar, Typography } from "@mui/material";
+import { Box, Button, MenuItem, Avatar, Typography, SvgIcon } from "@mui/material";
 import { useState } from "react";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
@@ -9,6 +9,7 @@ import { faStar } from "@fortawesome/free-solid-svg-icons";
 import { useMe } from "../../../contexts/MeContext";
 import { useSelector } from "react-redux";
 import LogoLoading from "../../LogoLoading";
+import LogoBoardStar from "~/assets/boardStar.svg?react"; // Đảm bảo logo SVG được import đúng
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -80,7 +81,33 @@ const Started = () => {
             <LogoLoading scale={0.4} /> {/* Tùy chỉnh scale nếu cần */}
           </MenuItem>
         ) : (!listStar || listStar.length === 0) ? (
-          <MenuItem disabled>Không có bảng nào</MenuItem>
+          <Box sx={{ width: 304, display: "flex", flexDirection: "column", alignItems: "center", p: 2 }}>
+            {/* Hình ảnh SVG */}
+            <Typography
+              variant="h3"
+              color="text.secondary"
+              textAlign="center"
+              sx={{ fontWeight: "bold" }} // Làm đậm chữ
+            >
+              Bảng Đánh Dấu Sao
+            </Typography>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+              <SvgIcon
+                component={LogoBoardStar}
+                sx={{
+                  width: "100%", // Chiếm toàn bộ chiều rộng của phần tử cha
+                  height: "auto", // Giữ tỷ lệ gốc
+                }}
+                viewBox="0 0 24 24"
+                inheritViewBox
+              />
+            </Box>
+
+            {/* Văn bản mô tả */}
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              Gắn dấu sao các bảng quan trọng để truy cập nhanh và dễ dàng.
+            </Typography>
+          </Box>
         ) : (
           listStar.map((board) => (
             <MenuItem

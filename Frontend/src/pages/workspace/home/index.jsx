@@ -13,9 +13,23 @@ import EditIcon from "@mui/icons-material/Edit";
 import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
 import MyBoard from "../../../components/MyBoard";
 import CreateBoard from "../../../components/CreateBoard";
+import MyStar from "../../../components/MyStar";
+import { useSelector } from "react-redux";
 
-const HomeWorkspace = ({ workspace, markedBoards }) => {
+const HomeWorkspace = ({ workspace }) => {
   const [isFormVisible, setFormVisible] = useState(false); // Quản lý hiển thị form
+  const starredBoards = useSelector((state) => state.starredBoards.starred.board_stars);
+
+  const listStarIds = workspace?.boards
+    ?.filter((board) => board.starred === 1)
+    ?.map((board) => board.id) || [];
+
+  const filteredStarredBoards = starredBoards?.filter((board) =>
+    listStarIds.includes(board.board_id)
+  ) || [];
+
+  console.log(filteredStarredBoards);
+
 
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
@@ -42,7 +56,7 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
         >
           <Avatar sx={{ bgcolor: "#5D87FF", width: "80px", height: "80px" }}>
             <span style={{ fontSize: "30px", fontWeight: "bold" }}>
-              {workspace.display_name.charAt(0).toUpperCase()}
+              {workspace?.display_name.charAt(0).toUpperCase()}
             </span>
           </Avatar>
           <Box>
@@ -51,7 +65,7 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
                 fontWeight="bold"
                 sx={{ whiteSpace: "nowrap", fontSize: 25 }}
               >
-                {workspace.display_name}
+                {workspace?.display_name}
               </Typography>
               <IconButton
                 onClick={toggleFormVisibility}
@@ -75,7 +89,7 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
             >
               <LockIcon sx={{ fontSize: 14 }} />
               <Typography sx={{ fontSize: 14 }}>
-                {workspace.permission_level}
+                {workspace?.permission_level}
               </Typography>
             </Box>
           </Box>
@@ -89,37 +103,30 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
           onCancel={toggleFormVisibility} // Truyền hàm đóng form
         />
       )}
-      <ListItem
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 0 20px",
-          gap: "20px",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <ListItemIcon>
-            <PermIdentityOutlinedIcon sx={{ fontSize: 40, color: "black" }} />
-          </ListItemIcon>
-          <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
-            Bảng đánh dấu sao
-          </Typography>
-        </Box>
-      </ListItem>
-      <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        {markedBoards?.length > 0 ? (
-          markedBoards?.map((board) => (
-            <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-              <MyBoard board={board} id={`recent-board-${board.id}`} />
-            </ListItem>
-          ))
-        ) : (
-          <Typography variant="body2" color="textSecondary">
-            Không có bảng nào.
-          </Typography>
-        )}
-      </List>
+      {filteredStarredBoards?.length > 0 && (
+        <>
+          <ListItem>
+            <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <ListItemIcon>
+                <PermIdentityOutlinedIcon sx={{ fontSize: 40, color: "black" }} />
+              </ListItemIcon>
+              <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
+                Bảng đánh dấu sao
+              </Typography>
+            </Box>
+          </ListItem>
+
+          <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap", padding: 0 }}>
+            {filteredStarredBoards?.map((star) => (
+              <ListItem key={`star-${star.id || Math.random()}`} sx={{ width: "auto", padding: 0 }}>
+                <MyStar star={star} />
+              </ListItem>
+            ))}
+          </List>
+        </>
+      )}
+
+
 
       {/* Danh sách bảng Trello */}
       <ListItem
@@ -142,15 +149,14 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
       </ListItem>
 
       <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        {workspace.boards && workspace.boards.length > 0 ? (
-          workspace.boards.map((board) => (
+        {workspace?.boards && workspace.boards.length > 0 ? (
+          workspace?.boards.map((board) => (
             <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
               <MyBoard
                 key={board.id}
                 board={board}
                 id={`recent-board-${board.id}`}
               />
-              ...
             </ListItem>
           ))
         ) : (

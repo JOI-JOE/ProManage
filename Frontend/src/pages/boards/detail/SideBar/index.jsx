@@ -1,5 +1,5 @@
-import React, { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useContext, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Drawer,
@@ -29,8 +29,10 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
+import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 
 const SideBar = () => {
+  const [openSettings, setOpenSettings] = useState();
 
   const toggleSettings = () => {
     setOpenSettings(!openSettings);

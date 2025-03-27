@@ -26,7 +26,6 @@ const MyStar = ({ star }) => {
             };
 
             if (star.starred) {
-                // Nếu board đã được đánh dấu sao, gọi unstar
                 dispatch(unstarBoard({ board: starredBoard })); // Dispatch action unstar
                 await unStarToBoard(user.id, star.board_id); // Gọi API unstar
             }
@@ -94,14 +93,14 @@ const MyStar = ({ star }) => {
                     transform: "scale(1)", // Nhỏ lại ban đầu
                     transition: "opacity 0.2s ease-out, transform 0.2s ease-out",
                     cursor: "pointer",
-                    opacity: star.starred ? 1 : 0, // Nếu đã đánh dấu sao thì luôn hiện
+                    opacity: star?.starred ? 1 : 0, // Nếu đã đánh dấu sao thì luôn hiện
                     "&:hover": {
                         opacity: 1, // Hiển thị khi hover
                         transform: "scale(1.1)", // To lên khi hover
                     },
                 }}
             >
-                {star.starred ? (
+                {star?.starred ? (
                     <StarRoundedIcon
                         sx={{
                             color: "#F2D600", // Màu vàng khi đã đánh dấu

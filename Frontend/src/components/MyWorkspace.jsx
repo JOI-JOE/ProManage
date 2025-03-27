@@ -38,7 +38,6 @@ const MyWorkspace = ({ workspace, boards }) => {
                     </Typography>
                 </Box>
 
-                {/* Các nút chức năng */}
                 <Box
                     sx={{
                         display: "flex",
@@ -144,7 +143,7 @@ const MyWorkspace = ({ workspace, boards }) => {
                         <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
                     </ListItem>
                 ))}
-                {/* <CreateBoard /> */}
+                <CreateBoard workspaceId={workspace?.id} />
             </List>
             {/* <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {activeBoards.length > 0 ? (
