@@ -8,7 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class ChecklistItem extends Model
 {
     use HasFactory;
-    protected $fillable = ['checklist_id', 'name', 'start_date', 'end_date', 'is_completed'];
+    protected $fillable = [
+        'checklist_id',
+        'name',
+        'start_date',
+        'is_completed',
+        'end_date',
+        'end_time',
+        'reminder'
+    ];
 
     public function checklist()
     {
