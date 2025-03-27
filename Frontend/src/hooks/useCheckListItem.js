@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getChecklistItemsByCheckList, createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName, toggleCheckListItemMember, getMembersInCheckListItem } from "../api/models/checkListItemsApi";
+import { getChecklistItemsByCheckList, createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName, toggleCheckListItemMember, getMembersInCheckListItem, getChecklistItemsDate, updateDateItem } from "../api/models/checkListItemsApi";
 import { useEffect } from "react";
 import echoInstance from "./realtime/useRealtime";
 
@@ -176,5 +176,32 @@ export const useToggleCheckListItemMember = () => {
         },
     });
 };
-
+export const useChecklistsItemByDate = (targetId) => {
+    const queryClient = useQueryClient();
+  
+    return useQuery({
+      queryKey: ["dateItem", targetId],
+      queryFn: () => getChecklistItemsDate(targetId),
+      enabled: !!targetId, // Chỉ gọi API nếu cardId tồn tại
+    
+    });
+  };
+  export const useUpdateItemDate = () => {
+      
+      const queryClient = useQueryClient();
+    
+      return useMutation({
+        mutationFn: ({ targetId,  endDate, endTime, reminder }) =>
+          updateDateItem(targetId, endDate, endTime, reminder),
+        onSuccess: (data, variables) => {
+         
+          // queryClient.invalidateQueries(["checklist-items"],variables.itemId);
+        queryClient.invalidateQueries({ queryKey: ["dateItem",variables.targetId], exact: true });
+  
+        },
+        onError: (error) => {
+          console.error("Lỗi khi cập nhật ngày card:", error);
+        },
+      });
+    }; 
 

@@ -145,6 +145,11 @@ const CardModal = ({}) => {
     type: null,
     targetId: null,
   });
+  const [dateConfig, setDateConfig] = useState({
+    open: false,
+    type: null, // 'card' | 'checklist-item'
+    targetId: null, // ID của card hoặc checklist item
+  });
   // const [activity, setActivity] = useState("");
 
   const [items, setItems] = useState([]);
@@ -1857,6 +1862,8 @@ const CardModal = ({}) => {
                                 setEditedItemName={setEditedItemName}
                                 handleMenuOpen={handleMenuOpen}
                                 setMemberListConfig={setMemberListConfig}
+                                setDateConfig={setDateConfig}
+
                               />
                             ))}
                           </List>
@@ -2502,7 +2509,18 @@ const CardModal = ({}) => {
                       </ListItemIcon>
                       <ListItemText
                         primary="Ngày"
-                        onClick={() => setIsDateModalOpen(true)}
+                        onClick={() => {
+                          setDateConfig({                          
+                            open: true,
+                            type: "card",
+                            targetId: cardId,
+
+                          })
+                        }
+
+
+                        }
+
                       />
                     </ListItemButton>
                   </ListItem>
@@ -2668,10 +2686,11 @@ const CardModal = ({}) => {
         />
 
         <DateModal
-          open={isDateModalOpen}
-          onClose={() => setIsDateModalOpen(false)}
-          onSave={handleSaveDate}
-          initialData={dateInfo}
+          open={dateConfig.open}
+          onClose={() => setDateConfig({ open: false, type: null, targetId: null })}
+          type={dateConfig.type}
+          targetId={dateConfig.targetId}
+
         />
 
         <Dialog
