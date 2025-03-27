@@ -7,9 +7,12 @@ use App\Events\ChecklistItemDeleted;
 use App\Events\ChecklistItemToggle;
 use App\Events\ChecklistItemUpdated;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendReminderNotificationChecklistItem;
 use App\Models\CheckList;
 use App\Models\ChecklistItem;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ChecklistItemController extends Controller
 {
@@ -22,6 +25,7 @@ class ChecklistItemController extends Controller
         $checklist = CheckList::find($checklistId);
 
         return response()->json([
+            'message'=>"lấy dữ liệu thành công",
             'status' => 'success',
             'data' => $checklist->items // Sử dụng quan hệ items từ model Checklist
         ], 200);
@@ -40,7 +44,7 @@ class ChecklistItemController extends Controller
         // Tạo mới CheckListItem
         $checklistItem = ChecklistItem::create($validatedData);
 
-        \Log::info("🚀 Gọi broadcast ChecklistItemCreated");
+        // Log::info("🚀 Gọi broadcast ChecklistItemCreated");
         broadcast(new ChecklistItemCreated($checklistItem))->toOthers();
 
         return response()->json([
@@ -48,6 +52,14 @@ class ChecklistItemController extends Controller
             'message' => 'Thêm mục checklist thành công!',
             'data' => $checklistItem
         ], 201);
+    }
+    public function show($itemId)
+    {
+        $checklistItem = ChecklistItem::find($itemId);
+
+
+
+        return response()->json($checklistItem);
     }
 
     /**
@@ -169,5 +181,67 @@ class ChecklistItemController extends Controller
             'status' => true,
             'message' => 'Xóa ChecklistItem thành công!',
         ], 200);
+    }
+    public function updateDate(Request $request, $id)
+    {
+        $request->validate([
+            'endDate' => 'nullable|date',
+            'endTime' => 'nullable|date_format:H:i',
+            'reminder' => 'nullable|string|max:255',
+        ]);
+        // Log::info($request->all());
+
+        // Tìm checklist item theo ID
+        $item = ChecklistItem::find($id);
+
+        // if (!$item) {
+        //     return response()->json(['message' => 'Checklist item không tồn tại'], 404);
+        // }
+
+        // Cập nhật ngày, giờ kết thúc và nhắc nhở
+        // $item->end_date = $request->endDate ;
+        // $item->end_time = $request->endTime ;
+        // $item->reminder = $request->reminder;
+        // Log::info('Before save:', [
+        //     'end_date' => $item->end_date,
+        //     'end_time' => $item->end_time,
+        //     'reminder' => $item->reminder,
+        // ]);
+
+
+        $item->update($request->all());
+        if (!empty($item->reminder) && strtotime($item->reminder)) {
+            // dispatch(new SendReminderNotification($card))->delay(now()->addMinutes(1));
+            // Log::info("📌 Job được lên lịch chạy vào: " . Carbon::parse($item->reminder));
+
+            dispatch(new SendReminderNotificationChecklistItem($item))->delay(Carbon::parse($item->reminder));
+        }
+
+
+        return response()->json([
+            'message' => 'Cập nhật checklist item thành công',
+            'item' => $item
+        ], 200);
+
+    }
+    public function getChecklistItemDate($id)
+    {
+        $checklistItem = ChecklistItem::select([
+                'end_date',
+                'end_time',
+                'reminder'
+            ])
+            ->where('id', $id)
+            ->first();
+
+        // if (!$checklistItem) {
+        //     return response()->json(['message' => 'Checklist item không tồn tại'], 404);
+        // }
+
+        return response()->json([
+            'message'=>"lấy ngày giờ checklist_item thành công",
+            'data'=>$checklistItem,
+
+        ]);
     }
 }

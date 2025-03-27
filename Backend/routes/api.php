@@ -268,6 +268,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/checklists', [ChecklistController::class, 'store']); // Thêm mới checklist
     Route::put('/checklists/{id}', [ChecklistController::class, 'update']); // Cập nhật checklist
     Route::delete('/checklists/{id}', [ChecklistController::class, 'deleteChecklist']); // Xóa checklist
+    Route::get('/item/{id}/show', [ChecklistItemController::class, 'show']);
+    Route::get('/item/{id}/dates-item', [ChecklistItemController::class, 'getChecklistItemDate']);
+    Route::put('/update-date/{id}/item', [ChecklistItemController::class, 'updateDate']);
 
     // Checklist Item routes
     Route::get('/checklist-items/{id}/item', [ChecklistItemController::class, 'getChecklistItems']); // Lấy danh sách checklist item theo checklist

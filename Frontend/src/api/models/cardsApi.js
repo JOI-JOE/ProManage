@@ -142,14 +142,14 @@ export const toggleCardMember = async (cardId, userId) => {
     throw error;
   }   
 }
-export const getDateByCard = async (cardId) => {
-  const response = await authClient.get(`/cards/${cardId}/dates`);
+export const getDateByCard = async (targetId) => {
+  const response = await authClient.get(`/cards/${targetId}/dates`);
   return response.data;
 };
-export const updateCardDate = async (cardId,startDate, endDate, endTime, reminder) => {
+export const updateCardDate = async (targetId,startDate, endDate, endTime, reminder) => {
   
   try {
-    const response = await authClient.put(`cards/${cardId}/dates`, {
+    const response = await authClient.put(`cards/${targetId}/dates`, {
       start_date:startDate,
       end_date: endDate,
       end_time: endTime,
