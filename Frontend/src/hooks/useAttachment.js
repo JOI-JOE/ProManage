@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import { getAttachmentsByCard, updateAttachment,} from "../api/attachmentApi";
-import { createAttachments, deleteAttachment, getAttachmentsByCard, updateFileNameAttachment } from "../api/models/attachmentsApi";
+import { createAttachments, deleteAttachment, getAttachmentsByCard, setCoverImage, updateFileNameAttachment } from "../api/models/attachmentsApi";
 import { useEffect } from "react";
 import echoInstance from "./realtime/useRealtime";
 
@@ -26,8 +26,8 @@ const useAttachments = (cardId) => {
       // console.log('Realtime archive changed: ', data);
 
       // queryClient.invalidateQueries(['boardMembers']);
-      queryClient.invalidateQueries({ queryKey: ["attachments", cardId] });
-      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["attachments", cardId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["activities"], exact: true  });
 
     });
 
@@ -69,6 +69,7 @@ const useAttachments = (cardId) => {
     onSuccess: () => {
       // Chỉ re-fetch API attachments
       // queryClient.refetchQueries(["attachments", cardId], { exact: true });
+      queryClient.invalidateQueries({ queryKey: ["attachments", cardId], exact: true });
     },
 
     onError: (_error, _newAttachment, context) => {
@@ -82,14 +83,14 @@ const useAttachments = (cardId) => {
     mutationFn: ({ cardId, attachmentId, newFileName }) =>
       updateFileNameAttachment(cardId, attachmentId, newFileName),
     onSuccess: () => {
-      queryClient.invalidateQueries(["attachments", cardId]); // Cập nhật lại danh sách
+      queryClient.invalidateQueries({ queryKey: ["attachments", cardId], exact: true });
     },
   });
 
   const removeAttachmentMutation = useMutation({
     mutationFn: (attachmentId) => deleteAttachment(cardId, attachmentId),
     onSuccess: () => {
-      queryClient.invalidateQueries(["attachments", cardId]);
+      queryClient.invalidateQueries({ queryKey: ["attachments", cardId], exact: true });
 
     },
   });

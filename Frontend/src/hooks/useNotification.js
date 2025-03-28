@@ -3,12 +3,15 @@ import { useEffect } from 'react';
 
 import { getNotifications } from '../api/models/notificationsApi';
 import echoInstance from './realtime/useRealtime';
+import { useNavigate } from 'react-router-dom';
 
 
 const useNotifications = (userId) => {
   const queryClient = useQueryClient();
 
   // useQuery để lấy danh sách thông báo
+  const navigate = useNavigate();
+
   const { data: notifications, isLoading, error } = useQuery({
     queryKey: ['notifications', userId], // Key duy nhất cho mỗi user
     queryFn: getNotifications, // Dùng hàm bạn đã viết
@@ -22,8 +25,12 @@ const useNotifications = (userId) => {
     const channel = echoInstance.private(`App.Models.User.${userId}`);
     
     channel.notification((notification) => {
-      // console.log("📥 New notification: ", notification);
-      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      if (notification.type === "App\\Notifications\\MemberRemovedNotification") {
+        navigate("/home");
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['notifications', userId] ,exact:true});
+      // queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
     });
   
     return () => {

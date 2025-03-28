@@ -34,6 +34,18 @@ export const generateInviteLink = async (boardId) => {
     }
 }
 
+export const removeInviteLink = async (token) => {
+    try {
+        const response = await authClient.delete(`/remove-invite/${token}`);
+        return response.data; // Trả về link mời
+    } catch (error) {
+        console.error("Lỗi khi tạo tắt link mời:", error);
+        throw error;
+    }
+}
+
+
+
 export const updateRoleMemberInBoards = async (boardId, userId, role) => {
     try {
         const response = await authClient.put(`/boards/update-role`, {
@@ -51,7 +63,7 @@ export const updateRoleMemberInBoards = async (boardId, userId, role) => {
 
 export const removeMemberFromBoard = async (boardId, userId) => {
     try {
-        const response = await authClient.delete(`/boards/delete`, {
+        const response = await authClient.delete(`${boardId}/boards/removeMember`, {
             data: {
                 board_id: boardId,
                 user_id: userId,
@@ -63,6 +75,17 @@ export const removeMemberFromBoard = async (boardId, userId) => {
         console.error("Lỗi khi xóa thành viên khỏi bảng:", errorMessage);
         throw new Error(errorMessage); // Ném lỗi với thông điệp cụ thể
     }
+};
+
+export const getGuestBoards = async () => {
+    try {
+    const response = await authClient.get(`/guest-boards`);
+    return response.data;
+    } catch (error) {
+        console.error("Lỗi khi lấy ra thành viên của bảng", error);
+        throw error;
+    }
+    
 };
 
 

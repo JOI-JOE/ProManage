@@ -181,11 +181,15 @@ Route::prefix('boards/{id}/')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/boards/{boardId}/members', [BoardMemberController::class, 'getBoardMembers']);
+    Route::get('/guest-boards', [BoardMemberController::class, 'getGuestBoards']);
+
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
+    Route::delete('/remove-invite/{token}', [BoardMemberController::class, 'removeInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
     Route::put('/boards/update-role', [BoardMemberController::class, 'updateRoleMemberInBoard']);
-    Route::delete('/boards/delete', [BoardMemberController::class, 'removeMemberFromBoard']);
+    Route::delete('{boardId}/boards/removeMember', [BoardMemberController::class, 'removeMemberFromBoard']);
+
 
     Broadcast::routes();
 });
