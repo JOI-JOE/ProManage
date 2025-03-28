@@ -3,7 +3,7 @@ import { Box, IconButton, Typography } from "@mui/material";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import PeopleIcon from "@mui/icons-material/People";
 import { Link } from "react-router-dom";
-import { useToggleBoardMarked } from "../hooks/useBoard";
+import { useRecentBoardAccess, useToggleBoardMarked } from "../hooks/useBoard";
 
 import { StarIcon } from "@heroicons/react/24/solid"; // Solid
 import { StarIcon as StarOutlineIcon } from "@heroicons/react/24/outline"; // Outline
@@ -14,6 +14,7 @@ const MyBoard = ({ board}) => {
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isMarked, setIsMarked] = useState(board.is_marked); // Trạng thái local
   const toggleBoardMarked = useToggleBoardMarked();
+  const saveRecentBoard = useRecentBoardAccess();
   
   // console.log(board);
   const handleToggleMarked = (e) => {
@@ -26,12 +27,18 @@ const MyBoard = ({ board}) => {
       },
     });
   };
+
+  
+  const handleClickBoard = () => {
+    saveRecentBoard.mutate(board.id); // Lưu vào recent-board khi bấm vào
+  };
  
 
   return (
     <Link
       to={`/b/${board.id}/${board.name}`}
       style={{ textDecoration: "none" }}
+      onClick={handleClickBoard} // Gọi hàm khi click
     >
       {" "}
       {/* Wrap with Link */}

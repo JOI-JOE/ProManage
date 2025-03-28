@@ -14,7 +14,7 @@ const Home = () => {
   ];  
   // console.log(user);
   const token = localStorage.getItem("token");
-  // console.log(token);
+  console.log(token);
 
   useEffect(() => {
     const interval = setInterval(() => {

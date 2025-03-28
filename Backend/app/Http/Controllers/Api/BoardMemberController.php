@@ -12,6 +12,7 @@ use App\Models\BoardMember;
 use App\Models\User;
 use App\Notifications\BoardInvitationReceivedNotification;
 use App\Notifications\BoardMemberRoleUpdatedNotification;
+use App\Notifications\MemberRemovedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,12 +66,12 @@ class BoardMemberController extends Controller
         $board = Board::findOrFail($boardId); // Lấy thông tin bảng
 
         // Kiểm tra quyền: chỉ Admin hoặc thành viên có quyền mời mới được tạo link
-        // if (!$board->members()->where('user_id', $user->id)->exists()) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'Bạn không có quyền tạo liên kết mời vào bảng này.'
-        //     ], 403);
-        // }
+        if (!$board->members()->where('user_id', $user->id)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền tạo liên kết mời vào bảng này.'
+            ], 403);
+        }
 
         // Tạo mã token duy nhất
         $inviteToken = Str::random(16); // Chỉ chứa chữ và số
@@ -93,6 +94,19 @@ class BoardMemberController extends Controller
             'invite_link' => "http://localhost:5173/invite-board/{$inviteToken}",
         ]);
     }
+
+    public function removeInviteLink($token)
+{
+    $invitation = BoardInvitation::where('invite_token', $token)->first();
+
+    if (!$invitation) {
+        return response()->json(['message' => 'Liên kết không tồn tại'], 404);
+    }
+
+    $invitation->delete(); // Xóa khỏi DB
+
+    return response()->json(['message' => 'Liên kết đã bị hủy']);
+}
 
     // 📍 Khi user click vào link mời
     public function handleInvite($token)
@@ -139,7 +153,7 @@ class BoardMemberController extends Controller
         event(new MemberJoinedBoard($board->created_by, $board->id, $user->full_name));
 
         // Xóa invite token sau khi sử dụng (tùy chọn)
-        $invite->delete();
+        // $invite->delete();
 
         return response()->json(['message' => 'Successfully joined the board', 'board' => $board]);
     }
@@ -197,50 +211,111 @@ class BoardMemberController extends Controller
         }
     }
 
-    public function removeMemberFromBoard(Request $request)
-    {
-        // Validate dữ liệu đầu vào
-        $request->validate([
-            'board_id' => 'required|exists:boards,id',
-            'user_id' => 'required|exists:users,id',
-        ]);
+    public function removeMemberFromBoard(Request $request, $boardId)
+{
+    // Validate dữ liệu đầu vào
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+    ]);
 
-        try {
-            $board = Board::findOrFail($request->board_id);
-            $currentUser = auth()->user();
+    try {
+        $board = Board::findOrFail($boardId);
+        $currentUser = auth()->user();
+        $removeUser = User::findOrFail($request->user_id);
 
-            // Kiểm tra quyền admin, chỉ định rõ ràng bảng board_members
-            if (
-                !$board->members()->where('board_members.user_id', $currentUser->id)
-                    ->where('board_members.role', 'admin')
-                    ->exists()
-            ) {
-                return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
-            }
-
-            // Kiểm tra nếu xóa admin cuối cùng
-            if (
-                $board->countAdmins() === 1 &&
-                $board->members()->where('board_members.user_id', $request->user_id)
+        // Kiểm tra quyền admin
+        if (
+            !$board->members()->where('board_members.user_id', $currentUser->id)
                 ->where('board_members.role', 'admin')
                 ->exists()
-            ) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot remove the last admin. Please assign another admin first.',
-                ], 400);
-            }
+        ) {
+            return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
+        }
 
+        // Kiểm tra nếu xóa admin cuối cùng
+        if (
+            $board->countAdmins() === 1 &&
+            $board->members()->where('board_members.user_id', $request->user_id)
+            ->where('board_members.role', 'admin')
+            ->exists()
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot remove the last admin. Please assign another admin first.',
+            ], 400);
+        }
+
+        DB::transaction(function () use ($board, $request) {
+            // Xóa thành viên khỏi bảng
             $board->members()->detach($request->user_id);
 
+            // Xóa thành viên khỏi tất cả card trong bảng
+            DB::table('card_user')->whereIn('card_id', function ($query) use ($board) {
+                $query->select('id')->from('cards')->whereIn('list_board_id', function ($subQuery) use ($board) {
+                    $subQuery->select('id')->from('list_boards')->where('board_id', $board->id);
+                });
+            })->where('user_id', $request->user_id)->delete();
 
+            // Xóa thành viên khỏi tất cả checklist_item_user
+            DB::table('checklist_item_user')->whereIn('checklist_item_id', function ($query) use ($board) {
+                $query->select('id')->from('checklist_items')->whereIn('checklist_id', function ($subQuery) use ($board) {
+                    $subQuery->select('id')->from('checklists')->whereIn('card_id', function ($subSubQuery) use ($board) {
+                        $subSubQuery->select('id')->from('cards')->whereIn('list_board_id', function ($subSubSubQuery) use ($board) {
+                            $subSubSubQuery->select('id')->from('list_boards')->where('board_id', $board->id);
+                        });
+                    });
+                });
+            })->where('user_id', $request->user_id)->delete();
+        });
 
-            // Gửi event realtime
-            event(new MemberRemovedFromBoard($request->user_id, $request->board_id));
+        // Gửi thông báo lưu vào database
+        $removeUser->notify(new MemberRemovedNotification($board->id, $board->name));
 
-            return response()->json(['success' => true, 'message' => 'Member removed successfully'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
+        // Gửi event realtime
+        event(new MemberRemovedFromBoard($request->user_id, $boardId));
+
+        return response()->json(['success' => true, 'message' => 'Member removed successfully'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
+}
+
+
+public function getGuestBoards()
+{
+    $userId = auth()->id();
+
+    $boards = DB::table('board_members')
+        ->join('boards', 'board_members.board_id', '=', 'boards.id')
+        ->join('workspaces', 'boards.workspace_id', '=', 'workspaces.id')
+        ->where('board_members.user_id', $userId)
+        ->where('workspaces.id_member_creator', '!=', $userId) // Loại bỏ các bảng trong workspace mà user là chủ
+        ->orderBy('workspaces.id') // Sắp xếp theo workspace
+        ->orderBy('boards.updated_at', 'desc') // Sắp xếp theo thời gian truy cập gần nhất
+        ->select(
+            'boards.id',
+            'boards.name',
+            'boards.workspace_id',
+            'workspaces.name as workspace_name',
+            'board_members.role' // Lấy quyền của user (admin/member)
+        )
+        ->get();
+
+    // Nhóm các bảng theo workspace
+    $groupedBoards = $boards->groupBy('workspace_id')->map(function ($boards, $workspaceId) {
+        return [
+            'workspace_id' => $workspaceId,
+            'workspace_name' => $boards->first()->workspace_name, // Lấy tên workspace từ bản ghi đầu tiên
+            'boards' => $boards->map(function ($board) {
+                return [
+                    'id' => $board->id,
+                    'name' => $board->name,
+                    'role' => $board->role,
+                ];
+            })->values(),
+        ];
+    })->values();
+
+    return response()->json($groupedBoards);
+}
 }

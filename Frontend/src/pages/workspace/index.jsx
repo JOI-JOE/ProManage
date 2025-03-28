@@ -23,7 +23,7 @@ const Workspaces = () => {
 
     // Kiểm tra nếu không tìm thấy workspace
     if (!workspace) {
-        return <div>Không tìm thấy workspace.</div>;
+        return <div>Đang tải thông tin....</div>;
     }
 
     // Render HomeWorkspace với dữ liệu workspace và danh sách bảng được đánh dấu

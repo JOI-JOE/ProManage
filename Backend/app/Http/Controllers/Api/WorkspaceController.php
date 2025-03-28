@@ -284,11 +284,21 @@ class WorkspaceController extends Controller
     }
     public function getGuestWorkspaces(Request $request)
     {
-        $user = $request->user();
-        $guestWorkspaces = $user->guestWorkspaces()->get();
-
+        $userId = $request->user()->id;
+    
+        $guestWorkspaces = DB::table('workspaces')
+            ->join('boards', 'workspaces.id', '=', 'boards.workspace_id')
+            ->join('board_members', function ($join) use ($userId) {
+                $join->on('boards.id', '=', 'board_members.board_id')
+                     ->where('board_members.user_id', '=', $userId);
+            })
+            ->where('workspaces.id_member_creator', '!=', $userId) // Loại bỏ workspace do user sở hữu
+            ->distinct()
+            ->select('workspaces.id', 'workspaces.name')
+            ->get();
+    
         return response()->json([
-            'message' => 'Lấy thành công',
+            'message' => 'Lấy thành công không gian làm việc khách',
             'data' => $guestWorkspaces,
         ]);
     }

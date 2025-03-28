@@ -53,7 +53,7 @@ const LoginForm = () => {
           navigate('/home');
         }
       
-        alert("Đăng nhập thành công"); // Thông báo
+        // alert("Đăng nhập thành công"); // Thông báo
       },
       onError: (err) => {
         console.error("Lỗi đăng nhập:", err);

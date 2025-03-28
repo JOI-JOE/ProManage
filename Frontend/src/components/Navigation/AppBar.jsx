@@ -151,7 +151,7 @@ const AppBar = ({ username, email }) => {
         <AppsIcon sx={{ color: "secondary.contrastText", fontSize: "24px" }} />
         <Box
           component={Link}
-          to={`/u/${username}/boards`}
+          to={`/u/${user?.user_name}/boards`}
           sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
         >
           <SvgIcon
