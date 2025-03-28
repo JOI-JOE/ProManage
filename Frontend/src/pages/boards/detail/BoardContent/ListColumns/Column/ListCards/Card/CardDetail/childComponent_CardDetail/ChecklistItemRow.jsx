@@ -12,7 +12,10 @@ import {
 import AccessTime from "@mui/icons-material/AccessTime";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { useGetMemberInCheckListItem, useChecklistsItemByDate } from "../../../../../../../../../../hooks/useCheckListItem";
+import {
+  useGetMemberInCheckListItem,
+  useChecklistsItemByDate,
+} from "../../../../../../../../../../hooks/useCheckListItem";
 import { format } from "date-fns";
 import vi from "date-fns/locale/vi";
 
@@ -27,11 +30,11 @@ const ChecklistItemRow = ({
   setEditedItemName,
   handleMenuOpen,
   setMemberListConfig,
-  setDateConfig
+  setDateConfig,
 }) => {
   const { data: checklistItemMembers } = useGetMemberInCheckListItem(item.id); // nếu không phải checklist-item thì trả về rỗng
   // const { data: checklistItem } = useChecklistsItemByCheckListItem(item.id); // nếu không phải checklist-item thì trả về rỗng
-  const { data: checklistItemDate=[] } =useChecklistsItemByDate(item.id)  // nếu không phải checklist-item thì trả về rỗng
+  const { data: checklistItemDate = [] } = useChecklistsItemByDate(item.id); // nếu không phải checklist-item thì trả về rỗng
   // const checklistItemEndTime=checklistItemDate.end_date
   const hasMembers = checklistItemMembers?.data?.length > 0;
   const checklistItemEndTime = checklistItemDate.end_date || null;
@@ -81,8 +84,23 @@ const ChecklistItemRow = ({
         />
       )}
 
-      <Box sx={{ display: "flex", alignItems: "center" }}>
-        {checklistItemEndTime && (
+      <Box
+        sx={{ display: "flex", alignItems: "center" }}
+        onClick={() => {
+          setDateConfig({
+            open: true,
+            type: "checklist-item",
+            targetId: item.id,
+          });
+        }}
+      >
+        {checklistItemEndTime ? (
+          <Typography variant="caption">
+            {format(new Date(checklistItemEndTime), "dd 'thg' MM", {
+              locale: vi,
+            })}
+          </Typography>
+        ) : (
           <IconButton
             sx={{
               ml: 0.5,
@@ -91,23 +109,10 @@ const ChecklistItemRow = ({
               transition: "all 0.3s",
             }}
             className="hover-icon"
-            onClick={() => {
-              setDateConfig({
-                open: true,
-                type: "checklist-item",
-                targetId: item.id,
-
-              })
-            }
-            }
-
           >
             <AccessTime sx={{ fontSize: "16px", mr: 0.5 }} />
-            <Typography variant="caption">
-              {format(new Date(checklistItemEndTime), "dd 'thg' MM", { locale: vi })}
-            </Typography>
           </IconButton>
-          )}  
+        )}
 
         {hasMembers ? (
           checklistItemMembers.data.map((member) => (

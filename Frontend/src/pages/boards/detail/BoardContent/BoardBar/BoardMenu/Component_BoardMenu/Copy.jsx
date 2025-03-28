@@ -34,7 +34,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
 
   return (
     <>
-      {/* 🔹 Popover chính */}
+      {/*  Popover chính */}
       <Popover
         open={open && !showChangePopover}
         anchorEl={anchorEl}
@@ -43,7 +43,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
         transformOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <div style={{ padding: "10px", width: "300px" }}>
-          {/* ✅ Nút đóng Popover */}
+          {/*  Nút đóng Popover */}
           <IconButton
             onClick={onClose}
             sx={{ position: "absolute", top: 8, right: 8 }}
@@ -51,12 +51,15 @@ const Copy = ({ open, onClose, anchorEl }) => {
             <CloseIcon />
           </IconButton>
 
-          {/* ✅ Tiêu đề */}
-          <Typography variant="h6" sx={{ textAlign: "center", mb: 2 }}>
+          {/*  Tiêu đề */}
+          <Typography
+            variant="h6"
+            sx={{ textAlign: "center", mb: 2, fontWeight: "bold" }}
+          >
             Sao chép bảng thông tin
           </Typography>
 
-          {/* ✅ Nhập tiêu đề */}
+          {/*  Nhập tiêu đề */}
           <Typography variant="body2" sx={{ mb: 1 }}>
             Tiêu đề
           </Typography>
@@ -70,7 +73,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
             sx={{ mb: 2 }}
           />
 
-          {/* ✅ Chọn không gian làm việc */}
+          {/* Chọn không gian làm việc */}
           <FormControl fullWidth size="small" sx={{ mb: 2 }}>
             <Typography variant="body2" sx={{ mb: 1, fontWeight: "bold" }}>
               Không gian làm việc
@@ -84,7 +87,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
             </Select>
           </FormControl>
 
-          {/* ✅ Mô tả vị trí bảng */}
+          {/* Mô tả vị trí bảng */}
           <Typography variant="body2" sx={{ mb: 1 }}>
             {visibility === "private" ? (
               <>
@@ -121,7 +124,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
             </span>
           </Typography>
 
-          {/* ✅ Checkbox giữ thẻ và thẻ mẫu */}
+          {/* Checkbox giữ thẻ và thẻ mẫu */}
           <FormControlLabel
             control={
               <Checkbox
@@ -141,13 +144,13 @@ const Copy = ({ open, onClose, anchorEl }) => {
             label="Giữ các thẻ mẫu"
           />
 
-          {/* ✅ Thông báo */}
+          {/*  Thông báo */}
           <Typography variant="body2" sx={{ color: "gray", mt: 1 }}>
             Hoạt động, nhận xét và các thành viên sẽ không được sao chép sang
             bảng thông tin mới.
           </Typography>
 
-          {/* ✅ Nút Tạo mới */}
+          {/* Nút Tạo mới */}
           <Button
             fullWidth
             variant="contained"
@@ -159,7 +162,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
         </div>
       </Popover>
 
-      {/* 🔹 Popover "Thay đổi không gian làm việc" */}
+      {/*  Popover "Thay đổi không gian làm việc" */}
       <Popover
         open={showChangePopover}
         anchorEl={anchorEl}
@@ -168,7 +171,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
         transformOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <div style={{ padding: "10px", width: "300px" }}>
-          {/* ✅ Nút quay lại */}
+          {/*  Nút quay lại */}
           <IconButton
             onClick={() => setShowChangePopover(false)}
             sx={{ position: "absolute", top: 8, left: 8 }}
@@ -176,7 +179,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
             <ArrowBackIcon />
           </IconButton>
 
-          {/* ✅ Nút đóng Popover */}
+          {/*  Nút đóng Popover */}
           <IconButton
             onClick={onClose}
             sx={{ position: "absolute", top: 8, right: 8 }}
@@ -184,7 +187,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
             <CloseIcon />
           </IconButton>
 
-          {/* ✅ Tiêu đề */}
+          {/*  Tiêu đề */}
           <Typography
             variant="h6"
             sx={{ textAlign: "center", marginBottom: "10px" }}
@@ -192,7 +195,7 @@ const Copy = ({ open, onClose, anchorEl }) => {
             Sao chép bảng thông tin
           </Typography>
 
-          {/* ✅ Các tùy chọn */}
+          {/*  Các tùy chọn */}
           <div
             style={{
               display: "flex",

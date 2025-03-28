@@ -17,6 +17,7 @@ import {
   TextField,
   IconButton,
   Chip,
+  Stack,
   Popover,
   Modal,
 } from "@mui/material";
@@ -27,6 +28,8 @@ import MemberList from "./childComponent_CardDetail/member.jsx";
 import TaskModal from "./childComponent_CardDetail/Task.jsx";
 import LabelList from "./childComponent_CardDetail/Label.jsx";
 import AttachmentModal from "./childComponent_CardDetail/Attached.jsx";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import authClient from "../../../../../../../../../api/authClient";
 import MoveCardModal from "./childComponent_CardDetail/Move";
 import CopyCardModal from "./childComponent_CardDetail/Copy";
 import ShareModal from "./childComponent_CardDetail/Share";
@@ -39,6 +42,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import NotesIcon from "@mui/icons-material/Notes";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import GroupIcon from "@mui/icons-material/Group";
 import LabelIcon from "@mui/icons-material/Label";
 import ChecklistIcon from "@mui/icons-material/Checklist";
@@ -52,7 +56,7 @@ import ShareIcon from "@mui/icons-material/Share";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import CloseIcon from "@mui/icons-material/Close";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import {
   useCardActions,
   useCardById,
@@ -66,6 +70,7 @@ import {
   useDeleteComment,
   useUpdateComment,
 } from "../../../../../../../../../hooks/useComment";
+import { useUser } from "../../../../../../../../../hooks/useUser";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { toast, ToastContainer } from "react-toastify";
@@ -87,22 +92,23 @@ import { ArrowDropDownIcon } from "@mui/x-date-pickers";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import dayjs from "dayjs";
+import LinkIcon from "@mui/icons-material/Link";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import { AccessTime, ArrowBack } from "@mui/icons-material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
+import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
-import { useMe } from "../../../../../../../../../contexts/MeContext.jsx";
 import ChecklistItemRow from "./childComponent_CardDetail/ChecklistItemRow.jsx";
-
+import { useMe } from "../../../../../../../../../contexts/MeContext.jsx";
 import useAttachments from "../../../../../../../../../hooks/useAttachment.js";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
+import InputAdornment from "@mui/material/InputAdornment";
 
-const CardModal = ({ }) => {
+const CardModal = ({}) => {
   const { cardId, title } = useParams();
-  const { data: schedule } = useCardSchedule(cardId);//date
-
+  const { data: schedule } = useCardSchedule(cardId);
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -129,6 +135,7 @@ const CardModal = ({ }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [cardName, setCardName] = useState(title);
   const [previousCardName, setPreviousCardName] = useState(title);
+  const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
 
@@ -153,7 +160,7 @@ const CardModal = ({ }) => {
     if (!dateString) return "Không có";
     const date = new Date(dateString);
     return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
-  }
+  };
 
   const [coverImage, setCoverImage] = useState(
     localStorage.getItem(`coverImage-${cardId}`) || null
@@ -161,8 +168,6 @@ const CardModal = ({ }) => {
   const [coverColor, setCoverColor] = useState(
     localStorage.getItem(`coverColor-${cardId}`) || null
   );
-
-
 
   // const handleCoverImageChange = (newImage) => {
   //   setCoverImage(newImage);
@@ -213,6 +218,7 @@ const CardModal = ({ }) => {
   // console.log(activities);
 
   const { user } = useMe();
+
   const userId = user?.id;
 
   const combinedData = [
@@ -308,6 +314,7 @@ const CardModal = ({ }) => {
   // Xử lý tham gia/rời khỏi card
   const handleJoinCard = () => {
     toggleMember(userId);
+    // console.log(userId);
   };
 
   const isMember = members?.data?.some((m) => m.id === userId);
@@ -376,23 +383,25 @@ const CardModal = ({ }) => {
     );
 
     // Gọi API
-    toggleItemStatus({ itemId: id, cardId: cardId }, {
-      onSuccess: () => {
-        console.log("✅ Cập nhật trạng thái thành công");
-        // Không invalidate nếu đã update local state
-      },
-      onError: () => {
-        console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
-        // Rollback về trạng thái ban đầu
-        setItems((prevItems) =>
-          prevItems.map((item) =>
-            item.id === id ? { ...item, is_completed: originalStatus } : item
-          )
-        );
-      },
-    });
+    toggleItemStatus(
+      { itemId: id, cardId: cardId },
+      {
+        onSuccess: () => {
+          console.log("✅ Cập nhật trạng thái thành công");
+          // Không invalidate nếu đã update local state
+        },
+        onError: () => {
+          console.error("❌ Lỗi khi cập nhật trạng thái checklist item");
+          // Rollback về trạng thái ban đầu
+          setItems((prevItems) =>
+            prevItems.map((item) =>
+              item.id === id ? { ...item, is_completed: originalStatus } : item
+            )
+          );
+        },
+      }
+    );
   };
-
 
   // const handleDeleteTask = (checklistId) => {
   //   removeCheckList(checklistId, {
@@ -468,7 +477,7 @@ const CardModal = ({ }) => {
     if (!editedItemName.trim()) return;
 
     updateCheckListItemName(
-      { itemId: id, name: editedItemName, cardId:cardId },
+      { itemId: id, name: editedItemName, cardId: cardId },
       {
         onSuccess: () => {
           setEditingItemId(null); // Thoát chế độ chỉnh sửa sau khi cập nhật
@@ -489,15 +498,18 @@ const CardModal = ({ }) => {
   const [selectedItemId, setSelectedItemId] = useState(null);
 
   const handleDeleteItem = (id) => {
-    deleteItem( { id: id, cardId:cardId }, {
-      onSuccess: () => {
-        console.log(`✅ Xóa thành công ChecklistItem ID: ${id}`);
-        handleMenuClose();
-      },
-      onError: (error) => {
-        console.error("❌ Lỗi khi xóa:", error);
-      },
-    });
+    deleteItem(
+      { id: id, cardId: cardId },
+      {
+        onSuccess: () => {
+          console.log(`✅ Xóa thành công ChecklistItem ID: ${id}`);
+          handleMenuClose();
+        },
+        onError: (error) => {
+          console.error("❌ Lỗi khi xóa:", error);
+        },
+      }
+    );
   };
 
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -636,7 +648,7 @@ const CardModal = ({ }) => {
 
   const [isCoverPhotoOpen, setIsCoverPhotoOpen] = useState(false);
 
-  // const [attachments, setAttachments] = useState([]); // Lưu file/link đính kèm
+  const [setAttachments] = useState([]); // Lưu file/link đính kèm
   const [anchorEl1, setAnchorEl1] = useState(null); // Menu liên kết
   const [anchorEl2, setAnchorEl2] = useState(null); // Menu tệp
 
@@ -644,6 +656,9 @@ const CardModal = ({ }) => {
   const [editedItem, setEditedItem] = useState(null);
   const [editedUrl, setEditedUrl] = useState("");
   const [editedDisplayText, setEditedDisplayText] = useState("");
+  const [selectedLink, setSelectedLink] = useState(null);
+  const [showAllLinks, setShowAllLinks] = useState(false);
+  const [editingLinkId, setEditingLinkId] = useState(null); // Lưu id link đang sửa
 
   //////////////////////////////////////ATTACHMENT///////////////////////////////////////
   const { attachments, removeAttachment, updateAttachment, setCoverImages } =
@@ -654,6 +669,8 @@ const CardModal = ({ }) => {
     : null;
 
   const handleCoverImageChange = (attachmentId) => {
+    // console.log(attachmentId);
+
     if (attachmentId) {
       setCoverImages(attachmentId); // Gọi mutation để đặt ảnh bìa
       handleMenuClose2(); // Đóng menu con
@@ -678,18 +695,27 @@ const CardModal = ({ }) => {
     });
   };
 
-  const handleMenuOpen1 = (event, item) => {
-    setAnchorEl1(event.currentTarget);
-    setEditedItem(item);
-  };
+  const isFile = (url) =>
+    /\.(png|jpe?g|gif|pdf|docx?|xlsx?|pptx?|sql|txt|rar|zip|json)(\?.*)?$/i.test(
+      url
+    );
 
+  const linkItems = attachments?.data?.filter((item) => !isFile(item.path_url));
+  const fileItems = attachments?.data?.filter((item) => isFile(item.path_url));
+  const handleMenuOpen1 = (event, file) => {
+    setAnchorEl1(event.currentTarget);
+    setCurrentFile(file); // Lưu file vào state để dùng trong Menu
+  };
+  const [currentFile, setCurrentFile] = useState(null);
   const handleMenuClose1 = () => {
     setAnchorEl1(null);
+    setCurrentFile(null); // Xóa file khi đóng menu
   };
 
-  const handleEdit = () => {
-    setEditedUrl(editedItem.url);
-    setEditedDisplayText(editedItem.name);
+  const handleEditLink = (file) => {
+    setEditedUrl(file.path_url);
+    setEditedDisplayText(file.file_name_defaut);
+    setEditingLinkId(file.id);
     setPopoverAnchorEl(anchorEl1);
     handleMenuClose1();
   };
@@ -699,21 +725,29 @@ const CardModal = ({ }) => {
     handleMenuClose1();
     // console.log('kokokok');
   };
+  const [setLinkItems] = useState([]);
+  const [updateTrigger, setUpdateTrigger] = useState(false);
 
   const handleSave1 = () => {
-    setAttachments((prevAttachments) =>
-      prevAttachments.map((item) =>
-        item.id === editedItem.id
-          ? { ...item, url: editedUrl, name: editedDisplayText }
-          : item
-      )
-    );
-    setPopoverAnchorEl(null);
+    if (editingLinkId !== null) {
+      const target = linkItems.find((item) => item.id === editingLinkId);
+      if (target) {
+        target.path_url = editedUrl;
+        target.file_name_defaut = editedDisplayText;
+      }
+      // Reset state sau khi sửa xong
+      setEditingLinkId(null);
+      setEditedUrl("");
+      setEditedDisplayText("");
+      // Không cần setLinkItems vì object đã tham chiếu cùng bộ nhớ
+    }
   };
 
-  const [files, setFiles] = useState([]);
-
+  //tệp
+  const [showAll, setShowAll] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [editAnchorEl, setEditAnchorEl] = useState(null);
+  const [newFileName, setNewFileName] = useState("");
 
   // Mở ảnh trong tab mới với tiêu đề là tên ảnh
   const openInNewTab = (file) => {
@@ -735,9 +769,6 @@ const CardModal = ({ }) => {
     document.body.removeChild(link);
   };
 
-  const [editAnchorEl, setEditAnchorEl] = useState(null);
-  const [newFileName, setNewFileName] = useState("");
-
   const handleMenuOpen2 = (event, file) => {
     setAnchorEl2(event.currentTarget);
     setSelectedFile(file);
@@ -748,19 +779,18 @@ const CardModal = ({ }) => {
   };
 
   // Hàm mở Popover (có thể gọi ở nút "Sửa")
-  const handleOpenPopover = () => {
+  const handleOpenPopover = (anchorEl, fileId) => {
+    setEditAnchorEl(anchorEl);
+    setSelectedFile(fileId);
     setNewFileName(
-      attachments.data.find((file) => file.id === selectedFile)
-        ?.file_name_defaut || ""
+      fileItems.find((file) => file.id === fileId)?.file_name_defaut || ""
     );
-
-    setEditAnchorEl(true); // Gán vị trí anchor từ menu con
-    handleMenuClose2(); // Đóng menu con
   };
 
   // Hàm đóng Popover
   const handleClosePopover = () => {
     setEditAnchorEl(null);
+    setNewFileName("");
   };
 
   // Hàm đổi tên file (logic đổi tên sẽ được bạn tùy chỉnh)
@@ -778,18 +808,6 @@ const CardModal = ({ }) => {
     removeAttachment(selectedFile);
     handleMenuClose2(); // Đóng menu sau khi xóa
   };
-
-  // const handleDownloadFile = (file) => {
-  //   if (!file || !file.url) return;
-
-  //   // Tạo một thẻ <a> ẩn để tải file
-  //   const link = document.createElement("a");
-  //   link.href = file.url;
-  //   link.setAttribute("download", file.name || "download"); // Đặt tên file khi tải về
-  //   document.body.appendChild(link);
-  //   link.click();
-  //   document.body.removeChild(link);
-  // };
 
   return (
     <Dialog
@@ -1006,9 +1024,9 @@ const CardModal = ({ }) => {
                 ml: 3,
                 p: 1,
               }}
-              // onClick={openDateModal}
-              onClick={() => setIsDateModalOpen(true)}
+              onClick={openDateModal}
             >
+              <AccessTime />
               <Typography>{formatDate(schedule.start_date)} -</Typography>
 
               <Typography>{formatDate(schedule.end_date)}</Typography>
@@ -1186,132 +1204,145 @@ const CardModal = ({ }) => {
                 )}
                 {/* ///////////////////// CHECK LENGTH////////////////////////////// */}
                 {/* Liên kết */}
-                {attachments?.data?.some(
-                  (item) => !/\.(png|jpg|jpeg|gif|pdf)$/i.test(item.path_url)
-                ) && (
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontSize: "12px", // Giảm font size để tiết kiệm không gian
-                          ml: "20px",
-                          mt: "5px",
-                          mb: "3px", // Giảm khoảng cách với các mục bên dưới
-                        }}
-                      >
-                        Liên kết
-                      </Typography>
-                      <List>
-                        {attachments.data
-                          .filter(
-                            (file) =>
-                              !/\.(png|jpg|jpeg|gif|pdf)$/i.test(file.path_url)
-                          ) // Lọc các "liên kết"
-                          .map((file) => {
-                            const domain = new URL(
-                              file.path_url
-                            ).hostname.replace(/^www\./, "");
-
-                            return (
-                              <ListItem
-                                key={file.id}
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  paddingRight: "40px",
-                                  mb: "4px",
-                                  ml: "10px",
-                                  cursor: "pointer",
-                                  height: "30px",
-                                  width: "100%",
-
-                                  border: "1px solid #F2F2F4",
-                                  backgroundColor: "#F2F2F4",
-                                  borderRadius: "4px",
+                {linkItems?.length > 0 && (
+                  <Box key={updateTrigger}>
+                    {" "}
+                    {/* Key để ép re-render khi update link */}
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontSize: "12px",
+                        ml: "20px",
+                        mt: "5px",
+                        mb: "3px",
+                      }}
+                    >
+                      Liên kết
+                    </Typography>
+                    <List>
+                      {(showAllLinks
+                        ? [...linkItems].sort(
+                            (a, b) =>
+                              new Date(b.created_at) - new Date(a.created_at)
+                          )
+                        : [...linkItems]
+                            .sort(
+                              (a, b) =>
+                                new Date(b.created_at) - new Date(a.created_at)
+                            )
+                            .slice(0, 4)
+                      ).map((file) => {
+                        const domain = new URL(file.path_url).hostname.replace(
+                          /^www\./,
+                          ""
+                        );
+                        return (
+                          <ListItem
+                            key={file.id}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              paddingRight: "40px",
+                              mb: "4px",
+                              ml: "10px",
+                              cursor: "pointer",
+                              height: "30px",
+                              width: "100%",
+                              border: "1px solid #F2F2F4",
+                              backgroundColor: "#F2F2F4",
+                              borderRadius: "4px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                flexGrow: 1,
+                              }}
+                            >
+                              <img
+                                src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`}
+                                alt="favicon"
+                                style={{ width: "16px", height: "16px" }}
+                              />
+                              <a
+                                href={file.path_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={file.path_url}
+                                style={{
+                                  color: "#5795EC",
+                                  fontSize: "15px",
+                                  textDecoration: "none",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  maxWidth: "300px",
+                                  display: "inline-block",
                                 }}
                               >
-                                {/* Hiển thị favicon và link cùng một hàng */}
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                    flexGrow: 1,
-                                  }}
-                                >
-                                  <img
-                                    src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`}
-                                    alt="favicon"
-                                    style={{
-                                      width: "16px",
-                                      height: "16px",
-                                    }}
-                                  />
-                                  <a
-                                    href={file.path_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title={file.path_url}
-                                    style={{
-                                      color: "#5795EC",
-                                      fontSize: "15px",
-                                      textDecoration: "none",
-                                      whiteSpace: "nowrap",
-                                      overflow: "hidden",
-                                      textOverflow: "ellipsis",
-                                      maxWidth: "300px",
-                                      display: "inline-block",
-                                    }}
-                                  >
-                                    {file.file_name_defaut || domain}
-                                  </a>
-                                </Box>
+                                {file.file_name_defaut || domain}
+                              </a>
+                            </Box>
+                            <IconButton
+                              onClick={(e) => handleMenuOpen1(e, file)}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                    {/* Nút ẩn hiện */}
+                    {linkItems.length > 4 && (
+                      <Button
+                        sx={{ ml: "20px", mt: "8px", fontSize: "12px" }}
+                        onClick={() => setShowAllLinks(!showAllLinks)}
+                      >
+                        {showAllLinks
+                          ? "Ẩn bớt"
+                          : `Hiện tất cả liên kết (${linkItems.length - 4} ẩn)`}
+                      </Button>
+                    )}
+                  </Box>
+                )}
 
-                                <IconButton
-                                  onClick={(e) => handleMenuOpen1(e, file)}
-                                  sx={{ ml: "auto" }}
-                                >
-                                  <MoreVertIcon />
-                                  <Menu
-                                    anchorEl={anchorEl1}
-                                    open={Boolean(anchorEl1)}
-                                    onClose={handleMenuClose1}
-                                    anchorOrigin={{
-                                      vertical: "bottom",
-                                      horizontal: "left",
-                                    }}
-                                    transformOrigin={{
-                                      vertical: "top",
-                                      horizontal: "left",
-                                    }}
-                                  >
-                                    <MenuItem
-                                      onClick={() => {
-                                        handleEdit();
-                                        handleMenuClose1();
-                                      }}
-                                    >
-                                      Sửa
-                                    </MenuItem>
-                                    <MenuItem>Nhận xét</MenuItem>
-                                    <MenuItem
-                                      onClick={() => {
-                                        handleDelete(file.id);
-                                        // handleMenuClose1();
-                                      }}
-                                    >
-                                      Xóa
-                                    </MenuItem>
-                                  </Menu>
-                                </IconButton>
-                              </ListItem>
-                            );
-                          })}
-                      </List>
-                    </Box>
-                  )}
+                <Menu
+                  anchorEl={anchorEl1}
+                  open={Boolean(anchorEl1)}
+                  onClose={handleMenuClose1}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  transformOrigin={{ vertical: "top", horizontal: "left" }}
+                >
+                  <MenuItem
+                    onClick={() => {
+                      if (currentFile) {
+                        handleEditLink(currentFile);
+                        setEditedUrl(currentFile.path_url);
+                        setEditedDisplayText(currentFile.file_name_defaut);
+                        setEditingLinkId(currentFile.id);
+                        setPopoverAnchorEl(anchorEl1);
+                        handleMenuClose1();
+                      }
+                    }}
+                  >
+                    Sửa
+                  </MenuItem>
+                  <MenuItem>Nhận xét</MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      if (currentFile) {
+                        handleDelete(currentFile.id);
+                        handleMenuClose1();
+                      }
+                    }}
+                    sx={{ color: "red" }}
+                  >
+                    Xóa
+                  </MenuItem>
+                </Menu>
 
-                {/* Popover chỉnh sửa */}
                 <Popover
                   open={Boolean(popoverAnchorEl)}
                   anchorEl={popoverAnchorEl}
@@ -1320,48 +1351,68 @@ const CardModal = ({ }) => {
                   transformOrigin={{ vertical: "top", horizontal: "left" }}
                 >
                   <Box sx={{ padding: 2, width: 300 }}>
-                    <IconButton onClick={() => setPopoverAnchorEl(null)}>
-                      <ArrowBack />
-                    </IconButton>
-                    <Typography variant="h6" sx={{ textAlign: "center" }}>
-                      Sửa tệp đính kèm
-                    </Typography>
+                    {/* Title and Back Icon in same row */}
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                      <IconButton
+                        onClick={() => setPopoverAnchorEl(null)}
+                        size="small"
+                      >
+                        <ArrowBack />
+                      </IconButton>
+                      <Typography
+                        variant="h6"
+                        sx={{ flexGrow: 1, textAlign: "center" }}
+                      >
+                        Sửa tệp đính kèm
+                      </Typography>
+                    </Box>
+
                     <Typography variant="subtitle2">
                       Tìm kiếm hoặc dán liên kết
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <TextField
-                        fullWidth
-                        value={editedUrl}
-                        onChange={(e) => setEditedUrl(e.target.value)}
-                        margin="normal"
-                        placeholder="Nhập URL"
-                      />
-                      {editedUrl && (
-                        <IconButton onClick={() => setEditedUrl("")}>
-                          {" "}
-                          <CloseIcon />{" "}
-                        </IconButton>
-                      )}
-                    </Box>
+                    <TextField
+                      fullWidth
+                      value={editedUrl}
+                      onChange={(e) => setEditedUrl(e.target.value)}
+                      margin="normal"
+                      placeholder="Nhập URL"
+                      InputProps={{
+                        endAdornment: editedUrl && (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setEditedUrl("")}
+                              size="small"
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+
                     <Typography variant="subtitle2" sx={{ marginTop: "10px" }}>
                       Văn bản hiển thị (không bắt buộc)
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <TextField
-                        fullWidth
-                        value={editedDisplayText}
-                        onChange={(e) => setEditedDisplayText(e.target.value)}
-                        margin="normal"
-                        placeholder="Nhập văn bản hiển thị"
-                      />
-                      {editedDisplayText && (
-                        <IconButton onClick={() => setEditedDisplayText("")}>
-                          {" "}
-                          <CloseIcon />{" "}
-                        </IconButton>
-                      )}
-                    </Box>
+                    <TextField
+                      fullWidth
+                      value={editedDisplayText}
+                      onChange={(e) => setEditedDisplayText(e.target.value)}
+                      margin="normal"
+                      placeholder="Nhập văn bản hiển thị"
+                      InputProps={{
+                        endAdornment: editedDisplayText && (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setEditedDisplayText("")}
+                              size="small"
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+
                     <Box
                       sx={{
                         display: "flex",
@@ -1376,7 +1427,7 @@ const CardModal = ({ }) => {
                         variant="contained"
                         onClick={() => {
                           handleSave1();
-                          setPopoverAnchorEl(null); // Đóng popover sau khi lưu
+                          setPopoverAnchorEl(null);
                         }}
                       >
                         Lưu
@@ -1386,157 +1437,193 @@ const CardModal = ({ }) => {
                 </Popover>
 
                 {/* Tệp */}
+                {fileItems?.length > 0 && (
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontSize: "12px",
+                        ml: "20px",
+                        mt: "5px",
+                        mb: "-15px",
+                      }}
+                    >
+                      Tệp
+                    </Typography>
 
-                {attachments?.data?.some((file) =>
-                  /\.(png|jpg|jpeg|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|sql)$/i.test(
-                    file.path_url
-                  )
-                ) && (
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontSize: "12px",
-                          ml: "20px",
-                          mt: "5px",
-                          mb: "-15px",
-                        }}
-                      >
-                        Tệp
-                      </Typography>
-                      <List>
-                        {attachments.data
-                          .filter((file) =>
-                            /\.(png|jpg|jpeg|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|sql)$/i.test(
-                              file.path_url
-                            )
+                    <List>
+                      {(showAll
+                        ? [...fileItems].sort(
+                            (a, b) =>
+                              new Date(b.created_at) - new Date(a.created_at)
                           )
-                          .map((file) => {
-                            const fileExt =
-                              file.path_url
-                                .match(/\.([a-zA-Z0-9]+)$/i)?.[1]
-                                .toLowerCase() || "default";
-                            const isImage = [
-                              "png",
-                              "jpg",
-                              "jpeg",
-                              "gif",
-                            ].includes(fileExt);
-                            const fileIcons = {
-                              png: "https://img.icons8.com/color/24/000000/image.png",
-                              jpg: "https://img.icons8.com/color/24/000000/image.png",
-                              jpeg: "https://img.icons8.com/color/24/000000/image.png",
-                              gif: "https://img.icons8.com/color/24/000000/image.png",
-                              pdf: "https://img.icons8.com/color/24/000000/pdf.png",
-                              doc: "https://img.icons8.com/color/24/000000/microsoft-word-2019.png",
-                              docx: "https://img.icons8.com/color/24/000000/microsoft-word-2019.png",
-                              xls: "https://img.icons8.com/color/24/000000/microsoft-excel-2019.png",
-                              xlsx: "https://img.icons8.com/color/24/000000/microsoft-excel-2019.png",
-                              ppt: "https://img.icons8.com/color/24/000000/microsoft-powerpoint-2019.png",
-                              pptx: "https://img.icons8.com/color/24/000000/microsoft-powerpoint-2019.png",
-                              sql: "https://img.icons8.com/color/24/000000/sql.png",
-                              default:
-                                "https://img.icons8.com/color/24/000000/file.png",
-                            };
+                        : [...fileItems]
+                            .sort(
+                              (a, b) =>
+                                new Date(b.created_at) - new Date(a.created_at)
+                            )
+                            .slice(0, 4)
+                      ).map((file) => {
+                        const fileExt =
+                          file.path_url
+                            .match(/\.([a-zA-Z0-9]+)$/)?.[1]
+                            ?.toLowerCase() || "default";
+                        const imageTypes = ["jpg", "jpeg", "png", "webp"];
+                        const isImage = imageTypes.includes(fileExt);
+                        const fileIcons = {
+                          pdf: "PDF",
+                          doc: "DOC",
+                          docx: "DOCX",
+                          xls: "XLS",
+                          xlsx: "XLSX",
+                          ppt: "PPT",
+                          pptx: "PPTX",
+                          rar: "RAR",
+                          zip: "ZIP",
+                          txt: "TXT",
+                          json: "JSON",
+                          default: "FILE",
+                        };
 
-                            const iconSrc =
-                              fileIcons[fileExt] || fileIcons.default;
-
-                            return (
-                              <ListItem
-                                key={file.id}
+                        return (
+                          <ListItem
+                            key={file.id}
+                            sx={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              mb: "-8px",
+                              ml: "10px",
+                              pr: "40px",
+                              cursor: "pointer",
+                              gap: "12px", // <<< GIẢI QUYẾT DÍNH NHAU
+                            }}
+                          >
+                            {/* Thumbnail hoặc icon */}
+                            {isImage ? (
+                              <Box
+                                component="img"
+                                src={file.path_url}
+                                alt={file.file_name_defaut}
                                 sx={{
+                                  width: 50,
+                                  height: 50,
+                                  objectFit: "cover",
+                                  borderRadius: "8px",
+                                  flexShrink: 0,
+                                }}
+                              />
+                            ) : (
+                              <Box
+                                sx={{
+                                  width: 50,
+                                  height: 50,
+                                  backgroundColor: "#E1E3E6",
+                                  color: "#374151",
+                                  fontWeight: "bold",
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "space-between",
-                                  paddingRight: "40px",
-                                  mb: "-8px",
-                                  ml: "10px",
-                                  cursor: "pointer",
+                                  justifyContent: "center",
+                                  borderRadius: "8px",
+                                  fontSize: "12px",
+                                  flexShrink: 0,
                                 }}
                               >
-                                {/* Hình ảnh hoặc icon */}
-                                <Box
-                                  component="img"
-                                  src={isImage ? file.path_url : iconSrc}
-                                  alt={
-                                    isImage
-                                      ? file.file_name_defaut
-                                      : `${fileExt}-icon`
-                                  }
-                                  sx={{
-                                    width: 50,
-                                    height: 50,
-                                    borderRadius: "8px",
-                                    objectFit: isImage ? "cover" : "contain",
-                                  }}
-                                  onClick={() => handleOpen(file.path_url)}
-                                />
+                                {fileIcons[fileExt] || fileIcons.default}
+                              </Box>
+                            )}
 
-                                {/* Nội dung tên và thời gian */}
-                                <Box sx={{ flexGrow: 1, ml: "10px" }}>
-                                  <Typography
-                                    sx={{ fontWeight: "bold", fontSize: "13px" }}
-                                    onClick={() => handleOpen(file.path_url)}
-                                  >
-                                    {file.file_name_defaut || "Không có tên"}
-                                  </Typography>
-                                  <Typography
-                                    variant="body2"
-                                    color="textSecondary"
-                                    sx={{ fontSize: "13px" }}
-                                  >
-                                    Đã thêm{" "}
-                                    {file.created_at
-                                      ? new Date(file.created_at).toLocaleString(
-                                        "vi-VN",
-                                        {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                          day: "2-digit",
-                                          month: "2-digit",
-                                          year: "numeric",
-                                        }
-                                      )
-                                      : "Không xác định"}
-                                    {file.is_cover && (
-                                      <Box component="span" sx={{ ml: 1 }}>
-                                        <img
-                                          src="https://img.icons8.com/material-outlined/24/000000/image.png"
-                                          alt="cover-icon"
-                                          style={{
-                                            width: "16px",
-                                            verticalAlign: "middle",
-                                          }}
-                                        />{" "}
-                                        Ảnh bìa
-                                      </Box>
-                                    )}
-                                  </Typography>
-                                </Box>
+                            {/* Nội dung file */}
+                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                              <Typography
+                                sx={{
+                                  fontWeight: "bold",
+                                  fontSize: "14px",
+                                  cursor: "pointer",
+                                  wordBreak: "break-word",
+                                  whiteSpace: "normal",
+                                }}
+                                onClick={() => handleOpen(file.path_url)}
+                              >
+                                {file.file_name_defaut || "Không có tên"}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="textSecondary"
+                                sx={{ fontSize: "12px", mt: "4px" }}
+                              >
+                                Đã thêm{" "}
+                                {file.created_at
+                                  ? new Date(file.created_at).toLocaleString(
+                                      "vi-VN",
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "numeric",
+                                      }
+                                    )
+                                  : "Không xác định"}
+                                {file.is_cover && (
+                                  <Box component="span" sx={{ ml: 1 }}>
+                                    <img
+                                      src="https://img.icons8.com/material-outlined/24/image.png"
+                                      alt="cover-icon"
+                                      style={{
+                                        width: "16px",
+                                        verticalAlign: "middle",
+                                      }}
+                                    />{" "}
+                                    Ảnh bìa
+                                  </Box>
+                                )}
+                              </Typography>
+                            </Box>
 
-                                {/* Menu tác vụ */}
-                                <IconButton
-                                  onClick={(e) => handleMenuOpen2(e, file.id)}
-                                  sx={{ ml: "auto" }}
-                                >
-                                  <MoreVertIcon />
-                                </IconButton>
-                              </ListItem>
-                            );
-                          })}
-                      </List>
-                    </Box>
-                  )}
+                            {/* Icon 3 chấm */}
+                            <IconButton
+                              onClick={(e) => handleMenuOpen2(e, file.id)}
+                              sx={{ ml: "auto" }}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </ListItem>
+                        );
+                      })}
+                    </List>
 
+                    {/* Nút Ẩn/Hiện */}
+                    {fileItems.length > 4 && (
+                      <Button
+                        sx={{ ml: "20px", mt: "8px", fontSize: "12px" }}
+                        onClick={() => setShowAll(!showAll)}
+                      >
+                        {showAll
+                          ? "Ẩn bớt"
+                          : `Hiện tất cả tệp đính kèm (${fileItems.length - 4} ẩn)`}
+                      </Button>
+                    )}
+                  </Box>
+                )}
                 {/* Menu con */}
                 <Menu
                   anchorEl={anchorEl2}
                   open={Boolean(anchorEl2)}
                   onClose={handleMenuClose2}
                 >
-                  <MenuItem onClick={handleOpenPopover}>Sửa</MenuItem>
-                  <MenuItem onClick={() => handleDownloadFile(selectedFile)}>
+                  <MenuItem
+                    onClick={(e) => {
+                      handleOpenPopover(e.currentTarget, selectedFile);
+                      handleMenuClose2(); // Đóng menu 3 chấm
+                      setTimeout(() => {
+                        setEditAnchorEl(anchorEl2); // Mở popover sửa
+                      }, 0);
+                    }}
+                  >
+                    Sửa
+                  </MenuItem>
+
+                  <MenuItem onClick={() => downloadFile(selectedFile)}>
                     Tải xuống
                   </MenuItem>
                   <MenuItem>Nhận xét</MenuItem>
@@ -1552,13 +1639,12 @@ const CardModal = ({ }) => {
                     Xóa
                   </MenuItem>
                 </Menu>
-
                 {/* Edit Popover */}
                 <Popover
-                  open={editAnchorEl}
+                  open={Boolean(editAnchorEl)}
                   anchorEl={editAnchorEl}
                   onClose={handleClosePopover}
-                  anchorOrigin={{ vertical: "top", horizontal: "left" }}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                   transformOrigin={{ vertical: "top", horizontal: "left" }}
                 >
                   <Box sx={{ padding: "16px", minWidth: "200px" }}>
@@ -1576,6 +1662,18 @@ const CardModal = ({ }) => {
                       value={newFileName}
                       onChange={(e) => setNewFileName(e.target.value)}
                       placeholder="Nhập tên mới"
+                      InputProps={{
+                        endAdornment: newFileName && (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setNewFileName("")}
+                              size="small"
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
                     />
 
                     <Box
@@ -1766,7 +1864,6 @@ const CardModal = ({ }) => {
                                 handleMenuOpen={handleMenuOpen}
                                 setMemberListConfig={setMemberListConfig}
                                 setDateConfig={setDateConfig}
-
                               />
                             ))}
                           </List>
@@ -2270,13 +2367,13 @@ const CardModal = ({ }) => {
                             ) : (
                               <Typography component="span" fontWeight="normal">
                                 {item.properties &&
-                                  item.properties.file_path &&
-                                  item.properties.file_name
+                                item.properties.file_path &&
+                                item.properties.file_name
                                   ? renderDescriptionWithLink(
-                                    actionText,
-                                    item.properties.file_path,
-                                    item.properties.file_name
-                                  )
+                                      actionText,
+                                      item.properties.file_path,
+                                      item.properties.file_name
+                                    )
                                   : actionText}
                               </Typography>
                             )}
@@ -2413,17 +2510,12 @@ const CardModal = ({ }) => {
                       <ListItemText
                         primary="Ngày"
                         onClick={() => {
-                          setDateConfig({                          
+                          setDateConfig({
                             open: true,
                             type: "card",
                             targetId: cardId,
-
-                          })
-                        }
-
-
-                        }
-
+                          });
+                        }}
                       />
                     </ListItemButton>
                   </ListItem>
@@ -2545,7 +2637,7 @@ const CardModal = ({ }) => {
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-        // onSave={handleAddTask}
+          // onSave={handleAddTask}
         />
 
         {/* Component Label List */}
@@ -2585,15 +2677,16 @@ const CardModal = ({ }) => {
           open={isCoverPhotoOpen}
           handleClose={() => setIsCoverPhotoOpen(false)}
           onCoverImageChange={handleCoverImageChange} // Pass the handler to CoverPhoto
-        // onCoverColorChange={handleCoverColorChange} // Pass the handler to CoverPhoto
+          // onCoverColorChange={handleCoverColorChange} // Pass the handler to CoverPhoto
         />
 
         <DateModal
           open={dateConfig.open}
-          onClose={() => setDateConfig({ open: false, type: null, targetId: null })}
+          onClose={() =>
+            setDateConfig({ open: false, type: null, targetId: null })
+          }
           type={dateConfig.type}
           targetId={dateConfig.targetId}
-
         />
 
         <Dialog
