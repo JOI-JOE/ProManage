@@ -4,68 +4,26 @@ import {
   // updateListName,
   updateClosed,
   createListAPI,
-  getListByBoardId,
+  // getListByBoardId,
   // updateColPosition,
   deleteList,
   getListClosedByBoard,
   updatePositionList,
+  fetchListByBoardId,
 } from "../api/models/listsApi";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import echoInstance from "./realtime/useRealtime";
 import { optimisticIdManager } from "../../utils/optimisticIdManager";
 
-// export const useLists = (boardId) => {
-//   const queryClient = useQueryClient();
-
-//   const query = useQuery({
-//     queryKey: ["lists", boardId],
-//     queryFn: () => getListByBoardId(boardId),
-//     enabled: !!boardId,
-//     staleTime: 0, // Luôn lấy dữ liệu mới từ API
-//     cacheTime: 1000 * 60 * 30, // Cache 30 phút
-//   });
-
-//   useEffect(() => {
-//     if (!boardId) return;
-
-//     // Sử dụng Public Channel để mọi người đều có thể nhận được sự kiện
-//     const channel = echoInstance.channel(`board.${boardId}`);
-
-//     // Lắng nghe sự kiện "list.updated"
-//     channel.listen(".list.updated", (event) => {
-//       console.log("Received list.updated event:", event);
-//       console.log("Updated List Data:", event.updatedList);
-
-//       // Cập nhật cache của query "lists" dựa trên dữ liệu mới
-//       queryClient.setQueryData(["lists", boardId], (oldData) => {
-//         console.log("Old Data:", oldData);
-
-//         if (!oldData || !oldData.columns || !Array.isArray(oldData.columns)) {
-//           console.warn(
-//             "Old data does not have a valid 'columns' array, returning unchanged."
-//           );
-//           return oldData;
-//         }
-
-//         const newColumns = oldData.columns.map((list) =>
-//           list.id === event.updatedList.id
-//             ? { ...list, ...event.updatedList }
-//             : list
-//         );
-//         const newData = { ...oldData, columns: newColumns };
-//         console.log("New Data after update:", newData.columns);
-//         return newData;
-//       });
-//     });
-
-//     return () => {
-//       channel.stopListening(".list.updated");
-//     };
-//   }, [boardId, queryClient]);
-
-//   return query;
-// };
+export const useListByBoardId = (boardId) => {
+  return useQuery({
+    queryKey: ["lists", boardId], // Key giúp quản lý cache
+    queryFn: () => fetchListByBoardId(boardId),
+    enabled: !!boardId, // Chỉ chạy khi có boardId
+    staleTime: 1000 * 60 * 5, // Giữ cache trong 5 phút
+  });
+};
 
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();

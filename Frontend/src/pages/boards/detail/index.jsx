@@ -1,31 +1,25 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import { Box, Container } from "@mui/material";
-import { Outlet, useLocation, useParams } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import SideBar from "./SideBar";
-import BoardProvider from "../../../providers/BoardProvider";
-import { useWorkspace } from "../../../contexts/WorkspaceContext";
+import { BoardProvider } from "../../../contexts/BoardContext";
+import { ListProvider } from "../../../contexts/ListContext";
 
 const BoardDetail = () => {
-  const { data } = useWorkspace();
-  const location = useLocation();
-  const workspaceId = location.state?.workspaceId;
-
-  const foundWorkspace = data.workspaces.find((ws) =>
-    ws.id == workspaceId
-  )
 
   return (
     <Container disableGutters maxWidth={false}>
       <Box sx={{ display: "flex" }}>
-        {/* Truyền workspace vào SideBar */}
-        <SideBar workspace={foundWorkspace} />
-        <Box sx={{ width: "81%" }}>
-          <BoardProvider>
-            <Outlet />
-          </BoardProvider>
-        </Box>
+        <BoardProvider>
+          <SideBar />
+          <ListProvider>
+            <Box sx={{ width: "81%" }}>
+              <Outlet />
+            </Box>
+          </ListProvider>
+        </BoardProvider>
       </Box>
-    </Container>
+    </Container >
   );
 };
 

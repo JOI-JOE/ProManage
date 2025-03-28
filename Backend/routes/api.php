@@ -73,6 +73,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('boards/{boardId}', 'show');
     });
 
+    // Function list 
+    Route::controller(ListController::class)->group(function () {
+        Route::get('lists/{boardId}', 'show');
+    });
+
+    // Funtion kéo thả column
+    Route::controller(DragDropController::class)->group(function () {
+        Route::put('/lists/{listId}', action: 'updatePositionList');
+        Route::put('/cards/{cardId}', action: 'updatePositionCard');
+    });
+
+
     // Function lấy dữ liệu của star
     Route::controller(BoardStarController::class)->group(function () {
         Route::prefix('boardstars')->group(function () {
@@ -129,14 +141,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
     });
 
-    // Funtion kéo thả column
-    Route::controller(DragDropController::class)->group(function () {
-        Route::put('/lists/{listId}', action: 'updatePositionList');
-        Route::put('/cards/{cardId}', action: 'updatePositionCard');
-    });
 
     // list board
-    Route::get('lists/{boardId}', [ListController::class, 'index']);
+    // Route::get('lists/{boardId}', [ListController::class, 'index']);
     Route::get('/search', [SearchController::class, 'search']);
 });
 

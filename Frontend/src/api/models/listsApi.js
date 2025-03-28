@@ -1,38 +1,53 @@
 import authClient from "../authClient";
 
-export const getListByBoardId = async (boardId) => {
+export const fetchListByBoardId = async (boardId) => {
   try {
-    if (!boardId) {
-      console.error("Lỗi: boardId không được cung cấp.");
-      return { data: [], error: "missing_board_id" };
-    }
-
     const response = await authClient.get(`/lists/${boardId}`);
-    return { data: response.data, error: null };
+    return response.data;
   } catch (error) {
     console.error(
-      `Lỗi khi lấy danh sách các list của board với ID: ${boardId}`,
-      error
+      "Lỗi khi lấy bảng:",
+      error?.response?.data?.message || error.message
     );
-
-    if (error.response) {
-      const status = error.response.status;
-
-      if (status === 403) {
-        console.error("Lỗi 403: Người dùng không có quyền truy cập board này.");
-        return { data: [], error: "no_access" };
-      }
-
-      if (status === 404) {
-        console.error("Lỗi 404: Không tìm thấy board hoặc danh sách.");
-        return { data: [], error: "not_found" };
-      }
-    }
-
-    console.error("Lỗi không xác định:", error);
-    return { data: [], error: "unknown_error" };
+    throw new Error(
+      error?.response?.data?.message ||
+        "Không thể lấy dữ liệu bảng, vui lòng thử lại sau."
+    );
   }
 };
+// export const getListByBoardId = async (boardId) => {
+//   try {
+//     if (!boardId) {
+//       console.error("Lỗi: boardId không được cung cấp.");
+//       return { data: [], error: "missing_board_id" };
+//     }
+
+//     const response = await authClient.get(`/lists/${boardId}`);
+//     return { data: response.data, error: null };
+//   } catch (error) {
+//     console.error(
+//       `Lỗi khi lấy danh sách các list của board với ID: ${boardId}`,
+//       error
+//     );
+
+//     if (error.response) {
+//       const status = error.response.status;
+
+//       if (status === 403) {
+//         console.error("Lỗi 403: Người dùng không có quyền truy cập board này.");
+//         return { data: [], error: "no_access" };
+//       }
+
+//       if (status === 404) {
+//         console.error("Lỗi 404: Không tìm thấy board hoặc danh sách.");
+//         return { data: [], error: "not_found" };
+//       }
+//     }
+
+//     console.error("Lỗi không xác định:", error);
+//     return { data: [], error: "unknown_error" };
+//   }
+// };
 
 export const getListClosedByBoard = async (boardId) => {
   try {

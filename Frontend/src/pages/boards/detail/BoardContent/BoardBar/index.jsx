@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Avatar,
   AvatarGroup,
@@ -12,19 +12,19 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import BoltIcon from "@mui/icons-material/Bolt";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
+import StarIcon from "@mui/icons-material/Star";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import AutomationDialog from "./childComponent/Auto/Auto";
 import FilterDialog from "./childComponent/Filter/Filter";
 import ViewPermissionsDialog from "./childComponent/View/View";
 import ShareBoardDialog from "./childComponent/Share/Share";
 import BoardMenu from "./BoardMenu";
-
 import { useUpdateBoardName } from "../../../../../hooks/useBoard";
-import BoardContext from "../../../../../contexts/BoardContext";
-import { useGetBoardMembers, useMemberJoinedListener } from "../../../../../hooks/useInviteBoard";
-import { useParams } from "react-router-dom";
+import { useMemberJoinedListener } from "../../../../../hooks/useInviteBoard";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
 import { useMe } from "../../../../../contexts/MeContext";
+import { useBoard } from "../../../../../contexts/BoardContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 const style = {
   border: "none",
@@ -40,100 +40,96 @@ const style = {
 };
 
 const BoardBar = () => {
-
-  const { boardId } = useParams();
-  const { board, isLoading, error } = useContext(BoardContext);
-  const { data: boardMembers } = useGetBoardMembers(boardId);
-  // const { data: user } = useUser();
   const { data: user } = useMe();
-  useMemberJoinedListener(user?.id)
+  const { board, members, memberships, isLoading, error, isEditable } = useBoard();
+  console.log(members)
+  console.log(memberships)
 
+  const combinedMembers = useMemo(() => {
+    if (!members || !memberships) return [];
 
+    return members.map((member) => {
+      const membership = memberships.find((m) => m.user_id === member.id);
+      return {
+        ...member,
+        role: membership ? membership.role : "member", // Mặc định là "member" nếu không tìm thấy
+        is_deactivated: membership ? membership.is_deactivated : 0,
+      };
+    });
+  }, [members, memberships]);
+
+  const queryClient = useQueryClient();
+
+  // Quản lý trạng thái dialog
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
-  const handleFilterDialogOpen = () => setOpenFilterDialog(true);
-  const handleFilterDialogClose = () => setOpenFilterDialog(false);
-
   const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
-  const handleAutomationDialogOpen = () => setOpenAutomationDialog(true);
-  const handleAutomationDialogClose = () => setOpenAutomationDialog(false);
-
-  const [openViewPermissionsDialog, setOpenViewPermissionsDialog] =
-    useState(false);
-  const handleViewPermissionsDialogOpen = () =>
-    setOpenViewPermissionsDialog(true);
-  const handleViewPermissionsDialogClose = () =>
-    setOpenViewPermissionsDialog(false);
-
+  const [openViewPermissionsDialog, setOpenViewPermissionsDialog] = useState(false);
   const [openShareDialog, setOpenShareDialog] = useState(false);
-  // const [editTitle, setEditTitle] = useState(false);
-  // const [teamName, setTeamName] = useState(board?.title || "Team WD-51");
+
+  // Quản lý trạng thái chỉnh sửa tiêu đề
+  const [editTitle, setEditTitle] = useState(false);
+  const [teamName, setTeamName] = useState(board?.name || "");
 
   // Quản lý trạng thái sao (isStarred)
   const [isStarred, setIsStarred] = useState(false);
 
-  const handleStarClick = () => {
-    setIsStarred((prev) => !prev); // Đảo ngược trạng thái sao
+  // Hook để cập nhật tên board
+  const updateBoardName = useUpdateBoardName();
+
+  // Cập nhật teamName khi board thay đổi
+  useEffect(() => {
+    if (board) {
+      setTeamName(board.name || "Untitled Board");
+    }
+  }, [board]);
+
+  // Xử lý mở/đóng dialog
+  const handleFilterDialogOpen = () => setOpenFilterDialog(true);
+  const handleFilterDialogClose = () => setOpenFilterDialog(false);
+
+  const handleAutomationDialogOpen = () => setOpenAutomationDialog(true);
+  const handleAutomationDialogClose = () => setOpenAutomationDialog(false);
+
+  const handleViewPermissionsDialogOpen = () => setOpenViewPermissionsDialog(true);
+  const handleViewPermissionsDialogClose = () => setOpenViewPermissionsDialog(false);
+
+  const handleShareDialogOpen = () => setOpenShareDialog(true);
+  const handleShareDialogClose = () => setOpenShareDialog(false);
+
+  // Xử lý chỉnh sửa tiêu đề
+  const handleTitleClick = () => {
+    if (isEditable) {
+      setEditTitle(true);
+    }
   };
-
-  // const handleTitleClick = () => setEditTitle(true);
-
-  // const handleTitleChange = (e) => setTeamName(e.target.value);
-
-  // const handleTitleBlur = () => setEditTitle(false);
-
-  // const handleTitleKeyPress = (e) => {
-  //   if (e.key === "Enter") {
-  //     setEditTitle(false);
-  //   }
-  // };
-
-  // const { boardId } = useParams(); // Lấy boardId từ URL
-  // // console.log("🔍 boardId từ useParams:", boardId);
-
-  // const { data, isLoading, error } = useQuery({
-  //   queryKey: ["board", boardId],
-  //   queryFn: () => getBoardById(boardId),
-  // });
-
-  // console.log(data)
-
-  // // console.log("🔍 Dữ liệu board từ API:", data?.data);
-
-  // const board = data?.data;
-
-  // console.log("🔍 Dữ liệu board từ API:", board);
-
-  // const updateBoardName = useUpdateBoardName();
-
-  const [editTitle, setEditTitle] = useState(false);
-  const [teamName, setTeamName] = useState("");
-
-  // Cập nhật khi dữ liệu board thay đổi
-  // React.useEffect(() => {
-  //   if (board) {
-  //     setTeamName(board.name || "Team WD-51");
-  //   }
-  // }, [board]);
-
-  const handleTitleClick = () => setEditTitle(true);
 
   const handleTitleChange = (e) => setTeamName(e.target.value);
 
-  const handleTitleBlur = () => {
+  const handleTitleBlur = useCallback(() => {
     if (teamName.trim() === "" || teamName === board?.name) {
+      setTeamName(board?.name || "Untitled Board");
       setEditTitle(false);
       return;
     }
 
-    // updateBoardName.mutate(
-    //   { board.id, name: teamName },
-    //   {
-    //     onSuccess: () => {
-    //       setEditTitle(false);
-    //     },
-    //   }
-    // );
-  };
+    if (board?.id) {
+      updateBoardName.mutate(
+        { boardId: board.id, name: teamName },
+        {
+          onSuccess: () => {
+            setEditTitle(false);
+            // Làm mới dữ liệu board sau khi cập nhật tên
+            queryClient.invalidateQueries(["board", board.id]);
+          },
+          onError: (err) => {
+            console.error("Error updating board name:", err);
+            setTeamName(board?.name || "Untitled Board");
+            setEditTitle(false);
+          },
+        }
+      );
+    }
+  }, [teamName, board, updateBoardName, queryClient]);
 
   const handleTitleKeyPress = (e) => {
     if (e.key === "Enter") {
@@ -141,10 +137,19 @@ const BoardBar = () => {
     }
   };
 
-  if (isLoading) return <p>Loading board...</p>;
-  if (error) return <p>Board not found</p>;
+  // Xử lý đánh dấu sao
+  const handleStarClick = () => {
+    setIsStarred((prev) => !prev);
+    // TODO: Gọi API để lưu trạng thái isStarred vào backend
+    // Ví dụ: axios.post(`/api/boards/${board.id}/star`, { isStarred: !isStarred });
+  };
 
-  const boardVisibility = board?.visibility || "test"; // Default to "Private"
+  // Xử lý loading và error
+  if (isLoading) return <Box sx={{ p: 2, color: "white" }}>Loading board...</Box>;
+  if (error) return <Box sx={{ p: 2, color: "red" }}>Board not found</Box>;
+
+  // Xác định board visibility
+  const boardVisibility = board?.visibility || "Private";
 
   return (
     <Box
@@ -160,21 +165,23 @@ const BoardBar = () => {
       }}
     >
       <Box px={1} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        {/*Chỉnh sửa tiêu đề  */}
+        {/* Chỉnh sửa tiêu đề */}
         {editTitle ? (
           <TextField
             value={teamName}
             onChange={handleTitleChange}
             onBlur={handleTitleBlur}
-            onKeyPress={handleTitleKeyPress} //sự kiện onKeyPress
+            onKeyPress={handleTitleKeyPress}
             variant="outlined"
             size="small"
+            autoFocus
             sx={{
-              width: "80px",
+              width: "120px",
               height: "30px",
               "& .MuiInputBase-root": {
-                fontSize: "0.7rem", // Kích thước chữ khi nhập
+                fontSize: "0.9rem",
                 backgroundColor: "#2E4053",
+                color: "#ffffff",
               },
               "& .MuiInputBase-input": {
                 textAlign: "center",
@@ -186,18 +193,36 @@ const BoardBar = () => {
             }}
           />
         ) : (
-          <Chip label={teamName} sx={style} onClick={handleTitleClick} />
+          <Chip
+            label={teamName}
+            sx={{
+              ...style,
+              cursor: isEditable ? "pointer" : "default",
+            }}
+            onClick={handleTitleClick}
+          />
         )}
-        {/* <StarButton isStarred={isStarred} onStarClick={handleStarClick} /> */}
+
+        {/* Nút đánh dấu sao */}
+        <Chip
+          icon={isStarred ? <StarIcon /> : <StarBorderIcon />}
+          variant="outlined"
+          clickable
+          sx={style}
+          onClick={handleStarClick}
+        />
+
+        {/* Khả năng xem */}
         <Chip
           icon={<LockOpenIcon />}
-          label={`Khả năng xem: ${boardVisibility}`} // Display the visibility status
+          label={`Khả năng xem: ${boardVisibility}`}
           variant="outlined"
           clickable
           sx={style}
           onClick={handleViewPermissionsDialogOpen}
         />
 
+        {/* Tự động hóa */}
         <Chip
           icon={<BoltIcon />}
           label="Tự động hóa"
@@ -206,6 +231,8 @@ const BoardBar = () => {
           sx={style}
           onClick={handleAutomationDialogOpen}
         />
+
+        {/* Lọc bảng */}
         <Chip
           icon={<FilterListIcon />}
           label="Lọc bảng"
@@ -215,7 +242,9 @@ const BoardBar = () => {
           onClick={handleFilterDialogOpen}
         />
       </Box>
+
       <Box sx={{ display: "flex", alignItems: "center", paddingX: 2 }}>
+        {/* Avatar thành viên */}
         <AvatarGroup
           max={5}
           sx={{
@@ -227,43 +256,43 @@ const BoardBar = () => {
             },
           }}
         >
-          {boardMembers?.data?.map((member) => (
-            <Tooltip key={member.id} title={member.full_name}>
+          {combinedMembers.map((member) => (
+            <Tooltip key={member.id} title={member.user_name || member.full_name}>
               <div style={{ position: "relative", display: "inline-block" }}>
-                {/* Avatar với chữ cái đầu */}
                 <Avatar
-                  alt={member.full_name}
-                  src={member.avatar || ""}
+                  alt={member.user_name || member.full_name}
+                  src={member.image || ""}
                   sx={{
                     width: 40,
                     height: 40,
                     backgroundColor: "#1976d2",
                     fontSize: "16px",
                     fontWeight: "bold",
-                    position: "relative", // Để chứa icon bên trong
+                    position: "relative",
                   }}
                 >
-                  {!member.avatar && member.full_name.charAt(0).toUpperCase()}
-
-                  {/* Icon vương miện nếu là admin */}
-                  {member.pivot.role === "admin" && (
-                    <ChevronDoubleDownIcon
-                      className="h-4 w-3 text-yellow-500"
-                      style={{
-                        position: "absolute",
-                        bottom: -5,
-                        right: 1,
-                        background: "",
-                        borderRadius: "50%",
-                        padding: "2px",
-                      }}
-                    />
-                  )}
+                  {!(member.image) &&
+                    (member.user_name || member.full_name)?.charAt(0).toUpperCase()}
                 </Avatar>
+                {member.role === "admin" && (
+                  <ChevronDoubleDownIcon
+                    className="h-4 w-3 text-yellow-500"
+                    style={{
+                      position: "absolute",
+                      bottom: -5,
+                      right: 1,
+                      background: "",
+                      borderRadius: "50%",
+                      padding: "2px",
+                    }}
+                  />
+                )}
               </div>
             </Tooltip>
           ))}
         </AvatarGroup>
+
+        {/* Nút chia sẻ */}
         <Button
           variant="contained"
           startIcon={<PersonAddAltIcon />}
@@ -273,31 +302,26 @@ const BoardBar = () => {
             fontSize: "0.75rem",
             textTransform: "none",
           }}
-          onClick={() => setOpenShareDialog(true)}
+          onClick={handleShareDialogOpen}
         >
           Chia sẻ
         </Button>
+
         <BoardMenu board={board} />
       </Box>
 
-      {/* Hộp thoại chia sẻ */}
+      {/* Dialogs */}
       <ShareBoardDialog
-        boardMembers={boardMembers}
+        boardMembers={combinedMembers}
         currentUser={user}
         open={openShareDialog}
-        onClose={() => setOpenShareDialog(false)}
+        onClose={handleShareDialogClose}
       />
-
-      {/* Hộp thoại lọc */}
       <FilterDialog open={openFilterDialog} onClose={handleFilterDialogClose} />
-
-      {/* Hộp thoại tự động hóa */}
       <AutomationDialog
         open={openAutomationDialog}
         onClose={handleAutomationDialogClose}
       />
-
-      {/* Hộp thoại quyền xem */}
       <ViewPermissionsDialog
         open={openViewPermissionsDialog}
         onClose={handleViewPermissionsDialogClose}

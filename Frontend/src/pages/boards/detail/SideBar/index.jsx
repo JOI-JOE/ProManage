@@ -29,33 +29,36 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
+import { useBoard } from "../../../../contexts/BoardContext";
+import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 
-const SideBar = ({ workspace }) => {
+const SideBar = () => {
   const [openSettings, setOpenSettings] = useState(false);
-
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
   };
-
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
-
   const handleMenuOpen = (event, boardId) => {
     setMenuAnchor(event.currentTarget);
     setSelectedBoardId(boardId);
   };
-
   const handleMenuClose = () => {
     setMenuAnchor(null);
     setSelectedBoardId(null);
   };
-
   const { mutate: toggleBoardClosed } = useToggleBoardClosed(); // Use hook
-
   const handleCloseBoard = (boardId) => {
     toggleBoardClosed(boardId); // Gọi hook để thay đổi trạng thái đóng bảng
     handleMenuClose();
   };
+  const { data } = useWorkspace();
+  const { workspace } = useBoard();
+  console.log(workspace?.id);
+
+  const boards = data?.workspaces?.find((ws) => ws.id === workspace?.id)?.boards || [];
+
+  console.log(boards);
 
   return (
     <Drawer
@@ -81,6 +84,7 @@ const SideBar = ({ workspace }) => {
         },
       }}
     >
+
       <Box
         sx={{
           display: "flex",
@@ -170,7 +174,7 @@ const SideBar = ({ workspace }) => {
       </Typography>
 
       <List sx={{ p: 0.5 }}>
-        {workspace?.boards?.map((board) => (
+        {boards?.map((board) => (
           <ListItem key={board.id} disablePadding sx={{ p: 1, display: "flex", alignItems: "center" }}>
             {/* Phần tên bảng dẫn link */}
             <ListItemButton

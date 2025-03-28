@@ -33,20 +33,35 @@ export const showBoardByWorkspaceId = async (workspaceId) => {
   }
 };
 
-export const getBoardById = async (boardId) => {
+export const fetchBoardById = async (boardId) => {
   if (!boardId) {
     throw new Error("boardId không hợp lệ");
   }
-
   try {
+    // Gọi API duy nhất để lấy toàn bộ thông tin
     const response = await authClient.get(`/boards/${boardId}`);
-    return response.data;
+    // Dữ liệu trả về từ API đã bao gồm tất cả thông tin cần thiết
+    const data = response.data;
+    // Kiểm tra nếu board không tồn tại
+    if (!data.board) {
+      throw new Error("Board không tồn tại");
+    }
+    // Trả về dữ liệu từ API
+    return {
+      board: data.board,
+      members: data.members,
+      memberships: data.memberships,
+      workspace: data.workspace,
+      message: data.message,
+      isEditable: data.isEditable,
+      canJoin: data.canJoin,
+      canJoinWorkspace: data.canJoinWorkspace || false, // Đảm bảo trường này tồn tại
+    };
   } catch (error) {
     console.error(
       "Lỗi khi lấy bảng:",
       error?.response?.data?.message || error.message
     );
-
     throw new Error(
       error?.response?.data?.message ||
         "Không thể lấy dữ liệu bảng, vui lòng thử lại sau."

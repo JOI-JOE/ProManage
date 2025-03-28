@@ -17,7 +17,7 @@ export const useGetWorkspaces = () => {
     cacheTime: 60 * 60 * 1000, // 60 phút
     refetchOnWindowFocus: false, // Không fetch lại khi focus tab
     refetchOnReconnect: false, // Không fetch khi mạng thay đổi
-    retry: 1, // Giảm số lần thử lại nếu lỗi
+    retry: 1,
   });
 };
 

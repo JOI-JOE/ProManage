@@ -4,19 +4,170 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\ListCreated;
 use App\Http\Requests\ListUpdateNameRequest;
-use App\Jobs\BroadcastListCreated;
 use App\Models\Board;
 use App\Models\ListBoard;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use Pusher\Pusher;
 
 class ListController extends Controller
 {
+    // ----------------------------------------------------
+    public function show($boardId)
+    {
+        // Bước 1: Lấy thông tin board
+        $board = DB::table('boards')
+            ->select(
+                'id AS board_id',
+                'name AS board_name',
+                'created_at',
+                'updated_at'
+            )
+            ->find($boardId);
+
+        if (!$board) {
+            return response()->json(['message' => 'Board not found'], 404);
+        }
+
+        // Bước 2: Lấy danh sách list_boards thuộc board này
+        $lists = DB::table('list_boards')
+            ->where('board_id', $boardId)
+            ->select([
+                'id',
+                'name',
+                'closed',
+                'position',
+                'created_at',
+                'updated_at',
+            ])
+            ->orderBy('position')
+            ->get()
+            ->toArray();
+
+        // Bước 3: Lấy danh sách cards thuộc board này
+        $cards = DB::table('cards')
+            ->join('list_boards', 'cards.list_board_id', '=', 'list_boards.id')
+            ->where('list_boards.board_id', $boardId)
+            ->where('cards.is_archived', false)
+            ->select([
+                'cards.id',
+                'cards.title AS name',
+                'cards.description AS desc',
+                'cards.thumbnail AS idAttachmentCover',
+                'cards.position',
+                'cards.start_date AS start',
+                'cards.end_date AS due',
+                'cards.end_time',
+                'cards.reminder AS dueReminder',
+                DB::raw('CAST(cards.is_completed AS UNSIGNED) AS dueComplete'),
+                DB::raw('CAST(cards.is_archived AS UNSIGNED) AS closed'),
+                'cards.list_board_id',
+                'list_boards.board_id AS boardId',
+            ])
+            ->orderBy('cards.position')
+            ->get()
+            ->map(function ($card) {
+                return (object) array_merge((array) $card, [
+                    'labels' => [],
+                    'memberId' => [],
+                    'labelId' => [],
+                    'checklists' => [],
+                ]);
+            })
+            ->toArray();
+
+        // Lấy tất cả card IDs để truy vấn dữ liệu liên quan
+        // $cardIds = array_keys($cards);
+
+        // // Bước 4: Lấy danh sách labels cho các cards
+        // if (!empty($cardIds)) {
+        //     $cardLabels = DB::table('card_label')
+        //         ->join('labels', 'card_label.label_id', '=', 'labels.id')
+        //         ->whereIn('card_label.card_id', $cardIds)
+        //         ->select(
+        //             DB::raw('card_label.card_id'),
+        //             DB::raw('card_label.label_id'),
+        //             DB::raw('labels.id AS id'),
+        //             DB::raw('labels.title AS title'),
+        //             // DB::raw('labels.color AS color'),
+        //             DB::raw('labels.created_at'),
+        //             DB::raw('labels.updated_at')
+        //         )
+        //         ->get();
+
+        //     foreach ($cardLabels as $cardLabel) {
+        //         $cardId = $cardLabel->card_id;
+        //         if (isset($cards[$cardId])) {
+        //             $cards[$cardId]->labels[] = [
+        //                 'id' => $cardLabel->id,
+        //                 'name' => $cardLabel->name,
+        //                 'color' => $cardLabel->color,
+        //                 'created_at' => $cardLabel->created_at,
+        //                 'updated_at' => $cardLabel->updated_at,
+        //             ];
+        //             $cards[$cardId]->idLabels[] = $cardLabel->id;
+        //         }
+        //     }
+
+        //     // Bước 5: Lấy danh sách card_user và thông tin users
+        //     $cardUsers = DB::table('card_user')
+        //         ->join('users', 'card_user.user_id', '=', 'users.id')
+        //         ->whereIn('card_user.card_id', $cardIds)
+        //         ->select(
+        //             DB::raw('card_user.card_id'),
+        //             DB::raw('card_user.user_id'),
+        //             DB::raw('users.full_name AS full_name'),
+        //             DB::raw('users.initials AS initials'),
+        //             DB::raw('users.image AS image')
+        //         )
+        //         ->get();
+
+        //     foreach ($cardUsers as $cardUser) {
+        //         $cardId = $cardUser->card_id;
+        //         if (isset($cards[$cardId])) {
+        //             $cards[$cardId]->idMembers[] = $cardUser->user_id;
+        //         }
+        //     }
+
+        //     // Bước 6: Lấy danh sách check_list
+        //     $checkLists = DB::table('check_lists')
+        //         ->whereIn('card_id', $cardIds)
+        //         ->select(
+        //             DB::raw('id'),
+        //             DB::raw('name'),
+        //             DB::raw('created_at'),
+        //             DB::raw('card_id')
+        //         )
+        //         ->get();
+
+        //     foreach ($checkLists as $checkList) {
+        //         $cardId = $checkList->card_id;
+        //         if (isset($cards[$cardId])) {
+        //             $cards[$cardId]->checklists[] = [
+        //                 'id' => $checkList->id,
+        //                 'name' => $checkList->name,
+        //                 'created_at' => $checkList->created_at,
+        //                 'card_id' => $checkList->card_id,
+        //             ];
+        //         }
+        //     }
+        // }
+
+        // Chuyển cards thành mảng giá trị (loại bỏ key)
+        $cards = array_values($cards);
+
+        // Bước 7: Tạo responseData
+        $response = [
+            'id' => $boardId,
+            'lists' => $lists,
+            'cards' => $cards,
+        ];
+
+        return response()->json($response);
+    }
+
+    // ----------------------------------------------------
 
     public function index($boardId)
     {
@@ -47,27 +198,6 @@ class ListController extends Controller
         if (!$board) {
             return response()->json(['message' => 'Board not found'], 404);
         }
-
-        // $user = Auth::user();
-
-        // $hasAccess = false;
-
-        // if ($board->visibility === 'public') {
-        //     $hasAccess = true;
-        // } elseif ($board->visibility === 'workspace') {
-        //     // Kiểm tra workspace có null không trước khi truy cập members
-        //     // if ($board->workspace && $board->workspace->members) {
-        //         $hasAccess = $board->workspace->members->contains($user->id);
-        //     // }
-        // } elseif ($board->visibility === 'private') {
-        //     // Kiểm tra members có null không trước khi truy cập
-        //     // if ($board->members) {
-        //         $hasAccess = $board->members->contains($user->id);
-        //     // }
-        // }
-        // if (!$hasAccess) {
-        //     return response()->json(['error' => 'Access denied'], 403);
-        // }
 
         $responseData = [
             'id' => $board->id,

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createBoard,
-  getBoardById,
+  fetchBoardById,
   getBoardClosed,
   getBoardMarked,
   getBoardsAllByClosed,
@@ -15,11 +15,60 @@ import {
   updateBoardVisibility,
 } from "../api/models/boardsApi";
 import { useCallback } from "react";
+import { getWorkspacesAll } from "../api/models/workspacesApi";
 
 /**
  * Hook useBoard để tạo bảng mới.
  * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
  */
+// function lấy dữ dữ liệu
+export const useBoardById = (boardId) => {
+  const queryClient = useQueryClient();
+  // Đảm bảo luôn có dữ liệu workspaces trước khi lấy từ cache
+  queryClient.ensureQueryData({
+    queryKey: ["getWorkspace"],
+    queryFn: getWorkspacesAll, // Hàm fetch workspace
+  });
+  // Lấy dữ liệu từ cache của "getWorkspace"
+  const cachedWorkspaces = queryClient.getQueryData(["getWorkspace"]);
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["board", boardId],
+    queryFn: () => fetchBoardById(boardId),
+    enabled: !!boardId,
+    retry: 1,
+    refetchOnMount: false, // Không gọi lại API khi mount lại
+    refetchOnWindowFocus: false, // Không refetch khi chuyển tab
+    refetchOnReconnect: false, // Không refetch khi mạng thay đổi
+    onError: (err) => {
+      console.error("Error fetching board:", err);
+    },
+  });
+
+  // Kiểm tra workspace tương ứng với boardId từ cache
+  const workspace =
+    cachedWorkspaces?.workspaces?.find((ws) =>
+      ws.boards?.some((board) => board.id === boardId)
+    ) || null;
+
+  return {
+    data: {
+      board: data?.board || null,
+      members: data?.members || [],
+      memberships: data?.memberships || [],
+      workspace: workspace || data?.workspace || null,
+      isEditable: data?.isEditable || false,
+      canJoinBoard: data?.canJoinBoard || false,
+      canJoinWorkspace: data?.canJoinWorkspace || false,
+      message: data?.message || "",
+      admins: data?.admins || [],
+      showBoardData: !!data?.board,
+    },
+    isLoading,
+    error: error ? error.message : null,
+    refetch,
+  };
+};
 
 export const useCreateBoard = () => {
   const queryClient = useQueryClient();
@@ -32,25 +81,7 @@ export const useCreateBoard = () => {
   });
 };
 
-export const useGetBoardByID = (boardId) => {
-  return useQuery({
-    queryKey: ["boards", boardId],
-    queryFn: async () => {
-      if (!boardId) return null; // Nếu không có boardId, không gọi API
 
-      try {
-        const response = await getBoardById(boardId);
-        if (!response?.data) {
-          throw new Error("Board data is empty or undefined");
-        }
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching board:", error);
-        throw new Error("Failed to fetch board data");
-      }
-    },
-  });
-};
 export const getBoardByClosed = () => {
   return useQuery({
     queryKey: ["boards"], // Key duy nhất để xác định và cache dữ liệu người dùng.
