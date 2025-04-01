@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLogin } from "../../hooks/useUser";
+import FormLabel from '@mui/material/FormLabel';
 import GitHubAuth from "./GitHubAuth";
 import GoogleAuth from "./GoogleAuth";
 
@@ -34,42 +35,34 @@ const LoginForm = () => {
 
     // Basic client-side validation
     if (!formData.email) {
-      setErrors((prev) => ({ ...prev, email: "Vui lòng nhập email." }));
+      setErrors((prev) => ({ ...prev, email: "Please enter your email." }));
       return;
     }
     if (!formData.password) {
-      setErrors((prev) => ({ ...prev, password: "Vui lòng nhập mật khẩu." }));
+      setErrors((prev) => ({ ...prev, password: "Please enter your password." }));
       return;
     }
 
     // Call the login mutation
     login(formData, {
       onSuccess: (data) => {
-        localStorage.setItem("token", data.token); // Lưu token
-      
+        localStorage.setItem("token", data.token); // Save token
         if (inviteToken) {
           navigate(`/accept-invite/${inviteToken}`);
         } else {
-          navigate('/home');
+          navigate("/home");
         }
-      
-        alert("Đăng nhập thành công"); // Thông báo
       },
       onError: (err) => {
-        console.error("Lỗi đăng nhập:", err);
+        console.error("Login error:", err);
 
         if (err.response) {
-          // Server returned an error (e.g., 400, 401, 500)
-          console.error("Lỗi từ server:", err.response.data);
-
           if (err.response.status === 401) {
-            // Handle 401 (Unauthorized) - likely invalid credentials
             setErrors((prev) => ({
               ...prev,
-              general: "Tài khoản hoặc mật khẩu không chính xác.",
+              general: "Invalid email or password.",
             }));
           } else if (err.response.status === 422) {
-            // Validation errors
             const serverErrors = err.response.data.errors;
             if (serverErrors) {
               setErrors((prev) => ({
@@ -79,25 +72,20 @@ const LoginForm = () => {
               }));
             }
           } else {
-            // Other server errors
             setErrors((prev) => ({
               ...prev,
-              general: "Lỗi đăng nhập. Vui lòng thử lại sau.",
+              general: "Login failed. Please try again later.",
             }));
           }
         } else if (err.request) {
-          // Request was made but no response was received
-          console.error("Lỗi không có response:", err.request);
           setErrors((prev) => ({
             ...prev,
-            general: "Lỗi kết nối. Vui lòng kiểm tra internet.",
+            general: "Connection error. Please check your internet.",
           }));
         } else {
-          // Something happened in setting up the request that triggered an Error
-          console.error("Lỗi khác:", err.message);
           setErrors((prev) => ({
             ...prev,
-            general: "Lỗi đăng nhập. Vui lòng thử lại sau.",
+            general: "Login failed. Please try again later.",
           }));
         }
       },
@@ -105,18 +93,27 @@ const LoginForm = () => {
   };
 
   return (
-    <section className="bg-[#1693E1] min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-[525px] bg-white rounded-lg p-10 text-center shadow-lg">
-        <h2 className="mb-10 text-center md:mb-16">PROMANAGE</h2>
+    <section className="bg-gray-100 min-h-screen flex items-center justify-center">
+      <div className="w-full max-w-md bg-white rounded-lg p-8 shadow-lg">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <h2 className="text-2xl font-bold text-blue-500">ProManage</h2>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-3xl font-semibold text-center mb-6">Sign in</h3>
+
         <form onSubmit={handleSubmit}>
+          {/* Email Field */}
+          <FormLabel htmlFor="email">Email</FormLabel>
           <div className="mb-4">
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Email"
-              className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
+              placeholder="Enter your email"
+              className={`w-full rounded-md border py-2 px-4 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.email ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -125,14 +122,16 @@ const LoginForm = () => {
             )}
           </div>
 
+          {/* Password Field */}
+          <FormLabel htmlFor="password">Password</FormLabel>
           <div className="mb-4">
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Password"
-              className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
+              placeholder="******"
+              className={`w-full rounded-md border py-2 px-4 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.password ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -141,41 +140,51 @@ const LoginForm = () => {
             )}
           </div>
 
+          
+
+          {/* General Error */}
           {errors.general && (
-            <p className="text-red-500 text-sm mb-4">{errors.general}</p>
+            <p className="text-red-500 text-sm mb-4 text-center">{errors.general}</p>
           )}
 
+          {/* Sign In Button */}
           <button
             type="submit"
-            className="w-full bg-indigo-500 text-white p-3 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full mt-4 bg-gray-800 text-white p-3 rounded-md hover:bg-gray-900 disabled:opacity-50 cursor-pointer"
             disabled={isLoading}
           >
-            {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+            {isLoading ? "Signing in..." : "Sign in"}
           </button>
         </form>
 
-        <p className="text-center mt-3">
+        {/* Forgot Password Link */}
+        <p className="text-center mt-4">
           <button
-            onClick={() => navigate("/forgort-password")} // Chuyển hướng
-            className="text-blue-500 hover:underline"
+            onClick={() => navigate("/forgot-password")}
+            className="text-blue-500 hover:underline text-sm cursor-pointer"
           >
-            Quên mật khẩu?
+            Forgot your password?
           </button>
         </p>
 
-        <p className="text-center mt-3">
-          <button
-            onClick={() => navigate("/register")} // Chuyển hướng
-            className="text-blue-500 hover:underline"
-          >
-            Đăng ký tài khoản
-          </button>
-        </p>
+        {/* Divider */}
+        <p className="text-center text-gray-500 my-4">or</p>
 
-        <p className="text-center mt-3">
-          Hoặc đăng nhập bằng
-          <GitHubAuth />
+        {/* Social Login Buttons */}
+        <div className="space-y-3 cursor-pointer">
           <GoogleAuth />
+          <GitHubAuth />
+        </div>
+
+        {/* Sign Up Link */}
+        <p className="text-center mt-4">
+          <span className="text-sm text-gray-600">Don't have an account? </span>
+          <button
+            onClick={() => navigate("/register")}
+            className="text-blue-500 hover:underline text-sm cursor-pointer"
+          >
+            Sign up
+          </button>
         </p>
       </div>
     </section>
