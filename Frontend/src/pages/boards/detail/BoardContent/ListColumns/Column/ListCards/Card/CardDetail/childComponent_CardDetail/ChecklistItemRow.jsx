@@ -86,22 +86,31 @@ const ChecklistItemRow = ({
 
       <Box
         sx={{ display: "flex", alignItems: "center" }}
-        onClick={() => {
-          setDateConfig({
-            open: true,
-            type: "checklist-item",
-            targetId: item.id,
-          });
-        }}
       >
         {checklistItemEndTime ? (
-          <Typography variant="caption">
+          <Typography variant="caption"
+            sx={{ cursor: "pointer" }}
+            onClick={() => {
+              setDateConfig({
+                open: true,
+                type: "checklist-item",
+                targetId: item.id,
+              });
+            }}>
+
             {format(new Date(checklistItemEndTime), "dd 'thg' MM", {
               locale: vi,
             })}
           </Typography>
         ) : (
           <IconButton
+            onClick={() => {
+              setDateConfig({
+                open: true,
+                type: "checklist-item",
+                targetId: item.id,
+              });
+            }}
             sx={{
               ml: 0.5,
               opacity: hasMembers ? 1 : 0,

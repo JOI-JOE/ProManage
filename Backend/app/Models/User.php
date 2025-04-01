@@ -100,9 +100,11 @@ class User extends Authenticatable
      */
 
 
-    public function workspaces_2()
+     public function workspaces_2()
     {
-        return $this->hasMany(Workspace::class, 'id_member_creator');
+        return $this->hasMany(Workspace::class, 'id_member_creator')->with(['boards' => function ($query) {
+            $query->where('closed', false);
+        }]);
     }
 
     public function boards()

@@ -40,13 +40,15 @@ const style = {
 };
 
 const BoardBar = () => {
-  
+
   const { boardId } = useParams();
   const { board, isLoading, error } = useContext(BoardContext);
-  const { data: boardMembers } = useGetBoardMembers(boardId);
+  const { data: boardMembers  = [] } = useGetBoardMembers(boardId);
+  // console.log(board);
   const { data: user } = useUser();
   useMemberJoinedListener(user?.id)
 
+  const currentUserId = user?.id; 
 
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
   const handleFilterDialogOpen = () => setOpenFilterDialog(true);
@@ -67,12 +69,28 @@ const BoardBar = () => {
   // const [editTitle, setEditTitle] = useState(false);
   // const [teamName, setTeamName] = useState(board?.title || "Team WD-51");
 
+  const [editTitle, setEditTitle] = useState(false);
+  const [teamName, setTeamName] = useState(board?.title);
+  const updateBoardName = useUpdateBoardName();
+
+  const admins = Array.isArray(boardMembers?.data) 
+  ? boardMembers.data.filter(member => member.pivot.role === "admin") 
+  : [];
+
+  const isAdmin = Array.isArray(boardMembers?.data) 
+  ? boardMembers.data.some(member => 
+      member.id === currentUserId && member.pivot.role === "admin"
+    ) 
+  : false;
+
+
   // Quản lý trạng thái sao (isStarred)
   const [isStarred, setIsStarred] = useState(false);
 
   const handleStarClick = () => {
     setIsStarred((prev) => !prev); // Đảo ngược trạng thái sao
   };
+
 
   // const handleTitleClick = () => setEditTitle(true);
 
@@ -87,14 +105,14 @@ const BoardBar = () => {
   // };
 
   // const { boardId } = useParams(); // Lấy boardId từ URL
-  // // console.log("🔍 boardId từ useParams:", boardId);
+  // console.log("🔍 user từ useParams:", user);
 
   // const { data, isLoading, error } = useQuery({
   //   queryKey: ["board", boardId],
   //   queryFn: () => getBoardById(boardId),
   // });
 
-  // console.log(data)
+  // console.log(isAdmin);
 
   // // console.log("🔍 Dữ liệu board từ API:", data?.data);
 
@@ -104,8 +122,7 @@ const BoardBar = () => {
 
   // const updateBoardName = useUpdateBoardName();
 
-  const [editTitle, setEditTitle] = useState(false);
-  const [teamName, setTeamName] = useState("");
+
 
   // Cập nhật khi dữ liệu board thay đổi
   // React.useEffect(() => {
@@ -124,14 +141,14 @@ const BoardBar = () => {
       return;
     }
 
-    // updateBoardName.mutate(
-    //   { board.id, name: teamName },
-    //   {
-    //     onSuccess: () => {
-    //       setEditTitle(false);
-    //     },
-    //   }
-    // );
+    updateBoardName.mutate(
+      { boardId: board.id, name: teamName, workspaceId: board.workspaceId  },
+      {
+        onSuccess: () => {
+          setEditTitle(false);
+        },
+      }
+    );
   };
 
   const handleTitleKeyPress = (e) => {
@@ -162,31 +179,28 @@ const BoardBar = () => {
         {/*Chỉnh sửa tiêu đề  */}
         {editTitle ? (
           <TextField
-            value={teamName}
+            value={teamName ?? board?.title}
             onChange={handleTitleChange}
             onBlur={handleTitleBlur}
-            onKeyPress={handleTitleKeyPress} //sự kiện onKeyPress
+            onKeyPress={handleTitleKeyPress}
             variant="outlined"
             size="small"
+            disabled={!isAdmin} // ❌ Chặn nếu không phải admin
             sx={{
               width: "80px",
               height: "30px",
               "& .MuiInputBase-root": {
-                fontSize: "0.7rem", // Kích thước chữ khi nhập
-                backgroundColor: "#2E4053",
+                fontSize: "0.7rem",
+                backgroundColor: isAdmin ? "#ffffff" : "#e0e0e0", // Khác màu nếu bị disable
               },
-              "& .MuiInputBase-input": {
-                textAlign: "center",
-              },
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
-                backgroundColor: "#ffffff",
-              },
+              "& .MuiInputBase-input": { textAlign: "center" },
+              "& .MuiOutlinedInput-root": { borderRadius: "8px" },
             }}
           />
         ) : (
-          <Chip label={teamName} sx={style} onClick={handleTitleClick} />
+          <Chip label={teamName ?? board?.title} sx={style} onClick={isAdmin ? handleTitleClick : undefined} />
         )}
+
         {/* <StarButton isStarred={isStarred} onStarClick={handleStarClick} /> */}
         <Chip
           icon={<LockOpenIcon />}

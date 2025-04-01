@@ -30,16 +30,35 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
-import { useGuestBoards } from "../../../../hooks/useInviteBoard";
+import { useGetBoardMembers, useGuestBoards } from "../../../../hooks/useInviteBoard";
 import { useGetWorkspaces } from "../../../../hooks/useWorkspace";
+import { useUser } from "../../../../hooks/useUser";
 
 const SideBar = () => {
   const { boardId } = useParams();
+  const { data: user } = useUser();
   // console.log(boardId);
   const { data: guestBoards } = useGuestBoards();
   // console.log(guestBoards);
   const { currentWorkspace } = useContext(WorkspaceContext);
-  
+  const { data: boardMembers = [] } = useGetBoardMembers(boardId);
+
+  const currentUserId = user?.id;
+
+  const isMember = Array.isArray(boardMembers?.data)
+    ? boardMembers.data.some(member =>
+      member.id === currentUserId && member.pivot.role === "member"
+    )
+    : false;
+
+
+  const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
+  // console.log(adminCount);
+
+  // useMemberJoinedListener(user?.id)
+
+
+
   const foundWorkspace = guestBoards?.find((workspace) =>
     workspace.boards.some((board) => board.id === boardId)
   );
@@ -273,44 +292,51 @@ const SideBar = () => {
                 {board.name}
               </MenuItem>
 
-              {[
-                {
-                  text: "Rời khỏi bảng",
-                  icon: <ExitToAppIcon />,
-                  color: "#ff4d4d",
-                },
-              ].map((item, index) => (
-                <MenuItem
-                  key={index}
-                  onClick={() => console.log(item.text)}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    padding: "10px 16px",
-                    "&:hover": { backgroundColor: item.color, color: "white" },
-                  }}
-                >
-                  {item.text}
-                  {item.icon}
-                </MenuItem>
-              ))}
-              {[
-                { text: "Đóng bảng", icon: <CloseIcon />, color: "#ff4d4d" },
-              ].map((item, index) => (
-                <MenuItem
-                  key={index}
-                  onClick={() => handleCloseBoard(board.id)}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    padding: "10px 16px",
-                    "&:hover": { backgroundColor: item.color, color: "white" },
-                  }}
-                >
-                  {item.text}
-                  {item.icon}
-                </MenuItem>
-              ))}
+              {(adminCount >= 2 || isMember) && (
+                [
+                  {
+                    text: "Rời khỏi bảng",
+                    icon: <ExitToAppIcon />,
+                    color: "#ff4d4d",
+                  },
+                ].map((item, index) => (
+                  <MenuItem
+                    key={index}
+                    onClick={() => console.log(item.text)}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "10px 16px",
+                      "&:hover": { backgroundColor: item.color, color: "white" },
+                    }}
+                  >
+                    {item.text}
+                    {item.icon}
+                  </MenuItem>
+                ))
+              )}
+
+
+              {!isMember && (
+                [
+                  { text: "Đóng bảng", icon: <CloseIcon />, color: "#ff4d4d" },
+                ].map((item, index) => (
+                  <MenuItem
+                    key={index}
+                    onClick={() => handleCloseBoard(board.id)}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "10px 16px",
+                      "&:hover": { backgroundColor: item.color, color: "white" },
+                    }}
+                  >
+                    {item.text}
+                    {item.icon}
+                  </MenuItem>
+                ))
+              )}
+
             </Menu>
           </ListItem>
         ))}
