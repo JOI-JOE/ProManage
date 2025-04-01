@@ -12,28 +12,28 @@ class GoogleAuthController extends Controller
 
     public function redirectToAuthProvider()
     {
-        // Kiểm tra nếu người dùng đã đăng nhập và có token
-        if (Auth::check() && $user = Auth::user()) {
-            if ($user->google_access_token) {
-                return redirect("http://localhost:5173?token={$user->createToken('auth_token')->plainTextToken}&idMember={$user->id}");
-            }
-        }
-
-        // Chuyển hướng đến Google OAuth, bỏ prompt=consent
+        // Redirect với prompt select_account, consent chỉ hiển thị lần đầu nếu Google cần
         return Socialite::driver('google')
-            ->with(['access_type' => 'offline'])
-            ->scopes(['openid', 'profile', 'email', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/gmail.send'])
+            ->scopes([
+                'openid',
+                'profile',
+                'email',
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile',
+                'https://www.googleapis.com/auth/gmail.send' // Quyền gửi email
+            ])
+            ->with(['access_type' => 'offline', 'prompt' => 'select_account']) // Chỉ yêu cầu chọn tài khoản
             ->redirect();
     }
 
     public function handleProviderCallback()
     {
         try {
-            // Lấy thông tin người dùng từ provider (sử dụng stateless vì đây là API)
+            // Lấy thông tin người dùng từ Google (stateless vì là API)
             $socialUser = Socialite::driver('google')->stateless()->user();
 
-            // Xử lý hoặc tạo người dùng
-            $user = $this->findOrCreateUser(socialUser: $socialUser);
+            // Tìm hoặc tạo user trực tiếp, không redirect lại
+            $user = $this->findOrCreateUser($socialUser);
 
             // Đăng nhập người dùng
             Auth::login($user);
@@ -41,13 +41,10 @@ class GoogleAuthController extends Controller
             // Tạo token xác thực
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Trả về token qua response JSON hoặc redirect với token trong query (tùy chọn)
+            // Redirect về frontend với token và idMember
             return redirect("http://localhost:5173/login/google?token={$token}&idMember={$user->id}");
         } catch (\Exception $e) {
-            // Ghi log lỗi để debug
             \Log::error('Google OAuth Error: ' . $e->getMessage());
-
-            // Trả về thông báo lỗi chi tiết hơn
             return redirect('http://localhost:5173?error=login_failed&message=' . urlencode($e->getMessage()));
         }
     }
