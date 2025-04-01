@@ -1,9 +1,8 @@
-import React, { memo, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import AppBar from "../Navigation/AppBar";
 import { MeProvider } from "../../contexts/MeContext";
 import { useStateContext } from "../../contexts/ContextProvider";
-import { useDispatch } from "react-redux";
 import { WorkspaceProvider } from "../../contexts/WorkspaceContext";
 
 

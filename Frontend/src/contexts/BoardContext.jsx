@@ -1,23 +1,10 @@
 import { createContext, useContext, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useBoardById } from "../hooks/useBoard";
+import { useListByBoardId } from "../hooks/useList";
 
-// Tạo Context với giá trị mặc định
-const BoardContext = createContext({
-    board: null,
-    members: [],
-    workspace: null,
-    isEditable: false,
-    canJoinBoard: false,
-    canJoinWorkspace: false,
-    message: "",
-    admins: [],
-    showBoardData: false,
-    isLoading: true,
-    error: null,
-});
+const BoardContext = createContext(null);
 
-// Custom hook để sử dụng BoardContext
 export const useBoard = () => {
     const context = useContext(BoardContext);
     if (!context) {
@@ -26,26 +13,42 @@ export const useBoard = () => {
     return context;
 };
 
-// BoardProvider component
 export const BoardProvider = ({ children }) => {
     const { boardId } = useParams();
-    const { data, isLoading, error } = useBoardById(boardId);
+
+    const { data: boardData, isLoading: boardLoading, error: boardError } = useBoardById(boardId);
+
+    const { data: listData, isLoading: listLoading, error: listError } = useListByBoardId(boardId, {
+        enabled: !!boardData,
+    });
+
+
+    // Gộp trạng thái loading và error
+    const isLoading = boardLoading || listLoading;
+    const error = boardError || listError;
+
+    // Memo hóa dữ liệu để tránh re-render không cần thiết
     const value = useMemo(
         () => ({
-            board: data.board,
-            members: data.members,
-            memberships: data.memberships,
-            workspace: data.workspace,
-            isEditable: data.isEditable,
-            canJoinBoard: data.canJoinBoard,
-            canJoinWorkspace: data.canJoinWorkspace,
-            message: data.message,
-            admins: data.admins,
-            showBoardData: data.showBoardData,
+            board: boardData?.board || null,
+            members: boardData?.members || [],
+            memberships: boardData?.memberships || [],
+            workspace: boardData?.workspace || null,
+            isEditable: boardData?.isEditable || false,
+            canJoinBoard: boardData?.canJoinBoard || false,
+            canJoinWorkspace: boardData?.canJoinWorkspace || false,
+            message: boardData?.message || "",
+            admins: boardData?.admins || [],
+            showBoardData: boardData?.showBoardData || false,
+
+            // Thêm danh sách lists & cards từ listData
+            lists: listData?.lists || [],
+            cards: listData?.cards || [],
+
             isLoading,
             error,
         }),
-        [data, isLoading, error]
+        [boardData, listData, isLoading, error]
     );
 
     return <BoardContext.Provider value={value}>{children}</BoardContext.Provider>;

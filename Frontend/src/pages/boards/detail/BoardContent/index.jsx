@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { cloneDeep, isEmpty, isEqual } from "lodash";
+import { cloneDeep } from "lodash";
 import {
   DndContext,
   MouseSensor,
@@ -9,20 +9,21 @@ import {
   DragOverlay,
   defaultDropAnimationSideEffects,
   pointerWithin,
+  closestCenter,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Col from "./Columns/Col";
 import Col_list from "./Columns/Col_list";
 import BoardBar from "./BoardBar/index";
-import { generatePlaceholderCard } from "../../../../../utils/formatters";
 import C_ard from "./Cards/C_ard";
-import { mapOrder } from "../../../../../utils/sort";
 import { moveCardBetweenDifferentColumns, moveCardWithinSameColumn } from "../../../../../utils/moveCardInList";
 import { calculateItemPosition } from "../../../../../utils/calculateItemPosition";
 import { useUpdatePositionList } from "../../../../hooks/useList";
 import { useUpdateCardPosition } from "../../../../hooks/useCard";
-import { useList } from "../../../../contexts/ListContext";
+import { useParams } from "react-router-dom";
+import { useBoard } from "../../../../contexts/BoardContext";
+
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: "ACTIVE_DRAG_ITEM_TYPE_COLUMN",
@@ -30,16 +31,19 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 };
 
 const BoardContent = () => {
-  const { data } = useList();
+  const { boardId } = useParams();
+  const { board, listData, isLoading, error } = useBoard()
+  console.log(board)
+
   const updatePositionListMutation = useUpdatePositionList();
   const updateCardPositionMutation = useUpdateCardPosition();
 
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 0 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 0 } })
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }), // Giảm độ nhạy xuống 5px
+    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 0 } }) // Thêm delay nhỏ cho cảm ứng
   );
 
-  const [orderedLists, setOrderedLists] = useState([]); // Lưu danh sách các list (cột)
+  const [orderedLists, setOrderedLists] = useState([]);
   const [activeDragItemId, setActiveDragItemId] = useState(null);
   const [activeDragItemType, setActiveDragItemType] = useState(null);
   const [activeDragItemData, setActiveDragItemData] = useState(null);
@@ -48,29 +52,66 @@ const BoardContent = () => {
   const initialActiveRef = useRef(null);
   const initialOverRef = useRef(null);
 
-  // Transform data into lists with cards
+  // Reset tất cả trạng thái khi boardId thay đổi
+  // Reset tất cả trạng thái khi boardId thay đổi
   useEffect(() => {
-    if (!data?.lists?.length) return;
+    setOrderedLists([]);
+    setActiveDragItemId(null);
+    setActiveDragItemType(null);
+    setActiveDragItemData(null);
+    setOldListDraggingCard(null);
+    setInitialLists([]);
+    initialActiveRef.current = null;
+    initialOverRef.current = null;
+  }, [boardId]);
 
-    // Sort lists by position
-    const sortedLists = [...data.lists].sort((a, b) => parseFloat(a.position) - parseFloat(b.position));
+  // Transform listData into orderedLists with cards
+  useEffect(() => {
+    if (isLoading) {
+      setOrderedLists([]);
+      return;
+    }
 
-    // Add cards to each list
-    const listsWithCards = sortedLists.map(list => {
-      const listCards = data.cards
-        .filter(card => card.list_board_id === list.id)
-        .sort((a, b) => parseFloat(a.position) - parseFloat(b.position));
+    if (error) {
+      setOrderedLists([]);
+      return;
+    }
+
+    if (!listData?.lists?.length) {
+      setOrderedLists([]);
+      return;
+    }
+
+    const sortedLists = [...listData.lists].sort((a, b) => parseFloat(a.position) - parseFloat(b.position));
+    const listsWithCards = sortedLists.map((list) => {
+      let listCards = [];
+
+      if (Array.isArray(listData?.cards)) {
+        listCards = listData.cards
+          .filter((card) => card.list_board_id === list.id)
+          .map((card) => ({
+            ...card,
+            position: parseFloat(card.position),
+            listId: card.list_board_id,
+            boardId: card.boardId,
+            memberId: card.memberId,
+            labelId: card.labelId,
+            closed: Boolean(card.closed),
+            dueComplete: Boolean(card.dueComplete),
+          }))
+          .sort((a, b) => parseFloat(a.position) - parseFloat(b.position));
+      } else {
+        listCards = [];
+      }
 
       return {
         ...list,
-        cards: listCards
+        cards: listCards,
+        closed: Boolean(list.closed),
       };
     });
-
     setOrderedLists(listsWithCards);
-  }, [data]);
-
-  console.log(data)
+  }, [listData, isLoading, error, boardId]);
 
   // Tìm list theo cardId
   const findListByCardId = (cardId) => {
@@ -164,7 +205,7 @@ const BoardContent = () => {
 
       updateCardPositionMutation.mutate({
         cardId: draggedCard.id,
-        listId: draggedCard.list_board_id,
+        listId: draggedCard.list_board_id, // Sử dụng list_board_id thay vì columnId
         position: draggedCard.position,
       });
     }
@@ -212,12 +253,16 @@ const BoardContent = () => {
     }),
   };
 
+  const customCollisionDetection = (args) => {
+    const pointerCollisions = pointerWithin(args);
+    return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args);
+  };
   return (
     <>
       <BoardBar />
       <DndContext
         sensors={sensors}
-        collisionDetection={pointerWithin}
+        collisionDetection={customCollisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -233,11 +278,11 @@ const BoardContent = () => {
             padding: "18px 0 7px 0px",
           })}
         >
-          <Col_list columns={orderedLists} boardId={data?.id} />
+          <Col_list columns={orderedLists} boardId={listData?.id} />
           <DragOverlay dropAnimation={customDropAnimation}>
             {!activeDragItemType && null}
             {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN && (
-              <Col list={activeDragItemData} />
+              <Col column={activeDragItemData} />
             )}
             {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD && (
               <C_ard card={activeDragItemData} />
@@ -249,4 +294,4 @@ const BoardContent = () => {
   );
 };
 
-export default BoardContent;
+export default BoardContent

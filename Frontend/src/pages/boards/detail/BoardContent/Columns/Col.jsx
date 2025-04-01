@@ -67,9 +67,9 @@ const Col = ({ column }) => {
     const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
     const [openCard, setOpenCard] = useState(false);
 
-    const [title, setTitle] = useState(column?.title);
+    const [name, setName] = useState(column?.name);
     const [isEditing, setIsEditing] = useState(false);
-    const [prevTitle, setPrevTitle] = useState(column?.title);
+    const [prevName, setPrevName] = useState(column?.name);
     const [anchorEl, setAnchorEl] = useState(null);
 
     const createCardMutation = useCreateCard();
@@ -112,7 +112,7 @@ const Col = ({ column }) => {
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: column.id, data: { ...column } });
+    } = useSortable({ id: column?.id, data: { ...column } });
 
     const columnStyle = {
         transform: CSS.Translate.toString(transform),
@@ -154,7 +154,7 @@ const Col = ({ column }) => {
     const handleArchiveConfirm = async () => {
         try {
             await updateClosed(column.id);
-            toast.success(`Cột "${column.title}" đã được lưu trữ.`);
+            toast.success(`Cột "${column.name}" đã được lưu trữ.`);
         } catch (error) {
             toast.error("Có lỗi xảy ra khi lưu trữ cột.");
         }
@@ -168,11 +168,11 @@ const Col = ({ column }) => {
 
     const handleTitleUpdate = async (e) => {
         if (e.type === "blur" || (e.type === "keydown" && e.key === "Enter")) {
-            if (!title.trim()) {
-                setTitle(prevTitle);
+            if (!name.trim()) {
+                setName(prevTitle);
             } else {
-                setPrevTitle(title);
-                await updateListName(column.id, { title });
+                setPrevName();
+                await updateListName(column.id, { name });
             }
             setIsEditing(false);
         }
@@ -220,9 +220,9 @@ const Col = ({ column }) => {
                 >
                     {isEditing ? (
                         <TextField
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            onFocus={() => setPrevTitle(title)}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            onFocus={() => setPrevName(name)}
                             onBlur={handleTitleUpdate}
                             onKeyDown={handleTitleUpdate}
                             autoFocus
@@ -258,7 +258,7 @@ const Col = ({ column }) => {
                             }}
                             onClick={handleTitleClick}
                         >
-                            {title}
+                            {name}
                         </Typography>
                     )}
 

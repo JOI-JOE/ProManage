@@ -1,10 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
-import { useUserData } from "../hooks/useUser";
+import { createContext, useContext, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useBoardStars } from "../hooks/useBoardStar";
 import { useDispatch } from "react-redux";
 import { setStarredBoards } from "../redux/slices/starredBoardsSlice";
+import { fetchUserData } from "../api/models/userApi";
 
-// Tạo Context với giá trị mặc định
 const MeContext = createContext({
     user: null,
     workspaceId: null,
@@ -14,13 +14,37 @@ const MeContext = createContext({
     error: null
 });
 
-// Hook custom để sử dụng context dễ dàng
-export const useMe = () => useContext(MeContext);
+// Custom hook for easy context usage
+export const useMe = () => {
+    const context = useContext(MeContext);
+    if (context === undefined) {
+        throw new Error('useMe must be used within a MeProvider');
+    }
+    return context;
+};
 
 export const MeProvider = ({ children }) => {
     const dispatch = useDispatch();
-    const { userInfo, isLoading, error } = useUserData();
-    const { data: boardStars } = useBoardStars(); // Không lấy `isLoading` và `error` vì không cần dùng trong context
+
+    // Using React Query for user data
+    const {
+        data: userInfo,
+        isLoading: userLoading,
+        error: userError
+    } = useQuery({
+        queryKey: ["userInfo"],
+        queryFn: fetchUserData,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        cacheTime: 15 * 60 * 1000, // 15 minutes
+        retry: 1,
+        refetchOnWindowFocus: false,
+    });
+
+    const user = userInfo?.user || null;
+    const workspaceId = userInfo?.workspaceId || null;
+    const boardId = userInfo?.boardId || null;
+
+    const { data: boardStars, isLoading: starsLoading } = useBoardStars();
 
     useEffect(() => {
         if (boardStars) {
@@ -28,10 +52,10 @@ export const MeProvider = ({ children }) => {
         }
     }, [boardStars, dispatch]);
 
-
-    const user = userInfo?.user || null;
-    const workspaceId = userInfo?.workspaceId || null;
-    const boardId = userInfo?.boardId || null;
+    // Combine loading states
+    const isLoading = userLoading || starsLoading;
+    // Combine errors (userError takes precedence)
+    const error = userError || null;
 
     const contextValue = useMemo(() => ({
         user,

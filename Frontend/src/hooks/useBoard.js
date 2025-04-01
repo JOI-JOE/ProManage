@@ -15,59 +15,18 @@ import {
   updateBoardVisibility,
 } from "../api/models/boardsApi";
 import { useCallback } from "react";
-import { getWorkspacesAll } from "../api/models/workspacesApi";
 
-/**
- * Hook useBoard để tạo bảng mới.
- * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
- */
-// function lấy dữ dữ liệu
 export const useBoardById = (boardId) => {
-  const queryClient = useQueryClient();
-  // Đảm bảo luôn có dữ liệu workspaces trước khi lấy từ cache
-  queryClient.ensureQueryData({
-    queryKey: ["getWorkspace"],
-    queryFn: getWorkspacesAll, // Hàm fetch workspace
-  });
-  // Lấy dữ liệu từ cache của "getWorkspace"
-  const cachedWorkspaces = queryClient.getQueryData(["getWorkspace"]);
-
-  const { data, isLoading, error, refetch } = useQuery({
+  return useQuery({
     queryKey: ["board", boardId],
     queryFn: () => fetchBoardById(boardId),
-    enabled: !!boardId,
-    retry: 1,
-    refetchOnMount: false, // Không gọi lại API khi mount lại
-    refetchOnWindowFocus: false, // Không refetch khi chuyển tab
-    refetchOnReconnect: false, // Không refetch khi mạng thay đổi
-    onError: (err) => {
-      console.error("Error fetching board:", err);
-    },
-  });
-
-  // Kiểm tra workspace tương ứng với boardId từ cache
-  const workspace =
-    cachedWorkspaces?.workspaces?.find((ws) =>
-      ws.boards?.some((board) => board.id === boardId)
-    ) || null;
-
-  return {
-    data: {
-      board: data?.board || null,
-      members: data?.members || [],
-      memberships: data?.memberships || [],
-      workspace: workspace || data?.workspace || null,
-      isEditable: data?.isEditable || false,
-      canJoinBoard: data?.canJoinBoard || false,
-      canJoinWorkspace: data?.canJoinWorkspace || false,
-      message: data?.message || "",
-      admins: data?.admins || [],
-      showBoardData: !!data?.board,
-    },
-    isLoading,
-    error: error ? error.message : null,
-    refetch,
-  };
+    staleTime: 5 * 60 * 1000, // 5 phút
+    gcTime: 15 * 60 * 1000, // 15 phút
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1, 
+  }); 
 };
 
 export const useCreateBoard = () => {
@@ -80,7 +39,6 @@ export const useCreateBoard = () => {
     },
   });
 };
-
 
 export const getBoardByClosed = () => {
   return useQuery({

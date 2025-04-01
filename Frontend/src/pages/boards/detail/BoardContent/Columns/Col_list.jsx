@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Box } from "@mui/material";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import Col from "./Col";
@@ -7,46 +7,52 @@ import { useCreateList } from "../../../../../hooks/useList";
 import { SPACING } from "../../../../../../utils/position.constant";
 import { optimisticIdManager } from "../../../../../../utils/optimisticIdManager";
 
-const Col_list = ({ columns = [], boardId }) => {
+const Col_list = React.memo(({ columns = [], boardId }) => {
     const [openColumn, setOpenColumn] = useState(false);
     const [localColumns, setLocalColumns] = useState(columns);
     const { createList, isSaving } = useCreateList(boardId);
 
+    // Sync localColumns với columns chỉ khi cần
     useEffect(() => {
-        if (JSON.stringify(localColumns) !== JSON.stringify(columns)) {
+        if (localColumns !== columns) {
             setLocalColumns(columns);
         }
     }, [columns]);
 
+    // Memoize danh sách ID cho SortableContext
+    const sortableItems = useMemo(() =>
+        localColumns.map(c => c.id).filter(Boolean),
+        [localColumns]
+    );
+
+    // Tối ưu hàm saveList
     const saveList = useCallback(async (name) => {
         if (!name || isSaving) return;
 
-        const optimisticId = optimisticIdManager.generateOptimisticId("list"); // Định nghĩa bên ngoài
-        let pos = 0;
+        const optimisticId = optimisticIdManager.generateOptimisticId("list");
+        const maxPosition = localColumns.length
+            ? localColumns[localColumns.length - 1].position + SPACING
+            : SPACING;
 
-        setLocalColumns((prev) => {
-            const maxPosition = prev.length > 0 ? Math.max(...prev.map(col => col.position)) : 0;
-            pos = maxPosition + SPACING; // Cập nhật giá trị pos
+        const newColumn = {
+            id: optimisticId,
+            board_id: boardId,
+            title: name,
+            position: maxPosition
+        };
 
-            return [
-                ...prev,
-                { id: optimisticId, board_id: boardId, title: name, position: pos },
-            ];
-        });
+        setLocalColumns(prev => [...prev, newColumn]);
 
         try {
-            await createList({ boardId, name, pos });
+            await createList({ boardId, name, pos: maxPosition });
         } catch (error) {
             console.error("❌ Lỗi khi tạo danh sách:", error);
-            setLocalColumns((prev) => prev.filter((col) => col.id !== optimisticId));
+            setLocalColumns(prev => prev.filter(col => col.id !== optimisticId));
         }
-    }, [isSaving, createList, boardId]);
+    }, [boardId, createList, isSaving, localColumns.length]);
 
     return (
-        <SortableContext
-            items={localColumns.map((c) => c.id).filter(Boolean)}
-            strategy={horizontalListSortingStrategy}
-        >
+        <SortableContext items={sortableItems} strategy={horizontalListSortingStrategy}>
             <Box
                 sx={{
                     bgcolor: "inherit",
@@ -58,14 +64,13 @@ const Col_list = ({ columns = [], boardId }) => {
                     "&::-webkit-scrollbar-track": { m: 2 },
                 }}
             >
-                {localColumns.map((column) => (
+                {localColumns.map(column => (
                     <Col key={column.id} column={column} />
                 ))}
-
                 <Col_new open={openColumn} setOpen={setOpenColumn} onAdd={saveList} />
             </Box>
         </SortableContext>
     );
-};
+});
 
 export default Col_list;

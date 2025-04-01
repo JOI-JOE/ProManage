@@ -26,39 +26,62 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // Lấy thông tin người dùng
-        $user = DB::table('users')
-            ->where('id', $userId)
-            ->select('id', 'user_name', 'email', 'full_name', 'image', 'initials', 'activity_block')
-            ->first();
+        // Sử dụng transaction để đảm bảo tính nhất quán
+        return DB::transaction(function () use ($userId) {
+            // Tối ưu query user với select cần thiết
+            $user = DB::table('users')
+                ->where('id', $userId)
+                ->select([
+                    'id',
+                    'user_name',
+                    'email',
+                    'full_name',
+                    'image',
+                    'initials',
+                    'activity_block'
+                ])
+                ->first();
 
-        // Truy vấn workspaces user tham gia hoặc tạo
-        $allWorkspaceIds = DB::table('workspaces')
-            ->leftJoin('workspace_members', 'workspaces.id', '=', 'workspace_members.workspace_id')
-            ->where(function ($query) use ($userId) {
-                $query->where('workspace_members.user_id', $userId)
-                    ->orWhere('workspaces.id_member_creator', $userId);
-            })
-            ->distinct()
-            ->pluck('workspaces.id')
-            ->toArray();
+            if (!$user) {
+                return response()->json(['error' => 'User not found'], 404);
+            }
 
-        // Truy vấn boards user tham gia hoặc tạo
-        $allBoardIds = DB::table('boards')
-            ->leftJoin('board_members', 'boards.id', '=', 'board_members.board_id')
-            ->where(function ($query) use ($userId) {
-                $query->where('board_members.user_id', $userId)
-                    ->orWhere('boards.created_by', $userId);
-            })
-            ->distinct()
-            ->pluck('boards.id')
-            ->toArray();
+            // Tối ưu query workspaces với subquery thay vì leftJoin
+            $workspaceQuery = DB::table('workspaces')
+                ->whereExists(function ($query) use ($userId) {
+                    $query->select(DB::raw(1))
+                        ->from('workspace_members')
+                        ->whereColumn('workspace_members.workspace_id', 'workspaces.id')
+                        ->where('workspace_members.user_id', $userId);
+                })
+                ->orWhere('id_member_creator', $userId);
 
-        return response()->json([
-            'user' => $user,
-            'workspaceId' => $allWorkspaceIds,
-            'boardId' => $allBoardIds,
-        ], 200);
+            $allWorkspaceIds = $workspaceQuery
+                ->distinct()
+                ->pluck('id')
+                ->all();
+
+            // Tối ưu query boards với subquery
+            $boardQuery = DB::table('boards')
+                ->whereExists(function ($query) use ($userId) {
+                    $query->select(DB::raw(1))
+                        ->from('board_members')
+                        ->whereColumn('board_members.board_id', 'boards.id')
+                        ->where('board_members.user_id', $userId);
+                })
+                ->orWhere('created_by', $userId);
+
+            $allBoardIds = $boardQuery
+                ->distinct()
+                ->pluck('id')
+                ->all();
+
+            return response()->json([
+                'user' => $user,
+                'workspaceId' => $allWorkspaceIds,
+                'boardId' => $allBoardIds,
+            ], 200);
+        });
     }
 
 

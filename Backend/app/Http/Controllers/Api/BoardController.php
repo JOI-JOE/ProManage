@@ -15,7 +15,6 @@ class BoardController extends Controller
     /// ---------------------------------------------
     /**
      * Lấy thông tin chi tiết của một board dựa trên boardId.
-     *
      * @param string $boardId
      * @return \Illuminate\Http\JsonResponse
      */

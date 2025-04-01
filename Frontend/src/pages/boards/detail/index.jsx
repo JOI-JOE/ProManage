@@ -3,7 +3,6 @@ import { Box, Container } from "@mui/material";
 import { Outlet } from "react-router-dom";
 import SideBar from "./SideBar";
 import { BoardProvider } from "../../../contexts/BoardContext";
-import { ListProvider } from "../../../contexts/ListContext";
 
 const BoardDetail = () => {
 
@@ -12,11 +11,9 @@ const BoardDetail = () => {
       <Box sx={{ display: "flex" }}>
         <BoardProvider>
           <SideBar />
-          <ListProvider>
-            <Box sx={{ width: "81%" }}>
-              <Outlet />
-            </Box>
-          </ListProvider>
+          <Box sx={{ width: "81%" }}>
+            <Outlet />
+          </Box>
         </BoardProvider>
       </Box>
     </Container >

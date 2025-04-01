@@ -42,8 +42,7 @@ const style = {
 const BoardBar = () => {
   const { data: user } = useMe();
   const { board, members, memberships, isLoading, error, isEditable } = useBoard();
-  console.log(members)
-  console.log(memberships)
+
 
   const combinedMembers = useMemo(() => {
     if (!members || !memberships) return [];
@@ -68,7 +67,7 @@ const BoardBar = () => {
 
   // Quản lý trạng thái chỉnh sửa tiêu đề
   const [editTitle, setEditTitle] = useState(false);
-  const [teamName, setTeamName] = useState(board?.name || "");
+  const [teamName, setTeamName] = useState(board?.name);
 
   // Quản lý trạng thái sao (isStarred)
   const [isStarred, setIsStarred] = useState(false);
@@ -79,7 +78,7 @@ const BoardBar = () => {
   // Cập nhật teamName khi board thay đổi
   useEffect(() => {
     if (board) {
-      setTeamName(board.name || "Untitled Board");
+      setTeamName(board?.name || "Untitled Board");
     }
   }, [board]);
 

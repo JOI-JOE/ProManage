@@ -20,7 +20,6 @@ import "../index.css";
 import router from "./router";
 
 const queryClient = new QueryClient()
-// import { queryClient } from "../utils/queryClient";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>

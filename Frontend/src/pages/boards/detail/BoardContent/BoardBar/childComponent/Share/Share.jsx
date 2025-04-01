@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGenerateInviteLink, useUpdateRoleMemberInBoards ,useRemoveMemberFromBoard } from "../../../../../../../hooks/useInviteBoard";
+import { useGenerateInviteLink, useUpdateRoleMemberInBoards, useRemoveMemberFromBoard } from "../../../../../../../hooks/useInviteBoard";
 // import { useRemoveMemberFromBoard } from "../../../../../../../hooks/useRemoveMemberFromBoard"; // Import hook đã chỉnh sửa
 import { toast } from "react-toastify";
 
@@ -126,7 +126,6 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
 
   // Kiểm tra số lượng admin
   const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
-  console.log(adminCount);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">

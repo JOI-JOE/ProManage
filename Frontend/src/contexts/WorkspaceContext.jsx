@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo } from "react";
 import { useGetWorkspaces } from "../hooks/useWorkspace";
+import { useMe } from "./MeContext";
 
 const WorkspaceContext = createContext({
     workspaces: null,
@@ -22,6 +23,6 @@ export const WorkspaceProvider = ({ children }) => {
     return (
         <WorkspaceContext.Provider value={contextValue}>
             {children}
-        </WorkspaceContext.Provider>    
+        </WorkspaceContext.Provider>
     );
 };

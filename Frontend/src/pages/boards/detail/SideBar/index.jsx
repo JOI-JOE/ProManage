@@ -54,11 +54,8 @@ const SideBar = () => {
   };
   const { data } = useWorkspace();
   const { workspace } = useBoard();
-  console.log(workspace?.id);
 
   const boards = data?.workspaces?.find((ws) => ws.id === workspace?.id)?.boards || [];
-
-  console.log(boards);
 
   return (
     <Drawer

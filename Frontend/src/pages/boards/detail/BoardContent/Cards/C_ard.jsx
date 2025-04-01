@@ -20,40 +20,40 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
-import { useCardLabels } from "../../../../../hooks/useLabel";
-import { useCardById, useGetMemberInCard } from "../../../../../hooks/useCard";
-import { useCommentsByCard } from "../../../../../hooks/useComment";
-import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
-import useAttachments from "../../../../../hooks/useAttachment";
-import { LazyLoadImage } from "react-lazy-load-image-component";
+// import { useCardLabels } from "../../../../../hooks/useLabel";
+// import { useCardById, useGetMemberInCard } from "../../../../../hooks/useCard";
+// import { useCommentsByCard } from "../../../../../hooks/useComment";
+// import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
+// import useAttachments from "../../../../../hooks/useAttachment";
+// import { LazyLoadImage } from "react-lazy-load-image-component";
 
 const C_ard = ({ card }) => {
-  const {
-    data: cardDetail,
-    isLoading,
-    error,
-    updateDescriptionCard,
-  } = useCardById(card.id);
-  const { data: cardLabels = [] } = useCardLabels(card.id);
-  const { data: comments = [] } = useCommentsByCard(card.id);
+  // const {
+  //   data: cardDetail,
+  //   isLoading,
+  //   error,
+  //   updateDescriptionCard,
+  // } = useCardById(card.id);
+  // const { data: cardLabels = [] } = useCardLabels(card.id);
+  // const { data: comments = [] } = useCommentsByCard(card.id);
   // console.log(cardDetail);
-  const { data: checklists = [], isLoadingChecklist } = useChecklistsByCard(
-    card.id
-  );
+  // const { data: checklists = [], isLoadingChecklist } = useChecklistsByCard(
+  //   card.id
+  // );
 
-  const { data: members = [], toggleMember } = useGetMemberInCard(card.id);
+  // const { data: members = [], toggleMember } = useGetMemberInCard(card.id);
 
-  const {
-    attachments = [],
-    addAttachment,
-    updateAttachment,
-    removeAttachment,
-  } = useAttachments(card.id);
+  // const {
+  //   attachments = [],
+  //   addAttachment,
+  //   updateAttachment,
+  //   removeAttachment,
+  // } = useAttachments(card.id);
 
-  const coverImageAttachment = attachments?.data?.find((file) => file.is_cover);
-  const coverImageBackGround = coverImageAttachment
-    ? coverImageAttachment.path_url
-    : null;
+  // const coverImageAttachment = attachments?.data?.find((file) => file.is_cover);
+  // const coverImageBackGround = coverImageAttachment
+  //   ? coverImageAttachment.path_url
+  //   : null;
 
 
 
@@ -99,19 +99,19 @@ const C_ard = ({ card }) => {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const showCardActions = () => {
-    return (
-      !!card?.memberIds?.length ||
-      !!comments?.length ||
-      !!attachments?.data?.length ||
-      !!cardDetail?.description ||
-      !!checklists?.some((checklist) => checklist.items.length > 0)
-    );
-  };
+  // const showCardActions = () => {
+  //   return (
+  //     !!card?.memberIds?.length ||
+  //     !!comments?.length ||
+  //     !!attachments?.data?.length ||
+  //     !!cardDetail?.description ||
+  //     !!checklists?.some((checklist) => checklist.items.length > 0)
+  //   );
+  // };
 
-  const allChecklistsCompleted = checklists?.every(
-    (checklist) => checklist.items?.every((item) => item.is_completed) ?? false
-  );
+  // const allChecklistsCompleted = checklists?.every(
+  //   (checklist) => checklist.items?.every((item) => item.is_completed) ?? false
+  // );
 
   return (
     <>
@@ -135,7 +135,7 @@ const C_ard = ({ card }) => {
           // height: "110px"
         }}
       >
-       {coverImageBackGround && (
+        {/* {coverImageBackGround && (
           <CardMedia sx={{ height: 140, mb: 2, justifyContent: "center" }}>
             <LazyLoadImage
               src={coverImageBackGround}
@@ -148,15 +148,13 @@ const C_ard = ({ card }) => {
               }}
             />
           </CardMedia>
-        )}
+        )} */}
 
         <CardContent sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
-          {cardLabels?.length > 0 && (
+          {/* {cardLabels?.length > 0 && (
             <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap", mb: 1 }}>
               {cardLabels?.map((label, index) => (
                 <Tooltip key={index} title={label.title || "No text"}>
-                  {" "}
-                  {/* Hiển thị text khi di chuột qua */}
                   <Box
                     sx={{
                       backgroundColor: label.color.hex_code,
@@ -168,13 +166,13 @@ const C_ard = ({ card }) => {
                 </Tooltip>
               ))}
             </Box>
-          )}
+          )} */}
 
           <Typography sx={{ fontSize: "0.7rem" }}>
-            {cardDetail?.title}
+            {card?.title}
           </Typography>
         </CardContent>
-
+        {/* 
         {showCardActions() && (
           <CardActions
             sx={{
@@ -281,9 +279,9 @@ const C_ard = ({ card }) => {
               </Tooltip>
             )}
           </CardActions>
-        )}
+        )} */}
 
-        {!!members?.data?.length && (
+        {/* {!!members?.data?.length && (
           <Box
             sx={{
               display: "flex",
@@ -310,7 +308,7 @@ const C_ard = ({ card }) => {
               </Tooltip>
             ))}
           </Box>
-        )}
+        )} */}
       </Card>
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
         <CardModal card={card} closeDetail={handleClose} />

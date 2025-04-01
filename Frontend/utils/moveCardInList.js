@@ -87,13 +87,13 @@ export const moveCardBetweenDifferentColumns = async (
       let newIndex = targetCards.findIndex((c) => c.id === overCardId);
       newIndex = newIndex >= 0 ? newIndex : targetCards.length;
 
-      // Cập nhật position dựa vào index mới
+      // Cập nhật position và list_board_id dựa vào index mới
       movedCard.position = calculateItemPosition(
         newIndex,
         targetCards,
         movedCard
       );
-      movedCard.columnId = targetColumn.id;
+      movedCard.list_board_id = targetColumn.id; // Sử dụng list_board_id thay vì columnId
 
       // Chèn card vào vị trí mới
       targetCards.splice(newIndex, 0, movedCard);

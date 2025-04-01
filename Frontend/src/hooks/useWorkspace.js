@@ -11,12 +11,11 @@ import {
 
 export const useGetWorkspaces = () => {
   return useQuery({
-    queryKey: ["getWorkspace"],
+    queryKey: ["workspaces"],
     queryFn: getWorkspacesAll,
-    staleTime: 10 * 60 * 1000, // 10 phút
-    cacheTime: 60 * 60 * 1000, // 60 phút
-    refetchOnWindowFocus: false, // Không fetch lại khi focus tab
-    refetchOnReconnect: false, // Không fetch khi mạng thay đổi
+    staleTime: 10 * 60 * 1000,
+    cacheTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
     retry: 1,
   });
 };

@@ -2,6 +2,49 @@ import axios from "axios";
 import authClient from "../authClient";
 
 const UNSPLASH_ACCESS_KEY = "3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"; // Thay bằng Access Key của bạn
+///------------------------------------------------------
+
+export const fetchBoardById = async (boardId) => {
+  // Validate input
+  if (!boardId || typeof boardId !== "string") {
+    throw new Error("Board ID không hợp lệ");
+  }
+
+  try {
+    const response = await authClient.get(`/boards/${boardId}`);
+
+    // Check if response and data exists
+    if (!response?.data) {
+      throw new Error("Không nhận được dữ liệu từ server");
+    }
+
+    const { data } = response;
+
+    // Validate required fields
+    if (!data.board) {
+      throw new Error("Dữ liệu bảng không hợp lệ");
+    }
+
+    // Return normalized data structure
+    return data;
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu bảng:", error);
+
+    // Handle different error cases
+    let errorMessage = "Lỗi khi tải dữ liệu bảng";
+    if (error.response) {
+      errorMessage = error.response.data?.message || errorMessage;
+    } else if (error.request) {
+      errorMessage = "Không nhận được phản hồi từ server";
+    } else {
+      errorMessage = error.message || errorMessage;
+    }
+
+    throw new Error(errorMessage);
+  }
+};
+
+///------------------------------------------------------
 
 export const getBoardsAllByClosed = async () => {
   try {
@@ -30,42 +73,6 @@ export const showBoardByWorkspaceId = async (workspaceId) => {
   } catch (error) {
     console.error("Lỗi khi lấy workspace của người dùng:", error);
     throw error;
-  }
-};
-
-export const fetchBoardById = async (boardId) => {
-  if (!boardId) {
-    throw new Error("boardId không hợp lệ");
-  }
-  try {
-    // Gọi API duy nhất để lấy toàn bộ thông tin
-    const response = await authClient.get(`/boards/${boardId}`);
-    // Dữ liệu trả về từ API đã bao gồm tất cả thông tin cần thiết
-    const data = response.data;
-    // Kiểm tra nếu board không tồn tại
-    if (!data.board) {
-      throw new Error("Board không tồn tại");
-    }
-    // Trả về dữ liệu từ API
-    return {
-      board: data.board,
-      members: data.members,
-      memberships: data.memberships,
-      workspace: data.workspace,
-      message: data.message,
-      isEditable: data.isEditable,
-      canJoin: data.canJoin,
-      canJoinWorkspace: data.canJoinWorkspace || false, // Đảm bảo trường này tồn tại
-    };
-  } catch (error) {
-    console.error(
-      "Lỗi khi lấy bảng:",
-      error?.response?.data?.message || error.message
-    );
-    throw new Error(
-      error?.response?.data?.message ||
-        "Không thể lấy dữ liệu bảng, vui lòng thử lại sau."
-    );
   }
 };
 

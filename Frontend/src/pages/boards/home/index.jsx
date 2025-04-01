@@ -25,12 +25,12 @@ const HomeBoard = ({ workspaces }) => {
   const starredBoards = useSelector((state) => state.starredBoards.starred);
   const listStar = starredBoards?.board_stars || [];  // Sử dụng mảng rỗng nếu không có dữ liệu
   
-  const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
-  const [openClosedBoards, setOpenClosedBoards] = useState(false);
-  const { mutate: toggleBoardClosed } = useToggleBoardClosed();
+  // const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
+  // const [openClosedBoards, setOpenClosedBoards] = useState(false);
+  // const { mutate: toggleBoardClosed } = useToggleBoardClosed();
 
-  const handleOpenClosedBoards = () => setOpenClosedBoards(true);
-  const handleCloseClosedBoards = () => setOpenClosedBoards(false);
+  // const handleOpenClosedBoards = () => setOpenClosedBoards(true);
+  // const handleCloseClosedBoards = () => setOpenClosedBoards(false);
 
   // Hàm mở lại board
   // const handleReopenBoard = (boardId) => {
@@ -110,9 +110,6 @@ const HomeBoard = ({ workspaces }) => {
           null
         )}
       </div>
-
-
-
     </Box>
   );
 };
