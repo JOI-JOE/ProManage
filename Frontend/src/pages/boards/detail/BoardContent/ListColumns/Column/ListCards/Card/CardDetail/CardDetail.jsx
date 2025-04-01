@@ -604,8 +604,27 @@ const CardModal = ({ }) => {
   const [selectedImage, setSelectedImage] = useState(null);
 
   const handleOpen = (imageUrl) => {
+    // console.log(imageUrl);
+    
+    // Trích xuất phần mở rộng tệp từ URL
+  const fileExt = imageUrl.match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase();
+  const imageTypes = ["jpg", "jpeg", "png", "webp"]; // Danh sách định dạng ảnh
+
+  if (imageTypes.includes(fileExt)) {
+    // Nếu là ảnh, hiển thị trong dialog
     setSelectedImage(imageUrl);
     setOpen(true);
+  } else if( fileExt === "pdf" ){
+    window.open(imageUrl, "_blank", "noopener,noreferrer");
+  } else {
+    // Nếu không phải ảnh (Word, Excel,...), tải về máy
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = imageUrl.split("/").pop() || "file"; // Lấy tên tệp từ URL hoặc đặt mặc định
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
   };
 
   // Hàm đóng modal
@@ -729,19 +748,11 @@ const CardModal = ({ }) => {
   const [updateTrigger, setUpdateTrigger] = useState(false);
 
   const handleSave1 = () => {
-    if (editingLinkId !== null) {
-      const target = linkItems.find((item) => item.id === editingLinkId);
-      if (target) {
-        target.path_url = editedUrl;
-        target.file_name_defaut = editedDisplayText;
-      }
-      // Reset state sau khi sửa xong
-      setEditingLinkId(null);
-      setEditedUrl("");
-      setEditedDisplayText("");
-      // Không cần setLinkItems vì object đã tham chiếu cùng bộ nhớ
-    }
+    if (!editedDisplayText.trim()) return; // Không cho phép tên trống
+    updateAttachment({cardId, attachmentId: editingLinkId, newFileName: editedDisplayText});
+    
   };
+
 
   //tệp
   const [showAll, setShowAll] = useState(false);
@@ -1339,7 +1350,7 @@ const CardModal = ({ }) => {
                   >
                     Sửa
                   </MenuItem>
-                  <MenuItem>Nhận xét</MenuItem>
+                  {/* <MenuItem>Nhận xét</MenuItem> */}
                   <MenuItem
                     onClick={() => {
                       if (currentFile) {
@@ -1636,15 +1647,31 @@ const CardModal = ({ }) => {
                   <MenuItem onClick={() => downloadFile(selectedFile)}>
                     Tải xuống
                   </MenuItem>
-                  <MenuItem>Nhận xét</MenuItem>
-                  <MenuItem
-                    onClick={() => handleCoverImageChange(selectedFile)}
-                  >
-                    {attachments?.data?.find((file) => file.id === selectedFile)
-                      ?.is_cover
-                      ? "Gỡ ảnh bìa"
-                      : "Tạo ảnh bìa"}
-                  </MenuItem>
+                  {/* <MenuItem>Nhận xét</MenuItem> */}
+                 {/* Kiểm tra nếu là file hình ảnh thì hiển thị tùy chọn "Tạo ảnh bìa" */}
+                 {(() => {
+                    const file = attachments?.data?.find(
+                      (f) => f.id === selectedFile
+                    );
+                    if (file) {
+                      const fileExt = file.path_url
+                        .match(/\.([a-zA-Z0-9]+)$/)?.[1]
+                        ?.toLowerCase();
+                      const imageTypes = ["jpg", "jpeg", "png", "webp", "pdf"];
+                      const isImage = imageTypes.includes(fileExt);
+
+                      if (isImage) {
+                        return (
+                          <MenuItem
+                            onClick={() => handleCoverImageChange(selectedFile)}
+                          >
+                            {file.is_cover ? "Gỡ ảnh bìa" : "Tạo ảnh bìa"}
+                          </MenuItem>
+                        );
+                      }
+                    }
+                    return null; // Không hiển thị nếu không phải file hình ảnh
+                  })()}
                   <MenuItem onClick={handleDeleteFile} sx={{ color: "red" }}>
                     Xóa
                   </MenuItem>

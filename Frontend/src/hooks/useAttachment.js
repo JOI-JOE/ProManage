@@ -124,7 +124,7 @@ const useAttachments = (cardId) => {
       return { previousAttachments };
     },
     onSuccess: () => {
-      queryClient.refetchQueries(["attachments", cardId], { exact: true });
+      queryClient.invalidateQueries(["attachments", cardId], { exact: true });
     },
     onError: (_error, _attachmentId, context) => {
       queryClient.setQueryData(["attachments", cardId], context.previousAttachments);
