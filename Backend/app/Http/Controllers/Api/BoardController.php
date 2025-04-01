@@ -114,7 +114,6 @@ class BoardController extends Controller
             'workspace_id' => $board->workspace_id,
             'closed' => $board->closed,
         ];
-
         // Bước 6: Chuẩn bị dữ liệu trả về
         $response = [
             'board' => $boardData,
@@ -247,46 +246,64 @@ class BoardController extends Controller
             return $workspaceData;
         }
 
+        // Lấy thông tin workspace & quyền từ board_members
         $workspace = DB::table('workspaces')
-            ->where('id', $board->workspace_id)
-            ->select('id', 'display_name', 'name', 'permission_level')
+            ->leftJoin('workspace_members', function ($join) use ($userId) {
+                $join->on('workspaces.id', '=', 'workspace_members.workspace_id')
+                    ->where('workspace_members.user_id', $userId);
+            })
+            ->select(
+                'workspaces.id',
+                'workspaces.display_name',
+                'workspaces.name',
+                'workspaces.permission_level',
+                'workspace_members.member_type' // Lấy member_type từ workspace_members
+            )
+            ->where('workspaces.id', $board->workspace_id)
             ->first();
 
         if (!$workspace) {
             return $workspaceData;
         }
 
-        $isWorkspaceMember = DB::table('workspace_members')
-            ->where('workspace_id', $board->workspace_id)
+        // Kiểm tra xem user có phải thành viên của workspace không
+        $isWorkspaceMember = !is_null($workspace->member_type);
+
+        // Kiểm tra xem user có phải thành viên của board không
+        $isBoardMember = DB::table('board_members')
+            ->where('board_id', $board->id)
             ->where('user_id', $userId)
             ->exists();
 
-        // Trường hợp 1: Board là public -> Luôn hiển thị thông tin workspace
+        // Trường hợp 1: Board là public
         if ($board->visibility === 'public') {
-            $workspaceData['workspace'] = [
-                'id' => $workspace->id,
-                'display_name' => $workspace->display_name,
-                'name' => $workspace->name,
-                'permission_level' => $workspace->permission_level,
-            ];
+            // Nếu workspace là public hoặc user là thành viên workspace/board
+            if ($workspace->permission_level === 'public' || $isWorkspaceMember || $isBoardMember) {
+                $workspaceData['workspace'] = [
+                    'id' => $workspace->id,
+                    'display_name' => $workspace->display_name,
+                    'name' => $workspace->name,
+                    'permission_level' => $workspace->permission_level,
+                    'member_type' => $isWorkspaceMember ? $workspace->member_type : null
+                ];
+            }
+            // Nếu workspace là private và user không phải thành viên
+            else {
+                $workspaceData['workspace'] = 'hidden'; // Ẩn thông tin workspace
+            }
         }
-        // Trường hợp 2: Board là private hoặc workspace
+        // Trường hợp 2: Board là private/workspace
         else {
-            // Nếu user đã tham gia workspace hoặc là thành viên của board, hiển thị thông tin workspace
-            $isBoardMember = DB::table('board_members')
-                ->where('board_id', $board->id)
-                ->where('user_id', $userId)
-                ->exists();
-
             if ($isWorkspaceMember || $isBoardMember) {
                 $workspaceData['workspace'] = [
                     'id' => $workspace->id,
                     'display_name' => $workspace->display_name,
                     'name' => $workspace->name,
                     'permission_level' => $workspace->permission_level,
+                    'member_type' => $workspace->member_type
                 ];
             } else {
-                $workspaceData['workspace'] = 'private'; // Workspace là private và user không phải thành viên
+                $workspaceData['workspace'] = 'private'; // User không thuộc workspace và không có quyền
             }
         }
 
@@ -295,10 +312,7 @@ class BoardController extends Controller
 
         return $workspaceData;
     }
-
-
     //-------------------------------------------------
-
 
 
     public function index()
