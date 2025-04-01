@@ -96,7 +96,7 @@ export const useCardById = (cardId) => {
 
   const updateDescriptionMutation = useMutation({
     mutationFn: (description) => updateDescription(cardId, description), // Gọi API cập nhật mô tả
-    onSuccess: (data) => {
+    onSuccess: (data, {cardId}) => {
       console.log("Mô tả đã được cập nhật:", data);
 
       queryClient.invalidateQueries({ queryKey: ["cardDetail", cardId], exact: true });

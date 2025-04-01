@@ -145,22 +145,15 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
       <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
         {/* Bảng Trello của tôi */}
         {workspace.boards && workspace.boards.length > 0 ? (
-          workspace.boards.map((board) => (
-            <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-              <MyBoard
-                key={board.id}
-                board={board}
-                id={`recent-board-${board.id}`}
-              />
-            </ListItem>
-          ))
-        ) : (
-          <Typography variant="body2" color="textSecondary">
-            Không có bảng nào.
-          </Typography>
-        )}
+          workspace.boards
+            .filter((board) => board.closed === 0) // Chỉ lấy các bảng chưa đóng
+            .map((board) => (
+              <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
+              </ListItem>
+            ))
+        ) : null}
 
-        {/* Tạo bảng mới */}
         <CreateBoard />
       </List>
     </Box>
