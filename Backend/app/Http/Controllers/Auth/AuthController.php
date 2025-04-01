@@ -323,10 +323,10 @@ class AuthController extends Controller
                 return response()->json(['message' => 'Email không tồn tại'], 404);
             }
 
-            // // Xác thực người dùng
-            // if (!Auth::attempt($request->only('email', 'password'))) {
-            //     return response()->json(['message' => 'Mật khẩu không đúng'], 401);
-            // }
+            // Xác thực người dùng
+            if (!Auth::attempt($request->only('email', 'password'))) {
+                return response()->json(['message' => 'Mật khẩu không đúng'], 401);
+            }
 
             // Tạo token sau khi xác thực thành công
             $token = $user->createToken('token')->plainTextToken;
