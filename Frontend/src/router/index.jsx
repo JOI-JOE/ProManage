@@ -28,6 +28,8 @@ import InvitePage from "../pages/boards/invite/InvitePage";
 import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
 import Board from "../pages/boards/detail/Board";
 import Calendar from "../pages/Boards/detail/SideBar/Calendar/Calendar";
+import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileDisplay";
+import Activity from "../components/Navigation/Menus/Profile and display/Activity";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -80,6 +82,14 @@ const router = createBrowserRouter([
           { path: "w/:workspaceName/members", element: <Member /> },
           { path: "w/:workspaceName/account", element: <Account /> },
         ],
+      },
+      {
+        path: "profile-display",
+        element: <ProfileDisplay />,
+      },
+      {
+        path: "activity",
+        element: <Activity />,
       },
     ],
   },
