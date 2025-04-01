@@ -1,13 +1,21 @@
-import React from "react";
-import { Box, Typography, TextField, Button, Avatar } from "@mui/material";
+import React, { useState } from "react";
+import { Box, Typography, TextField, Button } from "@mui/material";
+import Avatar from "@mui/material/Avatar";
 
 const ProfileDisplay = () => {
+  const [activeTab, setActiveTab] = useState("profile");
+
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    // Add navigation logic if needed
+  };
+
   return (
     <Box
       sx={{
         padding: 4,
-        backgroundColor: "#ffffff", // Changed to white
-        color: "#000000", // Changed to black
+        backgroundColor: "#ffffff",
+        color: "#000000",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
@@ -67,13 +75,14 @@ const ProfileDisplay = () => {
           <Typography
             variant="body1"
             sx={{
-              mrginRight: 2,
               marginBottom: 2,
               paddingBottom: 1,
               cursor: "pointer",
-              borderBottom: "2px solid #00A3BF",
+              borderBottom:
+                activeTab === "profile" ? "2px solid #00A3BF" : "none",
               color: "#000000", // Changed to black
             }}
+            onClick={() => handleTabClick("profile")}
           >
             Hồ sơ và Hiển thị
           </Typography>
@@ -83,8 +92,11 @@ const ProfileDisplay = () => {
               marginBottom: 2,
               paddingBottom: 1,
               cursor: "pointer",
-              color: "#888888", // Changed to gray
+              borderBottom:
+                activeTab === "activity" ? "2px solid #00A3BF" : "none",
+              color: "#000000", // Changed to gray
             }}
+            onClick={() => handleTabClick("activity")}
           >
             Hoạt động
           </Typography>
@@ -94,28 +106,35 @@ const ProfileDisplay = () => {
               marginBottom: 2,
               paddingBottom: 1,
               cursor: "pointer",
-              color: "#888888", // Changed to gray
+              borderBottom:
+                activeTab === "cards" ? "2px solid #00A3BF" : "none",
+              color: "#000000", // Changed to gray
             }}
+            onClick={() => handleTabClick("cards")}
           >
             Thẻ
           </Typography>
+
           <Typography
             variant="body1"
             sx={{
+              marginBottom: 2,
               paddingBottom: 1,
               cursor: "pointer",
-              color: "#888",
+              borderBottom:
+                activeTab === "settings" ? "2px solid #00A3BF" : "none",
+              color: "#000000", // Changed to gray
             }}
+            onClick={() => handleTabClick("settings")}
           >
             Cài đặt
           </Typography>
         </Box>
       </Box>
-
       {/* Right Section */}
       <Box
         sx={{
-          backgroundColor: "#f9f9f9", // Changed to light gray
+          backgroundColor: "#f9f9f9",
           padding: 4,
           borderRadius: 2,
           width: "450px",
@@ -134,9 +153,9 @@ const ProfileDisplay = () => {
           defaultValue="phamthihongngatfplhn"
           sx={{
             mb: 2,
-            "& .MuiInputBase-input": { fontSize: "0.7rem", color: "#000000" }, // Changed font size to 0.6rem
-            "& .MuiInputLabel-root": { color: "#555555" }, // Changed to dark gray
-            "& .MuiInputBase-root": { color: "#000000" }, // Changed to black
+            "& .MuiInputBase-input": { fontSize: "0.7rem", color: "#000000" },
+            "& .MuiInputLabel-root": { color: "#555555" },
+            "& .MuiInputBase-root": { color: "#000000" },
           }}
         />
         <Typography variant="body2" sx={{ mb: 1, color: "#000000" }}>
@@ -149,9 +168,9 @@ const ProfileDisplay = () => {
             padding: "8px",
             fontSize: "0.875rem",
             borderRadius: "4px",
-            border: "1px solid #ccc", // Changed border color to light gray
-            color: "#000000", // Changed to black
-            backgroundColor: "#ffffff", // Changed to white
+            border: "1px solid #ccc",
+            color: "#000000",
+            backgroundColor: "#ffffff",
             marginBottom: "24px",
           }}
         ></textarea>
