@@ -18,16 +18,12 @@ export const BoardProvider = ({ children }) => {
 
     const { data: boardData, isLoading: boardLoading, error: boardError } = useBoardById(boardId);
 
-    const { data: listData, isLoading: listLoading, error: listError } = useListByBoardId(boardId, {
-        enabled: !!boardData,
-    });
-
+    const { data: listData, isLoading: listLoading, error: listError } = useListByBoardId(boardId);
 
     // Gộp trạng thái loading và error
     const isLoading = boardLoading || listLoading;
     const error = boardError || listError;
 
-    // Memo hóa dữ liệu để tránh re-render không cần thiết
     const value = useMemo(
         () => ({
             board: boardData?.board || null,
@@ -38,14 +34,11 @@ export const BoardProvider = ({ children }) => {
             canJoinBoard: boardData?.canJoinBoard || false,
             canJoinWorkspace: boardData?.canJoinWorkspace || false,
             message: boardData?.message || "",
-            admins: boardData?.admins || [],
-            showBoardData: boardData?.showBoardData || false,
-
-            // Thêm danh sách lists & cards từ listData
-            lists: listData?.lists || [],
-            cards: listData?.cards || [],
-
+            isActive: boardData?.action || null, // Thêm trường active status
+            listData: listData || { lists: [], cards: [] }, // Đảm bảo có default value
             isLoading,
+            boardLoading,
+            listLoading,
             error,
         }),
         [boardData, listData, isLoading, error]

@@ -44,7 +44,6 @@ import { useGetInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 const Member = () => {
   const { workspaceName } = useParams();
 
-  // Dữ liệu để lấy được workspace bằng tên
   const {
     data: workspace,
     isLoading: isLoadingWorkspace,
@@ -410,21 +409,42 @@ const Member = () => {
             {/* Danh sách thành viên */}
             <Box
               sx={{
-                display: "flex",
-                flexDirection: "column", // Hiển thị theo hàng dọc
-                alignItems: "flex-start", // Căn lề trái cho các thành viên
-                gap: 2, // Khoảng cách giữa các thành viên
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                width: '100%',
+                maxWidth: '800px',
+                margin: '0 auto',
+                maxHeight: 'calc(100vh - 200px)', // Giới hạn chiều cao tối đa
+                overflowY: 'auto', // Thêm thanh cuộn khi cần
+                '&::-webkit-scrollbar': {
+                  width: '6px'
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: '#B6BBBF',
+                  borderRadius: '6px'
+                },
+                '&::-webkit-scrollbar-thumb:hover': {
+                  backgroundColor: '#ECF0F1'
+                }
               }}
             >
-              {/* Thông tin thành viên */}
               {members?.map((member, index) => (
-                <Box
-                  key={`${member.id}-${index}`} // Kết hợp member.id và index để tạo key duy nhất
-                  id="workspace-member-list"
-                >
-                  <MemberItem member={member} />{" "}
-                  {/* Truyền dữ liệu member vào MemberItem */}
-                </Box>
+                <MemberItem
+                  key={member.id || `member-${index}`} // Dùng index làm key nếu id bị undefined
+                  member={{
+                    id: member.id,
+                    name: member.name,
+                    username: member.username,
+                    last_active: member.last_active,
+                    board_count: member.boards?.length || 0,
+                    is_admin: member.is_admin
+                  }}
+                  sx={{
+                    flexShrink: 0, // Ngăn không cho các item co lại
+                    minHeight: '64px' // Chiều cao tối thiểu cho mỗi item
+                  }}
+                />
               ))}
             </Box>
           </Box>

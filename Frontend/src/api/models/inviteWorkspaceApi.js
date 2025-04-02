@@ -8,7 +8,6 @@ export const addMemberToWorkspaceDirection = async ({
     const response = await authClient.post(
       `/workspace/${workspaceId}/member/${memberId}`
     );
-
     return response.data;
   } catch (error) {
     console.error(

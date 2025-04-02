@@ -5,42 +5,30 @@ const UNSPLASH_ACCESS_KEY = "3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"; // Th
 ///------------------------------------------------------
 
 export const fetchBoardById = async (boardId) => {
-  // Validate input
   if (!boardId || typeof boardId !== "string") {
     throw new Error("Board ID không hợp lệ");
   }
 
   try {
-    const response = await authClient.get(`/boards/${boardId}`);
-
-    // Check if response and data exists
-    if (!response?.data) {
-      throw new Error("Không nhận được dữ liệu từ server");
-    }
-
-    const { data } = response;
-
-    // Validate required fields
-    if (!data.board) {
+    const { data } = await authClient.get(`/boards/${boardId}`);
+    if (!data?.board) {
       throw new Error("Dữ liệu bảng không hợp lệ");
     }
-
-    // Return normalized data structure
-    return data;
+    return {
+      ...data,
+      action: data.action || data.board?.action || null, // Normalize action field
+    };
   } catch (error) {
-    console.error("Lỗi khi lấy dữ liệu bảng:", error);
-
-    // Handle different error cases
-    let errorMessage = "Lỗi khi tải dữ liệu bảng";
-    if (error.response) {
-      errorMessage = error.response.data?.message || errorMessage;
-    } else if (error.request) {
-      errorMessage = "Không nhận được phản hồi từ server";
-    } else {
-      errorMessage = error.message || errorMessage;
+    // Handle 403 response with action
+    if (error.response?.status === 403 && error.response.data?.action) {
+      return { action: error.response.data.action };
     }
 
-    throw new Error(errorMessage);
+    // Log and throw for other errors
+    console.error("Lỗi khi lấy dữ liệu bảng:", error);
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi tải dữ liệu bảng"
+    );
   }
 };
 

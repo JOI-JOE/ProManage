@@ -21,16 +21,11 @@ export const useListByBoardId = (boardId) => {
     queryKey: ["lists", boardId],
     queryFn: () => fetchListByBoardId(boardId),
     enabled: !!boardId,
+    retry: 1,
     staleTime: 5 * 60 * 1000, // 5 phút
     cacheTime: 30 * 60 * 1000, // 30 phút
     refetchOnWindowFocus: false, // Tắt refetch khi focus để tận dụng cache
     refetchOnReconnect: true,
-    // onSuccess: (data) => {
-    //   console.log(`Data fetched for boardId ${boardId}:`, data);
-    // },
-    // onError: (error) => {
-    //   console.error(`Error fetching data for boardId ${boardId}:`, error);
-    // },
   });
 
   useEffect(() => {

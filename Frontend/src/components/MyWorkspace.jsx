@@ -17,6 +17,19 @@ import CreateBoard from "./CreateBoard";
 
 const MyWorkspace = ({ workspace, boards }) => {
 
+    const [showCreateBoard, setShowCreateBoard] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
+
+    const handleOpenCreateBoard = (event) => {
+        setAnchorEl(event.currentTarget);
+        setShowCreateBoard(true);
+    };
+
+    const handleCloseCreateBoard = () => {
+        setShowCreateBoard(false);
+        setAnchorEl(null);
+    };
+
     return (
         <div>
             <ListItem
@@ -143,7 +156,30 @@ const MyWorkspace = ({ workspace, boards }) => {
                         <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
                     </ListItem>
                 ))}
-                <CreateBoard workspaceId={workspace?.id} />
+                <ListItem sx={{ width: "auto", padding: 0 }}>
+                    <Box
+                        onClick={handleOpenCreateBoard} // Mở popover khi nhấn
+                        sx={{
+                            width: "180px",
+                            height: "100px",
+                            backgroundColor: "#EDEBFC",
+                            borderRadius: "8px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            "&:hover": { backgroundColor: "#DCDFE4" },
+                        }}
+                    >
+                        Tạo bảng mới
+                    </Box>
+                </ListItem>
+                <CreateBoard
+                    workspaceId={workspace?.id} // Truyền workspaceId nếu cần
+                    open={showCreateBoard}
+                    anchorEl={anchorEl}
+                    onClose={handleCloseCreateBoard}
+                />
             </List>
             {/* <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {activeBoards.length > 0 ? (

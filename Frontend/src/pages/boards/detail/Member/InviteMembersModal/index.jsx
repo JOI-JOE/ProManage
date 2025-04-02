@@ -12,7 +12,6 @@ const MemberSearch = ({ workspaceId, onMemberSelect }) => {
     const { data, isLoading } = useSearchMembers(inputValue, workspaceId);
     const members = data?.users || [];
 
-    // 📝 Xử lý khi nhập input
     const handleInputChange = (event, value) => {
         setInputValue(value);
         setHasTyped(value.length > 0); // Nếu có chữ -> true

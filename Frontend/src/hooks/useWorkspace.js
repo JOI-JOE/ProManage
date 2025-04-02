@@ -20,19 +20,19 @@ export const useGetWorkspaces = () => {
   });
 };
 
-export const useGetGuestWorkspaces = () => {
-  return useQuery({
-    queryKey: ["guestWorkspaces"],
-    queryFn: getGuestWorkspace,
-    staleTime: 5 * 60 * 1000, // 5 phút
-    cacheTime: 10 * 60 * 1000, // 10 phút
-    refetchOnWindowFocus: false, // Không refetch khi focus lại tab
-    retry: 2, // Thử lại 2 lần nếu lỗi
-    onError: (error) => {
-      console.error("Lỗi khi lấy danh sách workspaces khách:", error);
-    },
-  });
-};
+// export const useGetGuestWorkspaces = () => {
+//   return useQuery({
+//     queryKey: ["guestWorkspaces"],
+//     queryFn: getGuestWorkspace,
+//     staleTime: 5 * 60 * 1000, // 5 phút
+//     cacheTime: 10 * 60 * 1000, // 10 phút
+//     refetchOnWindowFocus: false, // Không refetch khi focus lại tab
+//     retry: 2, // Thử lại 2 lần nếu lỗi
+//     onError: (error) => {
+//       console.error("Lỗi khi lấy danh sách workspaces khách:", error);
+//     },
+//   });
+// };
 
 export const useGetWorkspaceByName = (workspaceName) => {
   return useQuery({

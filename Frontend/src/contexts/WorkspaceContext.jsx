@@ -1,6 +1,5 @@
 import { createContext, useContext, useMemo } from "react";
 import { useGetWorkspaces } from "../hooks/useWorkspace";
-import { useMe } from "./MeContext";
 
 const WorkspaceContext = createContext({
     workspaces: null,
@@ -16,6 +15,7 @@ export const WorkspaceProvider = ({ children }) => {
 
     const contextValue = useMemo(() => ({
         data,
+        guestWorkspace: data?.guestWorkspaces || null,
         isLoading,
         error,
     }), [data, isLoading, error]);

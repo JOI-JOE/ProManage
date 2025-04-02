@@ -7,6 +7,9 @@ import {
   ListItemIcon,
   Avatar,
   IconButton,
+  SvgIcon,
+  Button,
+  Hidden
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
@@ -14,10 +17,25 @@ import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
 import MyBoard from "../../../components/MyBoard";
 import CreateBoard from "../../../components/CreateBoard";
 import MyStar from "../../../components/MyStar";
+import emptyBoard from "~/assets/emptyBoard.svg?react";
 import { useSelector } from "react-redux";
 
+
 const HomeWorkspace = ({ workspace }) => {
-  const [isFormVisible, setFormVisible] = useState(false); // Quản lý hiển thị form
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleOpenCreateBoard = (event) => {
+    setAnchorEl(event.currentTarget);
+    setShowCreateBoard(true);
+  };
+
+  const handleCloseCreateBoard = () => {
+    setShowCreateBoard(false);
+    setAnchorEl(null);
+  };
+
+  const [isFormVisible, setFormVisible] = useState(false);
   const starredBoards = useSelector((state) => state.starredBoards.starred.board_stars);
 
   const listStarIds = workspace?.boards
@@ -28,12 +46,11 @@ const HomeWorkspace = ({ workspace }) => {
     listStarIds.includes(board.board_id)
   ) || [];
 
-  console.log(filteredStarredBoards);
-
-
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
   };
+
+
 
   return (
     <Box
@@ -95,7 +112,6 @@ const HomeWorkspace = ({ workspace }) => {
           </Box>
         </Box>
       )}
-
       {/* Form hiển thị khi bấm Edit */}
       {isFormVisible && (
         <WorkspaceDetailForm
@@ -103,6 +119,8 @@ const HomeWorkspace = ({ workspace }) => {
           onCancel={toggleFormVisibility} // Truyền hàm đóng form
         />
       )}
+
+      {/* Danh sách bảng sao */}
       {filteredStarredBoards.length > 0 && (
         <>
           <ListItem>
@@ -126,8 +144,6 @@ const HomeWorkspace = ({ workspace }) => {
         </>
       )}
 
-
-
       {/* Danh sách bảng Trello */}
       <ListItem
         sx={{
@@ -150,23 +166,89 @@ const HomeWorkspace = ({ workspace }) => {
 
       <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
         {workspace?.boards && workspace.boards.length > 0 ? (
-          workspace?.boards.map((board) => (
-            <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-              <MyBoard
-                key={board.id}
-                board={board}
-                id={`recent-board-${board.id}`}
-              />
+          <>
+            {workspace.boards.map((board) => (
+              <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                <MyBoard key={board.id} board={board} id={`w-board-${board.id}`} />
+              </ListItem>
+            ))}
+            <ListItem sx={{ width: "auto", padding: 0 }}>
+              <Box
+                onClick={handleOpenCreateBoard} // Mở popover khi nhấn
+                sx={{
+                  width: "180px",
+                  height: "100px",
+                  backgroundColor: "#EDEBFC",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  "&:hover": { backgroundColor: "#DCDFE4" },
+                }}
+              >
+                Tạo bảng mới
+              </Box>
             </ListItem>
-          ))
+            <CreateBoard
+              workspaceId={workspace?.id} // Truyền workspaceId nếu cần
+              open={showCreateBoard}
+              anchorEl={anchorEl}
+              onClose={handleCloseCreateBoard}
+            />
+          </>
         ) : (
-          <Typography variant="body2" color="textSecondary">
-            Không có bảng nào.
-          </Typography>
-        )}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              width: "100%",
+              height: "100%",
+              mt: 4,
+            }}
+          >
+            {/* Hình ảnh minh họa */}
+            <SvgIcon
+              component={emptyBoard}
+              sx={{ width: 411, height: 200, mb: 2 }}
+              viewBox="0 0 24 24"
+              inheritViewBox
+            />
 
-        <CreateBoard />
+            {/* Tiêu đề */}
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              Các bảng là nơi hoàn thành công việc ở Trello.
+            </Typography>
+
+            {/* Nội dung mô tả */}
+            <Typography variant="body2" sx={{ maxWidth: 500, mt: 1, color: "gray" }}>
+              Trên bảng, bạn có thể di chuyển các thẻ giữa các danh sách để giữ cho
+              các dự án, nhiệm vụ và hơn thế nữa luôn đi đúng hướng.
+            </Typography>
+
+            {/* Button tạo bảng */}
+            <Button
+              variant="contained"
+              sx={{ mt: 3, bgcolor: "#2E71F3", ":hover": { bgcolor: "#1E50C9" } }}
+              onClick={handleOpenCreateBoard} // Mở popover khi nhấn
+            >
+              Tạo bảng đầu tiên
+            </Button>
+
+            {/* Component CreateBoard */}
+            <CreateBoard
+              workspaceId={workspace?.id} // Truyền workspaceId nếu cần
+              open={showCreateBoard}
+              anchorEl={anchorEl}
+              onClose={handleCloseCreateBoard}
+            />
+          </Box>
+        )}
       </List>
+
     </Box>
   );
 };

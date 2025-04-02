@@ -1,15 +1,16 @@
 import Cookies from "js-cookie";
-import { Button } from "@mui/material";
+import { Button, CircularProgress } from "@mui/material";
 import { useAddMemberToWorkspaceDirection } from "../../../../hooks/useWorkspaceInvite";
+import { useNavigate } from "react-router-dom";
 
 const InviteWithToken = ({ inviteData }) => {
+  const navigate = useNavigate();
   const memberId = Cookies.get("idMember");
   const inviter = inviteData?.memberInviter;
   const workspace = inviteData?.workspace;
 
   const { mutate: addMember, isLoading: isJoining } = useAddMemberToWorkspaceDirection();
 
-  // Xử lý chấp nhận lời mời
   const handleAcceptInvite = () => {
     if (!workspace?.id || !memberId) {
       alert("Dữ liệu không hợp lệ!");
@@ -17,14 +18,14 @@ const InviteWithToken = ({ inviteData }) => {
     }
 
     addMember(
-      { workspaceId: workspace.id, memberId },
+      { workspaceId: workspace?.id, memberId },
       {
         onSuccess: () => {
           alert("Bạn đã tham gia không gian làm việc thành công!");
-          window.location.reload(); // Hoặc chuyển hướng đến trang workspace
+          navigate(`/w/${workspace.name}`); // Chuyển đến trang workspace sau khi tham gia
         },
         onError: (error) => {
-          alert(`Lỗi: ${error.message}`);
+          alert(`Lỗi: ${error.response?.data?.message || error.message}`);
         },
       }
     );
@@ -56,9 +57,10 @@ const InviteWithToken = ({ inviteData }) => {
           "&:hover": {
             backgroundColor: isJoining ? "#9E9E9E" : "#1565C0",
           },
+          minWidth: "250px",
         }}
       >
-        {isJoining ? "Đang tham gia..." : "Tham gia vào không gian làm việc"}
+        {isJoining ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Tham gia vào không gian làm việc"}
       </Button>
     </div>
   );

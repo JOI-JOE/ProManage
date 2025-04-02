@@ -23,6 +23,8 @@ import { useUpdatePositionList } from "../../../../hooks/useList";
 import { useUpdateCardPosition } from "../../../../hooks/useCard";
 import { useParams } from "react-router-dom";
 import { useBoard } from "../../../../contexts/BoardContext";
+import SendRequest from "./SendRequest";
+import LogoLoading from "../../../../components/LogoLoading";
 
 
 const ACTIVE_DRAG_ITEM_TYPE = {
@@ -32,8 +34,9 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 
 const BoardContent = () => {
   const { boardId } = useParams();
-  const { board, listData, isLoading, error } = useBoard()
-  console.log(board)
+  const { listData, isActive, boardLoading, listLoading, error } = useBoard()
+
+  console.log(isActive)
 
   const updatePositionListMutation = useUpdatePositionList();
   const updateCardPositionMutation = useUpdateCardPosition();
@@ -53,7 +56,6 @@ const BoardContent = () => {
   const initialOverRef = useRef(null);
 
   // Reset tất cả trạng thái khi boardId thay đổi
-  // Reset tất cả trạng thái khi boardId thay đổi
   useEffect(() => {
     setOrderedLists([]);
     setActiveDragItemId(null);
@@ -67,7 +69,7 @@ const BoardContent = () => {
 
   // Transform listData into orderedLists with cards
   useEffect(() => {
-    if (isLoading) {
+    if (listLoading) {
       setOrderedLists([]);
       return;
     }
@@ -111,7 +113,7 @@ const BoardContent = () => {
       };
     });
     setOrderedLists(listsWithCards);
-  }, [listData, isLoading, error, boardId]);
+  }, [listData, listLoading, error, boardId]);
 
   // Tìm list theo cardId
   const findListByCardId = (cardId) => {
@@ -257,6 +259,15 @@ const BoardContent = () => {
     const pointerCollisions = pointerWithin(args);
     return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args);
   };
+
+  if (listLoading && boardLoading) {
+    return <LogoLoading />; // Hoặc component loading của bạn
+  }
+
+  if (isActive === 'request_access') {
+    return <SendRequest />;
+  }
+
   return (
     <>
       <BoardBar />
@@ -269,16 +280,17 @@ const BoardContent = () => {
       >
         <Box
           sx={(theme) => ({
-            backgroundColor: "#1693E1",
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
             imageRendering: "auto",
             height: theme.trello.boardContentHeight,
             padding: "18px 0 7px 0px",
+            // backgroundColor: "#1693E1",
+            backgroundImage: 'url("https://i.pinimg.com/736x/d9/b0/be/d9b0be32ca3e33b95841df2fe9cdf337.jpg")',
           })}
         >
-          <Col_list columns={orderedLists} boardId={listData?.id} />
+          <Col_list columns={orderedLists} boardId={boardId} />
           <DragOverlay dropAnimation={customDropAnimation}>
             {!activeDragItemType && null}
             {activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN && (

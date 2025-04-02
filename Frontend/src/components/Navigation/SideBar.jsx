@@ -19,6 +19,7 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 
 const SideBar = ({ workspaces }) => {
     const { user } = useMe()
+    
     const { data } = useWorkspace()
     return (
         <Drawer

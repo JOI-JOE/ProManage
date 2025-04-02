@@ -1,34 +1,25 @@
-import { Box, CircularProgress, Typography } from "@mui/material";
-import React, { useState } from "react";
+import { Box, CircularProgress, Typography, ListItemIcon } from "@mui/material";
+import React, { useState, useMemo } from "react";
 import { styled } from "@mui/material/styles";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { useGetGuestWorkspaces, useGetWorkspaces } from "../../../hooks/useWorkspace";
 import { Link } from "react-router-dom";
+import { useWorkspace } from "../../../contexts/WorkspaceContext";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import AddIcon from "@mui/icons-material/Add";
 
-const StyledMenu = styled((props) => (
-  <Menu
-    elevation={0}
-    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-    transformOrigin={{ vertical: "top", horizontal: "center" }}
-    {...props}
-  />
-))(({ theme }) => ({
+const StyledMenu = styled(Menu)(({ theme }) => ({
   "& .MuiPaper-root": {
     borderRadius: 6,
     marginTop: theme.spacing(1),
-    minWidth: 180,
-    color: "rgb(55, 65, 81)",
-    boxShadow:
-      "rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px",
+    width: 300,
+    color: theme.palette.mode === "dark" ? theme.palette.grey[300] : "rgb(55, 65, 81)",
+    boxShadow: theme.shadows[3],
     "& .MuiMenu-list": { padding: "4px 0" },
-    "& .MuiMenuItem-root": {
-      "& .MuiSvgIcon-root": { fontSize: 18, color: "#000", marginRight: theme.spacing(1.5) },
-    },
-    ...theme.applyStyles("dark", { color: theme.palette.grey[300] }),
   },
 }));
 
@@ -43,7 +34,7 @@ const WorkspaceItem = React.memo(({ workspace, onClose, isGuest = false }) => (
       gap: 1.5,
       px: 2,
       py: 1,
-      "&:hover": { bgcolor: "#F4F5F7" },
+      "&:hover": { bgcolor: "action.hover" },
     }}
   >
     <Box
@@ -51,7 +42,7 @@ const WorkspaceItem = React.memo(({ workspace, onClose, isGuest = false }) => (
         width: 32,
         height: 32,
         borderRadius: "50%",
-        bgcolor: isGuest ? "#EB5A47" : "#0079BF",
+        bgcolor: isGuest ? "error.main" : "primary.main",
         color: "white",
         display: "flex",
         alignItems: "center",
@@ -61,9 +52,9 @@ const WorkspaceItem = React.memo(({ workspace, onClose, isGuest = false }) => (
         flexShrink: 0,
       }}
     >
-      {(isGuest ? workspace.workspaceName : workspace.display_name).charAt(0).toUpperCase()}
+      {(isGuest ? workspace.workspaceName : workspace.display_name)?.charAt(0)?.toUpperCase()}
     </Box>
-    <Typography variant="body2" sx={{ fontWeight: 500, color: "#172B4D" }}>
+    <Typography variant="body2" sx={{ fontWeight: 500 }}>
       {isGuest ? workspace.workspaceName : workspace.display_name}
     </Typography>
   </MenuItem>
@@ -71,29 +62,28 @@ const WorkspaceItem = React.memo(({ workspace, onClose, isGuest = false }) => (
 
 const Workspace = () => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const { data, guestWorkspace, isLoading, error } = useWorkspace();
   const open = Boolean(anchorEl);
+
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
 
-  const { data: data, isLoading, isError } = useGetWorkspaces();
-  // const { data: guestWorkspace } = useGetGuestWorkspaces();
-
-  // const InviteBoard = useMemo(() => {
-  //   return guestWorkspace?.data?.flatMap((workspaceGuest) =>
-  //     workspaceGuest.boards.map((board) => ({
-  //       id: board.id,
-  //       name: board.name,
-  //       workspaceId: board.workspace_id,
-  //       workspaceName: workspaceGuest.display_name
-  //     }))
-  //   ) || [];
-  // }, [guestWorkspace?.data]);
+  const guestBoards = useMemo(() => {
+    return guestWorkspace?.flatMap(workspace =>
+      workspace.boards?.map(board => ({
+        id: board.id,
+        name: board.name,
+        workspaceId: board.workspace_id,
+        workspaceName: workspace.display_name
+      })) || []
+    ) || [];
+  }, [guestWorkspace]);
 
   return (
     <Box>
       <Button
-        id="demo-customized-button-workspace"
-        aria-controls={open ? "demo-customized-menu" : undefined}
+        id="workspace-menu-button"
+        aria-controls={open ? "workspace-menu" : undefined}
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
         disableElevation
@@ -103,38 +93,56 @@ const Workspace = () => {
       >
         Các Không gian làm việc
       </Button>
+
       <StyledMenu
-        id="demo-customized-menu-workspace"
-        MenuListProps={{ "aria-labelledby": "demo-customized-button" }}
+        id="workspace-menu"
+        MenuListProps={{ "aria-labelledby": "workspace-menu-button" }}
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        sx={{ minWidth: 250 }}
       >
-        <Typography variant="body1" sx={{ fontWeight: "bold", px: 2, py: 1, color: "#172B4D" }}>
-          Các không gian làm việc
+        {/* Header Section */}
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold", px: 2, py: 1 }}>
+          CÁC KHÔNG GIAN LÀM VIỆC
         </Typography>
-        <Divider />
-        {/* {isLoading && (
-          <MenuItem>
+
+        <Divider sx={{ my: 1 }} />
+
+        {/* Workspaces List */}
+        {isLoading ? (
+          <MenuItem disabled>
             <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải...
           </MenuItem>
-        )} */}
-        {/* {isError && <MenuItem sx={{ color: "red" }}>Lỗi tải dữ liệu</MenuItem>} */}
-        {/* {workspaces?.map((workspace) => (
-          <WorkspaceItem key={workspace.id} workspace={workspace} onClose={handleClose} />
-        ))} */}
+        ) : error ? (
+          <MenuItem disabled sx={{ color: "error.main" }}>
+            Lỗi tải dữ liệu
+          </MenuItem>
+        ) : (
+          data?.workspaces?.map(workspace => (
+            <WorkspaceItem key={workspace.id} workspace={workspace} onClose={handleClose} />
+          ))
+        )}
+
         <Divider sx={{ my: 1 }} />
-        <Typography variant="body1" sx={{ fontWeight: "bold", px: 2, py: 1, color: "#172B4D" }}>
-          Không gian làm việc khách
+
+        {/* Guest Workspaces */}
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold", px: 2, py: 1 }}>
+          CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
         </Typography>
-        <Divider />
-        {/* {InviteBoard?.map((board) => (
-          <WorkspaceItem key={board.id} workspace={board} onClose={handleClose} isGuest />
-        ))} */}
+
+        {guestBoards.length > 0 ? (
+          guestBoards.map(board => (
+            <WorkspaceItem key={board.id} workspace={board} onClose={handleClose} isGuest />
+          ))
+        ) : (
+          <MenuItem disabled sx={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+            <Typography variant="body2">0 bảng còn lại</Typography>
+            <Typography variant="caption">Nhận các bảng không giới hạn</Typography>
+          </MenuItem>
+        )}
       </StyledMenu>
     </Box>
   );
 };
 
-export default Workspace;
+export default React.memo(Workspace);

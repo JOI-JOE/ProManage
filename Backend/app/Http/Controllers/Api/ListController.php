@@ -16,195 +16,72 @@ class ListController extends Controller
     // ----------------------------------------------------
     public function show($boardId)
     {
-        // Bước 1: Lấy thông tin board
+        $userId = auth()->id();
+
+        // Bước 1: Lấy thông tin board cơ bản
         $board = DB::table('boards')
-            ->select('id AS board_id', 'name AS board_name', 'created_at', 'updated_at')
-            ->find($boardId);
+            ->select('id', 'visibility', 'workspace_id')
+            ->where('id', $boardId)
+            ->first();
 
         if (!$board) {
             return response()->json(['message' => 'Board not found'], 404);
         }
 
-        // Truy vấn danh sách `lists` cơ bản
-        $listsQuery = DB::table('list_boards')
+        // Bước 2: Kiểm tra quyền truy cập nghiêm ngặt
+        if (!$this->hasBoardAccess($board, $userId)) {
+            return response()->json(['message' => 'Access denied'], 403);
+        }
+
+        // Bước 3: Lấy dữ liệu lists và cards nếu có quyền
+        $lists = DB::table('list_boards')
             ->where('board_id', $boardId)
-            ->select('id', 'name', 'closed', 'position', 'created_at', 'updated_at')
-            ->orderBy('position');
-
-        $lists = $listsQuery->get()->map(fn($list) => (object) [
-            'id' => $list->id,
-            'name' => $list->name,
-            'closed' => $list->closed,
-            'position' => (float) $list->position,
-            'created_at' => $list->created_at,
-            'updated_at' => $list->updated_at,
-            'cards' => function () use ($list) { // Lazy loading cho cards
-                return $this->getCardsForList($list->id);
-            },
-        ])->all();
-
-        // Trả về response cơ bản
-        return response()->json([
-            'id' => $boardId,
-            'lists' => $lists,
-            'cards' => function () use ($boardId) { // Lazy loading cho tất cả cards
-                return $this->getCardsForBoard($boardId);
-            },
-        ]);
-    }
-
-    // Hàm lấy cards cho một list cụ thể
-    private function getCardsForList($listId)
-    {
-        return DB::table('cards')
-            ->where('list_board_id', $listId)
-            ->where('is_archived', false)
-            ->select(
-                'id',
-                'title',
-                'description AS desc',
-                'thumbnail AS idAttachmentCover',
-                'position',
-                'start_date AS start',
-                'end_date AS due',
-                'end_time',
-                'reminder AS dueReminder',
-                DB::raw('CAST(is_completed AS UNSIGNED) AS dueComplete'),
-                DB::raw('CAST(is_archived AS UNSIGNED) AS closed'),
-                'list_board_id'
-            )
+            ->select('id', 'name', 'position')
             ->orderBy('position')
-            ->get()
-            ->map(fn($card) => (object) [
-                'id' => $card->id,
-                'title' => $card->title,
-                'desc' => $card->desc,
-                'idAttachmentCover' => $card->idAttachmentCover,
-                'position' => (float) $card->position,
-                'start' => $card->start,
-                'due' => $card->due,
-                'end_time' => $card->end_time,
-                'dueReminder' => $card->dueReminder,
-                'dueComplete' => $card->dueComplete,
-                'closed' => $card->closed,
-                'list_board_id' => $card->list_board_id,
-                'labels' => function () use ($card) { // Lazy loading cho labels
-                    return $this->getLabelsForCard($card->id);
-                },
-                'memberId' => function () use ($card) { // Lazy loading cho members
-                    return $this->getMembersForCard($card->id);
-                },
-                'labelId' => function () use ($card) { // Lazy loading cho label IDs
-                    return $this->getLabelIdsForCard($card->id);
-                },
-                'checklists' => function () use ($card) { // Lazy loading cho checklists
-                    return $this->getChecklistsForCard($card->id);
-                },
-            ])->all();
+            ->get();
+
+        $cards = DB::table('cards')
+            ->whereIn('list_board_id', $lists->pluck('id'))
+            ->where('is_archived', false)
+            ->select('id', 'title', 'list_board_id', 'position')
+            ->orderBy('position')
+            ->get();
+
+        // Bước 4: Trả về dữ liệu tối giản
+        return response()->json([
+            'id' => $board->id,
+            'lists' => $lists,
+            'cards' => $cards
+        ], 200);
     }
 
-    // Hàm lấy tất cả cards cho một board
-    private function getCardsForBoard($boardId)
+    /**
+     * Kiểm tra quyền truy cập nghiêm ngặt
+     * Chỉ trả về true nếu user có quyền xem board
+     */
+    private function hasBoardAccess($board, $userId)
     {
-        return DB::table('cards')
-            ->join('list_boards', 'cards.list_board_id', '=', 'list_boards.id')
-            ->where('list_boards.board_id', $boardId)
-            ->where('cards.is_archived', false)
-            ->select(
-                'cards.id',
-                'cards.title AS title',
-                'cards.description AS desc',
-                'cards.thumbnail AS idAttachmentCover',
-                'cards.position',
-                'cards.start_date AS start',
-                'cards.end_date AS due',
-                'cards.end_time',
-                'cards.reminder AS dueReminder',
-                DB::raw('CAST(cards.is_completed AS UNSIGNED) AS dueComplete'),
-                DB::raw('CAST(cards.is_archived AS UNSIGNED) AS closed'),
-                'cards.list_board_id',
-                'list_boards.board_id AS boardId'
-            )
-            ->orderBy('cards.position')
-            ->get()
-            ->map(fn($card) => (object) [
-                'id' => $card->id,
-                'title' => $card->title,
-                'desc' => $card->desc,
-                'idAttachmentCover' => $card->idAttachmentCover,
-                'position' => (float) $card->position,
-                'start' => $card->start,
-                'due' => $card->due,
-                'end_time' => $card->end_time,
-                'dueReminder' => $card->dueReminder,
-                'dueComplete' => $card->dueComplete,
-                'closed' => $card->closed,
-                'list_board_id' => $card->list_board_id,
-                'boardId' => $card->boardId,
-                'labels' => function () use ($card) {
-                    return $this->getLabelsForCard($card->id);
-                },
-                'memberId' => function () use ($card) {
-                    return $this->getMembersForCard($card->id);
-                },
-                'labelId' => function () use ($card) {
-                    return $this->getLabelIdsForCard($card->id);
-                },
-                'checklists' => function () use ($card) {
-                    return $this->getChecklistsForCard($card->id);
-                },
-            ])->all();
-    }
+        // Nếu là thành viên của board
+        if (DB::table('board_members')->where('board_id', $board->id)->where('user_id', $userId)->exists()) {
+            return true;
+        }
 
-    // Hàm lấy labels cho một card
-    private function getLabelsForCard($cardId)
-    {
-        return DB::table('card_label')
-            ->join('labels', 'card_label.label_id', '=', 'labels.id')
-            ->where('card_label.card_id', $cardId)
-            ->select('labels.id', 'labels.title AS name', 'labels.created_at', 'labels.updated_at')
-            ->get()
-            ->map(fn($label) => (object) [
-                'id' => $label->id,
-                'name' => $label->name,
-                'created_at' => $label->created_at,
-                'updated_at' => $label->updated_at,
-            ])->all();
-    }
+        // Nếu board public
+        if ($board->visibility === 'public') {
+            return true;
+        }
 
-    // Hàm lấy member IDs cho một card
-    private function getMembersForCard($cardId)
-    {
-        return DB::table('card_user')
-            ->where('card_id', $cardId)
-            ->pluck('user_id')
-            ->all();
-    }
+        // Nếu board thuộc workspace và user là thành viên workspace
+        if ($board->visibility === 'workspace' && $board->workspace_id) {
+            return DB::table('workspace_members')
+                ->where('workspace_id', $board->workspace_id)
+                ->where('user_id', $userId)
+                ->exists();
+        }
 
-    // Hàm lấy label IDs cho một card
-    private function getLabelIdsForCard($cardId)
-    {
-        return DB::table('card_label')
-            ->where('card_id', $cardId)
-            ->pluck('label_id')
-            ->all();
+        // Các trường hợp khác không có quyền
+        return false;
     }
-
-    // Hàm lấy checklists cho một card
-    private function getChecklistsForCard($cardId)
-    {
-        return DB::table('check_lists')
-            ->where('card_id', $cardId)
-            ->select('id', 'name', 'created_at', 'card_id')
-            ->get()
-            ->map(fn($checklist) => (object) [
-                'id' => $checklist->id,
-                'name' => $checklist->name,
-                'created_at' => $checklist->created_at,
-                'card_id' => $checklist->card_id,
-            ])->all();
-    }
-
     // ----------------------------------------------------
 
     public function index($boardId)

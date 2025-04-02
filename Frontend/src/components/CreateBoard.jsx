@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -19,7 +19,7 @@ import { useCreateBoard, useImageUnsplash } from "../hooks/useBoard";
 import { useColor } from "../hooks/useColor";
 import { useWorkspace } from "../contexts/WorkspaceContext";
 
-const CreateBoard = ({ workspaceId }) => {
+const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
   const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
   const {
     data: unsplashImages,
@@ -28,37 +28,39 @@ const CreateBoard = ({ workspaceId }) => {
   } = useImageUnsplash();
 
   const { data: workspaceData } = useWorkspace();
-  const filterWorkspace = useMemo(() =>
-    workspaceData?.workspaces?.map(({ display_name, name, id }) => ({
-      display_name,
-      name,
-      id
-    })) || [],
+  const filterWorkspace = useMemo(
+    () =>
+      workspaceData?.workspaces?.map(({ display_name, name, id }) => ({
+        display_name,
+        name,
+        id,
+      })) || [],
     [workspaceData]
   );
   const { data: colors, isLoading: isLoadingColors } = useColor();
 
-  const [openPopover, setOpenPopover] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
   const [boardTitle, setBoardTitle] = useState("");
   const [selectedBg, setSelectedBg] = useState("");
   const [workspace, setWorkspace] = useState("");
   const [viewPermission, setViewPermission] = useState("workspace");
 
-  const handleOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-    setOpenPopover(true);
-    refetch();
-  };
+  // Khi popover mở, gọi refetch để tải ảnh Unsplash
+  const handleOpen = useCallback(
+    (event) => {
+      if (onOpen) onOpen(event); // Gọi hàm mở từ parent nếu có
+      refetch();
+    },
+    [onOpen, refetch]
+  );
 
-  const handleClose = () => {
-    setOpenPopover(false);
-    setAnchorEl(null);
-    setBoardTitle(""); // Reset form khi đóng
+  // Reset form và đóng popover
+  const handleClose = useCallback(() => {
+    setBoardTitle("");
     setSelectedBg("");
     setWorkspace("");
     setViewPermission("workspace");
-  };
+    onClose(); // Gọi hàm đóng từ parent
+  }, [onClose]);
 
   const handleSelectBg = useCallback((bg) => {
     setSelectedBg(bg);
@@ -73,7 +75,7 @@ const CreateBoard = ({ workspaceId }) => {
     const boardData = {
       name: boardTitle,
       thumbnail: selectedBg,
-      workspace_id: workspace || filterWorkspace[0]?.id, // Default to first workspace if none selected
+      workspace_id: workspace || workspaceId || filterWorkspace[0]?.id, // Ưu tiên workspaceId từ props
       visibility: viewPermission,
     };
 
@@ -86,11 +88,21 @@ const CreateBoard = ({ workspaceId }) => {
         alert(`❌ Lỗi khi tạo bảng: ${error.message}`);
       },
     });
-  }, [boardTitle, selectedBg, workspace, viewPermission, createBoard, filterWorkspace]);
+  }, [
+    boardTitle,
+    selectedBg,
+    workspace,
+    viewPermission,
+    createBoard,
+    workspaceId,
+    filterWorkspace,
+    handleClose,
+  ]);
 
   return (
-    <div>
-      <ListItem sx={{ width: "auto", padding: 0 }}>
+    <>
+      {/* Nút hoặc khu vực kích hoạt popover từ bên ngoài */}
+      {/* <ListItem sx={{ width: "auto", padding: 0 }}>
         <Box
           onClick={handleOpen}
           sx={{
@@ -107,24 +119,33 @@ const CreateBoard = ({ workspaceId }) => {
         >
           Tạo bảng mới
         </Box>
-      </ListItem>
+      </ListItem> */}
 
+      {/* Popover hiển thị form tạo board */}
       <Popover
-        open={openPopover}
+        open={open}
         anchorEl={anchorEl}
         onClose={handleClose}
         disableEnforceFocus
         anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
+          vertical: "center",
+          horizontal: "right",
         }}
         transformOrigin={{
-          vertical: "top",
-          horizontal: "center",
+          vertical: "center",
+          horizontal: "left",
         }}
+        sx={{ m: 2 }}
       >
         <Box sx={{ width: 350, p: 2 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
             <Typography variant="h6" fontWeight="bold">
               Tạo bảng
             </Typography>
@@ -149,7 +170,6 @@ const CreateBoard = ({ workspaceId }) => {
             Phông nền
           </Typography>
 
-
           <Grid container spacing={1} sx={{ mb: 2 }}>
             {colors?.map((color) => (
               <Grid item key={color.id}>
@@ -160,7 +180,10 @@ const CreateBoard = ({ workspaceId }) => {
                     backgroundColor: color.hex_code,
                     borderRadius: "4px",
                     cursor: "pointer",
-                    border: selectedBg === color.hex_code ? "2px solid #007BFF" : "none",
+                    border:
+                      selectedBg === color.hex_code
+                        ? "2px solid #007BFF"
+                        : "none",
                   }}
                   onClick={() => handleSelectBg(color.hex_code)}
                 />
@@ -186,7 +209,10 @@ const CreateBoard = ({ workspaceId }) => {
                       height: 35,
                       borderRadius: "4px",
                       cursor: "pointer",
-                      border: selectedBg === image.urls.small ? "2px solid #007BFF" : "none",
+                      border:
+                        selectedBg === image.urls.small
+                          ? "2px solid #007BFF"
+                          : "none",
                     }}
                     onClick={() => handleSelectBg(image.urls.small)}
                   />
@@ -211,7 +237,7 @@ const CreateBoard = ({ workspaceId }) => {
           </Typography>
           <Select
             fullWidth
-            value={workspace || workspaceId || filterWorkspace[0]?.id || ""} // Đảm bảo value khớp với ws.id
+            value={workspace || workspaceId || filterWorkspace[0]?.id || ""}
             onChange={(e) => setWorkspace(e.target.value)}
             sx={{
               mb: 2,
@@ -219,7 +245,9 @@ const CreateBoard = ({ workspaceId }) => {
               "& .MuiSvgIcon-root": { color: "white" },
               "& .MuiOutlinedInput-notchedOutline": { borderColor: "#444" },
               "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#666" },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#666" },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#666",
+              },
             }}
           >
             {filterWorkspace.map((ws) => (
@@ -261,9 +289,9 @@ const CreateBoard = ({ workspaceId }) => {
             {isCreatingBoard ? "Đang tạo..." : "Tạo bảng"}
           </Button>
         </Box>
-      </Popover>
-    </div>
+      </Popover >
+    </>
   );
-}
+};
 
 export default CreateBoard;
