@@ -42,9 +42,10 @@ const MemberItem = ({ member }) => {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "10px",
-        borderBottom: "1px solid #333",
-        background: "#222",
-        borderRadius: "8px",
+        // borderBottom: "1px solid #333",
+        // borderTop: "1px solid #333",
+        background: "#ffffff",
+        // borderRadius: "8px",
         marginBottom: "8px",
       }}
     >
@@ -62,7 +63,7 @@ const MemberItem = ({ member }) => {
           {member?.name?.charAt(0)}
         </Avatar>
         <Box>
-          <Typography fontWeight="bold" sx={{ color: "#fff" }}>
+          <Typography fontWeight="bold" sx={{ color: "#172B4D" }}>
             {member?.name}
           </Typography>
           <Typography variant="body2" sx={{ color: "gray" }}>
@@ -112,7 +113,7 @@ const MemberItem = ({ member }) => {
           size="small"
           startIcon={<HelpOutlineIcon />}
         >
-          {member.member_type}
+          {member.member_type === "admin" ? "Quản trị viên" : "Thành viên"}
         </Button>
 
         <Button
