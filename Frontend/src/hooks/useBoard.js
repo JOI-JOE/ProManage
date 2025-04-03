@@ -15,8 +15,8 @@ import {
   updateBoardVisibility,
 } from "../api/models/boardsApi";
 import { useCallback, useContext, useEffect } from "react";
-import WorkspaceContext from "../contexts/WorkspaceContext";
-import echoInstance from "./realtime/useRealtime";
+// import WorkspaceContext from "../contexts/WorkspaceContext";
+// import echoInstance from "./realtime/useRealtime";
 
 export const useBoardById = (boardId) => {
   return useQuery({
@@ -103,16 +103,11 @@ export const useRecentBoardAccess = () => {
  */
 export const useUpdateBoardName = () => {
   const queryClient = useQueryClient();
-  const { currentWorkspace } = useContext(WorkspaceContext);
 
   return useMutation({
     mutationFn: ({ boardId, name }) => updateBoardName(boardId, name), // Gọi API cập nhật tên board
     onSuccess: (_, { boardId, workspaceId }) => {
-      // Invalidate lại dữ liệu để cập nhật UI
-
-      // queryClient.invalidateQueries({ queryKey: ["boards", currentWorkspace.id], exact: true });
       queryClient.invalidateQueries(["boards"]);
-      // queryClient.invalidateQueries({ queryKey: ["boardDetail", boardId], exact: true });
     },
     onError: (error) => {
       console.error("❌ Lỗi khi cập nhật tên bảng:", error);

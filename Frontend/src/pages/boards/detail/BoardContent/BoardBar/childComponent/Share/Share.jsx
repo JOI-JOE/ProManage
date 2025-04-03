@@ -16,19 +16,19 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGenerateInviteLink, useUpdateRoleMemberInBoards ,useRemoveMemberFromBoard, useRemoveInviteLink } from "../../../../../../../hooks/useInviteBoard";
+import { useGenerateInviteLink, useUpdateRoleMemberInBoards, useRemoveMemberFromBoard, useRemoveInviteLink } from "../../../../../../../hooks/useInviteBoard";
 // import { useRemoveMemberFromBoard } from "../../../../../../../hooks/useRemoveMemberFromBoard"; // Import hook đã chỉnh sửa
 import { toast } from "react-toastify";
+import { useBoard } from "../../../../../../../contexts/BoardContext";
 
-const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
+const ShareBoardDialog = ({ boardMembers, currentUser, open, onClose }) => {
   const { boardId } = useParams();
   const currentBoardId = boardId;
   const navigate = useNavigate();
 
-  // console.log(currentUser);
 
   // console.log('Current board:',boardMembers);
- // States
+  // States
   const [roleAnchorEl, setRoleAnchorEl] = useState(null);
   const [leaveAnchorEl, setLeaveAnchorEl] = useState(null);
   const [selectedMemberId, setSelectedMemberId] = useState(null);
@@ -126,25 +126,27 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   };
 
   const handleDeleteLink = () => {
-  
-   const inviteCode = link.split("/").pop();
+
+    const inviteCode = link.split("/").pop();
     removeInvite(inviteCode, {
-        onSuccess: () => {
-            toast.success("Đã xóa liên kết mời!");
-            localStorage.removeItem("InviteLink"); // Xóa khỏi localStorage
-            setLink(null);
-        }
+      onSuccess: () => {
+        toast.success("Đã xóa liên kết mời!");
+        localStorage.removeItem("InviteLink"); // Xóa khỏi localStorage
+        setLink(null);
+      }
     });
-};
+  };
 
   // Utility functions
   const getMemberRoleText = (role) => (role === "admin" ? "Quản trị viên" : "Thành viên");
   const getMemberRoleDescription = (role) =>
     role === "admin" ? "Quản trị viên của bảng" : "Thành viên";
 
-  // Kiểm tra số lượng admin
-  const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
-  // console.log(adminCount);
+  console.log("mảng members", boardMembers)
+  console.log("người dùng hiện tại", currentUser)
+
+  const admins = boardMembers.filter(member => member.role === "admin");
+  const adminCount = admins.length;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -172,7 +174,7 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
               "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "teal" },
             }}
           />
-         {link ? (
+          {link ? (
             <Typography variant="body2" color="red" sx={{ cursor: "pointer", ml: 1 }} onClick={handleDeleteLink}>
               Xóa liên kết
             </Typography>
@@ -182,12 +184,12 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
             </Typography>
           )}
         </Box>
-        
-        
+
+
 
         {link && (
-          <Typography variant="body2" color="textSecondary" sx={{ cursor: "pointer", ml: 1, color: "blue" }}   onClick={() => navigator.clipboard.writeText(link)}>
-            Sao chép liên kết 
+          <Typography variant="body2" color="textSecondary" sx={{ cursor: "pointer", ml: 1, color: "blue" }} onClick={() => navigator.clipboard.writeText(link)}>
+            Sao chép liên kết
           </Typography>
         )}
 
@@ -195,19 +197,19 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
           Thành viên của bảng thông tin
         </Typography>
 
-        {boardMembers?.data?.map((member) => {
-          const isCurrentUser = currentUser?.id === member.id;
-          // console.log(currentUser?.id)
+        {boardMembers?.map((member) => {
+          // const isCurrentUser = currentUser?.id === member.id;
+          // const isSelectedAdmin = member.role === "admin";
+          // const canEdit = isAdmin;
 
-          const currentUserBoard = currentUser?.boardMember?.find((board) => board.board_id === currentBoardId);
-
-          // console.log("currentUser boardMember:", currentUser?.boardMember);
-
-          const isAdmin = currentUserBoard?.role === "admin";
-          const canEdit = isAdmin;
-          const isSelectedAdmin = member?.pivot.role === "admin";
-          const removeOptionText =
-            isCurrentUser && adminCount > 1 ? "Rời bảng" : isSelectedAdmin ? "Rời bảng" : "Xóa khỏi bảng";
+          // Xác định text của nút "Remove" hoặc "Rời bảng"
+          // const removeOptionText = isCurrentUser
+          //   ? adminCount > 1
+          //     ? "Rời bảng"
+          //     : "Bạn là admin cuối cùng"
+          //   : isSelectedAdmin
+          //     ? "Rời bảng"
+          //     : "Xóa khỏi bảng";
 
           return (
             <Box
@@ -220,7 +222,7 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
             >
               <Avatar
                 alt={member.full_name}
-                src={member.avatar || ""}
+                src={member?.image || ""}
                 sx={{
                   width: 40,
                   height: 40,
@@ -229,47 +231,49 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
                   fontWeight: "bold",
                 }}
               >
-                {!member.avatar && member.full_name.charAt(0).toUpperCase()}
+                {member?.image || member?.full_name.charAt(0).toUpperCase()}
               </Avatar>
               <Box flexGrow={1}>
                 <Typography fontWeight="bold">{member.full_name}</Typography>
                 <Typography variant="body2" color="textSecondary">{member.email}</Typography>
                 <Typography variant="body2" color="textSecondary">
-                  {getMemberRoleDescription(member.pivot.role)}
+                  {getMemberRoleDescription(member.role)}
                 </Typography>
               </Box>
 
-              {canEdit ? (
-                <>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    endIcon={<ExpandMoreIcon />}
-                    onClick={(e) => handleOpenRoleMenu(e, member.id)}
-                    sx={{ fontSize: "0.765rem" }}
-                  >
-                    {getMemberRoleText(member.pivot.role)}
-                  </Button>
-                  <Menu
-                    anchorEl={roleAnchorEl}
-                    open={Boolean(roleAnchorEl) && selectedMemberId === member.id}
-                    onClose={() => handleCloseRoleMenu(null, member.id)}
-                    MenuListProps={{ sx: { "& .MuiMenuItem-root": { fontSize: "0.8rem" } } }}
-                  >
-                    <MenuItem onClick={() => handleCloseRoleMenu("Quản trị viên", member.id)}>
-                      Quản trị viên
-                    </MenuItem>
-                    <MenuItem onClick={() => handleCloseRoleMenu("Thành viên", member.id)}>Thành viên</MenuItem>
-                    <MenuItem onClick={() => handleCloseRoleMenu(removeOptionText, member.id)}>
-                      {removeOptionText}
-                    </MenuItem>
-                  </Menu>
-                </>
-              ) : (
-                <Typography variant="body2" sx={{ fontSize: "0.765rem", p: "4px 8px" }}>
-                  {getMemberRoleText(member.pivot.role)}
-                </Typography>
-              )}
+              {/* {canEdit ? ( */}
+              <>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  endIcon={<ExpandMoreIcon />}
+                  onClick={(e) => handleOpenRoleMenu(e, member.id)}
+                  sx={{ fontSize: "0.765rem" }}
+                >
+                  {/* {getMemberRoleText(member.role)} */}
+                  ddk
+                </Button>
+                <Menu
+                  anchorEl={roleAnchorEl}
+                  open={Boolean(roleAnchorEl) && selectedMemberId === member.id}
+                  onClose={() => handleCloseRoleMenu(null, member.id)}
+                  MenuListProps={{ sx: { "& .MuiMenuItem-root": { fontSize: "0.8rem" } } }}
+                >
+                  <MenuItem onClick={() => handleCloseRoleMenu("Quản trị viên", member.id)}>
+                    Quản trị viên
+                  </MenuItem>
+                  <MenuItem onClick={() => handleCloseRoleMenu("Thành viên", member.id)}>Thành viên</MenuItem>
+                  {/* <MenuItem onClick={() => handleCloseRoleMenu(removeOptionText, member.id)}> */}
+                  {/* {removeOptionText} */}
+                  {/* </MenuItem> */}
+                </Menu>
+              </>
+              {/* ) : ( */}
+              <Typography variant="body2" sx={{ fontSize: "0.765rem", p: "4px 8px" }}>
+                {/* {getMemberRoleText(member.role)} */}
+                kajf
+              </Typography>
+              {/* )} */}
             </Box>
           );
         })}

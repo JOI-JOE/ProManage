@@ -98,7 +98,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::controller(WorkspaceController::class)->group(function () {
         Route::prefix('workspaces')->group(function () {
             Route::get('/', 'index');
-            Route::get('/{workspaceName}', 'showWorkspaceByName')->where('workspaceName', '[A-Za-z0-9-]+');
+            Route::get('/name/{workspaceName}', 'showWorkspaceByName');
             Route::post('/', 'store');
             Route::put('/{workspace}', 'updateWorkspaceInfo');
             Route::delete('/{workspace}', 'destroy');

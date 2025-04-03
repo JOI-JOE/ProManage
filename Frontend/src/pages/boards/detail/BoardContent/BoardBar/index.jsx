@@ -19,12 +19,12 @@ import FilterDialog from "./childComponent/Filter/Filter";
 import ViewPermissionsDialog from "./childComponent/View/View";
 import ShareBoardDialog from "./childComponent/Share/Share";
 import BoardMenu from "./BoardMenu";
-import { useUpdateBoardName } from "../../../../../hooks/useBoard";
 import { useMemberJoinedListener } from "../../../../../hooks/useInviteBoard";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
 import { useMe } from "../../../../../contexts/MeContext";
 import { useBoard } from "../../../../../contexts/BoardContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUpdateBoardName } from "../../../../../hooks/useBoard";
 
 const style = {
   border: "none",
@@ -40,10 +40,8 @@ const style = {
 };
 
 const BoardBar = () => {
-  const { data: user } = useMe();
+  const { user } = useMe();
   const { board, members, memberships, isLoading, error, isEditable } = useBoard();
-
-  const currentUserId = user?.id;
 
   const combinedMembers = useMemo(() => {
     if (!members || !memberships) return [];
@@ -330,7 +328,7 @@ const BoardBar = () => {
       {/* Dialogs */}
       <ShareBoardDialog
         boardMembers={combinedMembers}
-        currentUser={user}
+        currentUser={user?.id}
         open={openShareDialog}
         onClose={handleShareDialogClose}
       />
