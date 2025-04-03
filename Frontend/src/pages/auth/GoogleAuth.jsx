@@ -35,8 +35,8 @@ const GoogleAuth = () => {
       onClick={handleLogin}
       className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300 mb-2"
     >
-      <FcGoogle className="mr-2" />
-      <span className=""> Đăng nhập với Google</span>
+      <FcGoogle className="text-xl" />
+      <span className="text-sm font-medium">Đăng nhập với Google</span>
     </button>
   );
 };
