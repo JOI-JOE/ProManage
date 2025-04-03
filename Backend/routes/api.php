@@ -201,11 +201,17 @@ Route::prefix('boards/{id}/')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/boards/{boardId}/members', [BoardMemberController::class, 'getBoardMembers']);
+    Route::get('/guest-boards', [BoardMemberController::class, 'getGuestBoards']);
+
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
+    Route::delete('/remove-invite/{token}', [BoardMemberController::class, 'removeInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
     Route::put('/boards/update-role', [BoardMemberController::class, 'updateRoleMemberInBoard']);
-    Route::delete('/boards/delete', [BoardMemberController::class, 'removeMemberFromBoard']);
+    Route::delete('{boardId}/boards/removeMember', [BoardMemberController::class, 'removeMemberFromBoard']);
+
+    Route::get('/boards/{boardId}/members/{userId}/cards', [BoardMemberController::class, 'getMemberCards']);
+    Route::get('/boards/{boardId}/members/{userId}/items', [BoardMemberController::class, 'getMemberChecklistItems']);
 
     Broadcast::routes();
 });
@@ -286,9 +292,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/checklists', [ChecklistController::class, 'store']); // Thêm mới checklist
     Route::put('/checklists/{id}', [ChecklistController::class, 'update']); // Cập nhật checklist
     Route::delete('/checklists/{id}', [ChecklistController::class, 'deleteChecklist']); // Xóa checklist
+    Route::get('/item/{id}/show', [ChecklistItemController::class, 'show']);
+    Route::get('/item/{id}/dates-item', [ChecklistItemController::class, 'getChecklistItemDate']);
+    Route::put('/update-date/{id}/item', [ChecklistItemController::class, 'updateDate']);
 
     // Checklist Item routes
-    Route::get('/checklist/{checklistId}/item', [ChecklistItemController::class, 'getChecklistItems']); // Lấy danh sách checklist item theo checklist
+    Route::get('/checklist-items/{id}/item', [ChecklistItemController::class, 'getChecklistItems']); // Lấy danh sách checklist item theo checklist
     Route::post('/checklist-items', [ChecklistItemController::class, 'store']); // Thêm mới checklist item
     Route::post('/checklist-items/{id}/toggle-member', [ChecklistItemMemberController::class, 'toggleMember']);
     Route::get('/checklist-items/{id}/members', [ChecklistItemMemberController::class, 'getMembers']);

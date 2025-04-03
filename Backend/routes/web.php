@@ -33,7 +33,7 @@ Route::get('/', function () {
 Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
 Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
 
-Route::middleware('admin')->prefix('admin')->as('admin.')->group(function () {
+Route::prefix('admin')->as('admin.')->group(function(){
 
     Route::get('/', function () {
         return view('admin.dashboard');

@@ -69,9 +69,6 @@ const MenuCalendar = ({ open, onClose }) => {
     );
   };
 
-  const isIndeterminate =
-    selectedLists.length > 0 && selectedLists.length < lists.length;
-
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <Box sx={{ width: 350, padding: 2 }}>

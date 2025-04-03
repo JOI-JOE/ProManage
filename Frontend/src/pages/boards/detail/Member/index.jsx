@@ -27,7 +27,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useParams } from "react-router-dom";
 import loadingLogo from "~/assets/loading.svg?react";
 
-
 import MemberItem from "./MemberItem";
 import GenerateLink from "../../../../components/GenerateLink";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
@@ -65,7 +64,6 @@ const Member = () => {
   const { mutate: addMember, isLoading, error } = useAddMemberToWorkspace();
   const { mutate: confirmMember } = useConfirmWorkspaceMember();
 
-
   const [inputValue, setInputValue] = useState("");
   const [options, setOptions] = useState([]);
   const [debouncedValue, setDebouncedValue] = useState("");
@@ -75,7 +73,10 @@ const Member = () => {
   const [invitationMessage, setInvitationMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const { data: memberSearch, isLoading: isLoadingMember } = useSearchMembers(debouncedValue, workspace?.id);
+  const { data: memberSearch, isLoading: isLoadingMember } = useSearchMembers(
+    debouncedValue,
+    workspace?.id
+  );
 
   // ✅ Tạo debounce bằng useRef -> Tránh spam API khi gõ nhanh
   const debounceTimeout = useRef(null);
@@ -102,17 +103,15 @@ const Member = () => {
   }, [debouncedValue, memberSearch]);
 
   const handleOptionSelect = (event, newValue) => {
-    const newIds = newValue.map(user => user.id);
+    const newIds = newValue.map((user) => user.id);
 
     setSelectedUsers(newValue);
-    setSelectedUserIds(prevIds => [...new Set([...prevIds, ...newIds])]);
+    setSelectedUserIds((prevIds) => [...new Set([...prevIds, ...newIds])]);
 
     if (newIds.length > 0) {
       console.log("📢 Sending API with userIds:", newIds);
 
-      addMember(
-        { workspaceId: workspace.id, userIds: newIds },
-      );
+      addMember({ workspaceId: workspace.id, userIds: newIds });
     }
     setInputValue("");
     setOptions([]);
@@ -121,7 +120,7 @@ const Member = () => {
   const handleSendInvitations = async () => {
     if (!selectedUsers.length) return;
 
-    const memberIds = selectedUsers.map(user => user.id);
+    const memberIds = selectedUsers.map((user) => user.id);
     console.log("📩 Đang gửi lời mời:", memberIds);
 
     setIsProcessing(true); // Bắt đầu hiển thị loading
@@ -129,11 +128,15 @@ const Member = () => {
     try {
       // Duyệt qua từng memberId và gửi yêu cầu mời
       for (const memberId of memberIds) {
-        await confirmMember({ workspaceId: workspace.id, memberId, invitationMessage });
+        await confirmMember({
+          workspaceId: workspace.id,
+          memberId,
+          invitationMessage,
+        });
       }
 
       console.log("✅ Tất cả lời mời đã gửi!");
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Giữ loading một lúc trước khi đóng
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Giữ loading một lúc trước khi đóng
 
       handleCloseInvite(); // Đóng modal sau khi hoàn tất
     } catch (error) {
@@ -142,8 +145,6 @@ const Member = () => {
       setIsProcessing(false); // Mở lại nút sau khi hoàn thành
     }
   };
-
-
 
   const { mutate: createInviteLink, isLoading: isCreatingInvite } =
     useCreateInviteWorkspace();
@@ -157,7 +158,6 @@ const Member = () => {
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
 
   const handleOpenInvite = () => {
-
     setInviteOpen(true);
     setLinkCopied(false);
     setIsLinkActive(false);
@@ -212,6 +212,24 @@ const Member = () => {
         maxWidth: "1200px",
         padding: "32px 20px 20px 20px",
         // margin: "30px auto",
+
+        overflow: "auto",
+        maxHeight: "579px", // Giới hạn chiều cao để kích hoạt scroll
+        "&::-webkit-scrollbar": {
+          width: "8px",
+          height: "8px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "#f1f1f1",
+          borderRadius: "4px",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: "#888",
+          borderRadius: "4px",
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          background: "#555",
+        },
       }}
     >
       {/* Header chứa Tiêu đề và Nút Mời Thành Viên */}
@@ -225,7 +243,6 @@ const Member = () => {
           width: "100%",
           maxWidth: "1100px",
           margin: "0 auto",
-          minHeight: "80px",
         }}
       >
         {!isFormVisible ? (
@@ -233,18 +250,24 @@ const Member = () => {
             <Avatar
               sx={{
                 bgcolor: "#5D87FF",
-                width: "80px",
-                height: "80px",
+                width: "50px",
+                height: "50px",
                 marginLeft: "100px",
               }}
             >
-              <span style={{ fontSize: "30px", fontWeight: "bold" }}>
+              <span style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
                 {workspace?.display_name.charAt(0).toUpperCase()}
               </span>
             </Avatar>
             <Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <Typography fontWeight="bold" sx={{ fontSize: 25 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <Typography fontWeight="bold" sx={{ fontSize: "1.2rem" }}>
                   {workspace?.display_name}
                 </Typography>
                 <IconButton
@@ -307,7 +330,7 @@ const Member = () => {
             <Typography
               variant="h6"
               fontWeight="bold"
-              sx={{ fontSize: "20px" }}
+              sx={{ fontSize: "0.9rem" }}
             >
               Người cộng tác
             </Typography>
@@ -354,12 +377,15 @@ const Member = () => {
             <Typography
               variant="h6"
               fontWeight="bold"
-              sx={{ fontSize: "20px" }}
+              sx={{ fontSize: "0.9rem" }}
             >
               Thành viên không gian làm việc (1)
             </Typography>
             <Box sx={{ borderBottom: "1px solid #D3D3D3", pb: 2, mb: 2 }}>
-              <Typography variant="body2" sx={{ color: "gray" }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "gray", fontSize: "0.7rem" }}
+              >
                 Các thành viên trong Không gian làm việc có thể xem và tham gia
                 tất cả các bảng Không gian làm việc hiển thị và tạo ra các bảng
                 mới trong Không gian làm việc.
@@ -369,7 +395,7 @@ const Member = () => {
             <Typography
               variant="h6"
               fontWeight="bold"
-              sx={{ mt: 2, fontSize: "20px" }}
+              sx={{ mt: 2, fontSize: "0.9rem" }}
             >
               Mời các thành viên tham gia cùng bạn
             </Typography>
@@ -384,7 +410,10 @@ const Member = () => {
                 justifyContent: "space-between",
               }}
             >
-              <Typography variant="body2" sx={{ color: "gray", flex: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "gray", flex: 1, fontSize: "0.7rem" }}
+              >
                 Bất kỳ ai có liên kết mời đều có thể tham gia Không gian làm
                 việc miễn phí này. Bạn cũng có thể tắt và tạo liên kết mới cho
                 Không gian làm việc này bất cứ lúc nào. Số lời mời đang chờ xử
@@ -402,7 +431,11 @@ const Member = () => {
                 fullWidth
                 size="small"
                 placeholder="Lọc theo tên"
-                sx={{ mb: 2, width: "200px" }}
+                sx={{
+                  mb: 2,
+                  width: "200px",
+                  "& .MuiInputBase-input": { fontSize: "0.6rem" },
+                }}
               />
             </Box>
 
@@ -468,7 +501,14 @@ const Member = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              width: "100%",
+            }}
+          >
             <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
               <Paper
                 elevation={0}
@@ -478,7 +518,8 @@ const Member = () => {
                   flex: 1, // 🔥 Giúp Paper mở rộng full width
                   borderRadius: "3px",
                   boxShadow: "inset 0 0 0 1px rgba(9, 30, 66, 0.15)",
-                  transition: "background-color 85ms ease, border-color 85ms ease, box-shadow 85ms ease",
+                  transition:
+                    "background-color 85ms ease, border-color 85ms ease, box-shadow 85ms ease",
                   backgroundColor: "#ffffff",
                   padding: "5px 10px", // 🔥 Tạo khoảng cách padding đẹp hơn
                 }}
@@ -487,23 +528,32 @@ const Member = () => {
                   multiple
                   id="custom-autocomplete"
                   options={options.filter(
-                    (option) => !selectedUsers.some((user) => user.id === option.id)
+                    (option) =>
+                      !selectedUsers.some((user) => user.id === option.id)
                   )}
                   getOptionLabel={(option) => option.full_name}
                   getOptionDisabled={(option) => option.joined} // 🔥 Vô hiệu hóa nếu đã joined
                   filterOptions={(options, state) =>
                     options.filter(
                       (option) =>
-                        option.full_name?.toLowerCase().includes(state.inputValue.toLowerCase()) ||
-                        option.user_name?.toLowerCase().includes(state.inputValue.toLowerCase()) ||
-                        option.email?.toLowerCase().includes(state.inputValue.toLowerCase())
+                        option.full_name
+                          ?.toLowerCase()
+                          .includes(state.inputValue.toLowerCase()) ||
+                        option.user_name
+                          ?.toLowerCase()
+                          .includes(state.inputValue.toLowerCase()) ||
+                        option.email
+                          ?.toLowerCase()
+                          .includes(state.inputValue.toLowerCase())
                     )
                   }
                   disableClearable
                   popupIcon={null}
                   loading={isLoadingMember}
                   loadingText={
-                    <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "center", py: 1 }}
+                    >
                       <SvgIcon
                         component={loadingLogo}
                         sx={{ width: 50, height: 50, transform: "scale(0.5)" }}
@@ -512,15 +562,30 @@ const Member = () => {
                       />
                     </Box>
                   }
-                  noOptionsText={isLoadingMember ? "Đang tìm kiếm..." : inputValue.length >= 3 ? "Không tìm thấy thành viên nào." : ""}
+                  noOptionsText={
+                    isLoadingMember
+                      ? "Đang tìm kiếm..."
+                      : inputValue.length >= 3
+                        ? "Không tìm thấy thành viên nào."
+                        : ""
+                  }
                   open={open}
                   value={selectedUsers}
                   onChange={handleOptionSelect}
                   fullWidth
                   renderOption={(props, option) => (
-                    <ListItem {...props} alignItems="flex-start" disabled={option.joined}>
+                    <ListItem
+                      {...props}
+                      alignItems="flex-start"
+                      disabled={option.joined}
+                    >
                       <ListItemAvatar>
-                        <Avatar alt={option.full_name} src={option.image || "/static/images/avatar/default.jpg"} />
+                        <Avatar
+                          alt={option.full_name}
+                          src={
+                            option.image || "/static/images/avatar/default.jpg"
+                          }
+                        />
                       </ListItemAvatar>
                       <ListItemText
                         primary={option.full_name}
@@ -547,13 +612,21 @@ const Member = () => {
                       {...params}
                       variant="standard"
                       placeholder="Nhập tên hoặc email..."
-                      InputProps={{ ...params.InputProps, disableUnderline: true }}
+                      InputProps={{
+                        ...params.InputProps,
+                        disableUnderline: true,
+                      }}
                       onChange={handleInputChange}
                       sx={{ width: "100%", padding: "5px 5px" }}
                     />
                   )}
                   PopperComponent={(props) => (
-                    <Popper {...props} modifiers={[{ name: "offset", options: { offset: [0, 15] } }]} />
+                    <Popper
+                      {...props}
+                      modifiers={[
+                        { name: "offset", options: { offset: [0, 15] } },
+                      ]}
+                    />
                   )}
                   sx={{
                     flex: 1,
@@ -568,14 +641,19 @@ const Member = () => {
                       overflowX: "hidden",
                       scrollbarWidth: "thin",
                       "&::-webkit-scrollbar": { width: "5px" },
-                      "&::-webkit-scrollbar-thumb": { backgroundColor: "#aaa", borderRadius: "10px" },
-                      "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#888" },
+                      "&::-webkit-scrollbar-thumb": {
+                        backgroundColor: "#aaa",
+                        borderRadius: "10px",
+                      },
+                      "&::-webkit-scrollbar-thumb:hover": {
+                        backgroundColor: "#888",
+                      },
                     },
                   }}
                 />
               </Paper>
-              {selectedUsers.length > 0 && (
-                isProcessing ? (
+              {selectedUsers.length > 0 &&
+                (isProcessing ? (
                   <Box
                     sx={{
                       display: "flex",
@@ -604,9 +682,7 @@ const Member = () => {
                   >
                     Gửi lời mời
                   </Button>
-                )
-              )}
-
+                ))}
             </Box>
             {selectedUsers.length > 0 && (
               <TextField
@@ -658,7 +734,7 @@ const Member = () => {
           )}
         </DialogContent>
       </Dialog>
-    </Box >
+    </Box>
   );
 };
 export default Member;

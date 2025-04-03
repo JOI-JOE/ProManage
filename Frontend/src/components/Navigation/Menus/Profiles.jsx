@@ -24,7 +24,6 @@ import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
 import { useMe } from "../../../contexts/MeContext";
 
-
 export default function ProfileMenu({ email }) {
   const { user } = useMe()
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -128,7 +127,9 @@ export default function ProfileMenu({ email }) {
         >
           ProManage
         </Typography>
-        <MenuItem>Hồ sơ và Hiển thị</MenuItem>
+        <MenuItem onClick={() => navigate("/profile-display")}>
+          Hồ sơ và Hiển thị
+        </MenuItem>
         <MenuItem>Hoạt động</MenuItem>
         <MenuItem>Thẻ</MenuItem>
         <MenuItem>Cài đặt</MenuItem>
@@ -275,4 +276,3 @@ export default function ProfileMenu({ email }) {
     </React.Fragment>
   );
 }
-

@@ -43,6 +43,7 @@ const BoardBar = () => {
   const { data: user } = useMe();
   const { board, members, memberships, isLoading, error, isEditable } = useBoard();
 
+  const currentUserId = user?.id;
 
   const combinedMembers = useMemo(() => {
     if (!members || !memberships) return [];
@@ -68,6 +69,21 @@ const BoardBar = () => {
   // Quản lý trạng thái chỉnh sửa tiêu đề
   const [editTitle, setEditTitle] = useState(false);
   const [teamName, setTeamName] = useState(board?.name);
+
+  // const [editTitle, setEditTitle] = useState(false);
+  // const [teamName, setTeamName] = useState(board?.title);
+  // const updateBoardName = useUpdateBoardName();
+
+  // const admins = Array.isArray(boardMembers?.data)
+  //   ? boardMembers.data.filter(member => member.pivot.role === "admin")
+  //   : [];
+
+  // const isAdmin = Array.isArray(boardMembers?.data)
+  //   ? boardMembers.data.some(member =>
+  //     member.id === currentUserId && member.pivot.role === "admin"
+  //   )
+  //   : false;
+
 
   // Quản lý trạng thái sao (isStarred)
   const [isStarred, setIsStarred] = useState(false);
@@ -167,7 +183,7 @@ const BoardBar = () => {
         {/* Chỉnh sửa tiêu đề */}
         {editTitle ? (
           <TextField
-            value={teamName}
+            value={teamName ?? board?.title}
             onChange={handleTitleChange}
             onBlur={handleTitleBlur}
             onKeyPress={handleTitleKeyPress}
@@ -189,6 +205,8 @@ const BoardBar = () => {
                 borderRadius: "8px",
                 backgroundColor: "#ffffff",
               },
+              "& .MuiInputBase-input": { textAlign: "center" },
+              "& .MuiOutlinedInput-root": { borderRadius: "8px" },
             }}
           />
         ) : (

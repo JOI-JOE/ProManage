@@ -100,10 +100,12 @@ class User extends Authenticatable
      */
 
 
-    // public function workspaces()
-    // {
-    //     return $this->hasMany(Workspace::class, 'id_member_creator');
-    // }
+     public function workspaces_2()
+    {
+        return $this->hasMany(Workspace::class, 'id_member_creator')->with(['boards' => function ($query) {
+            $query->where('closed', false);
+        }]);
+    }
 
     public function boards()
     {
@@ -151,29 +153,32 @@ class User extends Authenticatable
 
     // Quan hệ để lấy Guest Workspaces
     //    / Trong User.php
-    public function guestWorkspaces()
-    {
-        $userId = $this->id;
-        Log::info('User ID: ' . $userId);
-        Log::info('BoardsMember IDs: ' . json_encode($this->boardsMember->pluck('id')->toArray()));
-
-        $query = Workspace::whereHas('boards', function ($query) {
-            $query->whereIn('boards.id', $this->boardsMember->pluck('id'));
-        })->whereDoesntHave('members', function ($query) use ($userId) {
-            $query->where('workspace_members.user_id', $userId);
-        })->with(['boards' => function ($query) {
-            $query->whereIn('id', $this->boardsMember->pluck('id'));
-        }]);
-
-        Log::info('SQL: ' . $query->toSql());
-        Log::info('Bindings: ' . json_encode($query->getBindings()));
-        Log::info('Result: ' . json_encode($query->get()->toArray()));
-        return $query;
-    }
-
-
-    public function checklistItems()
-    {
-        return $this->belongsToMany(ChecklistItem::class, 'checklist_item_user', 'user_id', 'checklist_item_id');
-    }
+    // public function guestWorkspaces()
+    // {
+    //     $userId = $this->id;
+    
+    //     // Lấy danh sách ID các board mà user tham gia (thành viên hoặc quản trị)
+    //     $boardIds = $this->boardsMember->pluck('id')->toArray();
+    
+    //     Log::info('User ID: ' . $userId);
+    //     Log::info('Board IDs: ' . json_encode($boardIds));
+    
+    //     // Nếu không có board nào thì trả về collection rỗng
+    //     if (empty($boardIds)) {
+    //         Log::info('User has no boards, returning empty collection.');
+    //         return collect([]);
+    //     }
+    
+    //     // Truy vấn lấy danh sách các workspace có chứa các board này (loại bỏ trùng)
+    //     $workspaces = Workspace::whereHas('boards', function ($query) use ($boardIds) {
+    //             $query->whereIn('boards.id', $boardIds);
+    //         })
+    //         ->select('id', 'name')  // Lấy cả id và name của workspace
+    //         ->distinct()            // Loại bỏ trùng lặp
+    //         ->get();                // Trả về collection thay vì chỉ danh sách tên
+    
+    //     Log::info('Workspaces: ' . json_encode($workspaces));
+    
+    //     return $workspaces;
+    // }
 }

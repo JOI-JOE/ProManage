@@ -10,7 +10,7 @@ export const useChecklistsByCard = (cardId) => {
         queryKey: ["checklists", cardId],
         queryFn: () => getChecklistsByCard(cardId), // Gọi API lấy danh sách comment
         enabled: !!cardId, // Chỉ gọi API nếu có cardId
-        staleTime: 1000 * 60 * 5, // Cache trong 5 phút
+        staleTime: 0, // Cache trong 5 phút
         cacheTime: 1000 * 60 * 30, // Giữ cache trong 30 phút
     });
 
@@ -25,21 +25,22 @@ export const useChecklistsByCard = (cardId) => {
         const channel = echoInstance.channel(`checklist.${cardId}`);
     
         channel.listen(".checklistItem.created", (event) => {
-            console.log("📡 Nhận sự kiện ChecklistItemCreated:", event);
+            // console.log("📡 Nhận sự kiện ChecklistItemCreated:", event);
     
-            queryClient.setQueryData(["checklistItems", event.checklistItem.checklist.id], (oldItems) => {
-                console.log("🔄 Cập nhật danh sách cũ:", oldItems);
-                if (!oldItems) return [event.checklistItem]; // Nếu danh sách rỗng, thêm mới
-                return [...oldItems, event.checklistItem]; // Thêm item mới vào danh sách
-            });
+            // queryClient.setQueryData(["checklistItems", event.checklistItem.checklist.id], (oldItems) => {
+            //     console.log("🔄 Cập nhật danh sách cũ:", oldItems);
+            //     if (!oldItems) return [event.checklistItem]; // Nếu danh sách rỗng, thêm mới
+            //     return [...oldItems, event.checklistItem]; // Thêm item mới vào danh sách
+            // });
     
-            queryClient.invalidateQueries({ queryKey: ["checklists"] });
-            queryClient.invalidateQueries({ queryKey: ["checklistItems", event.checklistItem.checklist.id] });
+            // queryClient.invalidateQueries({ queryKey: ["checklists"], exact: true  });
+            // queryClient.invalidateQueries({ queryKey: ["checklistItems", event.checklistItem.checklist.id], exact: true});
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
 
         });
 
         channel.listen(".checklistItem.updated", (event) => {
-            console.log("🔄 Nhận sự kiện ChecklistItemUpdated:", event);
+            // console.log("🔄 Nhận sự kiện ChecklistItemUpdated:", event);
     
             // queryClient.setQueryData(["checklistItems", event.checklistItem.checklist.id], (oldItems) => {
             //     if (!oldItems) return [];
@@ -49,12 +50,12 @@ export const useChecklistsByCard = (cardId) => {
             //     );
             // });
     
-            queryClient.invalidateQueries({ queryKey: ["checklists", cardId] });
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
 
         });
 
         channel.listen(".checklistItem.deleted", (event) => {
-            console.log("❌ Nhận sự kiện ChecklistItemDeleted:", event);
+            // console.log("❌ Nhận sự kiện ChecklistItemDeleted:", event);
         
             // queryClient.setQueryData(["checklistItems", cardId], (oldItems) => {
             //     if (!oldItems) return [];
@@ -63,86 +64,41 @@ export const useChecklistsByCard = (cardId) => {
             // });
         
             // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });
-            queryClient.invalidateQueries({ queryKey: ["checklists", cardId ] });
-            queryClient.invalidateQueries({ queryKey: ["checklistItems", event.checklistItem.checklist.id] });
+            // queryClient.invalidateQueries({ queryKey: ["checklists", cardId ] });
+            // queryClient.invalidateQueries({ queryKey: ["checklistItems", event.checklistItem.checklist.id] });
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
+
 
         });
 
         channel.listen(".checklist.updated", (event) => {
-            console.log("🔄 Nhận sự kiện ChecklistUpdated:", event);
+            // console.log("🔄 Nhận sự kiện ChecklistUpdated:", event);
     
-            queryClient.setQueryData(["checklists"], (oldChecklists) => {
-                if (!oldChecklists) return [];
-    
-                return oldChecklists.map((checklist) =>
-                    checklist.id === event.checklist.id ? { ...checklist, name: event.checklist.name } : checklist
-                );
-            });
-    
-            queryClient.invalidateQueries({ queryKey: ["checklists"] });
-        });
-
-        channel.listen(".checklist.created", (event) => {
-            console.log("📡 Nhận sự kiện ChecklistCreated:", event);
-
-
-            queryClient.invalidateQueries({ queryKey: ["checklists"] });
-            queryClient.invalidateQueries({ queryKey: ["activities", cardId] });
-        });
-
-        channel.listen(".checklist.deleted", (event) => {
-            console.log("🗑 Checklist bị xóa:", event);
-        
-            // Cập nhật danh sách checklist
-            // queryClient.setQueryData(["checklists", event.cardId], (oldChecklists) => {
+            // queryClient.setQueryData(["checklists"], (oldChecklists) => {
             //     if (!oldChecklists) return [];
-            //     return oldChecklists.filter(checklist => checklist.id !== event.checklistId);
+    
+            //     return oldChecklists.map((checklist) =>
+            //         checklist.id === event.checklist.id ? { ...checklist, name: event.checklist.name } : checklist
+            //     );
             // });
-        
-            // // Cập nhật activity nếu có
-            // if (event.activity) {
-            //     queryClient.setQueryData(["activities", event.cardId], (oldActivities) => {
-            //         if (!oldActivities) return [];
-            //         return [...oldActivities, event.activity];
-            //     });
-            // }
-        
-            queryClient.invalidateQueries({ queryKey: ["checklists"] });
-            queryClient.invalidateQueries({ queryKey: ["activities"] });
+    
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
         });
 
+        channel.listen(".checklist.created", () => {
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
+            queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
+        });
 
-        channel.listen(".checklistItem.toggle", (event) => {
-            
-        
-            queryClient.setQueryData(["checklistItems", event.checklistItem.checklist_id], (oldItems) => {
-                if (!oldItems) return [event.checklistItem];
-        
-                return oldItems.map((item) =>
-                    item.id === event.checklistItem.id ? event.checklistItem : item
-                );
-            });
-        
-            // Cập nhật phần trăm hoàn thành của checklist
-            queryClient.setQueryData(["checklists"], (oldChecklists) => {
-                if (!oldChecklists) return [];
-        
-                return oldChecklists.map((checklist) =>
-                    checklist.id === event.checklistItem.checklist_id
-                        ? { ...checklist, completion_rate: event.completionRate }
-                        : checklist
-                );
-            });
-        
-            // Nếu có activity, cập nhật danh sách hoạt động
-            if (event.activity) {
-                queryClient.setQueryData(["activities"], (oldActivities) => {
-                    return oldActivities ? [event.activity, ...oldActivities] : [event.activity];
-                });
-            }
+        channel.listen(".checklist.deleted", () => {
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
+            queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
+        });
 
-            queryClient.invalidateQueries({queryKey: ["checklists"]});
-            queryClient.invalidateQueries({ queryKey: ["activities"] }); 
+        channel.listen(".checklistItem.toggle", () => {
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
+            queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         });
         
 
@@ -173,8 +129,8 @@ export const useCreateCheckList = () => {
     return useMutation({
         mutationFn: ({ card_id, name }) => createCheckList({ card_id, name }), // Gọi API tạo checklist
         onSuccess: (newCheckList, { card_id }) => {
-            // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] }); // Cập nhật lại danh sách checklist
-            // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
+            queryClient.invalidateQueries({ queryKey: ["checklists", card_id], exact:true });
+            queryClient.invalidateQueries({ queryKey: ["activities", card_id], exact:true}); 
         },
         onError: (error) => {
             console.error("❌ Lỗi khi thêm checklist:", error);
@@ -187,32 +143,37 @@ export const useUpdateCheckList = () => {
 
     return useMutation({
         mutationFn: ({ id, name }) => updateCheckList({ id, name }), // Gọi API cập nhật
-        onSuccess: (_, { card_id }) => {
-            // queryClient.invalidateQueries({ queryKey: ["checklists", card_id] });
-            // queryClient.invalidateQueries({ queryKey: ["checklists"] });
+        onSuccess: (_, { cardId }) => {
+            // Invalidate chính xác theo cardId
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
+            // queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật checklist:", error);
         },
-
     });
 };
+
 
 export const useDeleteCheckList = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (checklistId) => deleteCheckList(checklistId), // Gọi API xóa checklist
-        onSuccess: (_, checklistId) => {
-            console.log(`✅ Xóa checklist thành công: ${checklistId}`);
-
-            // Cập nhật danh sách checklist sau khi xóa
-            queryClient.setQueryData(["checklists"], (oldChecklists = []) =>
+        mutationFn: ({ checklistId, cardId }) => deleteCheckList(checklistId), 
+        onSuccess: (_, { checklistId, cardId }) => {
+            // Xóa trực tiếp trong cache cho nhanh
+            queryClient.setQueryData(["checklists", cardId], (oldChecklists = []) =>
                 oldChecklists.filter((c) => c.id !== checklistId)
             );
+
+            // Sau đó vẫn có thể invalidate để đảm bảo đồng bộ
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
+            queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi xóa checklist:", error);
         }
     });
 };
+
+

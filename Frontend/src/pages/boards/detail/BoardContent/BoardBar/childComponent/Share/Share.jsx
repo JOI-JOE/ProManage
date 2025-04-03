@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGenerateInviteLink, useUpdateRoleMemberInBoards, useRemoveMemberFromBoard } from "../../../../../../../hooks/useInviteBoard";
+import { useGenerateInviteLink, useUpdateRoleMemberInBoards ,useRemoveMemberFromBoard, useRemoveInviteLink } from "../../../../../../../hooks/useInviteBoard";
 // import { useRemoveMemberFromBoard } from "../../../../../../../hooks/useRemoveMemberFromBoard"; // Import hook đã chỉnh sửa
 import { toast } from "react-toastify";
 
@@ -25,17 +25,22 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   const currentBoardId = boardId;
   const navigate = useNavigate();
 
-  const { mutate: generateLink } = useGenerateInviteLink();
-  const { mutate: updateRoleMemberInBoard } = useUpdateRoleMemberInBoards();
-  const removeMember = useRemoveMemberFromBoard(currentUser?.id); // Sử dụng hook với currentUserId
+  // console.log(currentUser);
 
-  // States
+  // console.log('Current board:',boardMembers);
+ // States
   const [roleAnchorEl, setRoleAnchorEl] = useState(null);
   const [leaveAnchorEl, setLeaveAnchorEl] = useState(null);
   const [selectedMemberId, setSelectedMemberId] = useState(null);
   const [openLeaveDialog, setOpenLeaveDialog] = useState(false);
-  const [link, setLink] = useState("");
+  const [link, setLink] = useState(null);
   const leaveButtonRef = useRef(null);
+
+  // Hooks
+  const { mutate: generateLink } = useGenerateInviteLink(setLink);
+  const { mutate: removeInvite } = useRemoveInviteLink();
+  const { mutate: updateRoleMemberInBoard } = useUpdateRoleMemberInBoards();
+  const removeMember = useRemoveMemberFromBoard(currentUser?.id); // Sử dụng hook với currentUserId
 
   // Handlers
   const handleOpenRoleMenu = (event, memberId) => {
@@ -117,7 +122,20 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
 
   const handleCreateLink = () => {
     generateLink(currentBoardId);
+    setLink(localStorage.getItem("InviteLink"));
   };
+
+  const handleDeleteLink = () => {
+  
+   const inviteCode = link.split("/").pop();
+    removeInvite(inviteCode, {
+        onSuccess: () => {
+            toast.success("Đã xóa liên kết mời!");
+            localStorage.removeItem("InviteLink"); // Xóa khỏi localStorage
+            setLink(null);
+        }
+    });
+};
 
   // Utility functions
   const getMemberRoleText = (role) => (role === "admin" ? "Quản trị viên" : "Thành viên");
@@ -126,6 +144,7 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
 
   // Kiểm tra số lượng admin
   const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
+  // console.log(adminCount);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -153,14 +172,22 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
               "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "teal" },
             }}
           />
-          <Typography variant="body2" color="teal" sx={{ cursor: "pointer", ml: 1 }} onClick={handleCreateLink}>
-            Tạo liên kết
-          </Typography>
+         {link ? (
+            <Typography variant="body2" color="red" sx={{ cursor: "pointer", ml: 1 }} onClick={handleDeleteLink}>
+              Xóa liên kết
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="blue" sx={{ cursor: "pointer", ml: 1 }} onClick={handleCreateLink}>
+              Tạo liên kết
+            </Typography>
+          )}
         </Box>
+        
+        
 
         {link && (
-          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-            Liên kết: {link}
+          <Typography variant="body2" color="textSecondary" sx={{ cursor: "pointer", ml: 1, color: "blue" }}   onClick={() => navigator.clipboard.writeText(link)}>
+            Sao chép liên kết 
           </Typography>
         )}
 

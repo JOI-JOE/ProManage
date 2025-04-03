@@ -88,15 +88,14 @@ export const logBoardAccess = async (boardId) => {
 
 export const updateBoardName = async (boardId, name) => {
   try {
-    const response = await authClient.patch(`/boards/${boardId}/name`, {
-      name,
-    });
+    const response = await authClient.patch(`/boards/${boardId}/name`, { name });
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi cập nhật tên bảng:", error);
-    throw error;
+    console.error("❌ Lỗi khi cập nhật tên bảng:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Không thể cập nhật tên bảng");
   }
 };
+
 
 export const toggleBoardMarked = async (boardId) => {
   try {

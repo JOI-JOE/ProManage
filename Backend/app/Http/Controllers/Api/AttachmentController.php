@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\AttachmentDeletedWithActivity;
 use App\Events\AttachmentUploaded;
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
@@ -111,11 +112,12 @@ class AttachmentController extends Controller
         $fileNameDefault = $attachment->file_name_defaut; // Lấy tên file gốc
 
         Storage::disk('public')->delete($attachment->path_url);
+
         $attachment->delete();
         $user_name = auth()->user()?->full_name ?? 'ai đó';
 
         $card = Card::findOrFail($cardId);
-        activity()
+        $activity = activity()
             ->causedBy(auth()->user())
             ->performedOn($card)
             ->event('deleted_attachment')
@@ -126,6 +128,8 @@ class AttachmentController extends Controller
             ])
             ->log("{$user_name} đã xoá tập tin đính kèm {$fileNameDefault} khỏi thẻ này ");
 
+
+        broadcast(new AttachmentDeletedWithActivity($cardId, $attachmentId, $fileNameDefault, $activity))->toOthers();
         return response()->json([
             'message' => 'Xóa tệp đính kèm thành công!',
             'status' => true,
@@ -171,15 +175,15 @@ class AttachmentController extends Controller
                 ->where('card_id', $cardId)
                 ->firstOrFail();
 
-            // Kiểm tra định dạng file
-            $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            if (!in_array($extension, $allowedExtensions)) {
-                return response()->json([
-                    'message' => 'Chỉ có thể đặt ảnh làm ảnh bìa!',
-                    'status' => false,
-                ], 422);
-            }
+            // // Kiểm tra định dạng file
+            // $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
+            // $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            // if (!in_array($extension, $allowedExtensions)) {
+            //     return response()->json([
+            //         'message' => 'Chỉ có thể đặt ảnh làm ảnh bìa!',
+            //         'status' => false,
+            //     ], 422);
+            // }
 
             // Đảm bảo chỉ có 1 ảnh bìa duy nhất hoặc bỏ ảnh bìa nếu đã chọn
             DB::transaction(function () use ($cardId, $attachment) {

@@ -96,10 +96,11 @@ export const useCardById = (cardId) => {
 
   const updateDescriptionMutation = useMutation({
     mutationFn: (description) => updateDescription(cardId, description), // Gọi API cập nhật mô tả
-    onSuccess: (data) => {
+    onSuccess: (data, {cardId}) => {
       console.log("Mô tả đã được cập nhật:", data);
 
-      queryClient.invalidateQueries(["cardDetail", cardId]);
+      queryClient.invalidateQueries({ queryKey: ["cardDetail", cardId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật mô tả:", error);
@@ -156,13 +157,13 @@ export const useCardActions = (boardId) => {
 
     channel.listen(".CardArchiveToggled", (data) => {
       // console.log('Realtime archive changed: ', data);
-     
+
       queryClient.invalidateQueries(["lists"]);
 
     });
     channel.listen(".CardDelete", (data) => {
       // console.log('Realtime archive changed: ', data);
-     
+
       queryClient.invalidateQueries(["lists"]);
 
     });
@@ -180,7 +181,8 @@ export const useCardActions = (boardId) => {
   const archiveCard = useMutation({
     mutationFn: updateArchivedCard,
     onSuccess: () => {
-      queryClient.invalidateQueries(["cardsArchivedByBoard"]);
+      queryClient.invalidateQueries({ queryKey: ["cardsArchivedByBoard"], exact: true });
+      queryClient.invalidateQueries(["lists"]);
       toast.success("Đổi trạng thái thẻ thành công!");
     },
     onError: (error) => {
@@ -233,8 +235,11 @@ export const useGetMemberInCard = (cardId) => {
 
 
         // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });
-        queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] }); // Fetch lại sau khi API thành công
+        // queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] }); // Fetch lại sau khi API thành công
+        queryClient.invalidateQueries({ queryKey: ["card", cardId], exact: true });
+        queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] });
         queryClient.invalidateQueries({ queryKey: ["activities"] });
+        queryClient.invalidateQueries({ queryKey: ["lists"] });
 
       }
     });
@@ -250,7 +255,10 @@ export const useGetMemberInCard = (cardId) => {
   const mutation = useMutation({
     mutationFn: (userId) => toggleCardMember(cardId, userId),
     onSuccess: () => {
-
+      queryClient.invalidateQueries({ queryKey: ["card", cardId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
   });
 
@@ -260,27 +268,26 @@ export const useGetMemberInCard = (cardId) => {
 
   return { ...membersQuery, toggleMember: mutation.mutate };
 };
-export const useCardSchedule = (cardId) => {
+export const useCardSchedule = (targetId) => {
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: ["cardSchedule", cardId],
-    queryFn: () => getDateByCard(cardId),
-    staleTime: 1000 * 60 * 5, // Dữ liệu cũ sau 5 phút
-    cacheTime: 1000 * 60 * 30, 
-    enabled: !!cardId, // Chỉ gọi API nếu cardId tồn tại
-
+    queryKey: ["cardSchedule", targetId],
+    queryFn: () => getDateByCard(targetId),
+    enabled: !!targetId, // Chỉ gọi API nếu cardId tồn tại
+  
   });
 };
 export const useUpdateCardDate = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ cardId, startDate, endDate, endTime, reminder }) =>
-      updateCardDate(cardId, startDate, endDate, endTime, reminder),
+    mutationFn: ({ targetId, startDate, endDate, endTime, reminder }) =>
+      updateCardDate(targetId, startDate, endDate, endTime, reminder),
     onSuccess: (data, variables) => {
-
-      queryClient.invalidateQueries(["cardSchedule"], variables.cardId);
+     
+      // queryClient.invalidateQueries(["cardSchedule"],variables.cardId);
+      queryClient.invalidateQueries({ queryKey: ["cardSchedule", variables.targetId], exact: true });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật ngày card:", error);

@@ -36,7 +36,6 @@ import useSearch from "../../hooks/useSearch";
 import { formatTime } from "../../../utils/dateUtils";
 import { useMe } from "../../contexts/MeContext";
 
-
 const AppBar = ({ username, email }) => {
   // const { data: user } = useUser();
   const { user, } = useMe();
@@ -47,18 +46,22 @@ const AppBar = ({ username, email }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [showUnread, setShowUnread] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
-  const [unreadCount, setUnreadCount] = useState(notifications?.data?.length || 0);
+  const [unreadCount, setUnreadCount] = useState(
+    notifications?.data?.length || 0
+  );
   const [lastSeenTime, setLastSeenTime] = useState(new Date());
 
   useEffect(() => {
     setUnreadCount(notifications?.data?.length || 0);
   }, [notifications]);
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
-  const { searchResults, isLoadingSearch, errorSearch } = useSearch(searchText, userId);
+  const { searchResults, isLoadingSearch, errorSearch } = useSearch(
+    searchText,
+    userId
+  );
   const searchRef = useRef(null);
-
 
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
@@ -77,7 +80,6 @@ const AppBar = ({ username, email }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -85,9 +87,10 @@ const AppBar = ({ username, email }) => {
     setLastSeenTime(new Date());
   };
 
-  const newNotificationsCount = notifications?.data?.filter((notif) => {
-    return new Date(notif.created_at) > new Date(lastSeenTime);
-  }).length || 0;
+  const newNotificationsCount =
+    notifications?.data?.filter((notif) => {
+      return new Date(notif.created_at) > new Date(lastSeenTime);
+    }).length || 0;
 
   const handleClose = () => {
     setAnchorEl(null);
@@ -122,7 +125,9 @@ const AppBar = ({ username, email }) => {
 
   // Sắp xếp thông báo theo thời gian (mới nhất trước)
   Object.values(groupedNotifications || {}).forEach((group) => {
-    group.notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    group.notifications.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
   });
 
   return (
@@ -134,14 +139,14 @@ const AppBar = ({ username, email }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: "secondary.main"
+        backgroundColor: "secondary.main",
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
         <AppsIcon sx={{ color: "secondary.contrastText", fontSize: "24px" }} />
         <Box
           component={Link}
-          to={`/u/${username}/boards`}
+          to={`/u/${user?.user_name}/boards`}
           sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
         >
           <SvgIcon
@@ -203,8 +208,15 @@ const AppBar = ({ username, email }) => {
             }}
           />
 
-          {isLoadingSearch && <CircularProgress size={24} sx={{ color: "white", marginTop: "10px" }} />}
-          {errorSearch && <p style={{ color: "red" }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>}
+          {isLoadingSearch && (
+            <CircularProgress
+              size={24}
+              sx={{ color: "white", marginTop: "10px" }}
+            />
+          )}
+          {errorSearch && (
+            <p style={{ color: "red" }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>
+          )}
 
           {searchText && !isLoadingSearch && !errorSearch && searchResults && (
             <Box
@@ -222,89 +234,90 @@ const AppBar = ({ username, email }) => {
             >
               <h3 style={{ color: "white" }}>Kết quả tìm kiếm:</h3>
 
-              {Array.isArray(searchResults.boards) && searchResults.boards.length > 0 && (
-                <Box sx={{ marginBottom: "15px" }}>
-                  <h4 style={{ color: "#00C2A0" }}>Bảng:</h4>
-                  <ul style={{ listStyle: "none", paddingLeft: 0 }}>
-                    {searchResults.boards.map((board) => (
-                      <li
-                        key={board.id}
-                        style={{
-                          color: "white",
-                          padding: "5px 0",
-                          borderBottom: "1px solid #444",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => setSearchText("")} // Đóng kết quả sau khi chọn
-                      >
-                        {board.name}
-                      </li>
-                    ))}
-                  </ul>
-                </Box>
-              )}
+              {Array.isArray(searchResults.boards) &&
+                searchResults.boards.length > 0 && (
+                  <Box sx={{ marginBottom: "15px" }}>
+                    <h4 style={{ color: "#00C2A0" }}>Bảng:</h4>
+                    <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                      {searchResults.boards.map((board) => (
+                        <li
+                          key={board.id}
+                          style={{
+                            color: "white",
+                            padding: "5px 0",
+                            borderBottom: "1px solid #444",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setSearchText("")} // Đóng kết quả sau khi chọn
+                        >
+                          {board.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
 
-              {Array.isArray(searchResults.cards) && searchResults.cards.length > 0 && (
-                <Box sx={{ marginBottom: "15px" }}>
-                  <h4 style={{ color: "#00C2A0" }}>Thẻ:</h4>
-                  <ul style={{ listStyle: "none", paddingLeft: 0 }}>
-                    {searchResults.cards.map((card) => (
-                      <li
-                        key={card.id}
-                        style={{
-                          color: "white",
-                          padding: "5px 0",
-                          borderBottom: "1px solid #444",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => setSearchText("")}
-                      >
-                        {card.title}
-                      </li>
-                    ))}
-                  </ul>
-                </Box>
-              )}
+              {Array.isArray(searchResults.cards) &&
+                searchResults.cards.length > 0 && (
+                  <Box sx={{ marginBottom: "15px" }}>
+                    <h4 style={{ color: "#00C2A0" }}>Thẻ:</h4>
+                    <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                      {searchResults.cards.map((card) => (
+                        <li
+                          key={card.id}
+                          style={{
+                            color: "white",
+                            padding: "5px 0",
+                            borderBottom: "1px solid #444",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setSearchText("")}
+                        >
+                          {card.title}
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
 
-              {Array.isArray(searchResults.users) && searchResults.users.length > 0 && (
-                <Box sx={{ marginBottom: "15px" }}>
-                  <h4 style={{ color: "#00C2A0" }}>Người dùng:</h4>
-                  <ul style={{ listStyle: "none", paddingLeft: 0 }}>
-                    {searchResults.users.map((user) => (
-                      <li
-                        key={user.id}
-                        style={{
-                          color: "white",
-                          padding: "5px 0",
-                          borderBottom: "1px solid #444",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => setSearchText("")}
-                      >
-                        {user.user_name}
-                      </li>
-                    ))}
-                  </ul>
-                </Box>
-              )}
+              {Array.isArray(searchResults.users) &&
+                searchResults.users.length > 0 && (
+                  <Box sx={{ marginBottom: "15px" }}>
+                    <h4 style={{ color: "#00C2A0" }}>Người dùng:</h4>
+                    <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                      {searchResults.users.map((user) => (
+                        <li
+                          key={user.id}
+                          style={{
+                            color: "white",
+                            padding: "5px 0",
+                            borderBottom: "1px solid #444",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setSearchText("")}
+                        >
+                          {user.user_name}
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
 
-              {(!Array.isArray(searchResults.boards) || searchResults.boards.length === 0) &&
-                (!Array.isArray(searchResults.cards) || searchResults.cards.length === 0) &&
-                (!Array.isArray(searchResults.users) || searchResults.users.length === 0) && (
+              {(!Array.isArray(searchResults.boards) ||
+                searchResults.boards.length === 0) &&
+                (!Array.isArray(searchResults.cards) ||
+                  searchResults.cards.length === 0) &&
+                (!Array.isArray(searchResults.users) ||
+                  searchResults.users.length === 0) && (
                   <p style={{ color: "white" }}>Không tìm thấy kết quả nào.</p>
                 )}
             </Box>
           )}
         </Box>
 
-
-
         <Tooltip title="Notification">
           <IconButton onClick={handleClick}>
-            <Badge
-              badgeContent={newNotificationsCount}
-              color="error"
-            >
+            <Badge badgeContent={newNotificationsCount} color="error">
               <NotificationsNoneIcon sx={{ color: "white" }} />
             </Badge>
           </IconButton>

@@ -46,14 +46,26 @@ const LoginForm = () => {
     login(formData, {
       onSuccess: (data) => {
         localStorage.setItem("token", data.token); // Lưu token
+        localStorage.setItem('user', data.user);
+        // console.log("Đăng nhập thành công:", data.user);
+
+      
+        // if (inviteToken) {
+        //   navigate(`/accept-invite/${inviteToken}`);
+        // } else {
+        //   navigate('/home');
+        // }
       
         if (inviteToken) {
           navigate(`/accept-invite/${inviteToken}`);
         } else {
-          navigate('/home');
-        }
-      
-        alert("Đăng nhập thành công"); // Thông báo
+          if (data.user.role === "admin") {
+              window.location.href = "http://localhost:8000"; // Điều hướng đến trang admin
+          } else {
+              navigate("/home"); // Điều hướng đến trang client
+          }
+      }
+        // alert("Đăng nhập thành công"); // Thông báo
       },
       onError: (err) => {
         console.error("Lỗi đăng nhập:", err);

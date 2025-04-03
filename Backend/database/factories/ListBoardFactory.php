@@ -3,25 +3,19 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ListBoard>
- */
 class ListBoardFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-    public function definition(): array
+    public function definition()
     {
         return [
-            'name' => $this->faker->word,
-            'closed' =>$this->faker->boolean,
-            'position' => $this->faker->numberBetween(1,10),
-            'board_id' => 1,
-            'color_id' => null,
+            'id' => Str::uuid(),
+            'name' => $this->faker->word(),
+            'closed' => false,
+            'position' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 }

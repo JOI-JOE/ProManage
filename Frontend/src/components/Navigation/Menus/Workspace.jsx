@@ -46,10 +46,10 @@ const WorkspaceItem = React.memo(({ workspace, onClose, isGuest = false }) => (
         color: "white",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        fontWeight: "bold",
-        fontSize: "1rem",
-        flexShrink: 0,
+        gap: 1.5,
+        px: 2,
+        py: 1,
+        "&:hover": { bgcolor: "#F4F5F7" },
       }}
     >
       {(isGuest ? workspace.workspaceName : workspace.display_name)?.charAt(0)?.toUpperCase()}
@@ -91,7 +91,7 @@ const Workspace = () => {
         endIcon={<KeyboardArrowDownIcon />}
         sx={{ color: "secondary.contrastText" }}
       >
-        Các Không gian làm việc
+        Không gian làm việc
       </Button>
 
       <StyledMenu

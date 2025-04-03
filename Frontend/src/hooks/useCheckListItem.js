@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getChecklistItemsByCheckList, createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName, toggleCheckListItemMember, getMembersInCheckListItem } from "../api/models/checkListItemsApi";
+import { getChecklistItemsByCheckList, createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName, toggleCheckListItemMember, getMembersInCheckListItem, getChecklistItemsDate, updateDateItem } from "../api/models/checkListItemsApi";
 import { useEffect } from "react";
 import echoInstance from "./realtime/useRealtime";
 
 
-// export const useChecklistsItemByCheckList = (checklist_id) => {
+// export const useChecklistsItemByCheckListItem = (itemId) => {
 //     return useQuery({
-//         queryKey: ["checklist-items", checklist_id],
-//         queryFn: () => getChecklistItemsByCheckList(checklist_id), // Gọi API lấy danh sách comment
-//         enabled: !!checklist_id, // Chỉ gọi API nếu có cardId
+//         queryKey: ["checklist-items", itemId],
+//         queryFn: () => getChecklistItemsByCheckList(itemId), // Gọi API lấy danh sách comment
+//         enabled: !!itemId, // Chỉ gọi API nếu có cardId
 //         staleTime: 1000 * 60 * 5, // Cache trong 5 phút
 //         cacheTime: 1000 * 60 * 30, // Giữ cache trong 30 phút
 //     });
@@ -16,40 +16,32 @@ import echoInstance from "./realtime/useRealtime";
 
 
 
+
 export const useCreateCheckListItem = () => {
     const queryClient = useQueryClient();
 
-    // const { checklist_id } = variables;
-
-    // console.log(checklist_id);
-
-    const createItem = useMutation({
+    return useMutation({
         mutationFn: ({ checklist_id, name }) => createCheckListItem({ checklist_id, name }),
 
-        onSuccess: (newItem, { checklist_id }) => {
-
+        onSuccess: (newItem, { checklist_id, cardId }) => {
             console.log("✅ Thêm mục checklist thành công:", newItem);
-            console.log("🆕 Checklist ID:", checklist_id);
 
-            // console.log(`📡 Đang lắng nghe kênh: checklist.${checklist_id}`);
+            // Cập nhật lại danh sách checklistItems của checklist đó
+            queryClient.invalidateQueries({ queryKey: ["checklistItems", checklist_id], exact: true });
 
-            // setLatestChecklistId(checklist_id);
+            // Cập nhật lại checklist chứa item (ví dụ completion rate)
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
 
-
-            // Cập nhật danh sách CheckListItem liên quan
-            // queryClient.invalidateQueries({ queryKey: ["checklistItems", checklist_id] });
-            // queryClient.invalidateQueries({ queryKey: ["checklists"] });
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+            // Cập nhật activity nếu backend có trả ra activity mới
+            // queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
         },
 
         onError: (error) => {
             console.error("❌ Lỗi khi thêm mục checklist:", error);
         },
     });
-
-    return createItem
-
 };
+
 
 
 
@@ -57,13 +49,18 @@ export const useToggleCheckListItemStatus = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (itemId) => toggleCheckListItemStatus(itemId),
-        onSuccess: (_, itemId) => {
+        mutationFn: ({ itemId }) => toggleCheckListItemStatus(itemId),
+        onSuccess: (_, { itemId, cardId }) => {
             console.log(`✅ Trạng thái item ${itemId} đã được cập nhật.`);
 
-            // queryClient.invalidateQueries({ queryKey: ["checklists"] });
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
-            // queryClient.invalidateQueries({ queryKey: ["activities"] }); 
+            // Cập nhật lại danh sách item của checklist
+            // queryClient.invalidateQueries({ queryKey: ["checklistItems", checklist_id], exact: true });
+
+            // Cập nhật lại checklist (tỉ lệ completion)
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
+
+            // Cập nhật activity nếu có
+            queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật trạng thái:", error);
@@ -72,24 +69,24 @@ export const useToggleCheckListItemStatus = () => {
 };
 
 
+
 export const useUpdateCheckListItemName = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: ({ itemId, name }) => updateCheckListItemName(itemId, name),
-        onSuccess: (_, variables) => {
-            console.log(`✅ Cập nhật tên checklist item thành công: ${variables.itemId}`);
+        onSuccess: (_, { cardId }) => {
+            console.log(`✅ Cập nhật tên checklist item thành công.`);
 
-            // Cập nhật danh sách checklist ngay lập tức
-            // queryClient.invalidateQueries({ queryKey: ["checklists"] });
+            // Làm mới danh sách items thuộc checklist
+            // queryClient.invalidateQueries({ queryKey: ["checklistItems", checklist_id], exact: true });
+
+            // Nếu cần cập nhật checklist cha
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật tên checklist item:", error);
         },
-        // onSettled: () => {
-        //     // Đảm bảo dữ liệu được đồng bộ sau khi xóa
-        //     queryClient.invalidateQueries(["checklist-items"]);
-        // },
     });
 };
 
@@ -97,35 +94,37 @@ export const useDeleteCheckListItem = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id) => deleteCheckListItem(id),
-        onMutate: async (id) => {
-            // Hủy các query đang chạy
-            await queryClient.cancelQueries(["checklist-items"]);
+        mutationFn: ({ id }) => deleteCheckListItem(id),
+        onMutate: async ({ id, checklist_id }) => {
+            // Hủy các query liên quan đang chạy
+            await queryClient.cancelQueries({ queryKey: ["checklistItems", checklist_id] });
 
-            // Lấy dữ liệu cũ
-            const previousItems = queryClient.getQueryData(["checklist-items"]);
+            // Lưu lại dữ liệu cũ
+            const previousItems = queryClient.getQueryData(["checklistItems", checklist_id]);
 
-
-            // Cập nhật danh sách ngay lập tức mà không cần reload trang
-            queryClient.setQueryData(["checklist-items"], (oldItems = []) =>
+            // Optimistic update: xóa luôn trong cache
+            queryClient.setQueryData(["checklistItems", checklist_id], (oldItems = []) =>
                 oldItems.filter((item) => item.id !== id)
             );
 
-            return { previousItems };
+            return { previousItems, checklist_id };
         },
-        onError: (error, id, context) => {
+        onError: (error, { id, checklist_id }, context) => {
             console.error("❌ Lỗi khi xóa ChecklistItem:", error);
-            // Nếu lỗi, khôi phục dữ liệu cũ
-            queryClient.setQueryData(["checklist-items"], context.previousItems);
+            // Rollback dữ liệu nếu lỗi
+            if (context?.previousItems) {
+                queryClient.setQueryData(["checklistItems", checklist_id], context.previousItems);
+            }
         },
-        onSettled: () => {
-            // Đảm bảo dữ liệu được đồng bộ sau khi xóa
-            // queryClient.invalidateQueries({ queryKey: ["checklists"] });
+        onSettled: (_, __, { cardId }) => {
+            // Làm mới dữ liệu sau cùng
+            // queryClient.invalidateQueries({ queryKey: ["checklistItems", checklist_id], exact: true });
+            queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
             queryClient.invalidateQueries({ queryKey: ["lists"] });
-
         },
     });
 };
+
 
 export const useGetMemberInCheckListItem = (itemId) => {
     const queryClient = useQueryClient();
@@ -146,7 +145,7 @@ export const useGetMemberInCheckListItem = (itemId) => {
         channel.listen(".ChecklistItemMemberUpdated", (event) => {
             // console.log("🔄 Nhận sự kiện ChecklistItemMemberUpdated:", event);
 
-            queryClient.invalidateQueries({ queryKey: ["checklist-item-members", itemId] });
+            queryClient.invalidateQueries({ queryKey: ["checklist-item-members", itemId]});
 
         });
 
@@ -166,7 +165,7 @@ export const useToggleCheckListItemMember = () => {
     return useMutation({
         mutationFn: ({ itemId, userId }) => toggleCheckListItemMember(itemId, userId),
         onSuccess: (_, variables) => {
-            console.log(`✅ Toggle thành viên thành công: itemId = ${variables.itemId}, userId = ${variables.userId}`);
+            // console.log(`✅ Toggle thành viên thành công: itemId = ${variables.itemId}, userId = ${variables.userId}`);
             // Tùy chọn: Invalidate query để load lại danh sách thành viên hoặc checklist items nếu cần
             // queryClient.invalidateQueries({ queryKey: ["checklists"] });
             // hoặc nếu bạn lưu riêng: 
@@ -177,5 +176,32 @@ export const useToggleCheckListItemMember = () => {
         },
     });
 };
-
+export const useChecklistsItemByDate = (targetId) => {
+    const queryClient = useQueryClient();
+  
+    return useQuery({
+      queryKey: ["dateItem", targetId],
+      queryFn: () => getChecklistItemsDate(targetId),
+      enabled: !!targetId, // Chỉ gọi API nếu cardId tồn tại
+    
+    });
+  };
+  export const useUpdateItemDate = () => {
+      
+      const queryClient = useQueryClient();
+    
+      return useMutation({
+        mutationFn: ({ targetId,  endDate, endTime, reminder }) =>
+          updateDateItem(targetId, endDate, endTime, reminder),
+        onSuccess: (data, variables) => {
+         
+          // queryClient.invalidateQueries(["checklist-items"],variables.itemId);
+        queryClient.invalidateQueries({ queryKey: ["dateItem",variables.targetId], exact: true });
+  
+        },
+        onError: (error) => {
+          console.error("Lỗi khi cập nhật ngày card:", error);
+        },
+      });
+    }; 
 

@@ -20,24 +20,25 @@ export const useCommentsByCard = (card_id) => {
         const channel = echoInstance.channel(`card.${card_id}`);
 
         channel.listen(".card.comment.added", async (event) => {
-            console.log("📡 Nhận event từ Pusher:", event);
+            // console.log("📡 Nhận event từ Pusher:", event);
 
             if (event?.comment?.card_id === card_id) {
                 // Kiểm tra nếu comment từ Pusher có đầy đủ thông tin user không
                 if (!event.comment.user) {
-                    console.warn("⚠️ Comment từ Pusher thiếu thông tin user. Gọi API để cập nhật lại...");
+                    // console.warn("⚠️ Comment từ Pusher thiếu thông tin user. Gọi API để cập nhật lại...");
 
                     // Gọi API lại để lấy thông tin đầy đủ của comment
                     await queryClient.invalidateQueries({ queryKey: ["comments", card_id] });
+                    queryClient.invalidateQueries({ queryKey: ["lists"] });
                     return;
                 }
 
                 queryClient.setQueryData(["comments", card_id], (oldData) => {
-                    console.log("🔄 Dữ liệu cũ trước khi cập nhật:", oldData);
+                    // console.log("🔄 Dữ liệu cũ trước khi cập nhật:", oldData);
 
                     const newData = oldData ? [...oldData, event.comment] : [event.comment];
 
-                    console.log("✅ Dữ liệu mới sau khi cập nhật:", newData);
+                    // console.log("✅ Dữ liệu mới sau khi cập nhật:", newData);
                     return newData;
                 });
 
@@ -46,7 +47,7 @@ export const useCommentsByCard = (card_id) => {
         });
 
         channel.listen(".card.comment.deleted", (event) => {
-            console.log("🗑 Nhận event xóa bình luận từ Pusher:", event);
+            // console.log("🗑 Nhận event xóa bình luận từ Pusher:", event);
     
             queryClient.setQueryData(["comments", card_id], (oldData) => {
                 return oldData ? oldData.filter(comment => comment.id !== event.commentId) : [];
@@ -58,7 +59,7 @@ export const useCommentsByCard = (card_id) => {
         });
 
         channel.listen(".card.comment.updated", (event) => {
-            console.log("📡 Nhận event cập nhật comment:", event);
+            // console.log("📡 Nhận event cập nhật comment:", event);
     
             queryClient.setQueryData(["comments", card_id], (oldData) => {
                 if (!oldData) return [event.comment];
@@ -88,22 +89,19 @@ export const useCommentsByCard = (card_id) => {
 export const useCreateComment = () => {
     const queryClient = useQueryClient();
 
-    const mutation = useMutation({
+    return useMutation({
         mutationFn: ({ card_id, user_id, content }) => createComment({ card_id, user_id, content }),
+        
         onSuccess: (newComment, { card_id }) => {
-            // queryClient.setQueryData(["comments", card_id], (oldData) => {
-            //     return oldData ? [...oldData, newComment] : [newComment];
-            // });
-            
+            // Sau khi comment thành công, tự động invalidate để lấy danh sách comments mới và cập nhật lists
+            queryClient.invalidateQueries({ queryKey: ["comments", card_id], exact: true });
             queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
+
         onError: (error) => {
             console.error("❌ Lỗi khi thêm bình luận:", error);
         },
     });
-
-    return mutation;
-
 };
 
 
@@ -113,8 +111,15 @@ export const useDeleteComment = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (commentId) => deleteComment(commentId), // Gọi API xóa
-    
+        mutationFn: (commentId) => deleteComment(commentId), // Gọi API xóa comment
+
+        onSuccess: (_, commentId) => {
+            console.log(`✅ Bình luận ${commentId} đã được xóa thành công!`);
+            // Invalidate để cập nhật danh sách comments và danh sách lists nếu có ảnh hưởng
+            queryClient.invalidateQueries({ queryKey: ["comments"], exact: false });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
+        },
+
         onError: (error) => {
             console.error("❌ Lỗi khi xóa bình luận:", error);
         }
@@ -125,13 +130,15 @@ export const useUpdateComment = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: updateComment,
+        mutationFn: updateComment, // API nhận { commentId, content }
         onSuccess: (_, variables) => {
-            // Cập nhật danh sách bình luận sau khi sửa
-            // queryClient.invalidateQueries(["comments", variables.cardId]);
+            console.log(`✅ Đã cập nhật bình luận ${variables.commentId} thành công!`);
+            queryClient.invalidateQueries({ queryKey: ["comments"], exact: false });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi chỉnh sửa bình luận:", error);
         },
     });
 };
+
