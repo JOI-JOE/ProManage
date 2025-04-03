@@ -96,7 +96,7 @@ export const useCardById = (cardId) => {
 
   const updateDescriptionMutation = useMutation({
     mutationFn: (description) => updateDescription(cardId, description), // Gọi API cập nhật mô tả
-    onSuccess: (data) => {
+    onSuccess: (data, {cardId}) => {
       console.log("Mô tả đã được cập nhật:", data);
 
       queryClient.invalidateQueries({ queryKey: ["cardDetail", cardId], exact: true });
@@ -268,28 +268,26 @@ export const useGetMemberInCard = (cardId) => {
 
   return { ...membersQuery, toggleMember: mutation.mutate };
 };
-export const useCardSchedule = (cardId) => {
+export const useCardSchedule = (targetId) => {
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: ["cardSchedule", cardId],
-    queryFn: () => getDateByCard(cardId),
-    staleTime: 1000 * 60 * 5, // Dữ liệu cũ sau 5 phút
-    cacheTime: 1000 * 60 * 30,
-    enabled: !!cardId, // Chỉ gọi API nếu cardId tồn tại
-
+    queryKey: ["cardSchedule", targetId],
+    queryFn: () => getDateByCard(targetId),
+    enabled: !!targetId, // Chỉ gọi API nếu cardId tồn tại
+  
   });
 };
 export const useUpdateCardDate = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ cardId, startDate, endDate, endTime, reminder }) =>
-      updateCardDate(cardId, startDate, endDate, endTime, reminder),
+    mutationFn: ({ targetId, startDate, endDate, endTime, reminder }) =>
+      updateCardDate(targetId, startDate, endDate, endTime, reminder),
     onSuccess: (data, variables) => {
-
-      queryClient.invalidateQueries({ queryKey: ["cardSchedule", variables.cardId], exact: true });
-      // queryClient.invalidateQueries({ queryKey: ["cardDetail", cardId], exact: true });
+     
+      // queryClient.invalidateQueries(["cardSchedule"],variables.cardId);
+      queryClient.invalidateQueries({ queryKey: ["cardSchedule", variables.targetId], exact: true });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật ngày card:", error);

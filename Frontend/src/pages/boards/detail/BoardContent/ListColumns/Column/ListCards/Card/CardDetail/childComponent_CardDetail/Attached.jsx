@@ -6,155 +6,94 @@ import {
   DialogTitle,
   Button,
   TextField,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-  IconButton,
   Typography,
   CircularProgress,
-  ListItemButton,
-  // PictureAsPdf,
-  // // Image,
-  // Link,
-  // VideoLibrary,
-  // InsertDriveFile,
-  // Description,
+  IconButton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useAttachments from "../../../../../../../../../../hooks/useAttachment";
 import { useParams } from "react-router-dom";
-// import MoreVertIcon from "@mui/icons-material/MoreVert";
-//  import EditIcon from "@mui/icons-material/Edit";
-//  import DeleteIcon from "@mui/icons-material/Delete";
 
-const getFileType = (attachment) => {
-  if (!attachment.path_url) return { type: "unknown", icon: <Description /> };
-  const fileExtension = attachment.path_url.split(".").pop().toLowerCase();
-
-  if (attachment.path_url.startsWith("http")) {
-    if (attachment.path_url.includes("youtube.com") || attachment.path_url.includes("youtu.be")) {
-      return { type: "youtube", icon: <VideoLibrary sx={{ color: "#ff0000" }} /> };
+// Hàm lấy tiêu đề từ link
+const fetchTitleFromURL = async (url) => {
+  try {
+    if (
+      url.includes("youtube.com") ||
+      url.includes("youtu.be") ||
+      url.includes("vimeo.com")
+    ) {
+      const response = await fetch(`https://noembed.com/embed?url=${url}`);
+      const data = await response.json();
+      if (data.title) return data.title;
     }
-    return { type: "link", icon: <Link sx={{ color: "#1976d2" }} /> };
-  }
-  if (["jpg", "jpeg", "png", "gif", "webp"].includes(fileExtension)) {
-    return { type: "image", icon: <Image sx={{ color: "#4caf50" }} /> };
-  }
-  if (["mp4", "mkv", "avi", "mov"].includes(fileExtension)) {
-    return { type: "video", icon: <VideoLibrary sx={{ color: "#ff9800" }} /> };
-  }
-  if (["pdf"].includes(fileExtension)) {
-    return { type: "pdf", icon: <PictureAsPdf sx={{ color: "red" }} /> };
-  }
-  if (["xls", "xlsx"].includes(fileExtension)) {
-    return { type: "excel", icon: <InsertDriveFile sx={{ color: "#2E7D32" }} /> };
-  }
-  return { type: "file", icon: <Description /> };
-};
 
+    const response = await fetch(url);
+    const htmlText = await response.text();
+    const doc = new DOMParser().parseFromString(htmlText, "text/html");
+    return doc.querySelector("title")?.innerText.trim() || "Không có tiêu đề";
+  } catch {
+    return "Không có tiêu đề";
+  }
+};
 
 const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
   const [newLink, setNewLink] = useState("");
   const [displayText, setDisplayText] = useState("");
   const [uploading, setUploading] = useState(false);
   const { cardId } = useParams();
-  const {addAttachment} = useAttachments(cardId);
- 
+  const { addAttachment } = useAttachments(cardId);
 
-  // const recentFiles = [
-  //   { id: 1, name: "Báo cáo tuần", user: "Hồng Ngát", time: "3 giờ trước" },
-  //   { id: 2, name: "Tài liệu dự án", user: "Hồng Ngát", time: "5 giờ trước" },
-  //   { id: 3, name: "Hợp đồng A", user: "Hồng Ngát", time: "2 ngày trước" },
-  //   {
-  //     id: 4,
-  //     name: "Thất tịch",
-  //     user: "Không gian làm việc",
-  //     time: "2 ngày trước",
-  //   },
-  //   { id: 5, name: "Test file", user: "", time: "1 tuần trước" },
-  // ];
-
-  // const isValidURL = (str) => {
-  //   const pattern = new RegExp(
-  //     "^(https?:\\/\\/)?([\\w-]+\\.)+[\\w-]+(\\/[\\w- ./?%&=]*)?$",
-  //     "i"
-  //   );
-  //   return pattern.test(str);
-  // };
-
-  // const handleInsert = () => {
-  //   if (isValidURL(newLink)) {
-  //     const newAttachment = {
-  //       id: Date.now(),
-  //       name: displayText || newLink,
-  //       url: newLink,
-  //       type: "link",
-  //       time: new Date().toISOString(),
-  //     };
-  //     onAddAttachment(newAttachment);
-  //     setNewLink("");
-  //     setDisplayText("");
-  //     onClose();
-  //   }
-  // };
-
-  // const handleFileSelect = (event) => {
-  //   const files = Array.from(event.target.files).map((file) => ({
-  //     id: Date.now() + Math.random(),
-  //     name: file.name,
-  //     url: URL.createObjectURL(file),
-  //     time: new Date().toISOString(),
-  //     type: "file",
-  //   }));
-
-  //   if (files.length > 0) {
-  //     setUploading(true);
-  //     setTimeout(() => {
-  //       onAddAttachment(files);
-  //       setUploading(false);
-  //       onClose();
-  //     }, 1500);
-  //   }
-  // };
-
-  // const filteredRecentFiles = !isValidURL(newLink)
-  //   ? recentFiles.filter((file) =>
-  //       file.name.toLowerCase().includes(newLink.toLowerCase())
-  //     )
-  //   : [];
-
+  // Xử lý upload file
   const handleAddAttachment = useCallback(
     async (event) => {
       const file = event.target.files[0];
       if (!file) return;
 
+      setUploading(true);
       const data = { cardId, file_name_defaut: file.name, file };
+
       try {
         await addAttachment(data);
-        alert("File đã được upload thành công!");
+        onClose(); // ✅ Đóng modal khi upload xong
       } catch (error) {
-        alert("Có lỗi xảy ra khi upload file: " + error.message);
+        console.error("Lỗi khi upload file:", error);
       } finally {
+        setUploading(false);
         event.target.value = "";
       }
     },
-    [cardId, addAttachment]
+    [cardId, addAttachment, onClose]
   );
 
+  // Xử lý chèn liên kết
   const handleAddLinkAttachment = async () => {
     if (!newLink.trim()) return;
-    const data = { cardId, file_name_defaut: displayText || "Liên kết không tên", path_url: newLink };
+
+    setUploading(true);
     try {
+      let fileName = displayText || newLink;
+      if (!displayText) {
+        fileName = await fetchTitleFromURL(newLink);
+      }
+
+      const data = {
+        cardId,
+        file_name_defaut: fileName,
+        path_url: newLink,
+      };
+
       await addAttachment(data);
+      // ✅ Reset form và đóng modal khi thêm link thành công
+      setNewLink("");
+      setDisplayText("");
+      onClose();
     } catch (error) {
       console.error("Lỗi khi thêm liên kết:", error);
+    } finally {
+      setUploading(false);
     }
-    setNewLink("");
-    setDisplayText("");
   };
 
- 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>
@@ -167,6 +106,7 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
+
       <DialogContent sx={{ maxHeight: 400, overflowY: "auto" }}>
         <Typography variant="body2" sx={{ mb: 1 }}>
           Tìm kiếm hoặc dán các liên kết
@@ -175,11 +115,12 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           fullWidth
           variant="outlined"
           size="small"
-          placeholder="Tìm kiếm file hoặc dán liên kết"
+          placeholder="Gắn liên kết tại đây"
           value={newLink}
           onChange={(e) => setNewLink(e.target.value)}
           sx={{ mb: 2 }}
         />
+
         <Typography variant="body2" sx={{ mb: 1 }}>
           Văn bản hiển thị (không bắt buộc)
         </Typography>
@@ -192,6 +133,7 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           onChange={(e) => setDisplayText(e.target.value)}
           sx={{ mb: 2 }}
         />
+
         <Button
           variant="contained"
           fullWidth
@@ -199,7 +141,7 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
           disabled={uploading}
         >
           {uploading ? "Tệp đang tải lên..." : "Chọn tệp"}
-          <input type="file" hidden multiple onChange={handleAddAttachment} />
+          <input type="file" hidden onChange={handleAddAttachment} />
         </Button>
 
         {uploading && (
@@ -207,19 +149,22 @@ const AttachmentModal = ({ open, onClose, onAddAttachment }) => {
             variant="body2"
             sx={{ mt: 2, display: "flex", alignItems: "center" }}
           >
-            <CircularProgress size={20} sx={{ mr: 1 }} /> Tệp đang tải lên...
+            <CircularProgress size={20} sx={{ mr: 1 }} /> Đang xử lý...
           </Typography>
         )}
       </DialogContent>
+
       <DialogActions>
         <Button onClick={onClose} disabled={uploading}>
           Hủy
         </Button>
-        {!uploading && (
-          <Button onClick={handleAddLinkAttachment} variant="contained">
-            Chèn
-          </Button>
-        )}
+        <Button
+          onClick={handleAddLinkAttachment}
+          variant="contained"
+          disabled={uploading}
+        >
+          Chèn
+        </Button>
       </DialogActions>
     </Dialog>
   );

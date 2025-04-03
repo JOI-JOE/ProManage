@@ -17,7 +17,7 @@ class AdminMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (!Auth::check() || Auth::user()->role !== "admin") {
-            return redirect()->to('http://localhost:5173/'); // Điều hướng về client nếu không phải admin
+            return redirect()->to('http://localhost:5173/home'); // Điều hướng về client nếu không phải admin
         }
 
         return $next($request); // Cho phép admin tiếp tục request

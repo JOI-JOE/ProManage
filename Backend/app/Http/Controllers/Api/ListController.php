@@ -59,8 +59,6 @@ class ListController extends Controller
         } elseif ($board->visibility === 'public') {
             $hasAccess = true;
         }
-
-        
         if (!$hasAccess) {
             return response()->json(['error' => 'Access denied'], 403);
         }

@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 use App\Events\CardPositionUpdated;
 use App\Events\ColumnPositionUpdated;
 use App\Jobs\SendReminderNotification;
+use App\Jobs\SendReminderNotificationCard;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -281,8 +282,11 @@ class CardController extends Controller
 
         }
         if (!empty($card->reminder) && strtotime($card->reminder)) {
-            dispatch(new SendReminderNotification($card))->delay(Carbon::parse($card->reminder));
+            // dispatch(new SendReminderNotification($card))->delay(now()->addMinutes(1));
+
+            dispatch(new SendReminderNotificationCard($card))->delay(Carbon::parse($card->reminder));
         }
+
 
         return response()->json([
             'message' => 'Cập nhật ngày, giờ và nhắc nhở thành công!',

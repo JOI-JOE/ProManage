@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Events\BoardStatusChanged;
+
 
 class BoardController extends Controller
 {
@@ -110,22 +112,22 @@ class BoardController extends Controller
     {
         $user = Auth::user();
 
-    if (!$user) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
 
-    // Lấy các bảng đã đóng, kiểm tra xem người dùng có phải là thành viên trong bảng board_members đó không
-    $closedBoards = Board::where('closed', 1) // Lọc các bảng đã đóng
-        ->whereHas('members', function ($query) use ($user) {
-            $query->where('user_id', $user->id); // Kiểm tra user_id
-        })
-        ->with(['workspace', 'members']) // Eager load thông tin workspace và board_members
-        ->get();
+        // Lấy các bảng đã đóng, kiểm tra xem người dùng có phải là thành viên trong bảng board_members đó không
+        $closedBoards = Board::where('closed', 1) // Lọc các bảng đã đóng
+            ->whereHas('members', function ($query) use ($user) {
+                $query->where('user_id', $user->id); // Kiểm tra user_id
+            })
+            ->with(['workspace', 'members']) // Eager load thông tin workspace và board_members
+            ->get();
 
-    return response()->json([
-        'result' => true,
-        'data' => $closedBoards
-    ]);
+        return response()->json([
+            'result' => true,
+            'data' => $closedBoards
+        ]);
     }
 
     public function store(Request $request)
@@ -259,27 +261,36 @@ class BoardController extends Controller
     {
         try {
             DB::beginTransaction();
+
             $board = Board::findOrFail($id);
 
-            // Kiểm tra nếu có trường 'name' trong yêu cầu
-            if ($request->has('name')) {
-                // Cập nhật trường 'name'
-                $board->name = $request->input('name');
-                $board->save();
+            if ($request->filled('name')) { // Kiểm tra có dữ liệu name không
+                $board->update(['name' => $request->input('name')]);
+                DB::commit();
+
+                return response()->json([
+                    'result' => true,
+                    'message' => 'Board name updated successfully.',
+                    'data' => $board
+                ]);
             }
 
-            DB::commit();
+            DB::rollBack(); // Không có dữ liệu mới, rollback tránh commit dư
             return response()->json([
-                'result' => true,
-                'message' => 'Board name updated successfully.',
-                'data' => $board
-            ]);
+                'result' => false,
+                'message' => 'No name provided.',
+            ], 400);
+
         } catch (\Throwable $th) {
-            // Rollback nếu có lỗi xảy ra
             DB::rollBack();
-            throw $th;
+            report($th); // Ghi log lỗi
+            return response()->json([
+                'result' => false,
+                'message' => 'An error occurred.',
+            ], 500);
         }
     }
+
     /**
      * Update cho riêng trường thumbnailthumbnail
      */
@@ -434,6 +445,8 @@ class BoardController extends Controller
             // Đảo trạng thái closed (1 -> 0, 0 -> 1)
             $board->closed = !$board->closed;
             $board->save();
+
+            broadcast(new BoardStatusChanged($board))->toOthers();
 
             return response()->json([
                 'result' => true,

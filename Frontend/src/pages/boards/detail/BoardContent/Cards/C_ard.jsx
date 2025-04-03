@@ -68,10 +68,17 @@ const C_ard = ({ card }) => {
     });
   };
 
-  const handleClose = () => {
+  const handleClose1 = () => {
     setOpen(false);
     // navigate(-1); // Quay lại trang trước (tốt hơn)
-    navigate(location.state?.background || `/boards/${boardId}/board`);
+    const pathSegments = location.pathname.split("/");
+
+    // Lấy phần `/b/:boardId/:boardName`
+    const newPath = `/${pathSegments[1]}/${pathSegments[2]}/${pathSegments[3]}`;
+
+    // Điều hướng về đường dẫn mới
+    navigate(newPath, { replace: true });
+
   };
 
   useEffect(() => {
@@ -99,11 +106,12 @@ const C_ard = ({ card }) => {
 
   const showCardActions = () => {
     return (
-      !!card?.memberIds?.length ||
+      // !!card?.memberIds?.length ||
       !!comments?.length ||
       !!attachments?.data?.length ||
       !!cardDetail?.description ||
-      !!checklists?.some((checklist) => checklist.items.length > 0)
+      !!checklists?.some((checklist) => checklist.items.length > 0) ||
+      !!members?.length
     );
   };
 
@@ -133,20 +141,24 @@ const C_ard = ({ card }) => {
           // height: "110px"
         }}
       >
-        {coverImageBackGround && (
-          <CardMedia sx={{ height: 140, mb: 2, justifyContent: "center" }}>
-            <LazyLoadImage
-              src={coverImageBackGround}
-              alt="Card Cover"
-              effect="blur" // Hiệu ứng mờ khi tải ảnh
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-              }}
-            />
-          </CardMedia>
+
+        {!!coverImageBackGround && (
+          <Box sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
+            <CardMedia sx={{ height: 140, mb: 2, justifyContent: "center" }}>
+              <LazyLoadImage
+                src={coverImageBackGround}
+                alt="Card Cover"
+                effect="blur" // Hiệu ứng mờ khi tải ảnh
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                }}
+              />
+            </CardMedia>
+          </Box>
         )}
+
 
         <CardContent sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
           {cardLabels?.length > 0 && (
@@ -191,15 +203,15 @@ const C_ard = ({ card }) => {
                 flex: 1,
               }}
             >
-              {!!card?.memberIds?.length && (
+              {/* {!!members?.length && (
                 <Button
                   size="small"
                   startIcon={<GroupIcon />}
                   sx={{ fontSize: "0.65rem", color: "primary.dark" }}
                 >
-                  {card?.memberIds?.length}
+                  {members?.length}
                 </Button>
-              )}
+              )} */}
               {!!cardDetail?.description && (
                 <Tooltip title={"Thẻ này có mô tả"}>
                   <Box
@@ -246,49 +258,49 @@ const C_ard = ({ card }) => {
               {!!checklists?.some(
                 (checklist) => checklist.items.length > 0
               ) && (
-                <Tooltip title={"Mục trong danh sách công việc"}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      backgroundColor: allChecklistsCompleted
-                        ? "primary.dark"
-                        : "transparent", // Màu nền xanh khi hoàn thành
-                      color: allChecklistsCompleted ? "white" : "primary.dark", // Màu chữ trắng khi hoàn thành
-                      padding: "4px 8px", // Thêm padding để làm nổi bật
-                      borderRadius: "4px", // Bo góc
-                    }}
-                  >
-                    <CheckBoxOutlinedIcon
+                  <Tooltip title={"Mục trong danh sách công việc"}>
+                    <Box
                       sx={{
-                        fontSize: 16,
-                      }}
-                    />
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontSize: "0.75rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        backgroundColor: allChecklistsCompleted
+                          ? "primary.dark"
+                          : "transparent", // Màu nền xanh khi hoàn thành
+                        color: allChecklistsCompleted ? "white" : "primary.dark", // Màu chữ trắng khi hoàn thành
+                        padding: "4px 8px", // Thêm padding để làm nổi bật
+                        borderRadius: "4px", // Bo góc
                       }}
                     >
-                      {checklists.reduce(
-                        (total, checklist) =>
-                          total +
-                          checklist.items.filter((item) => item.is_completed)
-                            .length,
-                        0
-                      )}
-                      /
-                      {checklists.reduce(
-                        (total, checklist) => total + checklist.items.length,
-                        0
-                      )}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
+                      <CheckBoxOutlinedIcon
+                        sx={{
+                          fontSize: 16,
+                        }}
+                      />
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: "0.75rem",
+                        }}
+                      >
+                        {checklists.reduce(
+                          (total, checklist) =>
+                            total +
+                            checklist.items.filter((item) => item.is_completed)
+                              .length,
+                          0
+                        )}
+                        /
+                        {checklists.reduce(
+                          (total, checklist) => total + checklist.items.length,
+                          0
+                        )}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                )}
             </Box>
-            {!!members?.data?.length && (
+            {Array.isArray(members?.data) && members.data.length > 0 && (
               <Box
                 sx={{
                   display: "flex",
@@ -299,7 +311,7 @@ const C_ard = ({ card }) => {
                   justifyContent: "flex-end",
                 }}
               >
-                {members?.data?.map((member, index) => (
+                {members.data.map((member, index) => (
                   <Tooltip key={index} title={member.full_name || "No name"}>
                     <Avatar
                       sx={{
@@ -309,17 +321,19 @@ const C_ard = ({ card }) => {
                         bgcolor: "primary.main",
                       }}
                     >
-                      {member.full_name.charAt(0)}
+                      {member.full_name ? member.full_name.charAt(0).toUpperCase() : "?"}
                     </Avatar>
                   </Tooltip>
                 ))}
               </Box>
             )}
+
           </CardActions>
+
         )}
       </Card>
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-        <CardModal card={card} closeDetail={handleClose} />
+      <Dialog open={open} onClose={handleClose1} fullWidth maxWidth="md">
+        <CardModal card={card} closeDetail={handleClose1} handleClose1={handleClose1} />
       </Dialog>
       <Outlet />
     </>

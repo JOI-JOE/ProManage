@@ -7,11 +7,17 @@ import {
   IconButton,
   Avatar,
   Box,
+  Typography,
 } from "@mui/material";
 import AccessTime from "@mui/icons-material/AccessTime";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { useGetMemberInCheckListItem } from "../../../../../../../../../../hooks/useCheckListItem";
+import {
+  useGetMemberInCheckListItem,
+  useChecklistsItemByDate,
+} from "../../../../../../../../../../hooks/useCheckListItem";
+import { format } from "date-fns";
+import vi from "date-fns/locale/vi";
 
 const ChecklistItemRow = ({
   item,
@@ -24,12 +30,15 @@ const ChecklistItemRow = ({
   setEditedItemName,
   handleMenuOpen,
   setMemberListConfig,
+  setDateConfig,
 }) => {
   const { data: checklistItemMembers } = useGetMemberInCheckListItem(item.id); // nếu không phải checklist-item thì trả về rỗng
   // const { data: checklistItem } = useChecklistsItemByCheckListItem(item.id); // nếu không phải checklist-item thì trả về rỗng
-
-  
+  const { data: checklistItemDate = [] } = useChecklistsItemByDate(item.id); // nếu không phải checklist-item thì trả về rỗng
+  // const checklistItemEndTime=checklistItemDate.end_date
   const hasMembers = checklistItemMembers?.data?.length > 0;
+  const checklistItemEndTime = checklistItemDate.end_date || null;
+  // console.log(checklistItemEndTime);
 
   return (
     <ListItem
@@ -75,18 +84,44 @@ const ChecklistItemRow = ({
         />
       )}
 
-      <Box sx={{ display: "flex", alignItems: "center" }}>
-        <IconButton
-          sx={{
-            ml: 0.5,
-            opacity: hasMembers ? 1 : 0,
-            visibility: hasMembers ? "visible" : "hidden",
-            transition: "all 0.3s",
-          }}
-          className="hover-icon"
-        >
-          <AccessTime />
-        </IconButton>
+      <Box
+        sx={{ display: "flex", alignItems: "center" }}
+      >
+        {checklistItemEndTime ? (
+          <Typography variant="caption"
+            sx={{ cursor: "pointer" }}
+            onClick={() => {
+              setDateConfig({
+                open: true,
+                type: "checklist-item",
+                targetId: item.id,
+              });
+            }}>
+
+            {format(new Date(checklistItemEndTime), "dd 'thg' MM", {
+              locale: vi,
+            })}
+          </Typography>
+        ) : (
+          <IconButton
+            onClick={() => {
+              setDateConfig({
+                open: true,
+                type: "checklist-item",
+                targetId: item.id,
+              });
+            }}
+            sx={{
+              ml: 0.5,
+              opacity: hasMembers ? 1 : 0,
+              visibility: hasMembers ? "visible" : "hidden",
+              transition: "all 0.3s",
+            }}
+            className="hover-icon"
+          >
+            <AccessTime sx={{ fontSize: "16px", mr: 0.5 }} />
+          </IconButton>
+        )}
 
         {hasMembers ? (
           checklistItemMembers.data.map((member) => (

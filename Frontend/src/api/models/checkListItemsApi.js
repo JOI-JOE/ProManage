@@ -73,17 +73,17 @@ export const toggleCheckListItemMember = async (itemId, userId) => {
     }
 };
 
-export const toggleCardMember = async (cardId,userId) => {
+export const toggleCardMember = async (cardId, userId) => {
     try {
-      const response = await authClient.post(`/cards/${cardId}/toggle-member`, {
-        user_id: userId, // Gửi user_id trong body
-      });
-      return response.data
+        const response = await authClient.post(`/cards/${cardId}/toggle-member`, {
+            user_id: userId, // Gửi user_id trong body
+        });
+        return response.data
     } catch (error) {
-      console.error("Lỗi khi lấy ra thành viên của card:", error);
-      throw error;
-    }   
-  }
+        console.error("Lỗi khi lấy ra thành viên của card:", error);
+        throw error;
+    }
+}
 
 export const getMembersInCheckListItem = async (itemId) => {
     try {
@@ -94,3 +94,29 @@ export const getMembersInCheckListItem = async (itemId) => {
         throw error;
     }
 }
+export const updateDateItem = async (itemId, endDate, endTime, reminder) => {
+    //   console.log(itemId,endDate,endTime);
+    try {
+        const response = await authClient.put(`/update-date/${itemId}/item`, {
+            end_date: endDate,
+            end_time: endTime,
+            reminder: reminder
+        });
+
+
+        return response.data;
+    } catch (error) {
+        console.error("Error updating card date:", error);
+        throw new Error(error.response?.data?.message || "Failed to update card date.");
+    }
+};
+export const getChecklistItemsDate = async (targetId) => {
+
+    try {
+        const response = await authClient.get(`/item/${targetId}/dates-item`);
+        return response.data.data; // Trả về dữ liệu từ API
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách checklist:", error);
+        throw error;
+    }
+};

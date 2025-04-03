@@ -3,7 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\Card;
-use App\Notifications\ReminderNotification;
+
+use App\Notifications\ReminderNotificationCard;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -11,7 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class SendReminderNotification implements ShouldQueue
+class SendReminderNotificationCard implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -47,7 +48,7 @@ class SendReminderNotification implements ShouldQueue
                 Log::error("🚨 Lỗi: Không tìm thấy user hoặc email trống để gửi thông báo.");
                 continue;
             }
-            $user->notify(new ReminderNotification($this->card));
+            $user->notify(new ReminderNotificationCard($this->card));
             Log::info("📩 Đã gửi nhắc nhở đến {$user->email}");
         }
     }
