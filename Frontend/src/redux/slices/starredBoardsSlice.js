@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  starred: [], // Mảng danh sách các board đã đánh dấu sao
+  starred: [],
 };
 
 const starredBoardsSlice = createSlice({
@@ -15,10 +15,9 @@ const starredBoardsSlice = createSlice({
       const { board } = action.payload; // Nhận board từ payload
       const boardIndex = state.starred.board_stars.findIndex(
         (b) => b.board_id === board.board_id
-      ); // Kiểm tra board đã có trong danh sách chưa
+      );
 
       if (boardIndex === -1) {
-        // Nếu board chưa có trong danh sách starred.board_stars, thêm vào mảng
         state.starred.board_stars.push(board);
       }
     },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -22,9 +22,12 @@ import { useSelector } from "react-redux";
 
 
 const HomeWorkspace = ({ workspace }) => {
+  
   const [showCreateBoard, setShowCreateBoard] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [isFormVisible, setFormVisible] = useState(false);
 
+  // Hàm mở/đóng form tạo board
   const handleOpenCreateBoard = (event) => {
     setAnchorEl(event.currentTarget);
     setShowCreateBoard(true);
@@ -35,23 +38,25 @@ const HomeWorkspace = ({ workspace }) => {
     setAnchorEl(null);
   };
 
-  const [isFormVisible, setFormVisible] = useState(false);
-  const starredBoards = useSelector((state) => state.starredBoards.starred.board_stars);
-
-  const listStarIds = workspace?.boards
-    ?.filter((board) => board.starred === 1)
-    ?.map((board) => board.id) || [];
-
-  const filteredStarredBoards = starredBoards?.filter((board) =>
-    listStarIds.includes(board.board_id)
-  ) || [];
-
+  // Toggle hiển thị form
   const toggleFormVisibility = () => {
-    setFormVisible(!isFormVisible);
+    setFormVisible((prev) => !prev);
   };
 
+  const starredBoards = useSelector((state) => state.starredBoards.starred.board_stars);
+
+  // Kiểm tra nếu starredBoards là mảng hợp lệ và workspace?.boards cũng là mảng
+  const workspaceBoardIds = Array.isArray(workspace?.boards)
+    ? workspace?.boards.map(board => board.id) // Lấy tất cả id của boards trong workspace
+    : [];
+
+  // Lọc các board trong starredBoards mà có board_id có trong workspaceBoardIds
+  const filteredStarredBoards = Array.isArray(starredBoards)
+    ? starredBoards.filter((board) => workspaceBoardIds.includes(board.board_id))
+    : [];  // Nếu starredBoards không phải mảng, trả về mảng rỗng
 
 
+  console.log(filteredStarredBoards);
   return (
     <Box
       sx={{

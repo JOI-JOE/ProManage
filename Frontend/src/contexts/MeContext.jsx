@@ -44,7 +44,9 @@ export const MeProvider = ({ children }) => {
     const workspaceId = userInfo?.workspaceId || null;
     const boardId = userInfo?.boardId || null;
 
-    const { data: boardStars, isLoading: starsLoading } = useBoardStars();
+    const { data: boardStars, isLoading: starsLoading } = useBoardStars({
+        enabled: !!user?.id,
+    });
 
     useEffect(() => {
         if (boardStars) {

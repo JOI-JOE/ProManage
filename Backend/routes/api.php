@@ -57,7 +57,6 @@ Route::middleware(['web'])->group(function () {
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
 Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
-Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getWorkspaceById']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
@@ -99,13 +98,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::controller(WorkspaceController::class)->group(function () {
         Route::prefix('workspaces')->group(function () {
             Route::get('/', 'index');
-            Route::get('/guest', 'getGuestWorkspaces');
-            Route::get('/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
-            Route::get('/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên
-            Route::get('/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy board đã đánh dấu theo tên
+            Route::get('/{workspaceName}', 'showWorkspaceByName')->where('workspaceName', '[A-Za-z0-9-]+');
             Route::post('/', 'store');
             Route::put('/{workspace}', 'updateWorkspaceInfo');
             Route::delete('/{workspace}', 'destroy');
+            // Route::get('/guest', 'getGuestWorkspaces');
+            // Route::get('/{workspaceId}', 'showWorkspaceById')->where('workspaceId', '^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$');
+            // Route::get('/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy board đã đánh dấu theo tên
         });
     });
 

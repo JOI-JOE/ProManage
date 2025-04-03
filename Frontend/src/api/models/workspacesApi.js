@@ -24,17 +24,6 @@ export const getWorkspaceByName = async (workspaceName) => {
   const response = await authClient.get(`/workspaces/name/${workspaceName}`);
   return response.data;
 };
-export const getBoardMarkedByWorkspace = async (workspaceName) => {
-  const response = await authClient.get(
-    `/workspaces/boardMarked/${workspaceName}`
-  );
-  return response.data;
-};
-
-export const getWorkspaceById = async (workspaceId) => {
-  const response = await authClient.get(`/workspaces/${workspaceId}`);
-  return response.data;
-};
 
 export const createWorkspace = async (data) => {
   return authClient
@@ -61,3 +50,15 @@ export const updateWorkspaceInfo = async (id, data) => {
       return Promise.reject(error);
     });
 };
+
+// export const getBoardMarkedByWorkspace = async (workspaceName) => {
+//   const response = await authClient.get(
+//     `/workspaces/boardMarked/${workspaceName}`
+//   );
+//   return response.data;
+// };
+
+// export const getWorkspaceById = async (workspaceId) => {
+//   const response = await authClient.get(`/workspaces/${workspaceId}`);
+//   return response.data;
+// };
