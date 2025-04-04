@@ -9,8 +9,9 @@ import {
   MenuItem,
 } from "@mui/material";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import CloseIcon from "@mui/icons-material/Close";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+// import CloseIcon from "@mui/icons-material/Close";
+// import CheckIcon from "@mui/icons-material/Check";
 
 const MemberItem = ({ member }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -146,4 +147,4 @@ const MemberItem = ({ member }) => {
   );
 };
 
-export default MemberItem;
+export default MemberItem

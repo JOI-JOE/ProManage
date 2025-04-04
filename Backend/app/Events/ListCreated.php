@@ -15,7 +15,7 @@ class ListCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-public $list;
+    public $list;
 
     public function __construct(ListBoard $list)
     {
@@ -35,13 +35,11 @@ public $list;
     public function broadcastWith()
     {
         $data = [
-            'newList' => [
-                'id' => $this->list->id,
-                'boardId' => $this->list->board_id,
-                'title' => $this->list->name,
-                'position' => (int) $this->list->position,
-                'cards' => [],
-            ]
+            'id' => $this->list->id,
+            'boardId' => $this->list->board_id,
+            'name' => $this->list->name,
+            'position' => (int) $this->list->position,
+            'cards' => [],
         ];
         return $data;
     }

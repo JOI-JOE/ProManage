@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -7,21 +7,56 @@ import {
   ListItemIcon,
   Avatar,
   IconButton,
+  SvgIcon,
+  Button,
+  Hidden
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
-
 import MyBoard from "../../../components/MyBoard";
 import CreateBoard from "../../../components/CreateBoard";
+import MyStar from "../../../components/MyStar";
+import emptyBoard from "~/assets/emptyBoard.svg?react";
+import { useSelector } from "react-redux";
 
-const HomeWorkspace = ({ workspace, markedBoards }) => {
-  const [isFormVisible, setFormVisible] = useState(false); // Quản lý hiển thị form
 
-  const toggleFormVisibility = () => {
-    setFormVisible(!isFormVisible);
+const HomeWorkspace = ({ workspace }) => {
+  
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [isFormVisible, setFormVisible] = useState(false);
+
+  // Hàm mở/đóng form tạo board
+  const handleOpenCreateBoard = (event) => {
+    setAnchorEl(event.currentTarget);
+    setShowCreateBoard(true);
   };
 
+  const handleCloseCreateBoard = () => {
+    setShowCreateBoard(false);
+    setAnchorEl(null);
+  };
+
+  // Toggle hiển thị form
+  const toggleFormVisibility = () => {
+    setFormVisible((prev) => !prev);
+  };
+
+  const starredBoards = useSelector((state) => state.starredBoards.starred.board_stars);
+
+  // Kiểm tra nếu starredBoards là mảng hợp lệ và workspace?.boards cũng là mảng
+  const workspaceBoardIds = Array.isArray(workspace?.boards)
+    ? workspace?.boards.map(board => board.id) // Lấy tất cả id của boards trong workspace
+    : [];
+
+  // Lọc các board trong starredBoards mà có board_id có trong workspaceBoardIds
+  const filteredStarredBoards = Array.isArray(starredBoards)
+    ? starredBoards.filter((board) => workspaceBoardIds.includes(board.board_id))
+    : [];  // Nếu starredBoards không phải mảng, trả về mảng rỗng
+
+
+  console.log(filteredStarredBoards);
   return (
     <Box
       sx={{
@@ -43,7 +78,7 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
         >
           <Avatar sx={{ bgcolor: "#5D87FF", width: "80px", height: "80px" }}>
             <span style={{ fontSize: "30px", fontWeight: "bold" }}>
-              {workspace.display_name.charAt(0).toUpperCase()}
+              {workspace?.display_name.charAt(0).toUpperCase()}
             </span>
           </Avatar>
           <Box>
@@ -52,7 +87,7 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
                 fontWeight="bold"
                 sx={{ whiteSpace: "nowrap", fontSize: 25 }}
               >
-                {workspace.display_name}
+                {workspace?.display_name}
               </Typography>
               <IconButton
                 onClick={toggleFormVisibility}
@@ -76,13 +111,12 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
             >
               <LockIcon sx={{ fontSize: 14 }} />
               <Typography sx={{ fontSize: 14 }}>
-                {workspace.permission_level}
+                {workspace?.permission_level}
               </Typography>
             </Box>
           </Box>
         </Box>
       )}
-
       {/* Form hiển thị khi bấm Edit */}
       {isFormVisible && (
         <WorkspaceDetailForm
@@ -90,37 +124,30 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
           onCancel={toggleFormVisibility} // Truyền hàm đóng form
         />
       )}
-      <ListItem
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 0 20px",
-          gap: "20px",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <ListItemIcon>
-            <PermIdentityOutlinedIcon sx={{ fontSize: 40, color: "black" }} />
-          </ListItemIcon>
-          <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
-            Bảng đánh dấu sao
-          </Typography>
-        </Box>
-      </ListItem>
-      <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        {markedBoards?.length > 0 ? (
-          markedBoards?.map((board) => (
-            <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-              <MyBoard board={board} id={`recent-board-${board.id}`} />
-            </ListItem>
-          ))
-        ) : (
-          <Typography variant="body2" color="textSecondary">
-            Không có bảng nào.
-          </Typography>
-        )}
-      </List>
+
+      {/* Danh sách bảng sao */}
+      {filteredStarredBoards.length > 0 && (
+        <>
+          <ListItem>
+            <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <ListItemIcon>
+                <PermIdentityOutlinedIcon sx={{ fontSize: 40, color: "black" }} />
+              </ListItemIcon>
+              <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
+                Bảng đánh dấu sao
+              </Typography>
+            </Box>
+          </ListItem>
+
+          <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap", padding: 0 }}>
+            {filteredStarredBoards?.map((star) => (
+              <ListItem key={`star-${star.id || Math.random()}`} sx={{ width: "auto", padding: 0 }}>
+                <MyStar star={star} />
+              </ListItem>
+            ))}
+          </List>
+        </>
+      )}
 
       {/* Danh sách bảng Trello */}
       <ListItem
@@ -143,19 +170,90 @@ const HomeWorkspace = ({ workspace, markedBoards }) => {
       </ListItem>
 
       <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        {/* Bảng Trello của tôi */}
-        {workspace.boards && workspace.boards.length > 0 ? (
-          workspace.boards
-            .filter((board) => board.closed === 0) // Chỉ lấy các bảng chưa đóng
-            .map((board) => (
+        {workspace?.boards && workspace.boards.length > 0 ? (
+          <>
+            {workspace.boards.map((board) => (
               <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-                <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
+                <MyBoard key={board.id} board={board} id={`w-board-${board.id}`} />
               </ListItem>
-            ))
-        ) : null}
+            ))}
+            <ListItem sx={{ width: "auto", padding: 0 }}>
+              <Box
+                onClick={handleOpenCreateBoard} // Mở popover khi nhấn
+                sx={{
+                  width: "180px",
+                  height: "100px",
+                  backgroundColor: "#EDEBFC",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  "&:hover": { backgroundColor: "#DCDFE4" },
+                }}
+              >
+                Tạo bảng mới
+              </Box>
+            </ListItem>
+            <CreateBoard
+              workspaceId={workspace?.id} // Truyền workspaceId nếu cần
+              open={showCreateBoard}
+              anchorEl={anchorEl}
+              onClose={handleCloseCreateBoard}
+            />
+          </>
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              width: "100%",
+              height: "100%",
+              mt: 4,
+            }}
+          >
+            {/* Hình ảnh minh họa */}
+            <SvgIcon
+              component={emptyBoard}
+              sx={{ width: 411, height: 200, mb: 2 }}
+              viewBox="0 0 24 24"
+              inheritViewBox
+            />
 
-        <CreateBoard />
+            {/* Tiêu đề */}
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              Các bảng là nơi hoàn thành công việc ở Trello.
+            </Typography>
+
+            {/* Nội dung mô tả */}
+            <Typography variant="body2" sx={{ maxWidth: 500, mt: 1, color: "gray" }}>
+              Trên bảng, bạn có thể di chuyển các thẻ giữa các danh sách để giữ cho
+              các dự án, nhiệm vụ và hơn thế nữa luôn đi đúng hướng.
+            </Typography>
+
+            {/* Button tạo bảng */}
+            <Button
+              variant="contained"
+              sx={{ mt: 3, bgcolor: "#2E71F3", ":hover": { bgcolor: "#1E50C9" } }}
+              onClick={handleOpenCreateBoard} // Mở popover khi nhấn
+            >
+              Tạo bảng đầu tiên
+            </Button>
+
+            {/* Component CreateBoard */}
+            <CreateBoard
+              workspaceId={workspace?.id} // Truyền workspaceId nếu cần
+              open={showCreateBoard}
+              anchorEl={anchorEl}
+              onClose={handleCloseCreateBoard}
+            />
+          </Box>
+        )}
       </List>
+
     </Box>
   );
 };

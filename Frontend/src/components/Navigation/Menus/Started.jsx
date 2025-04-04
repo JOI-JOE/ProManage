@@ -1,27 +1,15 @@
-import {
-  Avatar,
-  Box,
-  CircularProgress,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-} from "@mui/material";
+import { Box, Button, MenuItem, Avatar, Typography, SvgIcon } from "@mui/material";
 import { useState } from "react";
 import { styled } from "@mui/material/styles";
-import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import EditIcon from "@mui/icons-material/Edit";
-import Divider from "@mui/material/Divider";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import FileCopyIcon from "@mui/icons-material/FileCopy";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { useBoardMarked } from "../../../hooks/useBoard";
-
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { useMe } from "../../../contexts/MeContext";
+import { useSelector } from "react-redux";
+import LogoLoading from "../../LogoLoading";
+import LogoBoardStar from "~/assets/boardStar.svg?react"; // Đảm bảo logo SVG được import đúng
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -44,35 +32,24 @@ const StyledMenu = styled((props) => (
     color: "rgb(55, 65, 81)",
     boxShadow:
       "rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px",
-    "& .MuiMenu-list": {
-      padding: "4px 0",
-    },
-    "& .MuiMenuItem-root": {
-      "& .MuiSvgIcon-root": {
-        fontSize: 18,
-        color: "#000",
-        marginRight: theme.spacing(1.5),
-      },
-      "&:active": {},
-    },
-    ...theme.applyStyles("dark", {
-      color: theme.palette.grey[300],
-    }),
   },
 }));
 
 const Started = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+
+  const { isLoading } = useMe(); // Lấy trạng thái loading từ context
+  const starredBoards = useSelector((state) => state.starredBoards.starred);
+  const listStar = starredBoards?.board_stars || [];  // Sử dụng mảng rỗng nếu không có dữ liệu
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleClose = () => {
     setAnchorEl(null);
   };
-
-  const { data: boardsMarked, isLoading, isError } = useBoardMarked();
-  const boardList = boardsMarked?.data || []; // Lấy danh sách mảng từ `data`
 
   return (
     <Box>
@@ -81,7 +58,6 @@ const Started = () => {
         aria-controls={open ? "demo-customized-menu" : undefined}
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
-        // variant="contained"
         disableElevation
         onClick={handleClick}
         endIcon={<KeyboardArrowDownIcon />}
@@ -89,6 +65,7 @@ const Started = () => {
       >
         Đã đánh dấu sao
       </Button>
+
       <StyledMenu
         id="demo-customized-menu-workspace"
         MenuListProps={{
@@ -99,20 +76,44 @@ const Started = () => {
         onClose={handleClose}
       >
         {isLoading ? (
+          // Nếu đang loading, hiển thị LogoLoading
           <MenuItem disabled>
-            <CircularProgress size={20} />
-            <Typography ml={1}>Đang tải...</Typography>
+            <LogoLoading scale={0.4} /> {/* Tùy chỉnh scale nếu cần */}
           </MenuItem>
-        ) : isError ? (
-          <MenuItem disabled>Lỗi khi tải dữ liệu</MenuItem>
-        ) : boardList.length === 0 ? (
-          <MenuItem disabled>Không có bảng nào</MenuItem>
+        ) : (!listStar || listStar.length === 0) ? (
+          <Box sx={{ width: 304, display: "flex", flexDirection: "column", alignItems: "center", p: 2 }}>
+            {/* Hình ảnh SVG */}
+            <Typography
+              variant="h3"
+              color="text.secondary"
+              textAlign="center"
+              sx={{ fontWeight: "bold" }} // Làm đậm chữ
+            >
+              Bảng Đánh Dấu Sao
+            </Typography>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+              <SvgIcon
+                component={LogoBoardStar}
+                sx={{
+                  width: "100%", // Chiếm toàn bộ chiều rộng của phần tử cha
+                  height: "auto", // Giữ tỷ lệ gốc
+                }}
+                viewBox="0 0 24 24"
+                inheritViewBox
+              />
+            </Box>
+
+            {/* Văn bản mô tả */}
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              Gắn dấu sao các bảng quan trọng để truy cập nhanh và dễ dàng.
+            </Typography>
+          </Box>
         ) : (
-          boardList.map((board) => (
+          listStar.map((board) => (
             <MenuItem
               component={Link}
-              to={`/b/${board.id}/${board.name}`}
-              key={board.id}
+              to={`/b/${board.board_id}/${board.name}`} // Đảm bảo sử dụng đúng board id và name
+              key={board.star_id} // Sử dụng board_id làm key duy nhất
               onClick={handleClose}
               sx={{
                 display: "flex",
@@ -135,24 +136,15 @@ const Started = () => {
                       ? board.thumbnail.startsWith("#")
                         ? board.thumbnail
                         : `url(${board.thumbnail}) center/cover no-repeat`
-                      : "#1693E1",
+                      : "#1693E1", // Nếu không có ảnh thì sẽ có màu nền mặc định
                   }}
-                >
-                  {!board.thumbnail && board.name.charAt(0).toUpperCase()}
-                </Avatar>
-
+                />
                 <Box>
                   <Typography variant="body1" fontWeight={500}>
-                    {board.name}
-                  </Typography>
-                  <Typography variant="body2" color="gray">
-                    {board.workspace.display_name}
+                    {board.name} {/* Sử dụng tên board */}
                   </Typography>
                 </Box>
               </Box>
-
-              {/* Khoảng trống ở giữa */}
-              <Box flexGrow={1} />
 
               {/* Bên phải: Icon ngôi sao */}
               <FontAwesomeIcon

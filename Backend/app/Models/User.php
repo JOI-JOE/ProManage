@@ -111,6 +111,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(Board::class, 'created_by');
     }
+
+    public function boardStars()
+    {
+        return $this->hasMany(BoardStar::class, 'user_id');
+    }
     public function workspaceMember()
     {
         return $this->hasMany(WorkspaceMembers::class, 'user_id', 'id');

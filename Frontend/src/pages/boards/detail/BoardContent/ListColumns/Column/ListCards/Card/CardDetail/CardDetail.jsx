@@ -70,7 +70,7 @@ import {
   useDeleteComment,
   useUpdateComment,
 } from "../../../../../../../../../hooks/useComment";
-import { useUser } from "../../../../../../../../../hooks/useUser";
+// import { useUser } from "../../../../../../../../../hooks/useUser";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { toast, ToastContainer } from "react-toastify";
@@ -97,7 +97,7 @@ import AttachmentIcon from "@mui/icons-material/Attachment";
 import { AccessTime, ArrowBack } from "@mui/icons-material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
-import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
+// import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
 import { formatTime } from "../../../../../../../../../../utils/dateUtils.js";
 import ChecklistItemRow from "./childComponent_CardDetail/ChecklistItemRow.jsx";
 import { useMe } from "../../../../../../../../../contexts/MeContext.jsx";
@@ -606,26 +606,26 @@ const CardModal = ({ closeDetail  }) => {
 
   const handleOpen = (imageUrl) => {
     // console.log(imageUrl);
-    
-    // Trích xuất phần mở rộng tệp từ URL
-  const fileExt = imageUrl.match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase();
-  const imageTypes = ["jpg", "jpeg", "png", "webp"]; // Danh sách định dạng ảnh
 
-  if (imageTypes.includes(fileExt)) {
-    // Nếu là ảnh, hiển thị trong dialog
-    setSelectedImage(imageUrl);
-    setOpen(true);
-  } else if( fileExt === "pdf" ){
-    window.open(imageUrl, "_blank", "noopener,noreferrer");
-  } else {
-    // Nếu không phải ảnh (Word, Excel,...), tải về máy
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = imageUrl.split("/").pop() || "file"; // Lấy tên tệp từ URL hoặc đặt mặc định
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+    // Trích xuất phần mở rộng tệp từ URL
+    const fileExt = imageUrl.match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase();
+    const imageTypes = ["jpg", "jpeg", "png", "webp"]; // Danh sách định dạng ảnh
+
+    if (imageTypes.includes(fileExt)) {
+      // Nếu là ảnh, hiển thị trong dialog
+      setSelectedImage(imageUrl);
+      setOpen(true);
+    } else if (fileExt === "pdf") {
+      window.open(imageUrl, "_blank", "noopener,noreferrer");
+    } else {
+      // Nếu không phải ảnh (Word, Excel,...), tải về máy
+      const link = document.createElement("a");
+      link.href = imageUrl;
+      link.download = imageUrl.split("/").pop() || "file"; // Lấy tên tệp từ URL hoặc đặt mặc định
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   // Hàm đóng modal
@@ -750,8 +750,8 @@ const CardModal = ({ closeDetail  }) => {
 
   const handleSave1 = () => {
     if (!editedDisplayText.trim()) return; // Không cho phép tên trống
-    updateAttachment({cardId, attachmentId: editingLinkId, newFileName: editedDisplayText});
-    
+    updateAttachment({ cardId, attachmentId: editingLinkId, newFileName: editedDisplayText });
+
   };
 
 
@@ -1649,8 +1649,8 @@ const CardModal = ({ closeDetail  }) => {
                     Tải xuống
                   </MenuItem>
                   {/* <MenuItem>Nhận xét</MenuItem> */}
-                 {/* Kiểm tra nếu là file hình ảnh thì hiển thị tùy chọn "Tạo ảnh bìa" */}
-                 {(() => {
+                  {/* Kiểm tra nếu là file hình ảnh thì hiển thị tùy chọn "Tạo ảnh bìa" */}
+                  {(() => {
                     const file = attachments?.data?.find(
                       (f) => f.id === selectedFile
                     );

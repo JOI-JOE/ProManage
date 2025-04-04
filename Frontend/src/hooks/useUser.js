@@ -1,57 +1,21 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import {
-  fetchUserBoardsWithWorkspaces,
-  fetchUserDashboardData,
-  fetchUserProfile,
+  fetchUserData,
   forgotPassword,
-  getUser,
   userRegister,
 } from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
 import { logoutUser } from "../api/models/userApi";
 
 export const useUserData = () => {
-  const {
-    data: userProfile,
-    isLoading: loadingProfile,
-    error: errorProfile,
-  } = useQuery({
-    queryKey: ["userProfile"],
-    queryFn: fetchUserProfile,
-  });
-
-  const {
-    data: userDashboard,
-    isLoading: loadingDashboard,
-    error: errorDashboard,
-  } = useQuery({
-    queryKey: ["userDashboard"],
-    queryFn: fetchUserDashboardData,
-  });
-
-  return {
-    userProfile,
-    userDashboard,
-    isLoading: loadingProfile || loadingDashboard,
-    error: errorProfile || errorDashboard,
-  };
-};
-
-export const useFetchUserBoardsWithWorkspaces = (userId) => {
   return useQuery({
-    queryKey: ["userBoardsWithWorkspaces", userId], // Cache theo từng userId
-    queryFn: () => fetchUserBoardsWithWorkspaces(userId), // Gọi API
-    enabled: !!userId, // Chỉ fetch khi có userId hợp lệ
-  });
-};
-
-export const useUser = () => {
-  return useQuery({
-    queryKey: ["user"],
-    queryFn: async () => await getUser(),
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 30,
+    queryKey: ["userInfo"],
+    queryFn: fetchUserData,
+    staleTime: 10 * 60 * 1000,
+    cacheTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 };
 

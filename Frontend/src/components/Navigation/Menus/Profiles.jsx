@@ -22,8 +22,10 @@ import { useNavigate } from "react-router-dom";
 
 import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
+import { useMe } from "../../../contexts/MeContext";
 
 export default function ProfileMenu({ email }) {
+  const { user } = useMe()
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
   const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
@@ -87,8 +89,11 @@ export default function ProfileMenu({ email }) {
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
         <Tooltip title="Tài khoản">
           <IconButton onClick={handleClick} size="small">
-            <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
-              {email?.charAt(0)?.toUpperCase() || ""}
+            <Avatar
+              sx={{ width: 40, height: 40, margin: "auto", bgcolor: "#00A3BF" }}
+              src={user?.image || undefined} // Nếu có ảnh thì hiển thị ảnh
+            >
+              {user?.image}
             </Avatar>
           </IconButton>
         </Tooltip>
@@ -97,8 +102,9 @@ export default function ProfileMenu({ email }) {
         <Box sx={{ p: 2, textAlign: "center" }}>
           <Avatar
             sx={{ width: 40, height: 40, margin: "auto", bgcolor: "#00A3BF" }}
+            src={user?.image || undefined} // Nếu có ảnh thì hiển thị ảnh
           >
-            {email?.charAt(0)?.toUpperCase() || ""}
+            {user?.image}
           </Avatar>
           <Typography
             variant="subtitle1"

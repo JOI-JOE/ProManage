@@ -52,6 +52,11 @@ class Board extends Model
         return $this->hasMany(BoardMember::class, 'board_id');
     }
 
+    public function boardStars()
+    {
+        return $this->hasMany(BoardStar::class, 'board_id');
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'user_id'); // 'created_by' là trường ngoại trong bảng 'boards'
@@ -77,7 +82,7 @@ class Board extends Model
         return $this->belongsToMany(User::class, 'board_members', 'board_id', 'user_id')
             ->withPivot('role', 'is_unconfirmed', 'joined', 'is_deactivated');
     }
-    
+
     public function activeMembers()
     {
         return $this->members()

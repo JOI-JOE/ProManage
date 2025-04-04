@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -16,52 +16,55 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
 import { useCreateBoard, useImageUnsplash } from "../hooks/useBoard";
-
 import { useColor } from "../hooks/useColor";
-import { useGetWorkspaces } from "../hooks/useWorkspace";
+import { useWorkspace } from "../contexts/WorkspaceContext";
 
-// const colors = ["#E3F2FD", "#64B5F6", "#1565C0", "#283593", "#8E24AA"];
+const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
+  const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
+  const {
+    data: unsplashImages,
+    isLoading: unsplashingImages,
+    refetch,
+  } = useImageUnsplash();
 
-const CreateBoard = React.memo(() => {
-  const [openPopover, setOpenPopover] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
+  const { data: workspaceData } = useWorkspace();
+  const filterWorkspace = useMemo(
+    () =>
+      workspaceData?.workspaces?.map(({ display_name, name, id }) => ({
+        display_name,
+        name,
+        id,
+      })) || [],
+    [workspaceData]
+  );
+  const { data: colors, isLoading: isLoadingColors } = useColor();
+
   const [boardTitle, setBoardTitle] = useState("");
   const [selectedBg, setSelectedBg] = useState("");
   const [workspace, setWorkspace] = useState("");
-  const [viewPermission, setViewPermission] = useState("");
-  // const [colorList, setColorList] = useState([]); // State lưu danh sách màu
-  // const userId = localStorage.getItem("user_id"); // ID được lưu sau khi đăng nhập
+  const [viewPermission, setViewPermission] = useState("workspace");
 
-  // Sử dụng hook useCreateBoard
-  // Sử dụng hook useCreateBoard
-  const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
-  const {
-    mutate: fetchUnsplashImages,
-    data: unsplashImages,
-    isLoading: unsplashingImages,
-  } = useImageUnsplash();
+  // Khi popover mở, gọi refetch để tải ảnh Unsplash
+  const handleOpen = useCallback(
+    (event) => {
+      if (onOpen) onOpen(event); // Gọi hàm mở từ parent nếu có
+      refetch();
+    },
+    [onOpen, refetch]
+  );
 
-  // Sử dụng hook useWorkspaces
-  const { data: workspaces, isLoading: isLoadingWorkspaces, error } = useGetWorkspaces();
-  const memoizedWorkspaces = useMemo(() => workspaces ?? [], [workspaces]);
+  // Reset form và đóng popover
+  const handleClose = useCallback(() => {
+    setBoardTitle("");
+    setSelectedBg("");
+    setWorkspace("");
+    setViewPermission("workspace");
+    onClose(); // Gọi hàm đóng từ parent
+  }, [onClose]);
 
-  const { data: colors, isLoading: isLoadingColors, errorColors } = useColor();
-
-
-  const handleOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-    setOpenPopover(true);
-    fetchUnsplashImages(); // Gọi API lấy ảnh
-  };
-
-  const handleClose = () => {
-    setOpenPopover(false);
-    setAnchorEl(null);
-  };
-
-  const handleSelectBg = (bg) => {
-    setSelectedBg(bg); // Nếu là mã màu, gán trực tiếp
-  };
+  const handleSelectBg = useCallback((bg) => {
+    setSelectedBg(bg);
+  }, []);
 
   const handleCreateBoard = useCallback(() => {
     if (!boardTitle.trim()) {
@@ -72,13 +75,12 @@ const CreateBoard = React.memo(() => {
     const boardData = {
       name: boardTitle,
       thumbnail: selectedBg,
-      workspace_id: workspace,
+      workspace_id: workspace || workspaceId || filterWorkspace[0]?.id, // Ưu tiên workspaceId từ props
       visibility: viewPermission,
     };
 
     createBoard(boardData, {
-      onSuccess: (data) => {
-        console.log(data);
+      onSuccess: () => {
         alert(`🎉 Bảng "${boardTitle}" đã được tạo thành công!`);
         handleClose();
       },
@@ -86,13 +88,21 @@ const CreateBoard = React.memo(() => {
         alert(`❌ Lỗi khi tạo bảng: ${error.message}`);
       },
     });
-
-    console.log("📩 Dữ liệu gửi lên API:", boardData);
-  }, [boardTitle, selectedBg, workspace, viewPermission, createBoard, handleClose]);
+  }, [
+    boardTitle,
+    selectedBg,
+    workspace,
+    viewPermission,
+    createBoard,
+    workspaceId,
+    filterWorkspace,
+    handleClose,
+  ]);
 
   return (
-    <div>
-      <ListItem sx={{ width: "auto", padding: 0 }}>
+    <>
+      {/* Nút hoặc khu vực kích hoạt popover từ bên ngoài */}
+      {/* <ListItem sx={{ width: "auto", padding: 0 }}>
         <Box
           onClick={handleOpen}
           sx={{
@@ -107,37 +117,42 @@ const CreateBoard = React.memo(() => {
             "&:hover": { backgroundColor: "#DCDFE4" },
           }}
         >
-          <Typography sx={{ color: "Black", fontWeight: "bold" }}>
-            Tạo bảng mới
-          </Typography>
+          Tạo bảng mới
         </Box>
-      </ListItem>
+      </ListItem> */}
 
+      {/* Popover hiển thị form tạo board */}
       <Popover
-        open={openPopover}
+        open={open}
         anchorEl={anchorEl}
         onClose={handleClose}
+        disableEnforceFocus
         anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
+          vertical: "center",
+          horizontal: "right",
         }}
         transformOrigin={{
-          vertical: "top",
-          horizontal: "center",
+          vertical: "center",
+          horizontal: "left",
         }}
+        sx={{ m: 2 }}
       >
-        <Box
-          sx={{
-            width: 350,
-            p: 2,
-            borderRadius: "8px",
-            bgcolor: "white",
-            boxShadow: 3,
-          }}
-        >
-          <Typography variant="h6" fontWeight="bold" textAlign="center">
-            Tạo bảng
-          </Typography>
+        <Box sx={{ width: 350, p: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography variant="h6" fontWeight="bold">
+              Tạo bảng
+            </Typography>
+            <IconButton onClick={handleClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
 
           <Box
             sx={{
@@ -147,75 +162,64 @@ const CreateBoard = React.memo(() => {
                 ? selectedBg
                 : `url(${selectedBg}) center/cover no-repeat`,
               borderRadius: "8px",
+              mb: 2,
             }}
           />
 
-          <Typography variant="subtitle1" mt={2} fontWeight="bold">
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
             Phông nền
           </Typography>
 
-
-
-          {colors?.length > 0 ? (
-            <Grid container spacing={1} mt={1}>
-              {colors.map((color) => (
-                <Grid item key={color.id}>
-                  <Box
-                    sx={{
-                      width: "50px",
-                      height: "35px",
-                      backgroundColor: color.hex_code,
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      border:
-                        selectedBg === color.hex_code ? "2px solid #007BFF" : "none",
-                    }}
-                    onClick={() => handleSelectBg(color.hex_code)}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          ) : (
-            <Typography>Không có màu nào khả dụng</Typography>
-          )}
-
-          <Typography variant="subtitle1" mt={2} fontWeight="bold">
-            Ảnh từ Unsplash
-          </Typography>
-
-          {/* Ảnh từ Unsplash */}
-          <Grid container spacing={1} mt={1}>
-            {unsplashImages?.map((image, index) => (
-              <Grid item key={index}>
+          <Grid container spacing={1} sx={{ mb: 2 }}>
+            {colors?.map((color) => (
+              <Grid item key={color.id}>
                 <Box
-                  component="img"
-                  src={image.urls.small}
                   sx={{
-                    width: "50px",
-                    height: "35px",
+                    width: 50,
+                    height: 35,
+                    backgroundColor: color.hex_code,
                     borderRadius: "4px",
                     cursor: "pointer",
                     border:
-                      selectedBg === image.urls.small
+                      selectedBg === color.hex_code
                         ? "2px solid #007BFF"
                         : "none",
                   }}
-                  onClick={() => handleSelectBg(image.urls.small)}
+                  onClick={() => handleSelectBg(color.hex_code)}
                 />
               </Grid>
             ))}
           </Grid>
 
-          <IconButton
-            onClick={handleClose}
-            sx={{ position: "absolute", top: 8, right: 8 }}
-          >
-            <CloseIcon />
-          </IconButton>
-
-          <Typography variant="h6" mt={2} fontWeight="bold">
-            Tiêu đề bảng <span style={{ color: "red" }}>*</span>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            Ảnh từ Unsplash
           </Typography>
+
+          {unsplashingImages ? (
+            <Typography>Đang tải ảnh...</Typography>
+          ) : (
+            <Grid container spacing={1} sx={{ mb: 2 }}>
+              {unsplashImages?.map((image) => (
+                <Grid item key={image.id}>
+                  <Box
+                    component="img"
+                    src={image.urls.small}
+                    sx={{
+                      width: 50,
+                      height: 35,
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      border:
+                        selectedBg === image.urls.small
+                          ? "2px solid #007BFF"
+                          : "none",
+                    }}
+                    onClick={() => handleSelectBg(image.urls.small)}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
 
           <TextField
             fullWidth
@@ -223,74 +227,71 @@ const CreateBoard = React.memo(() => {
             variant="outlined"
             value={boardTitle}
             onChange={(e) => setBoardTitle(e.target.value)}
-            error={boardTitle.trim() === ""}
-            helperText={
-              boardTitle.trim() === "" ? "👋 Tiêu đề bảng là bắt buộc" : ""
-            }
-            sx={{ marginBottom: 2 }}
+            error={!boardTitle.trim()}
+            helperText={!boardTitle.trim() && "👋Tiêu đề bảng là bắt buộc"}
+            sx={{ mb: 2 }}
           />
 
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
             Không gian làm việc
           </Typography>
+          <Select
+            fullWidth
+            value={workspace || workspaceId || filterWorkspace[0]?.id || ""}
+            onChange={(e) => setWorkspace(e.target.value)}
+            sx={{
+              mb: 2,
+              color: "black",
+              "& .MuiSvgIcon-root": { color: "white" },
+              "& .MuiOutlinedInput-notchedOutline": { borderColor: "#444" },
+              "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#666" },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#666",
+              },
+            }}
+          >
+            {filterWorkspace.map((ws) => (
+              <MenuItem key={ws.id} value={ws.id}>
+                {ws.display_name || ws.name}
+              </MenuItem>
+            ))}
+          </Select>
 
-          {isLoadingWorkspaces ? (
-            <Typography>Đang tải...</Typography>
-          ) : error ? (
-            <Typography color="error">Lỗi tải workspace</Typography>
-          ) : (
-            <Select
-              fullWidth
-              value={workspace}
-              onChange={(e) => setWorkspace(e.target.value)}
-              sx={{ marginBottom: 2 }}
-            >
-              {(memoizedWorkspaces ?? []).map((ws) => (
-                <MenuItem key={ws.id} value={ws.id}>
-                  {ws.name}
-                </MenuItem>
-              ))}
-            </Select>
-          )}
-
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
             Quyền xem
           </Typography>
           <Select
             fullWidth
             value={viewPermission}
             onChange={(e) => setViewPermission(e.target.value)}
-            sx={{ marginBottom: 2 }}
+            sx={{ mb: 2 }}
           >
-            {/* <MenuItem value="default">Không gian làm việc</MenuItem> */}
             <MenuItem value="private">
-              <LockIcon fontSize="small" />
+              <LockIcon sx={{ mr: 1 }} fontSize="small" />
               Riêng tư
             </MenuItem>
             <MenuItem value="workspace">
-              <GroupsIcon fontSize="small" />
+              <GroupsIcon sx={{ mr: 1 }} fontSize="small" />
               Không gian làm việc
             </MenuItem>
             <MenuItem value="public">
-              <PublicIcon fontSize="small" />
+              <PublicIcon sx={{ mr: 1 }} fontSize="small" />
               Công khai
             </MenuItem>
           </Select>
 
-          <Box sx={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCreateBoard}
-              disabled={isCreatingBoard || boardTitle.trim() === ""}
-            >
-              {isCreatingBoard ? "Đang tạo..." : "Tạo bảng"}
-            </Button>
-          </Box>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleCreateBoard}
+            disabled={isCreatingBoard || !boardTitle.trim()}
+          >
+            {isCreatingBoard ? "Đang tạo..." : "Tạo bảng"}
+          </Button>
         </Box>
-      </Popover>
-    </div>
+      </Popover >
+    </>
   );
-});
+};
 
 export default CreateBoard;

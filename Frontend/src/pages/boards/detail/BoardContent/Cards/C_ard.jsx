@@ -20,40 +20,40 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
-import { useCardLabels } from "../../../../../hooks/useLabel";
-import { useCardById, useGetMemberInCard } from "../../../../../hooks/useCard";
-import { useCommentsByCard } from "../../../../../hooks/useComment";
-import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
-import useAttachments from "../../../../../hooks/useAttachment";
-import { LazyLoadImage } from "react-lazy-load-image-component";
+// import { useCardLabels } from "../../../../../hooks/useLabel";
+// import { useCardById, useGetMemberInCard } from "../../../../../hooks/useCard";
+// import { useCommentsByCard } from "../../../../../hooks/useComment";
+// import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
+// import useAttachments from "../../../../../hooks/useAttachment";
+// import { LazyLoadImage } from "react-lazy-load-image-component";
 
 const C_ard = ({ card }) => {
-  const {
-    data: cardDetail,
-    isLoading,
-    error,
-    updateDescriptionCard,
-  } = useCardById(card.id);
-  const { data: cardLabels = [] } = useCardLabels(card.id);
-  const { data: comments = [] } = useCommentsByCard(card.id);
+  // const {
+  //   data: cardDetail,
+  //   isLoading,
+  //   error,
+  //   updateDescriptionCard,
+  // } = useCardById(card.id);
+  // const { data: cardLabels = [] } = useCardLabels(card.id);
+  // const { data: comments = [] } = useCommentsByCard(card.id);
   // console.log(cardDetail);
-  const { data: checklists = [], isLoadingChecklist } = useChecklistsByCard(
-    card.id
-  );
+  // const { data: checklists = [], isLoadingChecklist } = useChecklistsByCard(
+  //   card.id
+  // );
 
-  const { data: members = [], toggleMember } = useGetMemberInCard(card.id);
+  // const { data: members = [], toggleMember } = useGetMemberInCard(card.id);
 
-  const {
-    attachments = [],
-    addAttachment,
-    updateAttachment,
-    removeAttachment,
-  } = useAttachments(card.id);
+  // const {
+  //   attachments = [],
+  //   addAttachment,
+  //   updateAttachment,
+  //   removeAttachment,
+  // } = useAttachments(card.id);
 
-  const coverImageAttachment = attachments?.data?.find((file) => file.is_cover);
-  const coverImageBackGround = coverImageAttachment
-    ? coverImageAttachment.path_url
-    : null;
+  // const coverImageAttachment = attachments?.data?.find((file) => file.is_cover);
+  // const coverImageBackGround = coverImageAttachment
+  //   ? coverImageAttachment.path_url
+  //   : null;
 
   const [open, setOpen] = useState(false); // State mở/đóng Dialog
   const navigate = useNavigate(); // Điều hướng URL
@@ -70,15 +70,9 @@ const C_ard = ({ card }) => {
 
   const handleClose1 = () => {
     setOpen(false);
-    // navigate(-1); // Quay lại trang trước (tốt hơn)
     const pathSegments = location.pathname.split("/");
-
-    // Lấy phần `/b/:boardId/:boardName`
     const newPath = `/${pathSegments[1]}/${pathSegments[2]}/${pathSegments[3]}`;
-
-    // Điều hướng về đường dẫn mới
     navigate(newPath, { replace: true });
-
   };
 
   useEffect(() => {
@@ -115,9 +109,9 @@ const C_ard = ({ card }) => {
     );
   };
 
-  const allChecklistsCompleted = checklists?.every(
-    (checklist) => checklist.items?.every((item) => item.is_completed) ?? false
-  );
+  // const allChecklistsCompleted = checklists?.every(
+  //   (checklist) => checklist.items?.every((item) => item.is_completed) ?? false
+  // );
 
   return (
     <>
@@ -161,12 +155,10 @@ const C_ard = ({ card }) => {
 
 
         <CardContent sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
-          {cardLabels?.length > 0 && (
+          {/* {cardLabels?.length > 0 && (
             <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap", mb: 1 }}>
               {cardLabels?.map((label, index) => (
                 <Tooltip key={index} title={label.title || "No text"}>
-                  {" "}
-                  {/* Hiển thị text khi di chuột qua */}
                   <Box
                     sx={{
                       backgroundColor: label.color.hex_code,
@@ -178,10 +170,10 @@ const C_ard = ({ card }) => {
                 </Tooltip>
               ))}
             </Box>
-          )}
+          )} */}
 
           <Typography sx={{ fontSize: "0.7rem" }}>
-            {cardDetail?.title}
+            {card?.title}
           </Typography>
         </CardContent>
         {showCardActions() && (
