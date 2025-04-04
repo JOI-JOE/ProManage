@@ -27,8 +27,6 @@ const ShareBoardDialog = ({ boardMembers, currentUser, open, onClose }) => {
   const navigate = useNavigate();
 
 
-  // console.log('Current board:',boardMembers);
-  // States
   const [roleAnchorEl, setRoleAnchorEl] = useState(null);
   const [leaveAnchorEl, setLeaveAnchorEl] = useState(null);
   const [selectedMemberId, setSelectedMemberId] = useState(null);
@@ -40,7 +38,7 @@ const ShareBoardDialog = ({ boardMembers, currentUser, open, onClose }) => {
   const { mutate: generateLink } = useGenerateInviteLink(setLink);
   const { mutate: removeInvite } = useRemoveInviteLink();
   const { mutate: updateRoleMemberInBoard } = useUpdateRoleMemberInBoards();
-  const removeMember = useRemoveMemberFromBoard(currentUser?.id); // Sử dụng hook với currentUserId
+  const removeMember = useRemoveMemberFromBoard(currentUser?.id);
 
   // Handlers
   const handleOpenRoleMenu = (event, memberId) => {
@@ -142,11 +140,7 @@ const ShareBoardDialog = ({ boardMembers, currentUser, open, onClose }) => {
   const getMemberRoleDescription = (role) =>
     role === "admin" ? "Quản trị viên của bảng" : "Thành viên";
 
-  console.log("mảng members", boardMembers)
-  console.log("người dùng hiện tại", currentUser)
-
-  const admins = boardMembers.filter(member => member.role === "admin");
-  const adminCount = admins.length;
+  const checkUser = boardMembers.filter(member => member.id === currentUser?.id);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -198,18 +192,6 @@ const ShareBoardDialog = ({ boardMembers, currentUser, open, onClose }) => {
         </Typography>
 
         {boardMembers?.map((member) => {
-          // const isCurrentUser = currentUser?.id === member.id;
-          // const isSelectedAdmin = member.role === "admin";
-          // const canEdit = isAdmin;
-
-          // Xác định text của nút "Remove" hoặc "Rời bảng"
-          // const removeOptionText = isCurrentUser
-          //   ? adminCount > 1
-          //     ? "Rời bảng"
-          //     : "Bạn là admin cuối cùng"
-          //   : isSelectedAdmin
-          //     ? "Rời bảng"
-          //     : "Xóa khỏi bảng";
 
           return (
             <Box
@@ -241,7 +223,6 @@ const ShareBoardDialog = ({ boardMembers, currentUser, open, onClose }) => {
                 </Typography>
               </Box>
 
-              {/* {canEdit ? ( */}
               <>
                 <Button
                   variant="outlined"
@@ -249,31 +230,65 @@ const ShareBoardDialog = ({ boardMembers, currentUser, open, onClose }) => {
                   endIcon={<ExpandMoreIcon />}
                   onClick={(e) => handleOpenRoleMenu(e, member.id)}
                   sx={{ fontSize: "0.765rem" }}
+                  disabled={member.role === "normal"}
                 >
-                  {/* {getMemberRoleText(member.role)} */}
-                  ddk
+                  {getMemberRoleText(member.role)}
                 </Button>
                 <Menu
                   anchorEl={roleAnchorEl}
                   open={Boolean(roleAnchorEl) && selectedMemberId === member.id}
                   onClose={() => handleCloseRoleMenu(null, member.id)}
-                  MenuListProps={{ sx: { "& .MuiMenuItem-root": { fontSize: "0.8rem" } } }}
+                  MenuListProps={{
+                    sx: {
+                      "& .MuiMenuItem-root": {
+                        fontSize: "0.8rem", // Điều chỉnh kích thước font
+                        padding: "8px 20px", // Điều chỉnh padding nếu cần
+                      },
+                      "& .MuiPaper-root": {
+                        minWidth: "200px", // Điều chỉnh độ rộng của Menu
+                        boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)", // Thêm hiệu ứng bóng cho Menu
+                      },
+                    },
+                  }}
+                  anchorOrigin={{
+                    vertical: "bottom", // Điều chỉnh vị trí của menu theo chiều dọc
+                    horizontal: "right", // Điều chỉnh vị trí của menu theo chiều ngang
+                  }}
+                  transformOrigin={{
+                    vertical: "top", // Đặt vị trí gốc của menu theo chiều dọc
+                    horizontal: "right", // Đặt vị trí gốc của menu theo chiều ngang
+                  }}
+                  sx={{
+                    mt: 1, // Dịch xuống dưới 20px
+                  }}
                 >
-                  <MenuItem onClick={() => handleCloseRoleMenu("Quản trị viên", member.id)}>
-                    Quản trị viên
-                  </MenuItem>
-                  <MenuItem onClick={() => handleCloseRoleMenu("Thành viên", member.id)}>Thành viên</MenuItem>
-                  {/* <MenuItem onClick={() => handleCloseRoleMenu(removeOptionText, member.id)}> */}
-                  {/* {removeOptionText} */}
-                  {/* </MenuItem> */}
+                  {{
+                    // checkUser.role === "admin" ?
+                    //   (
+                    //     <MenuItem onClick={() => handleCloseRoleMenu("Quản trị viên", member.id)}>
+                    //     Quản trị viên
+                    //   </MenuItem>
+                    //   <MenuItem onClick={() => handleCloseRoleMenu("Thành viên", member.id)}>
+                    //     Thành viên
+                    //   </MenuItem>
+                    //   <MenuItem onClick={() => handleLeaveBoard("Rời khỏi", member.id)}>
+                    //     Ra ngoài
+                    //   </MenuItem>
+                    //   ) : (
+                    //     <MenuItem onClick={() => handleCloseRoleMenu("Quản trị viên", member.id)} disabled={true}>
+                    //     Quản trị viên
+                    //   </MenuItem>
+                    //   <MenuItem onClick={() => handleCloseRoleMenu("Thành viên", member.id)}  disabled={true}>
+                    //     Thành viên
+                    //   </MenuItem>
+                    //   <MenuItem onClick={() => handleLeaveBoard("Rời khỏi", member.id)}>
+                    //     Ra ngoài
+                    //   </MenuItem>
+                    //   )
+                  }}
+
                 </Menu>
               </>
-              {/* ) : ( */}
-              <Typography variant="body2" sx={{ fontSize: "0.765rem", p: "4px 8px" }}>
-                {/* {getMemberRoleText(member.role)} */}
-                kajf
-              </Typography>
-              {/* )} */}
             </Box>
           );
         })}

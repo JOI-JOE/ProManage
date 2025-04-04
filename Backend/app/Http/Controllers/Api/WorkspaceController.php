@@ -202,7 +202,7 @@ class WorkspaceController extends Controller
             }
 
             // Trả về dữ liệu workspace
-            // return new WorkspaceResource($workspace);
+            return new WorkspaceResource($workspace);
         } catch (\Exception $e) {
             Log::error('Lỗi khi lấy chi tiết workspace: ' . $e->getMessage());
             return response()->json([

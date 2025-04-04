@@ -74,12 +74,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Function list 
     Route::controller(ListController::class)->group(function () {
-        Route::get('lists/{boardId}', 'show');
+        Route::prefix('lists')->group(function () {
+            Route::get('/{boardId}', 'show');
+            Route::put('/{listId}',  'update');
+        });
     });
 
     // Funtion kéo thả column
     Route::controller(DragDropController::class)->group(function () {
-        Route::put('/lists/{listId}', action: 'updatePositionList');
+        // Route::put('/lists/{listId}', action: 'updatePositionList');
         Route::put('/cards/{cardId}', action: 'updatePositionCard');
     });
 
@@ -102,9 +105,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('/', 'store');
             Route::put('/{workspace}', 'updateWorkspaceInfo');
             Route::delete('/{workspace}', 'destroy');
-            // Route::get('/guest', 'getGuestWorkspaces');
-            // Route::get('/{workspaceId}', 'showWorkspaceById')->where('workspaceId', '^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$');
-            // Route::get('/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy board đã đánh dấu theo tên
         });
     });
 
@@ -118,7 +118,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
-        Route::post('/workspace/{workspaceId}/addMembers', action: 'addMembersToWorkspace');
         Route::post('/workspace/{workspaceId}/member/{memberId}',  'addMemberToWorkspaceDirection');
     });
 
@@ -141,43 +140,27 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
 
-    // list board
-    // Route::get('lists/{boardId}', [ListController::class, 'index']);
-    Route::get('/search', [SearchController::class, 'search']);
+    // Route::get('/search', [SearchController::class, 'search']);
+
+    // Route::get('/color', [ColorController::class, 'index']);
+
+    // Route::prefix('lists')->group(function () {
+    //     Route::post('/', [ListController::class, 'store']);
+    //     Route::get('/{boardId}/listClosed', [ListController::class, 'getListClosed']);
+    //     Route::delete('{id}/destroy', [ListController::class, 'destroy']);
+    //     // Route::patch('/{listId}/updateName', [ListController::class, 'updateName']);
+    //     Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
+    //     // Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
+    //     Route::get('/{id}/detail', [ListController::class, 'getListById']);
+    // });
+
 });
 
-Route::get('/color', [ColorController::class, 'index']);
-Route::get('/workspaces/{id}/boards', [ListController::class, 'getBoardsByWorkspace']);
-
-Route::prefix('lists')->group(function () {
-    Route::post('/', [ListController::class, 'store']);
-    Route::delete('{id}/destroy', [ListController::class, 'destroy']);
-    Route::get('/{boardId}/listClosed', [ListController::class, 'getListClosed']);
-    Route::patch('/{id}/updateName', [ListController::class, 'updateName']);
-    Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
-    Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
-    Route::get('/{id}/detail', [ListController::class, 'getListById']);
-});
-
-Route::get('/colors', [ColorController::class, 'index']);
-
-Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
-    Route::get('/', [BoardController::class, 'show']);
-    Route::get('{boardId}', [BoardController::class, 'show']);
-    Route::put('{boardId}', [BoardController::class, 'update']);
-    Route::delete('{boardId}', [BoardController::class, 'closeBoard']);
-});
 
 
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
 Route::delete('/boards/{boardId}', [BoardController::class, 'toggleBoardClosed']);
-
-
-
-// Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
-// Route::get('/board/{id}', [BoardController::class, 'getBoard']);
-// Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
 
 
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');

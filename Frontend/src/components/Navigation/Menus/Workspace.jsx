@@ -11,6 +11,7 @@ import { useWorkspace } from "../../../contexts/WorkspaceContext";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AddIcon from "@mui/icons-material/Add";
+import LogoLoading from "../../LogoLoading";
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
   "& .MuiPaper-root": {
@@ -62,7 +63,7 @@ const WorkspaceItem = React.memo(({ workspace, onClose, isGuest = false }) => (
 
 const Workspace = () => {
   const [anchorEl, setAnchorEl] = useState(null);
-  const { data, guestWorkspace, isLoading, error } = useWorkspace();
+  const { workspaces, guestWorkspace, isLoading, error } = useWorkspace();
   const open = Boolean(anchorEl);
 
   const handleClick = (event) => setAnchorEl(event.currentTarget);
@@ -111,14 +112,15 @@ const Workspace = () => {
         {/* Workspaces List */}
         {isLoading ? (
           <MenuItem disabled>
-            <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải...
+            <LogoLoading />
+            {/* <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải... */}
           </MenuItem>
         ) : error ? (
           <MenuItem disabled sx={{ color: "error.main" }}>
             Lỗi tải dữ liệu
           </MenuItem>
         ) : (
-          data?.workspaces?.map(workspace => (
+          workspaces?.map(workspace => (
             <WorkspaceItem key={workspace.id} workspace={workspace} onClose={handleClose} />
           ))
         )}
@@ -141,7 +143,7 @@ const Workspace = () => {
           </MenuItem>
         )}
       </StyledMenu>
-    </Box>
+    </Box >
   );
 };
 

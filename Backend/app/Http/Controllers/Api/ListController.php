@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Events\ListCreated;
-use App\Http\Requests\ListUpdateNameRequest;
+use App\Events\ListUpdated;
 use App\Models\Board;
 use App\Models\ListBoard;
 use App\Models\Workspace;
@@ -36,14 +36,14 @@ class ListController extends Controller
         // Bước 3: Lấy dữ liệu lists và cards nếu có quyền
         $lists = DB::table('list_boards')
             ->where('board_id', $boardId)
-            ->select('id', 'name', 'position')
+            ->select('id', 'name', 'position', 'closed')
             ->orderBy('position')
             ->get();
 
         $cards = DB::table('cards')
             ->whereIn('list_board_id', $lists->pluck('id'))
             ->where('is_archived', false)
-            ->select('id', 'title', 'list_board_id', 'position')
+            ->select('id', 'title', 'list_board_id', 'position', 'is_archived')
             ->orderBy('position')
             ->get();
 
@@ -212,63 +212,74 @@ class ListController extends Controller
     }
     public function store(Request $request)
     {
+        try {
+            $validated = $request->validate([
+                'boardId' => 'required|exists:boards,id',
+                'name' => 'required|string',
+                'pos' => 'required|numeric', // Thêm numeric để đảm bảo position là số
+            ]);
+
+            $list = ListBoard::create([
+                'board_id' => $validated['boardId'],
+                'name' => $validated['name'],
+                'position' => $validated['pos'],
+            ]);
+
+            broadcast(new ListCreated($list))->toOthers();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $list->id,
+                    'name' => $list->name,
+                    'position' => $list->position,
+                    'board_id' => $list->board_id,
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create list',
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+    public function update(Request $request, $listId)
+    {
+        // Tìm list theo ID
+        $list = ListBoard::find($listId);
+        if (!$list) {
+            return response()->json(['message' => 'List not found'], 404);
+        }
+
+        // Validation rules: 'name', 'closed' và 'position' đều có thể có trong request
         $validated = $request->validate([
-            'boardId' => 'required|exists:boards,id',
-            'name' => 'required|string',
-            'pos' => 'required',
+            'name' => 'sometimes|string|max:50',   // Tên là tùy chọn, phải là chuỗi, tối đa 50 ký tự
+            'closed' => 'sometimes|boolean',        // 'closed' là tùy chọn, phải là boolean
+            'position' => 'sometimes|integer',     // 'position' là tùy chọn, phải là số nguyên
         ]);
 
-        $list = ListBoard::create([
-            'board_id' =>  $validated['boardId'],
-            'name' => $validated['name'],
-            'position' => $validated['pos'],
-        ]);
-        // Phát sự kiện WebSocket
-        broadcast(new ListCreated($list))->toOthers();
-
-        return response()->json([
-            'id' => $list->id,
-            'title' => $list->name,
-            'position' => $list->position,
-            'board_id' => $list->board_id,
-        ], 201);
-    }
-
-    public function updateName(ListUpdateNameRequest $request, string $id)
-    {
-
-        $validated = $request->validated();
-
-        $list = ListBoard::find($id);
-
-        if (!$list) {
-            return response()->json(['message' => 'Not found'], 404);
+        // Nếu có trường 'position', cập nhật 'position' của list
+        if (isset($validated['position'])) {
+            $list->update(['position' => $validated['position']]);
         }
 
-        $list->name = $validated['name'];
-        $list->save();
-
-
-        return response()->json($list);
-    }
-    public function updateClosed($id)
-    {
-        $list = ListBoard::find($id);
-
-        if (!$list) {
-            return response()->json(['message' => 'Not found'], 404);
+        // Cập nhật các trường còn lại (name và closed)
+        if (isset($validated['name']) || isset($validated['closed'])) {
+            $list->update($validated);
         }
 
+        // Lấy lại thông tin sau khi cập nhật
+    $list->refresh();
 
-        $list->closed = !$list->closed;
-        $list->save();
+        // Broadcast sự kiện (cập nhật danh sách cho client khác)
+        broadcast(new ListUpdated($list))->toOthers();
 
-        // broadcast(new ListArchived($list));
-
+        // Trả về kết quả sau khi cập nhật thành công
         return response()->json([
-            'message' => 'List archived successfully',
-            'data' => $list
-        ]);
+            'data' => $list,
+            'message' => 'List updated successfully'
+        ], 200);
     }
 
     public function updateColor(Request $request, string $id)

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -20,71 +21,58 @@ class AuthController extends Controller
 {
     public function index()
     {
+        // Xác thực người dùng
         $userId = Auth::id();
-
         if (!$userId) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // Sử dụng transaction để đảm bảo tính nhất quán
-        return DB::transaction(function () use ($userId) {
-            // Tối ưu query user với select cần thiết
-            $user = DB::table('users')
-                ->where('id', $userId)
-                ->select([
-                    'id',
-                    'user_name',
-                    'email',
-                    'full_name',
-                    'image',
-                    'initials',
-                    'activity_block'
-                ])
-                ->first();
+        // Lấy thông tin cơ bản của người dùng
+        $user = DB::table('users')
+            ->where('id', $userId)
+            ->select([
+                'id',
+                'user_name',
+                'email',
+                'full_name',
+                'image',
+                'initials',
+                'activity_block'
+            ])
+            ->first();
 
-            if (!$user) {
-                return response()->json(['error' => 'User not found'], 404);
-            }
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
 
-            // Tối ưu query workspaces với subquery thay vì leftJoin
-            $workspaceQuery = DB::table('workspaces')
-                ->whereExists(function ($query) use ($userId) {
-                    $query->select(DB::raw(1))
-                        ->from('workspace_members')
-                        ->whereColumn('workspace_members.workspace_id', 'workspaces.id')
-                        ->where('workspace_members.user_id', $userId);
-                })
-                ->orWhere('id_member_creator', $userId);
+        // Lấy danh sách workspace ID mà người dùng có quyền truy cập (KHÔNG CACHE)
+        $workspaceIds = DB::table('workspaces')
+            ->whereIn('id', function ($query) use ($userId) {
+                $query->select('workspace_id')
+                    ->from('workspace_members')
+                    ->where('user_id', $userId);
+            })
+            ->orWhere('id_member_creator', $userId)
+            ->pluck('id')
+            ->toArray();
 
-            $allWorkspaceIds = $workspaceQuery
-                ->distinct()
-                ->pluck('id')
-                ->all();
+        // Lấy danh sách board ID mà người dùng có quyền truy cập (KHÔNG CACHE)
+        $boardIds = DB::table('boards')
+            ->whereIn('id', function ($query) use ($userId) {
+                $query->select('board_id')
+                    ->from('board_members')
+                    ->where('user_id', $userId);
+            })
+            ->orWhere('created_by', $userId)
+            ->pluck('id')
+            ->toArray();
 
-            // Tối ưu query boards với subquery
-            $boardQuery = DB::table('boards')
-                ->whereExists(function ($query) use ($userId) {
-                    $query->select(DB::raw(1))
-                        ->from('board_members')
-                        ->whereColumn('board_members.board_id', 'boards.id')
-                        ->where('board_members.user_id', $userId);
-                })
-                ->orWhere('created_by', $userId);
-
-            $allBoardIds = $boardQuery
-                ->distinct()
-                ->pluck('id')
-                ->all();
-
-            return response()->json([
-                'user' => $user,
-                'workspaceId' => $allWorkspaceIds,
-                'boardId' => $allBoardIds,
-            ], 200);
-        });
+        return response()->json([
+            'user' => $user,
+            'workspaceIds' => $workspaceIds,
+            'boardIds' => $boardIds,
+        ]);
     }
-
-
 
     public function handleLogin(Request $request)
     {

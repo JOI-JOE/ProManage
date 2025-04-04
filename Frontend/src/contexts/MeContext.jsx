@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useBoardStars } from "../hooks/useBoardStar";
 import { useDispatch } from "react-redux";
 import { setStarredBoards } from "../redux/slices/starredBoardsSlice";
-import { fetchUserData } from "../api/models/userApi";
+// import { fetchUserData } from "../api/models/userApi";
+import { useUserData } from "../hooks/useUser";
 
 const MeContext = createContext({
     user: null,
@@ -11,14 +11,14 @@ const MeContext = createContext({
     boardId: null,
     boardStars: null,
     isLoading: true,
-    error: null
+    isUserLoaded: false, // Thêm trạng thái này
+    error: null,
 });
 
-// Custom hook for easy context usage
 export const useMe = () => {
     const context = useContext(MeContext);
     if (context === undefined) {
-        throw new Error('useMe must be used within a MeProvider');
+        throw new Error("useMe must be used within a MeProvider");
     }
     return context;
 };
@@ -26,27 +26,14 @@ export const useMe = () => {
 export const MeProvider = ({ children }) => {
     const dispatch = useDispatch();
 
-    // Using React Query for user data
-    const {
-        data: userInfo,
-        isLoading: userLoading,
-        error: userError
-    } = useQuery({
-        queryKey: ["userInfo"],
-        queryFn: fetchUserData,
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        cacheTime: 15 * 60 * 1000, // 15 minutes
-        retry: 1,
-        refetchOnWindowFocus: false,
-    });
+    const { data: userInfo, userLoading, userError } = useUserData()
 
     const user = userInfo?.user || null;
     const workspaceId = userInfo?.workspaceId || null;
     const boardId = userInfo?.boardId || null;
 
-    const { data: boardStars, isLoading: starsLoading } = useBoardStars({
-        enabled: !!user?.id,
-    });
+    // Fetch board stars, chỉ chạy khi user.id tồn tại
+    const { data: boardStars, isLoading: starsLoading } = useBoardStars(); // Sửa lại để truyền user.id trực tiếp
 
     useEffect(() => {
         if (boardStars) {
@@ -54,19 +41,17 @@ export const MeProvider = ({ children }) => {
         }
     }, [boardStars, dispatch]);
 
-    // Combine loading states
-    const isLoading = userLoading || starsLoading;
-    // Combine errors (userError takes precedence)
-    const error = userError || null;
-
-    const contextValue = useMemo(() => ({
-        user,
-        workspaceId,
-        boardId,
-        boardStars,
-        isLoading,
-        error,
-    }), [user, workspaceId, boardId, boardStars, isLoading, error]);
+    const contextValue = useMemo(
+        () => ({
+            user,
+            workspaceId,
+            boardId,
+            boardStars,
+            userLoading,
+            userError,
+        }),
+        [user, workspaceId, boardId, boardStars, userLoading, userError]
+    );
 
     return <MeContext.Provider value={contextValue}>{children}</MeContext.Provider>;
 };

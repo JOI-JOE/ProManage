@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   Dialog,
@@ -22,7 +22,7 @@ import {
   useCardLabels,
   useCreateLabel,
   useDeleteLabelByBoard,
-  useLabels,
+  // useLabels,
   useUpdateCardLabel,
   useUpdateLabelName,
 } from "../../../../../../../../../../hooks/useLabel";
@@ -40,7 +40,9 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const { boardId } = useParams();
   const { cardId } = useParams();
   const queryClient = useQueryClient();
-  const { data: fetchedLabels } = useLabels(boardId);
+
+  // const { data: fetchedLabels } = useLabels(boardId);
+
   const { data: fetchedCardLabels } = useCardLabels(cardId);
   // Cập nhật labels khi fetchedLabels thay đổi
   const createLabelMutation = useCreateLabel();
@@ -99,7 +101,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
     if (!NewUpdatedLabelName.trim()) alert("Tên nhãn không được để trống!");
 
     updateLabelNameMutation.mutate(
-      { labelId: editLabelId,   boardId: boardId, data: { title: NewUpdatedLabelName } },
+      { labelId: editLabelId, boardId: boardId, data: { title: NewUpdatedLabelName } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["labels"] });
@@ -150,7 +152,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   };
   const handleDeleteLabel = (labelId) => {
     deleteLabelMutation.mutate(
-      { labelId, cardId:cardId, boardId: boardId },
+      { labelId, cardId: cardId, boardId: boardId },
       {
         onSuccess: () => {
           // queryClient.invalidateQueries({ queryKey: ["labels"] });
@@ -343,7 +345,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                     </IconButton>
                   </Box>
                 }
-                // sx={{ width: "100%" }}
+              // sx={{ width: "100%" }}
               />
               <IconButton
                 size="small"

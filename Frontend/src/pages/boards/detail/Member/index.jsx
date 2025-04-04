@@ -31,7 +31,7 @@ import MemberItem from "./MemberItem";
 import GenerateLink from "../../../../components/GenerateLink";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
 import {
-  useAddMemberToWorkspace,
+  // useAddMemberToWorkspace,
   useCancelInvitationWorkspace,
   useConfirmWorkspaceMember,
   useCreateInviteWorkspace,
@@ -61,7 +61,7 @@ const Member = () => {
     enabled: !!workspace?.id,
   });
 
-  const { mutate: addMember, isLoading, error } = useAddMemberToWorkspace();
+  // const { mutate: addMember, isLoading, error } = useAddMemberToWorkspace();
   const { mutate: confirmMember } = useConfirmWorkspaceMember();
 
   const [inputValue, setInputValue] = useState("");
@@ -78,7 +78,6 @@ const Member = () => {
     workspace?.id
   );
 
-  // ✅ Tạo debounce bằng useRef -> Tránh spam API khi gõ nhanh
   const debounceTimeout = useRef(null);
 
   const handleInputChange = (event) => {
@@ -109,8 +108,6 @@ const Member = () => {
     setSelectedUserIds((prevIds) => [...new Set([...prevIds, ...newIds])]);
 
     if (newIds.length > 0) {
-      console.log("📢 Sending API with userIds:", newIds);
-
       addMember({ workspaceId: workspace.id, userIds: newIds });
     }
     setInputValue("");
@@ -256,7 +253,8 @@ const Member = () => {
               }}
             >
               <span style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
-                {workspace?.display_name.charAt(0).toUpperCase()}
+                {/* {workspace?.display_name.charAt(0).toUpperCase()} */}
+                klsdgd
               </span>
             </Avatar>
             <Box>

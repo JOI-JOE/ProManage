@@ -18,12 +18,6 @@ class ListUpdated implements ShouldBroadcastNow
     public function __construct(ListBoard $list)
     {
         $this->list = $list;
-        Log::info('ListUpdated event created', [
-            'list_id'  => $list->id,
-            'board_id' => $list->board_id,
-            'title'    => $list->name,
-            'position' => (int)$list->position,
-        ]);
     }
 
     /**
@@ -55,15 +49,12 @@ class ListUpdated implements ShouldBroadcastNow
     public function broadcastWith()
     {
         $data = [
-            'updatedList' => [
-                'id'       => $this->list->id,
-                'boardId'  => $this->list->board_id,
-                'title'    => $this->list->name,
-                'position' => (int)$this->list->position,
-            ]
+            'id'       => $this->list->id,
+            'boardId'  => $this->list->board_id,
+            'name'    => $this->list->name,
+            'position' => $this->list->position,
+            'closed'   => $this->list->closed
         ];
-
-        Log::info('Broadcasting list.updated event', $data);
         return $data;
     }
 }

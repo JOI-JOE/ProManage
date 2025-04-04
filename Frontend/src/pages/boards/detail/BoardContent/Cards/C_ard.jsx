@@ -70,15 +70,9 @@ const C_ard = ({ card }) => {
 
   const handleClose1 = () => {
     setOpen(false);
-    // navigate(-1); // Quay lại trang trước (tốt hơn)
     const pathSegments = location.pathname.split("/");
-
-    // Lấy phần `/b/:boardId/:boardName`
     const newPath = `/${pathSegments[1]}/${pathSegments[2]}/${pathSegments[3]}`;
-
-    // Điều hướng về đường dẫn mới
     navigate(newPath, { replace: true });
-
   };
 
   useEffect(() => {

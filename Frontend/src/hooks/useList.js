@@ -1,84 +1,219 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   // getListDetail,
-  // updateListName,
-  updateClosed,
+  // getListClosedByBoard,
+  // deleteList,
+  // updateClosed,
   createListAPI,
-  // getListByBoardId,
-  // updateColPosition,
-  deleteList,
-  getListClosedByBoard,
   updatePositionList,
   fetchListByBoardId,
+  updateListName,
+  updateListClosed,
 } from "../api/models/listsApi";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import echoInstance from "./realtime/useRealtime";
-import { optimisticIdManager } from "../../utils/optimisticIdManager";
 
 export const useListByBoardId = (boardId) => {
   const queryClient = useQueryClient();
+  const channelRef = useRef(null);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["lists", boardId],
     queryFn: () => fetchListByBoardId(boardId),
     enabled: !!boardId,
-    retry: 1,
+    retry: 0,
     staleTime: 5 * 60 * 1000, // 5 phút
-    cacheTime: 30 * 60 * 1000, // 30 phút
-    refetchOnWindowFocus: false, // Tắt refetch khi focus để tận dụng cache
+    cacheTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   });
+
+  // --- Xử lý cập nhật list ---
+  const handleListUpdate = useCallback(
+    (updateEvent) => {
+      if (!updateEvent?.id) return;
+      queryClient.setQueryData(["lists", boardId], (oldData) => {
+        if (!oldData?.lists) return oldData;
+        console.log("Dữ liệu mới", updateEvent);
+        console.log("Dữ liệu cũ", oldData);
+        return {
+          ...oldData,
+          lists: oldData.lists.map((list) =>
+            list.id === updateEvent.id ? { ...list, ...updateEvent } : list
+          ),
+        };
+      });
+    },
+    [boardId, queryClient]
+  );
+
+  // --- Xử lý tạo list mới ---
+  const handleListCreate = useCallback(
+    (event) => {
+      if (!event?.id) return;
+
+      queryClient.setQueryData(["lists", boardId], (oldData) => {
+        const oldLists = Array.isArray(oldData?.lists) ? oldData.lists : [];
+        // Nếu list đã tồn tại, bỏ qua
+        const exists = oldLists.some((list) => list.id === event.id);
+        if (exists) return oldData;
+
+        const updatedLists = [...oldLists, event];
+
+        return {
+          ...oldData,
+          lists: updatedLists,
+        };
+      });
+    },
+    [boardId, queryClient]
+  );
 
   useEffect(() => {
     if (!boardId) return;
 
     const channel = echoInstance.channel(`board.${boardId}`);
+    channelRef.current = channel;
 
-    channel.listen(".list.updated", (event) => {
-      // console.log(`Realtime update for boardId ${boardId}:`, event);
-      queryClient.setQueryData(["lists", boardId], (oldData) => {
-        if (!oldData || !Array.isArray(oldData.lists)) {
-          return { ...oldData, lists: [event.updatedList] };
-        }
-        const listExists = oldData.lists.some(
-          (list) => list.id === event.updatedList.id
-        );
-
-        let updatedLists;
-        if (listExists) {
-          updatedLists = oldData.lists.map((list) =>
-            list.id === event.updatedList.id
-              ? { ...list, ...event.updatedList }
-              : list
-          );
-        } else {
-          updatedLists = [...oldData.lists, event.updatedList];
-        }
-
-        return { ...oldData, lists: updatedLists };
-      });
-    });
+    channel.listen(".list.updated", handleListUpdate);
+    channel.listen(".list.created", handleListCreate);
 
     return () => {
-      channel.stopListening(".list.updated");
-      echoInstance.leaveChannel(`board.${boardId}`);
-      // console.log(`Cleaned up channel for boardId ${boardId}`);
+      if (channelRef.current) {
+        channelRef.current.stopListening(".list.updated");
+        channelRef.current.stopListening(".list.created");
+        echoInstance.leaveChannel(`board.${boardId}`);
+      }
     };
-  }, [boardId, queryClient]);
+  }, [boardId, handleListUpdate, handleListCreate]);
 
-  return { data, isLoading, isError };
+  return {
+    data,
+    isLoading,
+    isError,
+    lists: data?.lists || [],
+  };
 };
 
 export const useUpdatePositionList = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ listId, position, boardId }) => {
       return await updatePositionList({ listId, position });
     },
-    retry: 3,
+    retry: 1,
     retryDelay: 1000,
   });
 };
+
+export const useCreateList = () => {
+  const mutation = useMutation({
+    mutationFn: createListAPI,
+    onError: (error) => {
+      console.error("Lỗi khi tạo danh sách:", error);
+    },
+  });
+
+  return {
+    createList: mutation.mutate,
+    isCreating: mutation.isPending,
+    error: mutation.error,
+  };
+};
+
+//------------------------------------------------------------------------------
+/// Function update
+export const useUpdateListName = () => {
+  return useMutation({
+    mutationFn: ({ listId, newName }) => updateListName(listId, newName),
+    onError: (error) => {
+      console.error("❌ Lỗi khi update list name:", error);
+    },
+  });
+};
+
+export const useUpdateListClosed = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ listId, closed }) => updateListClosed(listId, closed),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(["lists", variables.boardId], {
+        exact: true,
+      });
+    },
+    onError: (error) => {
+      console.error("❌ Lỗi khi cập nhật trạng thái đóng danh sách:", error);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["lists"]);
+    },
+  });
+};
+
+// Hook lấy danh sách list đã đóng (archived)
+// export const useListsClosed = (boardId) => {
+//   const queryClient = useQueryClient();
+//   const {
+//     data: listsClosed,
+//     isLoading,
+//     error,
+//   } = useQuery({
+//     queryKey: ["listClosed", boardId],
+//     queryFn: () => getListClosedByBoard(boardId),
+//     enabled: !!boardId,
+//   });
+
+//   // Mutation để xóa list
+//   const deleteMutation = useMutation({
+//     mutationFn: deleteList,
+//     onMutate: async (id) => {
+//       await queryClient.cancelQueries(["listClosed"]);
+//       const previousLists = queryClient.getQueryData(["listClosed"]);
+
+//       queryClient.setQueryData(["listClosed"], (oldLists) =>
+//         oldLists?.data ? oldLists.data.filter((list) => list.id !== id) : []
+//       );
+
+//       return { previousLists };
+//     },
+//     onError: (error, _, context) => {
+//       console.error("Xóa thất bại:", error);
+//       queryClient.setQueryData(["listClosed"], context.previousLists);
+//     },
+//     onSettled: () => {
+//       queryClient.invalidateQueries(["listClosed"]);
+//     },
+//   });
+
+//   // Mutation để cập nhật trạng thái lưu trữ (bỏ lưu trữ)
+//   const updateClosedMutation = useMutation({
+//     mutationFn: (listId) => updateListClosed(listId),
+//     onSuccess: (data, listId) => {
+//       console.log(`🔄 Cập nhật trạng thái lưu trữ cho list ${listId}`);
+
+//       // Cập nhật danh sách listClosed ngay lập tức mà không cần gọi API lại
+//       queryClient.setQueryData(["listClosed"], (oldLists) =>
+//         oldLists?.data
+//           ? oldLists?.data.filter((list) => list.id !== listId)
+//           : []
+//       );
+
+//       // Cập nhật danh sách list active (nếu có)
+//       queryClient.invalidateQueries(["list", listId]);
+//     },
+//     onError: (error) => {
+//       console.error("❌ Lỗi khi cập nhật trạng thái lưu trữ:", error);
+//     },
+//   });
+
+//   return {
+//     listsClosed,
+//     isLoading,
+//     error,
+//     deleteMutation,
+//     updateClosedMutation,
+//   };
+// };
 
 // export const useLists = (boardId) => {
 //   const queryClient = useQueryClient();
@@ -215,126 +350,3 @@ export const useUpdatePositionList = () => {
 
 //   return query;
 // };
-
-export const useCreateList = (boardId) => {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async (newList) => {
-      // console.log(newList);
-      return await createListAPI(newList); // Gọi API để tạo danh sách
-    },
-    onMutate: async (newList) => {
-      await queryClient.cancelQueries({ queryKey: ["lists", boardId] });
-
-      // 🆕 Tạo ID tạm thời
-      const optimisticId = optimisticIdManager.generateOptimisticId("List");
-      const previousLists = queryClient.getQueryData(["lists", boardId]) || [];
-
-      // 🌟 Cập nhật danh sách tạm thời (UI phản hồi ngay lập tức)
-      queryClient.setQueryData(["lists", boardId], (old) => {
-        const safeOld = Array.isArray(old) ? old : []; // Đảm bảo old luôn là mảng
-        return [...safeOld, { id: optimisticId, ...newList, temporary: true }];
-      });
-
-      return { previousLists, optimisticId };
-    },
-
-    onSuccess: (data, newList, context) => {
-      if (!data?.id) {
-        console.error("❌ API không trả về ID hợp lệ, rollback danh sách.");
-        queryClient.setQueryData(["lists", boardId], context.previousLists);
-        return;
-      }
-
-      // 🔄 Cập nhật danh sách với ID thực (thay thế ID lạc quan)
-      queryClient.setQueryData(["lists", boardId], (old = []) =>
-        old.map((list) =>
-          list.id === context.optimisticId ? { ...list, id: data.id } : list
-        )
-      );
-
-      // Liên kết ID lạc quan với ID thực
-      optimisticIdManager.resolveId(context.optimisticId, data.id);
-    },
-
-    onError: (error, newList, context) => {
-      console.error("❌ Lỗi khi tạo danh sách:", error);
-      queryClient.setQueryData(["lists", boardId], context.previousLists);
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["lists", boardId],
-        exact: true,
-      });
-    },
-  });
-
-  return { createList: mutation.mutate, isSaving: mutation.isPending };
-};
-
-// Hook lấy danh sách list đã đóng (archived)
-export const useListsClosed = (boardId) => {
-  const queryClient = useQueryClient();
-  const {
-    data: listsClosed,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["listClosed", boardId],
-    queryFn: () => getListClosedByBoard(boardId),
-    enabled: !!boardId,
-  });
-
-  // Mutation để xóa list
-  const deleteMutation = useMutation({
-    mutationFn: deleteList,
-    onMutate: async (id) => {
-      await queryClient.cancelQueries(["listClosed"]);
-      const previousLists = queryClient.getQueryData(["listClosed"]);
-
-      queryClient.setQueryData(["listClosed"], (oldLists) =>
-        oldLists?.data ? oldLists.data.filter((list) => list.id !== id) : []
-      );
-
-      return { previousLists };
-    },
-    onError: (error, _, context) => {
-      console.error("Xóa thất bại:", error);
-      queryClient.setQueryData(["listClosed"], context.previousLists);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries(["listClosed"]);
-    },
-  });
-
-  // Mutation để cập nhật trạng thái lưu trữ (bỏ lưu trữ)
-  const updateClosedMutation = useMutation({
-    mutationFn: (listId) => updateClosed(listId),
-    onSuccess: (data, listId) => {
-      console.log(`🔄 Cập nhật trạng thái lưu trữ cho list ${listId}`);
-
-      // Cập nhật danh sách listClosed ngay lập tức mà không cần gọi API lại
-      queryClient.setQueryData(["listClosed"], (oldLists) =>
-        oldLists?.data
-          ? oldLists?.data.filter((list) => list.id !== listId)
-          : []
-      );
-
-      // Cập nhật danh sách list active (nếu có)
-      queryClient.invalidateQueries(["list", listId]);
-    },
-    onError: (error) => {
-      console.error("❌ Lỗi khi cập nhật trạng thái lưu trữ:", error);
-    },
-  });
-
-  return {
-    listsClosed,
-    isLoading,
-    error,
-    deleteMutation,
-    updateClosedMutation,
-  };
-};

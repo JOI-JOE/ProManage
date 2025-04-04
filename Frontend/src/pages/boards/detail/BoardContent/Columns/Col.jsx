@@ -7,8 +7,8 @@ import Divider from "@mui/material/Divider";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { mapOrder } from "../../../../../../utils/sort";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -20,6 +20,7 @@ import Card_list from "../Cards/Card_list";
 import Card_new from "../Cards/Card_new";
 import { v4 as uuidv4 } from "uuid";
 import { useCreateCard } from "../../../../../hooks/useCard";
+import { useUpdateListName } from "../../../../../hooks/useList";
 
 const StyledMenu = styled((props) => (
     <Menu
@@ -62,16 +63,17 @@ const StyledMenu = styled((props) => (
 const Col = ({ column }) => {
 
     const [openCopyDialog, setOpenCopyDialog] = useState(false);
-
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
     const [openCard, setOpenCard] = useState(false);
-
-    const [name, setName] = useState(column?.name);
-    const [isEditing, setIsEditing] = useState(false);
-    const [prevName, setPrevName] = useState(column?.name);
     const [anchorEl, setAnchorEl] = useState(null);
 
+    // Api của list
+    const [tempName, setTempName] = useState(column?.name);
+    const [isEditing, setIsEditing] = useState(false);
+    const { mutate: updateList } = useUpdateListName();
+
+    /// Api của card
     const createCardMutation = useCreateCard();
     const [cardName, setCardName] = useState("");
     const [localCards, setLocalCards] = useState(column?.cards || []);
@@ -162,20 +164,49 @@ const Col = ({ column }) => {
     };
 
     //======================================== Sửa tiêu đề========================================
+    useEffect(() => {
+        if (column?.name !== tempName) {
+            setTempName(column?.name || '');
+        }
+    }, [column?.name]);
+
     const handleTitleClick = () => {
         setIsEditing(true);
+        setTempName(column?.name);
     };
 
-    const handleTitleUpdate = async (e) => {
-        if (e.type === "blur" || (e.type === "keydown" && e.key === "Enter")) {
-            if (!name.trim()) {
-                setName(prevTitle);
-            } else {
-                setPrevName();
-                await updateListName(column.id, { name });
-            }
+    const handleKeyDown = async (e) => {
+        if (e.key === "Enter") {
+            await handleUpdate();
+        } else if (e.key === "Escape") {
+            setTempName(column?.name);
             setIsEditing(false);
         }
+    };
+
+    const handleBlur = async () => {
+        await handleUpdate();
+    };
+
+    const handleUpdate = async () => {
+        const newName = tempName.trim();
+
+        if (!newName) {
+            setTempName(column?.name);
+            setIsEditing(false);
+            return;
+        }
+
+        if (newName !== column?.name) {
+            try {
+                await updateList({ listId: column.id, newName });
+            } catch (error) {
+                console.error("Lỗi khi cập nhật tên cột:", error);
+                setTempName(column?.name);
+            }
+        }
+
+        setIsEditing(false);
     };
 
     //======================================== Dropdown========================================
@@ -220,20 +251,23 @@ const Col = ({ column }) => {
                 >
                     {isEditing ? (
                         <TextField
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            onFocus={() => setPrevName(name)}
-                            onBlur={handleTitleUpdate}
-                            onKeyDown={handleTitleUpdate}
+                            value={tempName}
+                            onChange={(e) => setTempName(e.target.value)}
+                            onBlur={handleBlur}
+                            onKeyDown={handleKeyDown}
                             autoFocus
                             variant="outlined"
-                            size="small"
+                            size="bold"
                             sx={{
-                                height: "20px",
+                                height: "10px",
                                 width: "200px",
                                 "& .MuiInputBase-input": {
                                     fontSize: "0.765rem",
                                     padding: "4px",
+                                },
+                                "& .MuiInputBase-input": {
+                                    fontSize: "0.765rem",
+                                    padding: "10px", // Căn chỉnh padding để text không bị lệch
                                 },
                                 "& .MuiOutlinedInput-root": {
                                     "& fieldset": {
@@ -250,15 +284,15 @@ const Col = ({ column }) => {
                         />
                     ) : (
                         <Typography
+                            onClick={handleTitleClick}
                             sx={{
                                 fontWeight: "bold",
                                 cursor: "pointer",
                                 fontSize: "0.8rem",
                                 color: "#333",
                             }}
-                            onClick={handleTitleClick}
                         >
-                            {name}
+                            {tempName}
                         </Typography>
                     )}
 
@@ -279,47 +313,80 @@ const Col = ({ column }) => {
                             MenuListProps={{
                                 "aria-labelledby": "basic-column-dropdown",
                             }}
+                            anchorOrigin={{
+                                vertical: "bottom",
+                                horizontal: "right",
+                            }}
+                            transformOrigin={{
+                                vertical: "top",
+                                horizontal: "left",
+                            }}
+                            sx={{
+                                mt: 1,
+                                "& .MuiPaper-root": {
+                                    minWidth: "220px",
+                                    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+                                    borderRadius: "8px",
+                                }
+                            }}
                             anchorEl={anchorEl}
                             open={open}
                             onClose={handleClose}
                             {...(!open && { inert: "true" })}
                         >
-                            <MenuItem
-                                onClick={handleCopyClick}
-                                disableRipple
-                                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-                            >
-                                <ContentCopyIcon />
-                                Copy
-                            </MenuItem>
-                            <MenuItem
-                                onClick={handleClose}
-                                disableRipple
-                                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-                            >
-                                <VisibilityIcon />
-                                Theo dõi
-                            </MenuItem>
+                            <Box sx={{ p: 0.5 }}>
+                                {/* Phần "Thêm thê" */}
 
-                            <Divider sx={{ my: 0.5 }} />
+                                <MenuItem
+                                    onClick={handleClose}
+                                    disableRipple
+                                    sx={{ fontSize: "0.85rem" }}
+                                >
+                                    Thêm thẻ
+                                </MenuItem>
 
-                            <MenuItem
-                                onClick={handleArchiveClick}
-                                disableRipple
-                                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-                            >
-                                <ArchiveIcon />
-                                Archive this column
-                            </MenuItem>
+                                <MenuItem
+                                    onClick={handleClose}
+                                    disableRipple
+                                    sx={{ fontSize: "0.85rem" }}
+                                >
+                                    Di chuyển danh sách
+                                </MenuItem>
 
-                            <MenuItem
-                                onClick={handleDeleteClick}
-                                disableRipple
-                                sx={{ fontSize: "0.85rem", color: "secondary.main" }}
-                            >
-                                <DeleteForeverIcon />
-                                Remove this column
-                            </MenuItem>
+                                <MenuItem
+                                    onClick={handleClose}
+                                    disableRipple
+                                    sx={{ fontSize: "0.85rem" }}
+                                >
+                                    Di chuyển tất cả thẻ trong danh sách này
+                                </MenuItem>
+
+                                <MenuItem
+                                    onClick={handleClose}
+                                    disableRipple
+                                    sx={{ fontSize: "0.85rem" }}
+                                >
+                                    Sắp xếp theo...
+                                </MenuItem>
+
+                                <Divider />
+
+                                <MenuItem
+                                    onClick={handleArchiveClick}
+                                    disableRipple
+                                    sx={{ fontSize: "0.85rem", py: 1 }}
+                                >
+                                    Lưu trữ danh sách này
+                                </MenuItem>
+
+                                <MenuItem
+                                    onClick={handleDeleteClick}
+                                    disableRipple
+                                    sx={{ fontSize: "0.85rem", px: 2, py: 1 }}
+                                >
+                                    Lưu trữ tất cả các thẻ trong danh sách này
+                                </MenuItem>
+                            </Box>
                         </StyledMenu>
                     </Box>
                 </Box>
@@ -338,11 +405,11 @@ const Col = ({ column }) => {
                 onConfirm={handleArchiveConfirm}
             />
 
-            <CopyColumn
+            {/* <CopyColumn
                 open={openCopyDialog}
                 onClose={() => setOpenCopyDialog(false)}
                 onCopy={handleCopyConfirm}
-            />
+            /> */}
 
             <ConfirmDeleteDialog
                 open={openDeleteDialog}

@@ -4,7 +4,6 @@ import {
   createInviteWorkspace,
   cancelInviteWorkspace,
   getSearchMembers,
-  addMemberToWorkspace,
   confirmWorkspaceMembers,
   getInvitationSecretByReferrer,
   addMemberToWorkspaceDirection,
@@ -105,22 +104,6 @@ export const useSearchMembers = (query, idWorkspace) => {
   });
 };
 
-// function khi chọn một người dùng vào hàng chờ
-export const useAddMemberToWorkspace = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ workspaceId, userIds }) =>
-      addMemberToWorkspace(workspaceId, userIds),
-    onSuccess: (data, variables) => {
-      console.log("✅ Thành viên đã được thêm:", data);
-    },
-    onError: (error) => {
-      console.error("❌ Lỗi khi thêm thành viên vào workspace:", error);
-    },
-  });
-};
-
 // function sau khi bấm gửi lời mời thêm vào trong trang thành viên
 export const useConfirmWorkspaceMember = () => {
   const queryClient = useQueryClient();
@@ -141,3 +124,19 @@ export const useConfirmWorkspaceMember = () => {
     },
   });
 };
+
+// // function khi chọn một người dùng vào hàng chờ
+// export const useAddMemberToWorkspace = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: ({ workspaceId, userIds }) =>
+//       addMemberToWorkspace(workspaceId, userIds),
+//     onSuccess: (data, variables) => {
+//       console.log("✅ Thành viên đã được thêm:", data);
+//     },
+//     onError: (error) => {
+//       console.error("❌ Lỗi khi thêm thành viên vào workspace:", error);
+//     },
+//   });
+// };

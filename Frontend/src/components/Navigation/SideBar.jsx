@@ -17,10 +17,10 @@ import { useMe } from "../../contexts/MeContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 
 
-const SideBar = ({ workspaces }) => {
+const SideBar = () => {
     const { user } = useMe()
-    
-    const { data } = useWorkspace()
+
+    const { workspaces } = useWorkspace()
     return (
         <Drawer
             variant="permanent"
@@ -73,7 +73,7 @@ const SideBar = ({ workspaces }) => {
             </Typography>
 
             {/* Truyền workspace vào WorkspaceMenu */}
-            {data?.workspaces?.map((item) => (
+            {workspaces?.map((item) => (
                 <div key={item.id}>
                     <WorkspaceMenu workspace={item} />
                 </div>

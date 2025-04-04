@@ -156,12 +156,6 @@ const BoardBar = () => {
     // TODO: Gọi API để lưu trạng thái isStarred vào backend
     // Ví dụ: axios.post(`/api/boards/${board.id}/star`, { isStarred: !isStarred });
   };
-
-  // Xử lý loading và error
-  if (isLoading) return <Box sx={{ p: 2, color: "white" }}>Loading board...</Box>;
-  if (error) return <Box sx={{ p: 2, color: "red" }}>Board not found</Box>;
-
-  // Xác định board visibility
   const boardVisibility = board?.visibility || "Private";
 
   return (
@@ -328,7 +322,7 @@ const BoardBar = () => {
       {/* Dialogs */}
       <ShareBoardDialog
         boardMembers={combinedMembers}
-        currentUser={user?.id}
+        currentUser={user}
         open={openShareDialog}
         onClose={handleShareDialogClose}
       />

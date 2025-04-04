@@ -16,7 +16,7 @@ export const fetchBoardById = async (boardId) => {
     }
     return {
       ...data,
-      action: data.action || data.board?.action || null, // Normalize action field
+    action: data.action || data.board?.action || null, // Normalize action field
     };
   } catch (error) {
     // Handle 403 response with action

@@ -43,6 +43,7 @@ class BoardController extends Controller
                 'description' => $board->description,
                 'visibility' => $board->visibility,
                 'workspace_id' => $board->workspace_id,
+                'logo'  => $board->thumbnail,
                 'closed' => $board->closed,
             ],
             'members' => $boardAccess['members'],
@@ -467,7 +468,6 @@ class BoardController extends Controller
                 'result' => false,
                 'message' => 'No name provided.',
             ], 400);
-
         } catch (\Throwable $th) {
             DB::rollBack();
             report($th); // Ghi log lỗi

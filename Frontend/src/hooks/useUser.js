@@ -1,19 +1,23 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { forgotPassword, userRegister } from "../api/models/userApi";
+import {
+  fetchUserData,
+  forgotPassword,
+  userRegister,
+} from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
 import { logoutUser } from "../api/models/userApi";
 
-// export const useUserData = () => {
-//   return useQuery({
-//     queryKey: ["userInfo"],
-//     queryFn: fetchUserData,
-//     staleTime: 5 * 60 * 1000, // 5 phút
-//     cacheTime: 15 * 60 * 1000, // 15 phút
-//     retry: 1,
-//     refetchOnWindowFocus: false, // Thêm để đồng bộ behavior
-//   });
-// };
+export const useUserData = () => {
+  return useQuery({
+    queryKey: ["userInfo"],
+    queryFn: fetchUserData,
+    staleTime: 10 * 60 * 1000,
+    cacheTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+};
 
 export const useLogin = () => {
   const queryClient = useQueryClient();
