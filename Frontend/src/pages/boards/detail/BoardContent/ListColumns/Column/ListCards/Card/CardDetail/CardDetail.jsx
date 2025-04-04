@@ -106,7 +106,8 @@ import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import InputAdornment from "@mui/material/InputAdornment";
 
-const CardModal = ({ }) => {
+const CardModal = ({ closeDetail  }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { cardId, title } = useParams();
   const { data: schedule } = useCardSchedule(cardId);
   const navigate = useNavigate();
@@ -116,7 +117,7 @@ const CardModal = ({ }) => {
   const [comment, setComment] = useState("");
   const [isEditingComment, setIsEditingComment] = useState(false);
   // const [setComments] = useState([]);
-  const { data: cardLabels = [] } = useCardLabels(cardId);
+  const { data: cardLabels = [] } = useCardLabels(cardId, { enabled: isModalOpen });
   const [labels, setLabels] = useState([]);
 
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
