@@ -179,8 +179,6 @@ const ShareBoardDialog = ({ boardMembers, currentUser, open, onClose }) => {
           )}
         </Box>
 
-
-
         {link && (
           <Typography variant="body2" color="textSecondary" sx={{ cursor: "pointer", ml: 1, color: "blue" }} onClick={() => navigator.clipboard.writeText(link)}>
             Sao chép liên kết

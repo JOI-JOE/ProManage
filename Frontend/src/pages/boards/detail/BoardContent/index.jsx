@@ -79,6 +79,7 @@ const BoardContent = () => {
     }
 
     const sortedLists = [...listData.lists]
+      .filter(list => list.closed !== 1) // Bỏ list đã đóng
       .sort((a, b) => parseFloat(a.position) - parseFloat(b.position))
       .map(list => ({
         ...list,
@@ -98,6 +99,7 @@ const BoardContent = () => {
 
     setOrderedLists(sortedLists);
   }, [listData, listLoading, error, boardId]);
+
 
   // Utility functions
   const findListByCardId = useCallback((cardId) => {

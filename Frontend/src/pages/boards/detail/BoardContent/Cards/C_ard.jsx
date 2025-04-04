@@ -98,16 +98,16 @@ const C_ard = ({ card }) => {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const showCardActions = () => {
-    return (
-      // !!card?.memberIds?.length ||
-      !!comments?.length ||
-      !!attachments?.data?.length ||
-      !!cardDetail?.description ||
-      !!checklists?.some((checklist) => checklist.items.length > 0) ||
-      !!members?.length
-    );
-  };
+  // const showCardActions = () => {
+  //   return (
+  //     // !!card?.memberIds?.length ||
+  //     !!comments?.length ||
+  //     !!attachments?.data?.length ||
+  //     !!cardDetail?.description ||
+  //     !!checklists?.some((checklist) => checklist.items.length > 0) ||
+  //     !!members?.length
+  //   );
+  // };
 
   // const allChecklistsCompleted = checklists?.every(
   //   (checklist) => checklist.items?.every((item) => item.is_completed) ?? false
@@ -136,7 +136,7 @@ const C_ard = ({ card }) => {
         }}
       >
 
-        {!!coverImageBackGround && (
+        {/* {!!coverImageBackGround && (
           <Box sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
             <CardMedia sx={{ height: 140, mb: 2, justifyContent: "center" }}>
               <LazyLoadImage
@@ -151,7 +151,7 @@ const C_ard = ({ card }) => {
               />
             </CardMedia>
           </Box>
-        )}
+        )} */}
 
 
         <CardContent sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
@@ -176,7 +176,7 @@ const C_ard = ({ card }) => {
             {card?.title}
           </Typography>
         </CardContent>
-        {showCardActions() && (
+        {/* {showCardActions() && (
           <CardActions
             sx={{
               p: "0 4px 8px 15px",
@@ -195,7 +195,7 @@ const C_ard = ({ card }) => {
                 flex: 1,
               }}
             >
-              {/* {!!members?.length && (
+              {!!members?.length && (
                 <Button
                   size="small"
                   startIcon={<GroupIcon />}
@@ -203,7 +203,7 @@ const C_ard = ({ card }) => {
                 >
                   {members?.length}
                 </Button>
-              )} */}
+              )}
               {!!cardDetail?.description && (
                 <Tooltip title={"Thẻ này có mô tả"}>
                   <Box
@@ -322,7 +322,7 @@ const C_ard = ({ card }) => {
 
           </CardActions>
 
-        )}
+        )} */}
       </Card>
       <Dialog open={open} onClose={handleClose1} fullWidth maxWidth="md">
         <CardModal card={card} closeDetail={handleClose1} handleClose1={handleClose1} />

@@ -1,5 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Box, TextField, Tooltip, Typography } from "@mui/material";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+    Alert,
+    Box,
+    TextField,
+    Tooltip,
+    Typography,
+    Button,
+    Snackbar
+} from "@mui/material";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -20,7 +28,7 @@ import Card_list from "../Cards/Card_list";
 import Card_new from "../Cards/Card_new";
 import { v4 as uuidv4 } from "uuid";
 import { useCreateCard } from "../../../../../hooks/useCard";
-import { useUpdateListName } from "../../../../../hooks/useList";
+import { useUpdateListClosed, useUpdateListName } from "../../../../../hooks/useList";
 
 const StyledMenu = styled((props) => (
     <Menu
@@ -60,23 +68,33 @@ const StyledMenu = styled((props) => (
     },
 }));
 
-const Col = ({ column }) => {
-
+const Col = ({ column, onArchive }) => {
     const [openCopyDialog, setOpenCopyDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
     const [openCard, setOpenCard] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
+    // Thông báo
+    const [showAlert, setShowAlert] = useState(false);
+
+    // Lưu trữ thông tin cột đã lưu trữ
+    const archivedColumnRef = useRef(null);
+    const [archivedColumn, setArchivedColumn] = useState(null);
 
     // Api của list
     const [tempName, setTempName] = useState(column?.name);
     const [isEditing, setIsEditing] = useState(false);
     const { mutate: updateList } = useUpdateListName();
 
+    // Api lưu trữ
+    const { mutate: closeList } = useUpdateListClosed();
+
     /// Api của card
     const createCardMutation = useCreateCard();
     const [cardName, setCardName] = useState("");
     const [localCards, setLocalCards] = useState(column?.cards || []);
+
+
 
     useEffect(() => {
         setLocalCards(column?.cards || []); // Chỉ theo dõi sự thay đổi của cards
@@ -106,6 +124,7 @@ const Col = ({ column }) => {
             setLocalCards((prev = []) => prev.filter((card) => card.id !== tempId)); // Rollback nếu lỗi
         }
     };
+    // ---------------------------------------------------------------------------------------------
 
     const {
         attributes,
@@ -154,15 +173,22 @@ const Col = ({ column }) => {
     };
 
     const handleArchiveConfirm = async () => {
-        try {
-            await updateClosed(column.id);
-            toast.success(`Cột "${column.name}" đã được lưu trữ.`);
-        } catch (error) {
-            toast.error("Có lỗi xảy ra khi lưu trữ cột.");
-        }
         setOpenArchiveDialog(false);
-    };
+        try {
+            // Gọi API để lưu trữ cột
+            onArchive(column.id);
+            setShowAlert(true);
+            await closeList({
+                listId: column.id,
+                closed: 1,
+            });
 
+        } catch (error) {
+            console.error("Lỗi khi lưu trữ:", error);
+            toast.error("Có lỗi xảy ra khi lưu trữ cột.");
+            setShowAlert(false); // Tắt alert khi có lỗi
+        }
+    };
     //======================================== Sửa tiêu đề========================================
     useEffect(() => {
         if (column?.name !== tempName) {
@@ -217,6 +243,8 @@ const Col = ({ column }) => {
     const handleClose = () => {
         setAnchorEl(null);
     };
+
+    //======================================== ALERT ========================================
 
     //======================================== Render========================================
     const cardOrderIds = useMemo(() => localCards.map(card => card.id) || [], [localCards]);
@@ -309,6 +337,99 @@ const Col = ({ column }) => {
                         </Tooltip>
 
                         <StyledMenu
+                            id="column-actions-menu"
+                            MenuListProps={{
+                                "aria-labelledby": "column-actions-button",
+                            }}
+                            anchorEl={anchorEl}
+                            open={open}
+                            onClose={handleClose}
+                            anchorOrigin={{
+                                vertical: "bottom",
+                                horizontal: "right",
+                            }}
+                            transformOrigin={{
+                                vertical: "top",
+                                horizontal: "left",
+                            }}
+                            sx={{
+                                mt: 1,
+                                "& .MuiPaper-root": {
+                                    minWidth: "240px",
+                                    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+                                    borderRadius: "8px",
+                                    padding: "4px 0",
+                                }
+                            }}
+                        >
+                            {/* Nhóm thao tác chính */}
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <AddIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Thêm thẻ
+                            </MenuItem>
+
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <ContentCopyIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Sao chép danh sách
+                            </MenuItem>
+
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <DriveFileMoveIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Di chuyển danh sách
+                            </MenuItem>
+
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <ListAltIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Di chuyển tất cả thẻ trong danh sách này
+                            </MenuItem>
+
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <SortIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Sắp xếp theo...
+                            </MenuItem>
+
+                            <Divider sx={{ my: 0.5 }} />
+
+                            {/* Nhóm lưu trữ */}
+                            <MenuItem
+                                onClick={handleArchiveClick}
+                                sx={{
+                                    fontSize: "14px",
+                                    px: 2,
+                                    py: 1,
+                                }}
+                            >
+                                {/* <ListItemIcon sx={{ color: "inherit" }}>
+                                    <ArchiveIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Lưu trữ danh sách này
+                            </MenuItem>
+
+                            <MenuItem
+                                // onClick={handleArchiveAllCards}
+                                sx={{
+                                    fontSize: "14px",
+                                    px: 2,
+                                    py: 1,
+                                }}
+                            >
+                                {/* <ListItemIcon sx={{ color: "inherit" }}>
+                                    <ArchiveIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Lưu trữ tất cả các thẻ trong danh sách này
+                            </MenuItem>
+                        </StyledMenu>
+                        {/* <StyledMenu
                             id="demo-customized-menu-workspace"
                             MenuListProps={{
                                 "aria-labelledby": "basic-column-dropdown",
@@ -335,8 +456,6 @@ const Col = ({ column }) => {
                             {...(!open && { inert: "true" })}
                         >
                             <Box sx={{ p: 0.5 }}>
-                                {/* Phần "Thêm thê" */}
-
                                 <MenuItem
                                     onClick={handleClose}
                                     disableRipple
@@ -387,7 +506,7 @@ const Col = ({ column }) => {
                                     Lưu trữ tất cả các thẻ trong danh sách này
                                 </MenuItem>
                             </Box>
-                        </StyledMenu>
+                        </StyledMenu> */}
                     </Box>
                 </Box>
 
@@ -405,6 +524,8 @@ const Col = ({ column }) => {
                 onConfirm={handleArchiveConfirm}
             />
 
+
+
             {/* <CopyColumn
                 open={openCopyDialog}
                 onClose={() => setOpenCopyDialog(false)}
@@ -417,6 +538,8 @@ const Col = ({ column }) => {
                 onConfirm={handleDeleteConfirm}
             />
         </div >
+
+
     );
 };
 

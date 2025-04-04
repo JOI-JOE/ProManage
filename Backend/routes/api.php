@@ -75,6 +75,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Function list 
     Route::controller(ListController::class)->group(function () {
         Route::prefix('lists')->group(function () {
+            Route::post('/',  'store');
             Route::get('/{boardId}', 'show');
             Route::put('/{listId}',  'update');
         });

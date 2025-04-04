@@ -34,8 +34,6 @@ export const useListByBoardId = (boardId) => {
       if (!updateEvent?.id) return;
       queryClient.setQueryData(["lists", boardId], (oldData) => {
         if (!oldData?.lists) return oldData;
-        console.log("Dữ liệu mới", updateEvent);
-        console.log("Dữ liệu cũ", oldData);
         return {
           ...oldData,
           lists: oldData.lists.map((list) =>
@@ -132,20 +130,10 @@ export const useUpdateListName = () => {
 };
 
 export const useUpdateListClosed = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ listId, closed }) => updateListClosed(listId, closed),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries(["lists", variables.boardId], {
-        exact: true,
-      });
-    },
     onError: (error) => {
       console.error("❌ Lỗi khi cập nhật trạng thái đóng danh sách:", error);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries(["lists"]);
     },
   });
 };

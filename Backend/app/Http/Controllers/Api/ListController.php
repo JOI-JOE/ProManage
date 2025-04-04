@@ -36,6 +36,7 @@ class ListController extends Controller
         // Bước 3: Lấy dữ liệu lists và cards nếu có quyền
         $lists = DB::table('list_boards')
             ->where('board_id', $boardId)
+            ->where('closed', 0)
             ->select('id', 'name', 'position', 'closed')
             ->orderBy('position')
             ->get();
@@ -229,11 +230,12 @@ class ListController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => [
+                'list' => [
                     'id' => $list->id,
                     'name' => $list->name,
                     'position' => $list->position,
                     'board_id' => $list->board_id,
+                    'closed' => $list->closed
                 ]
             ], 201);
         } catch (\Exception $e) {
@@ -270,7 +272,7 @@ class ListController extends Controller
         }
 
         // Lấy lại thông tin sau khi cập nhật
-    $list->refresh();
+        $list->refresh();
 
         // Broadcast sự kiện (cập nhật danh sách cho client khác)
         broadcast(new ListUpdated($list))->toOthers();

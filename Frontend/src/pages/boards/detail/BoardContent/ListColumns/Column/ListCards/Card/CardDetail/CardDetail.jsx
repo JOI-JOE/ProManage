@@ -563,10 +563,6 @@ const CardModal = ({ }) => {
       onSuccess: () => {
         setIsDeleteConfirmOpen(false);
         setCommentToDelete(null);
-
-        // queryClient.invalidateQueries(["comments", cardId]);
-        // queryClient.invalidateQueries({ queryKey: ["comments"] });
-        // queryClient.invalidateQueries({ queryKey: ["lists"] });
       },
       onError: (error) => {
         console.error("❌ Lỗi khi xóa bình luận:", error);
@@ -752,8 +748,6 @@ const CardModal = ({ }) => {
     updateAttachment({ cardId, attachmentId: editingLinkId, newFileName: editedDisplayText });
 
   };
-
-
   //tệp
   const [showAll, setShowAll] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -2735,8 +2729,7 @@ const CardModal = ({ }) => {
         </Dialog>
 
         <ToastContainer />
-      </Box>{" "}
-      {/* Move the Box here to wrap the entire content */}
+      </Box>
     </Dialog>
   );
 };

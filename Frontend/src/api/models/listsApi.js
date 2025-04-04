@@ -23,7 +23,7 @@ export const createListAPI = async ({ boardId, name, pos }) => {
       name,
       pos,
     });
-    if (response.status !== 201 || !response.data?.id) {
+    if (!response.data || !response.data.list) {
       throw new Error("API trả về dữ liệu không hợp lệ");
     }
     return response.data;
