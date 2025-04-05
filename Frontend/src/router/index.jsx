@@ -87,10 +87,6 @@ const router = createBrowserRouter([
         path: "profile-display",
         element: <ProfileDisplay />,
       },
-      {
-        path: "activity",
-        element: <Activity />,
-      },
     ],
   },
   { path: "invite/:workspaceId/:inviteToken", element: <InviteHandling /> },

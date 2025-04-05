@@ -14,8 +14,8 @@ const GitHubAuth = () => {
     if (token) {
       setToken(token); // Lưu vào Context + localStorage (chỉ 1 lần)
       navigate("/home"); // Chuyển hướng sau khi đăng nhập
-    }else{
-        navigate("/login");
+    } else {
+      navigate("/login");
     }
   }, [navigate]);
 
@@ -28,8 +28,8 @@ const GitHubAuth = () => {
       onClick={handleLoginGitHub}
       className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300 mb-2"
     >
-      <IoLogoGithub size={20} className="mr-2" />
-      Login with GitHub
+      <IoLogoGithub className="text-l" />
+      {/* Login with GitHub */}
     </button>
   );
 };

@@ -46,13 +46,13 @@ const LoginForm = () => {
     login(formData, {
       onSuccess: (data) => {
         localStorage.setItem("token", data.token); // Lưu token
-      
+
         if (inviteToken) {
           navigate(`/accept-invite/${inviteToken}`);
         } else {
-          navigate('/home');
+          navigate("/home");
         }
-      
+
         // alert("Đăng nhập thành công"); // Thông báo
       },
       onError: (err) => {
@@ -105,9 +105,17 @@ const LoginForm = () => {
   };
 
   return (
-    <section className="bg-[#1693E1] min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-[525px] bg-white rounded-lg p-10 text-center shadow-lg">
-        <h2 className="mb-10 text-center md:mb-16">PROMANAGE</h2>
+    <section
+      className="min-h-screen flex items-center justify-center bg-cover bg-center"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('https://i.pinimg.com/736x/64/38/b3/6438b38a762d52d83727aef56fc75863.jpg')",
+      }}
+    >
+      <div className="w-full max-w-[400px] rounded-lg p-8 text-center shadow-lg bg-white bg-opacity-90">
+        <h3 className="mb-8 text-center text-base font-semibold text-black">
+          Đăng nhập vào tài khoản
+        </h3>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <input
@@ -116,7 +124,7 @@ const LoginForm = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Email"
-              className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
+              className={`w-full rounded-md border bg-[#FCFDFE] h-[40px] px-5 text-sm text-body-color placeholder-[#ACB6BE] outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-50 transition ${
                 errors.email ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -132,7 +140,7 @@ const LoginForm = () => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Password"
-              className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
+              className={`w-full rounded-md border bg-[#FCFDFE] h-[40px] px-5 text-sm text-body-color placeholder-[#ACB6BE] outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-50 transition ${
                 errors.password ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -147,36 +155,42 @@ const LoginForm = () => {
 
           <button
             type="submit"
-            className="w-full bg-indigo-500 text-white p-3 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full bg-teal-500 text-white text-sm h-[40px] rounded-md hover:bg-teal-600 transition disabled:opacity-50"
             disabled={isLoading}
           >
             {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
 
-        <p className="text-center mt-3">
+        <p className="text-center mt-3 text-sm">
           <button
-            onClick={() => navigate("/forgort-password")} // Chuyển hướng
-            className="text-blue-500 hover:underline"
+            onClick={() => navigate("/forgort-password")}
+            className="text-teal-500  hover:text-teal-700 transition"
           >
             Quên mật khẩu?
           </button>
         </p>
 
-        <p className="text-center mt-3">
+        <p className="text-center mt-3 text-sm">
           <button
-            onClick={() => navigate("/register")} // Chuyển hướng
-            className="text-blue-500 hover:underline"
+            onClick={() => navigate("/register")}
+            className="text-teal-500  hover:text-teal-700 transition"
           >
             Đăng ký tài khoản
           </button>
         </p>
 
-        <p className="text-center mt-3">
+        <p className="text-center mt-3 pb-3 text-gray-600 text-sm">
           Hoặc đăng nhập bằng
-          <GitHubAuth />
-          <GoogleAuth />
         </p>
+        <div className="flex items-center justify-center gap-4">
+          <div className="text-sm">
+            <GitHubAuth showText={false} />
+          </div>
+          <div className="text-sm">
+            <GoogleAuth showText={false} />
+          </div>
+        </div>
       </div>
     </section>
   );
