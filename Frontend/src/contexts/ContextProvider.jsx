@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useCallback, useMemo, useRef } fro
 const StateContext = createContext({
     user: null,
     token: null,
-    setUser: () => { },
+    setUser: () => { }, 
     setToken: () => { },
 });
 

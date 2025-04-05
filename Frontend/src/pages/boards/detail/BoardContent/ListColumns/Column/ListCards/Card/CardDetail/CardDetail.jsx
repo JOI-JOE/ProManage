@@ -108,7 +108,6 @@ import InputAdornment from "@mui/material/InputAdornment";
 
 const CardModal = ({ }) => {
 
-
   const { cardId, title } = useParams();
   
   const { data: schedule } = useCardSchedule(cardId);
@@ -119,7 +118,7 @@ const CardModal = ({ }) => {
   const [comment, setComment] = useState("");
   const [isEditingComment, setIsEditingComment] = useState(false);
   // const [setComments] = useState([]);
-  const { data: cardLabels = [] } = useCardLabels(cardId);
+  const { data: cardLabels = [] } = useCardLabels(cardId, { enabled: isModalOpen });
   const [labels, setLabels] = useState([]);
 
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
