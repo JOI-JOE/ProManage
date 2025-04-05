@@ -190,6 +190,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/boards/update-role', [BoardMemberController::class, 'updateRoleMemberInBoard']);
     Route::delete('{boardId}/boards/removeMember', [BoardMemberController::class, 'removeMemberFromBoard']);
 
+    Route::get('/boards/{boardId}/members/{userId}/cards', [BoardMemberController::class, 'getMemberCards']);
+    Route::get('/boards/{boardId}/members/{userId}/items', [BoardMemberController::class, 'getMemberChecklistItems']);
 
     Broadcast::routes();
 });

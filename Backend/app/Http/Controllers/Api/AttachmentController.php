@@ -175,15 +175,15 @@ class AttachmentController extends Controller
                 ->where('card_id', $cardId)
                 ->firstOrFail();
 
-            // Kiểm tra định dạng file
-            $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            if (!in_array($extension, $allowedExtensions)) {
-                return response()->json([
-                    'message' => 'Chỉ có thể đặt ảnh làm ảnh bìa!',
-                    'status' => false,
-                ], 422);
-            }
+            // // Kiểm tra định dạng file
+            // $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
+            // $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            // if (!in_array($extension, $allowedExtensions)) {
+            //     return response()->json([
+            //         'message' => 'Chỉ có thể đặt ảnh làm ảnh bìa!',
+            //         'status' => false,
+            //     ], 422);
+            // }
 
             // Đảm bảo chỉ có 1 ảnh bìa duy nhất hoặc bỏ ảnh bìa nếu đã chọn
             DB::transaction(function () use ($cardId, $attachment) {

@@ -106,7 +106,8 @@ import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import InputAdornment from "@mui/material/InputAdornment";
 
-const CardModal = ({}) => {
+const CardModal = ({ closeDetail  }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { cardId, title } = useParams();
   const { data: schedule } = useCardSchedule(cardId);
   const navigate = useNavigate();
@@ -116,7 +117,7 @@ const CardModal = ({}) => {
   const [comment, setComment] = useState("");
   const [isEditingComment, setIsEditingComment] = useState(false);
   // const [setComments] = useState([]);
-  const { data: cardLabels = [] } = useCardLabels(cardId);
+  const { data: cardLabels = [] } = useCardLabels(cardId, { enabled: isModalOpen });
   const [labels, setLabels] = useState([]);
 
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
@@ -604,8 +605,27 @@ const CardModal = ({}) => {
   const [selectedImage, setSelectedImage] = useState(null);
 
   const handleOpen = (imageUrl) => {
+    // console.log(imageUrl);
+    
+    // Trích xuất phần mở rộng tệp từ URL
+  const fileExt = imageUrl.match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase();
+  const imageTypes = ["jpg", "jpeg", "png", "webp"]; // Danh sách định dạng ảnh
+
+  if (imageTypes.includes(fileExt)) {
+    // Nếu là ảnh, hiển thị trong dialog
     setSelectedImage(imageUrl);
     setOpen(true);
+  } else if( fileExt === "pdf" ){
+    window.open(imageUrl, "_blank", "noopener,noreferrer");
+  } else {
+    // Nếu không phải ảnh (Word, Excel,...), tải về máy
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = imageUrl.split("/").pop() || "file"; // Lấy tên tệp từ URL hoặc đặt mặc định
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
   };
 
   // Hàm đóng modal
@@ -729,19 +749,11 @@ const CardModal = ({}) => {
   const [updateTrigger, setUpdateTrigger] = useState(false);
 
   const handleSave1 = () => {
-    if (editingLinkId !== null) {
-      const target = linkItems.find((item) => item.id === editingLinkId);
-      if (target) {
-        target.path_url = editedUrl;
-        target.file_name_defaut = editedDisplayText;
-      }
-      // Reset state sau khi sửa xong
-      setEditingLinkId(null);
-      setEditedUrl("");
-      setEditedDisplayText("");
-      // Không cần setLinkItems vì object đã tham chiếu cùng bộ nhớ
-    }
+    if (!editedDisplayText.trim()) return; // Không cho phép tên trống
+    updateAttachment({cardId, attachmentId: editingLinkId, newFileName: editedDisplayText});
+    
   };
+
 
   //tệp
   const [showAll, setShowAll] = useState(false);
@@ -993,7 +1005,21 @@ const CardModal = ({}) => {
           </Box>
           <IconButton
             aria-label="close"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              setOpen(false);
+
+              // Tách các phần của URL
+              const pathSegments = location.pathname.split("/");
+
+              // Kiểm tra nếu pathSegments có đúng số lượng phần tử
+              if (pathSegments.length >= 4 && pathSegments[1] === "b") {
+                const newPath = `/${pathSegments[1]}/${pathSegments[2]}/${pathSegments[3]}`;
+                navigate(newPath, { replace: true });
+              } else {
+                // Trường hợp fallback: nếu không có đủ phần tử, quay về trang board
+                navigate(`/boards`);
+              }
+            }}  // Điều hướng về URL mong muốn
             sx={{
               position: "absolute",
               right: -3,
@@ -1001,11 +1027,7 @@ const CardModal = ({}) => {
               color: "black",
             }}
           >
-            <CloseIcon
-              sx={{
-                fontSize: "14px",
-              }}
-            />
+            <CloseIcon sx={{ fontSize: "14px" }} />
           </IconButton>
         </DialogTitle>
 
@@ -1222,15 +1244,15 @@ const CardModal = ({}) => {
                     <List>
                       {(showAllLinks
                         ? [...linkItems].sort(
+                          (a, b) =>
+                            new Date(b.created_at) - new Date(a.created_at)
+                        )
+                        : [...linkItems]
+                          .sort(
                             (a, b) =>
                               new Date(b.created_at) - new Date(a.created_at)
                           )
-                        : [...linkItems]
-                            .sort(
-                              (a, b) =>
-                                new Date(b.created_at) - new Date(a.created_at)
-                            )
-                            .slice(0, 4)
+                          .slice(0, 4)
                       ).map((file) => {
                         const domain = new URL(file.path_url).hostname.replace(
                           /^www\./,
@@ -1329,7 +1351,7 @@ const CardModal = ({}) => {
                   >
                     Sửa
                   </MenuItem>
-                  <MenuItem>Nhận xét</MenuItem>
+                  {/* <MenuItem>Nhận xét</MenuItem> */}
                   <MenuItem
                     onClick={() => {
                       if (currentFile) {
@@ -1454,15 +1476,15 @@ const CardModal = ({}) => {
                     <List>
                       {(showAll
                         ? [...fileItems].sort(
+                          (a, b) =>
+                            new Date(b.created_at) - new Date(a.created_at)
+                        )
+                        : [...fileItems]
+                          .sort(
                             (a, b) =>
                               new Date(b.created_at) - new Date(a.created_at)
                           )
-                        : [...fileItems]
-                            .sort(
-                              (a, b) =>
-                                new Date(b.created_at) - new Date(a.created_at)
-                            )
-                            .slice(0, 4)
+                          .slice(0, 4)
                       ).map((file) => {
                         const fileExt =
                           file.path_url
@@ -1554,15 +1576,15 @@ const CardModal = ({}) => {
                                 Đã thêm{" "}
                                 {file.created_at
                                   ? new Date(file.created_at).toLocaleString(
-                                      "vi-VN",
-                                      {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                        year: "numeric",
-                                      }
-                                    )
+                                    "vi-VN",
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "numeric",
+                                    }
+                                  )
                                   : "Không xác định"}
                                 {file.is_cover && (
                                   <Box component="span" sx={{ ml: 1 }}>
@@ -1626,15 +1648,31 @@ const CardModal = ({}) => {
                   <MenuItem onClick={() => downloadFile(selectedFile)}>
                     Tải xuống
                   </MenuItem>
-                  <MenuItem>Nhận xét</MenuItem>
-                  <MenuItem
-                    onClick={() => handleCoverImageChange(selectedFile)}
-                  >
-                    {attachments?.data?.find((file) => file.id === selectedFile)
-                      ?.is_cover
-                      ? "Gỡ ảnh bìa"
-                      : "Tạo ảnh bìa"}
-                  </MenuItem>
+                  {/* <MenuItem>Nhận xét</MenuItem> */}
+                 {/* Kiểm tra nếu là file hình ảnh thì hiển thị tùy chọn "Tạo ảnh bìa" */}
+                 {(() => {
+                    const file = attachments?.data?.find(
+                      (f) => f.id === selectedFile
+                    );
+                    if (file) {
+                      const fileExt = file.path_url
+                        .match(/\.([a-zA-Z0-9]+)$/)?.[1]
+                        ?.toLowerCase();
+                      const imageTypes = ["jpg", "jpeg", "png", "webp", "pdf"];
+                      const isImage = imageTypes.includes(fileExt);
+
+                      if (isImage) {
+                        return (
+                          <MenuItem
+                            onClick={() => handleCoverImageChange(selectedFile)}
+                          >
+                            {file.is_cover ? "Gỡ ảnh bìa" : "Tạo ảnh bìa"}
+                          </MenuItem>
+                        );
+                      }
+                    }
+                    return null; // Không hiển thị nếu không phải file hình ảnh
+                  })()}
                   <MenuItem onClick={handleDeleteFile} sx={{ color: "red" }}>
                     Xóa
                   </MenuItem>
@@ -2367,13 +2405,13 @@ const CardModal = ({}) => {
                             ) : (
                               <Typography component="span" fontWeight="normal">
                                 {item.properties &&
-                                item.properties.file_path &&
-                                item.properties.file_name
+                                  item.properties.file_path &&
+                                  item.properties.file_name
                                   ? renderDescriptionWithLink(
-                                      actionText,
-                                      item.properties.file_path,
-                                      item.properties.file_name
-                                    )
+                                    actionText,
+                                    item.properties.file_path,
+                                    item.properties.file_name
+                                  )
                                   : actionText}
                               </Typography>
                             )}
@@ -2487,36 +2525,29 @@ const CardModal = ({}) => {
                   </ListItem>
 
                   <ListItem disablePadding>
-                    <ListItemButton>
+                    <ListItemButton onClick={() => setIsTaskModalOpen(true)} sx={{ width: "100%" }}>
                       <ListItemIcon>
-                        <ChecklistIcon
-                          sx={{ color: "black", fontSize: "0.8rem" }}
-                        />
+                        <ChecklistIcon sx={{ color: "black", fontSize: "1rem" }} />
                       </ListItemIcon>
-                      <ListItemText
-                        primary="Việc cần làm"
-                        onClick={() => setIsTaskModalOpen(true)}
-                      />
+                      <ListItemText primary="Việc cần làm" />
                     </ListItemButton>
                   </ListItem>
 
                   <ListItem disablePadding>
-                    <ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        setDateConfig({
+                          open: true,
+                          type: "card",
+                          targetId: cardId,
+                        });
+                      }}
+                      sx={{ width: "100%" }}
+                    >
                       <ListItemIcon>
-                        <EventIcon
-                          sx={{ color: "black", fontSize: "0.8rem" }}
-                        />
+                        <EventIcon sx={{ color: "black", fontSize: "1rem" }} />
                       </ListItemIcon>
-                      <ListItemText
-                        primary="Ngày"
-                        onClick={() => {
-                          setDateConfig({
-                            open: true,
-                            type: "card",
-                            targetId: cardId,
-                          });
-                        }}
-                      />
+                      <ListItemText primary="Ngày" />
                     </ListItemButton>
                   </ListItem>
 
@@ -2637,7 +2668,7 @@ const CardModal = ({}) => {
         <TaskModal
           open={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
-          // onSave={handleAddTask}
+        // onSave={handleAddTask}
         />
 
         {/* Component Label List */}
@@ -2677,7 +2708,7 @@ const CardModal = ({}) => {
           open={isCoverPhotoOpen}
           handleClose={() => setIsCoverPhotoOpen(false)}
           onCoverImageChange={handleCoverImageChange} // Pass the handler to CoverPhoto
-          // onCoverColorChange={handleCoverColorChange} // Pass the handler to CoverPhoto
+        // onCoverColorChange={handleCoverColorChange} // Pass the handler to CoverPhoto
         />
 
         <DateModal

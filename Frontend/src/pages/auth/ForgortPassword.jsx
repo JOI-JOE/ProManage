@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useForgotPassword } from "../../hooks/useUser";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import FormLabel from '@mui/material/FormLabel';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -8,70 +9,76 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const { mutate, isLoading, isSuccess, isError } = useForgotPassword();
+  const { mutate, isLoading } = useForgotPassword();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setMessage("");
     setError("");
 
-    // mutate(email, {
-    //   onSuccess: (data) =>
-    //     setMessage("Vui lòng kiểm tra email để đặt lại mật khẩu!"),
-    //   onError: (err) => setError("Có lỗi xảy ra. Vui lòng thử lại!"),
-    // });
+    if (!email) {
+      setError("Please enter your email.");
+      return;
+    }
+
     mutate(email, {
-      onSuccess: () => setMessage("Vui lòng kiểm tra email để đặt lại mật khẩu!"),
-      onError: (err) => setError(err?.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại!"),
+      onSuccess: () => setMessage("Please check your email to reset your password!"),
+      onError: (err) =>
+        setError(err?.response?.data?.message || "An error occurred. Please try again!"),
     });
   };
 
   return (
-    <section className="bg-[#1693E1] min-h-screen flex items-center justify-center">
-      <div className="container mx-auto">
-        <div className="flex justify-center">
-          <div className="w-full max-w-[525px] rounded-lg bg-white py-16 px-10 text-center sm:px-12 md:px-[60px]">
-            <div className="mb-10 text-center md:mb-16 text-xl font-bold">
-              TRELLO
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
-                  className={`w-full rounded-md border bg-[#FCFDFE] py-3 px-5 text-base text-body-color placeholder-[#ACB6BE] outline-none focus:border-primary ${
-                    error ? "border-red-500" : "border-gray-300"
-                  }`}
-                  required
-                />
-              </div>
-
-              <div className="mb-10">
-                <button
-                  type="submit"
-                  className="w-full px-4 py-3 bg-indigo-500 hover:bg-indigo-700 rounded-md text-white disabled:opacity-50"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Đang gửi..." : "Gửi mật khẩu mới"}
-                </button>
-              </div>
-            </form>
-
-            {message && <p className="text-green-600">{message}</p>}
-            {error && <p className="text-red-600">{error}</p>}
-
-            <button
-              onClick={() => navigate("/login")} // Sử dụng navigate đã khai báo ở trên
-              className="text-blue-500 hover:underline"
-            >
-              Quay về trang đăng nhập
-            </button>
-          </div>
+    <section className="bg-gray-100 min-h-screen flex items-center justify-center">
+      <div className="w-full max-w-md bg-white rounded-lg p-8 shadow-lg">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <h2 className="text-2xl font-bold text-blue-500">ProManage</h2>
         </div>
+
+        {/* Title */}
+        <h3 className="text-3xl font-semibold text-center mb-6">Forgot Password</h3>
+
+        <form onSubmit={handleSubmit}>
+          {/* Email Field */}
+          <FormLabel htmlFor="email">Email</FormLabel>
+          <div className="mb-4">
+            <input
+              type="email"
+              name="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              className={`w-full rounded-md border py-2 px-4 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500 ${
+                error ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          </div>
+
+          {/* Success Message */}
+          {message && <p className="text-green-600 text-sm mb-4 text-center">{message}</p>}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full mt-4 bg-gray-800 text-white p-3 rounded-md hover:bg-gray-900 disabled:opacity-50 cursor-pointer"
+            disabled={isLoading}
+          >
+            {isLoading ? "Sending..." : "Send New Password"}
+          </button>
+        </form>
+
+        {/* Back to Login Link */}
+        <p className="text-center mt-4">
+          <button
+            onClick={() => navigate("/login")}
+            className="text-blue-500 hover:underline text-sm cursor-pointer"
+          >
+            Back to Sign in
+          </button>
+        </p>
       </div>
     </section>
   );

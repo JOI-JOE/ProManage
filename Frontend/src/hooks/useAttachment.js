@@ -70,6 +70,7 @@ const useAttachments = (cardId) => {
       // Chỉ re-fetch API attachments
       // queryClient.refetchQueries(["attachments", cardId], { exact: true });
       queryClient.invalidateQueries({ queryKey: ["attachments", cardId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
     },
 
     onError: (_error, _newAttachment, context) => {
@@ -91,7 +92,7 @@ const useAttachments = (cardId) => {
     mutationFn: (attachmentId) => deleteAttachment(cardId, attachmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attachments", cardId], exact: true });
-
+      queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
     },
   });
 
@@ -123,7 +124,7 @@ const useAttachments = (cardId) => {
       return { previousAttachments };
     },
     onSuccess: () => {
-      queryClient.refetchQueries(["attachments", cardId], { exact: true });
+      queryClient.invalidateQueries(["attachments", cardId], { exact: true });
     },
     onError: (_error, _attachmentId, context) => {
       queryClient.setQueryData(["attachments", cardId], context.previousAttachments);
