@@ -30,26 +30,8 @@ use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
 { // app/Http/Controllers/CardController.php
-    public function getCardsByList($listId)
-    {
-        try {
-            $cards = Card::where('list_board_id', $listId)
-                ->where('is_archived', 0)
-                ->withCount('comments')
-                ->get();
-            return response()->json([
-                'status' => true,
-                'message' => 'Lấy dữ liệu card thành công',
-                'data' => $cards
-            ]);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Có lỗi lấy dữ liệu cardcard',
-                // 'data'=>$cards
-            ]);
-        }
-    }
+
+    //-------------------------------------------------------------------
     public function store(Request $request)
     {
         // 📌 Validate request
@@ -76,6 +58,27 @@ class CardController extends Controller
         broadcast(new CardCreated($card))->toOthers();
 
         return response()->json($card, 201);
+    }
+    //-------------------------------------------------------------------
+    public function getCardsByList($listId)
+    {
+        try {
+            $cards = Card::where('list_board_id', $listId)
+                ->where('is_archived', 0)
+                ->withCount('comments')
+                ->get();
+            return response()->json([
+                'status' => true,
+                'message' => 'Lấy dữ liệu card thành công',
+                'data' => $cards
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Có lỗi lấy dữ liệu cardcard',
+                // 'data'=>$cards
+            ]);
+        }
     }
     // cập nhật tên
     public function updateName($cardId, Request $request)
@@ -293,10 +296,6 @@ class CardController extends Controller
             'data' => $card,
         ]);
     }
-
-
-
-
     public function removeDates($cardId)
     {
         $card = Card::findOrFail($cardId);
@@ -349,8 +348,6 @@ class CardController extends Controller
 
         ]);
     }
-
-
     //// Lưu trữ , khôi phục thẻ, xóa vĩnh viễn
     public function toggleArchive($id)
     {
@@ -379,7 +376,6 @@ class CardController extends Controller
             ], 500);
         }
     }
-
     public function getArchivedCardsByBoard($boardId)
     {
         try {
@@ -403,7 +399,6 @@ class CardController extends Controller
             ], 500);
         }
     }
-
     public function delete($id)
     {
         try {

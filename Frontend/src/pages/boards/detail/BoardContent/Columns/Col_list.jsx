@@ -28,6 +28,48 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
         setLocalColumns(columns || []);
     }, [columns]);
 
+
+    ///--------- hàm xử lý tạo list ----------------------------
+    const handleAddNewList = useCallback(
+        async (name) => {
+            if (!name || isSaving || !boardId) return;
+
+            const optimisticId = `temp-${Date.now()}`;
+            const currentColumns = localColumnsRef.current;
+            const maxPosition = currentColumns.length
+                ? currentColumns[currentColumns.length - 1].position + SPACING
+                : SPACING;
+
+            const newColumn = {
+                id: optimisticId,
+                board_id: boardId,
+                name,
+                position: maxPosition,
+                closed: 0,
+                isOptimistic: true,
+            };
+
+            // Cập nhật UI ngay lập tức
+            setLocalColumns((prev) => [...prev, newColumn]);
+            setOpenColumn(false);
+
+            // Di chuyển handleCreateList ra ngoài useCallback để giảm re-render
+            try {
+                const response = await createList({
+                    boardId,
+                    name,
+                    pos: maxPosition,
+                });
+            } catch (error) {
+                console.error("Error creating list:", error);
+                setLocalColumns((prev) =>
+                    prev.filter((col) => col.id !== optimisticId)
+                );
+            }
+        },
+        [boardId, createList, isSaving, localColumnsRef] // Thêm localColumnsRef vào dependencies
+    );
+
     // Hàm lưu trữ cột
     const handleArchive = (columnId) => {
         setLocalColumns((prevColumns) => {
@@ -78,47 +120,6 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
     const sortableItems = useMemo(
         () => localColumns.map((c) => c.id).filter(Boolean),
         [localColumns]
-    );
-
-
-    const saveList = useCallback(
-        async (name) => {
-            if (!name || isSaving || !boardId) return;
-
-            const optimisticId = `temp-${Date.now()}`;
-            const currentColumns = localColumnsRef.current;
-            const maxPosition = currentColumns.length
-                ? currentColumns[currentColumns.length - 1].position + SPACING
-                : SPACING;
-
-            const newColumn = {
-                id: optimisticId,
-                board_id: boardId,
-                name,
-                position: maxPosition,
-                closed: 0,
-                isOptimistic: true,
-            };
-
-            // Cập nhật UI ngay lập tức
-            setLocalColumns((prev) => [...prev, newColumn]);
-            setOpenColumn(false);
-
-            // Di chuyển handleCreateList ra ngoài useCallback để giảm re-render
-            try {
-                const response = await createList({
-                    boardId,
-                    name,
-                    pos: maxPosition,
-                });
-            } catch (error) {
-                console.error("Error creating list:", error);
-                setLocalColumns((prev) =>
-                    prev.filter((col) => col.id !== optimisticId)
-                );
-            }
-        },
-        [boardId, createList, isSaving, localColumnsRef] // Thêm localColumnsRef vào dependencies
     );
 
     return (
@@ -206,7 +207,7 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
                     {localColumns.map(column => (
                         <Col key={column.id} column={column} onArchive={handleArchive} />
                     ))}
-                    <Col_new open={openColumn} setOpen={setOpenColumn} onAdd={saveList} />
+                    <Col_new open={openColumn} setOpen={setOpenColumn} onAdd={handleAddNewList} />
                 </Box>
             </SortableContext>
         </>

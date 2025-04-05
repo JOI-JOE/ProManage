@@ -107,7 +107,10 @@ import "react-lazy-load-image-component/src/effects/blur.css";
 import InputAdornment from "@mui/material/InputAdornment";
 
 const CardModal = ({ }) => {
+
+
   const { cardId, title } = useParams();
+  
   const { data: schedule } = useCardSchedule(cardId);
   const navigate = useNavigate();
   const [description, setDescription] = useState("");

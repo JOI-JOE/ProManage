@@ -67,6 +67,9 @@ export const useListByBoardId = (boardId) => {
     [boardId, queryClient]
   );
 
+  // ---- Xử lý tạo card mới
+  const handleCardCreate = useCallback(event);
+
   useEffect(() => {
     if (!boardId) return;
 

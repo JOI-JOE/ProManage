@@ -9,23 +9,48 @@ import {
   Box,
   Tooltip,
   Avatar,
+  CardActionArea,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams, Outlet } from "react-router-dom";
 import GroupIcon from "@mui/icons-material/Group";
 import CommentIcon from "@mui/icons-material/Comment";
 import AttachmentIcon from "@mui/icons-material/Attachment";
+import NotesIcon from '@mui/icons-material/Notes';
 import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined"; // Icon checklist
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import DescriptionIcon from "@mui/icons-material/Description";
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 // import { useCardLabels } from "../../../../../hooks/useLabel";
 // import { useCardById, useGetMemberInCard } from "../../../../../hooks/useCard";
 // import { useCommentsByCard } from "../../../../../hooks/useComment";
 // import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
 // import useAttachments from "../../../../../hooks/useAttachment";
 // import { LazyLoadImage } from "react-lazy-load-image-component";
+
+const CardMetaItem = ({ icon, text, tooltip }) => {
+  const content = (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+        color: "#637087",
+        fontSize: "10px",
+      }}
+    >
+      {icon}
+      <Typography variant="body2" sx={{ fontSize: "0.75rem" }}>
+        {text}
+      </Typography>
+    </Box>
+  );
+
+  return tooltip ? <Tooltip title={tooltip}>{content}</Tooltip> : content;
+};
+
 
 const C_ard = ({ card }) => {
   // const {
@@ -60,13 +85,13 @@ const C_ard = ({ card }) => {
   const location = useLocation(); // Lấy URL hiện tại
   const { cardId } = useParams();
 
-  const handleOpen = () => {
-    setOpen(true);
-    navigate(`c/${card.id}/${card.title.replace(/\s+/g, "-")}`, {
-      replace: false,
-      state: { background: location.pathname }, // Lưu lại trang trước khi mở modal
-    });
-  };
+  // const handleOpen = () => {
+  //   setOpen(true);
+  //   navigate(`c/${card.id}/${card.title.replace(/\s+/g, "-")}`, {
+  //     replace: false,
+  //     state: { background: location.pathname }, // Lưu lại trang trước khi mở modal
+  //   });
+  // };
 
   const handleClose1 = () => {
     setOpen(false);
@@ -115,219 +140,147 @@ const C_ard = ({ card }) => {
 
   return (
     <>
-      <Card // Sử dụng index làm key (không khuyến khích nếu thứ tự thay đổi)
+      <Card
         ref={setNodeRef}
         style={cardStyle}
         {...attributes}
         {...listeners}
-        onClick={handleOpen}
         sx={{
+          maxWidth: 260,
+          borderRadius: '9px',
           position: "relative",
           cursor: "pointer",
           boxShadow: "0 1px 1px rgba(0,0,0,0.2)",
-          overflow: "unset",
+          overflow: "hidden", // Thay đổi từ "unset" sang "hidden"
           display: card?.FE_PlaceholderCard ? "none" : "block",
-          border: "1px solid transparent",
-          transition: "border 0.2s ease-in-out, box-shadow 0.2s ease-in-out", // Thêm transition
           ":hover": {
-            border: "1px solid #0079bf", // Border màu xanh khi hover (giống Trello)
+            outline: "2px solid #0C66E4",
           },
-          // height: "110px"
         }}
       >
-
-        {/* {!!coverImageBackGround && (
-          <Box sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
-            <CardMedia sx={{ height: 140, mb: 2, justifyContent: "center" }}>
-              <LazyLoadImage
-                src={coverImageBackGround}
-                alt="Card Cover"
-                effect="blur" // Hiệu ứng mờ khi tải ảnh
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                }}
-              />
-            </CardMedia>
-          </Box>
-        )} */}
-
-
-        <CardContent sx={{ p: 1.5, pb: 2, "&:last-child": { p: 1.5 } }}>
-          {/* {cardLabels?.length > 0 && (
-            <Box sx={{ display: "flex", gap: "4px", flexWrap: "wrap", mb: 1 }}>
-              {cardLabels?.map((label, index) => (
-                <Tooltip key={index} title={label.title || "No text"}>
-                  <Box
-                    sx={{
-                      backgroundColor: label.color.hex_code,
-                      height: "8px",
-                      width: "40px",
-                      borderRadius: "4px",
-                    }}
-                  />
-                </Tooltip>
-              ))}
-            </Box>
-          )} */}
-
-          <Typography sx={{ fontSize: "0.7rem" }}>
-            {card?.title}
-          </Typography>
-        </CardContent>
-        {/* {showCardActions() && (
-          <CardActions
-            sx={{
-              p: "0 4px 8px 15px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px", // Điều chỉnh khoảng cách giữa các icon
-              flexWrap: "wrap",
-              justifyContent: "space-between", // Ensure space between icons and avatars
-            }}
-          >
-            <Box
+        <Box
+          component="div"
+          onClick={(e) => {
+            if (!e.defaultPrevented) {
+              handleOpen();
+            }
+          }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+            }
+          }}
+        >
+          <CardActionArea>
+            {/* Thêm Box wrapper với borderRadius để làm mềm góc ảnh */}
+            {/* <Box
               sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                flex: 1,
+                width: '100%',
+                height: '159.828px',
+                overflow: 'hidden',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#f0f0f0',
+                borderTopLeftRadius: '9px', // Thêm bo góc phía trên
+                borderTopRightRadius: '9px', // Thêm bo góc phía trên
               }}
             >
-              {!!members?.length && (
-                <Button
-                  size="small"
-                  startIcon={<GroupIcon />}
-                  sx={{ fontSize: "0.65rem", color: "primary.dark" }}
-                >
-                  {members?.length}
-                </Button>
-              )}
-              {!!cardDetail?.description && (
-                <Tooltip title={"Thẻ này có mô tả"}>
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: "4px" }}
-                  >
-                    <DescriptionIcon
-                      sx={{ fontSize: 16, color: "primary.dark" }}
-                    />
-                  </Box>
-                </Tooltip>
-              )}
-              {!!comments?.length && (
-                <Tooltip title={"Bình luận"}>
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: "4px" }}
-                  >
-                    <CommentIcon sx={{ fontSize: 16, color: "primary.dark" }} />
-                    <Typography
-                      variant="body2"
-                      sx={{ fontSize: "0.75rem", color: "primary.dark" }}
-                    >
-                      {comments?.length}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
-              {!!attachments?.data?.length && (
-                <Tooltip title={"Các tệp tin đính kèm"}>
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: "4px" }}
-                  >
-                    <AttachmentIcon
-                      sx={{ fontSize: 16, color: "primary.dark" }}
-                    />
-                    <Typography
-                      variant="body2"
-                      sx={{ fontSize: "0.75rem", color: "primary.dark" }}
-                    >
-                      {attachments?.data?.length}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
-              {!!checklists?.some(
-                (checklist) => checklist.items.length > 0
-              ) && (
-                  <Tooltip title={"Mục trong danh sách công việc"}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        backgroundColor: allChecklistsCompleted
-                          ? "primary.dark"
-                          : "transparent", // Màu nền xanh khi hoàn thành
-                        color: allChecklistsCompleted ? "white" : "primary.dark", // Màu chữ trắng khi hoàn thành
-                        padding: "4px 8px", // Thêm padding để làm nổi bật
-                        borderRadius: "4px", // Bo góc
-                      }}
-                    >
-                      <CheckBoxOutlinedIcon
-                        sx={{
-                          fontSize: 16,
-                        }}
-                      />
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: "0.75rem",
-                        }}
-                      >
-                        {checklists.reduce(
-                          (total, checklist) =>
-                            total +
-                            checklist.items.filter((item) => item.is_completed)
-                              .length,
-                          0
-                        )}
-                        /
-                        {checklists.reduce(
-                          (total, checklist) => total + checklist.items.length,
-                          0
-                        )}
-                      </Typography>
-                    </Box>
-                  </Tooltip>
-                )}
-            </Box>
-            {Array.isArray(members?.data) && members.data.length > 0 && (
+              <LazyLoadImage
+                // src="https://i.pinimg.com/736x/46/72/4b/46724b52751a9bbcbb8343ea6c377850.jpg"
+                alt="Card Cover"
+                effect="blur"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover', // Thay đổi từ 'contain' sang 'cover' để đảm bảo ảnh phủ đầy không gian
+                  borderTopLeftRadius: '9px', // Thêm bo góc phía trên
+                  borderTopRightRadius: '9px', // Thêm bo góc phía trên
+                }}
+              />
+            </Box> */}
+            <CardContent
+              sx={{
+                padding: '8px',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                {card?.title}
+              </Typography>
               <Box
                 sx={{
-                  display: "flex",
-                  gap: "4px",
-                  zIndex: 1,
-                  marginLeft: "auto",
-                  flexWrap: "wrap",
-                  justifyContent: "flex-end",
+                  padding: '0 4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1
                 }}
               >
-                {members.data.map((member, index) => (
-                  <Tooltip key={index} title={member.full_name || "No name"}>
-                    <Avatar
-                      sx={{
-                        width: 22,
-                        height: 22,
-                        fontSize: "0.6rem",
-                        bgcolor: "primary.main",
-                      }}
-                    >
-                      {member.full_name ? member.full_name.charAt(0).toUpperCase() : "?"}
-                    </Avatar>
-                  </Tooltip>
-                ))}
+                {/* Checklist*/}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 1.5,
+                    alignItems: 'center'
+                  }}
+                >
+                  <CardMetaItem
+                    icon={<CheckBoxOutlinedIcon sx={{ fontSize: 16 }} />}
+                    text="0/5"
+                    tooltip="Checklist"
+                  />
+                  <CardMetaItem
+                    icon={<AttachmentIcon sx={{ fontSize: 16 }} />}
+                    text="2"
+                    tooltip="Các tệp tin đính kèm"
+                  />
+                  <CardMetaItem
+                    icon={<ChatBubbleOutlineIcon sx={{ fontSize: 14 }} />}
+                    text="5"
+                    tooltip="Bình luận"
+                  />
+                  <CardMetaItem
+                    icon={<NotesIcon sx={{ fontSize: 16 }} />}
+                    text="2"
+                    tooltip="Thẻ đã có mô tả"
+                  />
+                </Box>
+
+                {/* Member avatars */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "4px",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  {[...Array(5)].map((_, i) => (
+                    <Tooltip title="No name" key={i}>
+                      <Avatar
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          fontSize: "0.6rem",
+                          bgcolor: "primary.main",
+                        }}
+                      >
+                        HA
+                      </Avatar>
+                    </Tooltip>
+                  ))}
+                </Box>
               </Box>
-            )}
-
-          </CardActions>
-
-        )} */}
+            </CardContent>
+          </CardActionArea>
+        </Box>
       </Card>
-      <Dialog open={open} onClose={handleClose1} fullWidth maxWidth="md">
+      {/* <Dialog open={open} onClose={handleClose1} fullWidth maxWidth="md">
         <CardModal card={card} closeDetail={handleClose1} handleClose1={handleClose1} />
-      </Dialog>
-      <Outlet />
+      </Dialog> */}
+      < Outlet />
     </>
   );
 };

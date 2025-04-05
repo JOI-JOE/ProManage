@@ -44,7 +44,6 @@ const BoardContent = () => {
     useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 0 } })
   );
 
-  // State management
   const [orderedLists, setOrderedLists] = useState([]);
   const [dragState, setDragState] = useState({
     activeId: null,
@@ -57,7 +56,7 @@ const BoardContent = () => {
   const initialActiveRef = useRef(null);
   const initialOverRef = useRef(null);
 
-  // Reset state when boardId changes
+  // Reset state ngay khi boardId thay đổi
   useEffect(() => {
     setOrderedLists([]);
     setDragState({
@@ -71,34 +70,32 @@ const BoardContent = () => {
     initialOverRef.current = null;
   }, [boardId]);
 
-  // Process and sort list data
   useEffect(() => {
-    if (listLoading || error || !listData?.lists?.length) {
+    if (listLoading || error) {
+      // Chỉ reset nếu đang có dữ liệu
+      if (orderedLists.length > 0) setOrderedLists([]);
+      return;
+    }
+
+    // Kiểm tra nếu không có dữ liệu hoặc không có lists
+    if (!listData || !listData.lists?.length) {
       setOrderedLists([]);
       return;
     }
 
-    const sortedLists = [...listData.lists]
-      .filter(list => list.closed !== 1) // Bỏ list đã đóng
-      .sort((a, b) => parseFloat(a.position) - parseFloat(b.position))
+    // Xử lý dữ liệu đã được nested từ API
+    const processedLists = listData.lists
+      .filter(list => list.closed !== 1)
+      .sort((a, b) => a.position - b.position) // Đã được convert sang number từ API
       .map(list => ({
         ...list,
-        position: parseFloat(list.position),
-        cards: (listData.cards || [])
-          .filter(card => card.list_board_id === list.id)
-          .map(card => ({
-            ...card,
-            position: parseFloat(card.position),
-            listId: card.list_board_id,
-            closed: !!card.closed,
-            dueComplete: !!card.dueComplete,
-          }))
-          .sort((a, b) => a.position - b.position),
-        closed: !!list.closed,
+        cards: (list.cards || [])
+          .filter(card => !card.closed) // Lọc card đã đóng/archive
+          .sort((a, b) => a.position - b.position) // Đã được convert sang number từ API
       }));
 
-    setOrderedLists(sortedLists);
-  }, [listData, listLoading, error, boardId]);
+    setOrderedLists(processedLists);
+  }, [listData, listLoading, error]);
 
 
   // Utility functions
@@ -127,23 +124,43 @@ const BoardContent = () => {
   }, [findListByCardId, orderedLists]);
 
   const handleCardDragOver = useCallback((active, over) => {
+    // Tìm list chứa card đang được kéo
     const activeList = findListByCardId(active.id);
-    const overList = findListByCardId(over.id) || activeList;
-    if (!activeList || !overList) return;
+    if (!activeList) return;
 
+    // Xác định list đích (overList)
+    let overList;
+    if (over.data.current?.listId) {
+      // Nếu over là card, lấy listId từ data của nó
+      overList = orderedLists.find(list => list.id === over.data.current.listId) || activeList;
+    } else {
+      // Nếu over là list, dùng trực tiếp ID của list
+      overList = orderedLists.find(list => list.id === over.id) || activeList;
+    }
+
+    if (!overList) return;
+
+    if (typeof setOrderedLists !== 'function') {
+      console.error('setOrderedLists is not available');
+      return;
+    }
     const moveCard = activeList.id === overList.id
       ? moveCardWithinSameColumn
       : moveCardBetweenDifferentColumns;
 
-    moveCard(
-      activeList.id === overList.id ? activeList : overList,
-      over.id,
-      activeList,
-      active.id,
-      active.data.current,
-      setOrderedLists
-    ).catch(error => console.error("Error moving card:", error));
-  }, [findListByCardId]);
+    try {
+      moveCard(
+        overList,
+        over.id,
+        activeList,
+        active.id,
+        active.data.current,
+        setOrderedLists
+      );
+    } catch (error) {
+      console.error("Error moving card:", error);
+    }
+  }, [findListByCardId, orderedLists]);
 
   const handleColumnDragOver = useCallback((active, over) => {
     if (!over || !active || !dragState.initialLists.length) return;
@@ -183,6 +200,8 @@ const BoardContent = () => {
         listId: draggedCard.list_board_id,
         position: draggedCard.position,
       });
+
+      console.log(draggedCard.position)
     } else if (dragState.activeType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
       const previousIndex = dragState.initialLists.findIndex(list => list.id === active.id);
       const newIndex = orderedLists.findIndex(list => list.id === over.id);
@@ -225,7 +244,7 @@ const BoardContent = () => {
   }, []);
 
   // Loading and access states
-  if (boardLoading) return <LogoLoading />;
+  if (boardLoading || listLoading) return <LogoLoading />;
   if (isActive === 'request_access') return <SendRequest />;
 
   return (

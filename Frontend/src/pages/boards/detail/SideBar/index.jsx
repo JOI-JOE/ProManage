@@ -278,6 +278,7 @@ const SideBar = () => {
                 <ListItem key={board.id} disablePadding sx={{ p: 1, display: "flex", alignItems: "center" }}>
                   <ListItemButton
                     component={Link}
+                    
                     to={`/b/${board.id}/${board.name}`}
                     sx={{
                       flexGrow: 1,
