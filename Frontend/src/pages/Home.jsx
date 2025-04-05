@@ -1,133 +1,150 @@
-import React, { useEffect, useState } from "react";
-import { Typography, Container, Paper, Button } from "@mui/material";
-// import { useUser, loading, error } from "../contexts/userContext";
+import React from "react";
+import { Button, Box, Typography, TextField } from "@mui/material";
+import trelloLogo from "~/assets/trello.svg?react";
+import SvgIcon from "@mui/material/SvgIcon";
+import { Link } from "react-router-dom";
 import { useMe } from "../contexts/MeContext";
 
 const Home = () => {
-  const { user } = useMe(); // Dùng context để lấy user
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const slides = [
-    { type: "image", src: "/img/sl1.webp" },
-    { type: "image", src: "/img/pro manage.webp" },
-    { type: "image", src: "/img/hi.webp" },
-  ];  
-  // console.log(user);
-  const token = localStorage.getItem("token");
-  console.log(token);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-  // console.log( user);
-
-  // if (loading) {
-  //   return (
-  //     <Container
-  //       sx={{
-  //         display: "flex",
-  //         justifyContent: "center",
-  //         alignItems: "center",
-  //         height: "100vh",
-  //         color: "white",
-  //       }}
-  //     >
-  //       Đang tải thông tin người dùng...
-  //     </Container>
-  //   );
-  // }
-
-  // if (error) {
-  //   return (
-  //     <Container
-  //       sx={{
-  //         display: "flex",
-  //         justifyContent: "center",
-  //         alignItems: "center",
-  //         height: "100vh",
-  //         color: "red",
-  //       }}
-  //     >
-  //       Lỗi: {error.message}
-  //     </Container>
-  //   );
-  // }
-
+  const backgroundStyle = {
+    backgroundImage:
+      "url('https://i.pinimg.com/736x/b4/03/dd/b403dd07ed859682d122b5862226fd68.jpg')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    height: "100vh",
+    width: "100%",
+    position: "relative",
+    color: "#000",
+    backgroundColor: "rgba(255, 255, 255, 0.5)", // Thêm lớp mờ
+    backgroundBlendMode: "overlay", // Kết hợp màu nền và ảnh
+  };
+  const { user } = useMe();
   return (
-    <Container
-      maxWidth={false}
-      sx={{
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        background: "linear-gradient(to right, #283048, #859398)",
-
-        color: "white",
-        padding: 3,
-      }}
-    >
-      <Typography
-        variant="h1"
-        fontWeight="bold"
-        gutterBottom
+    <div style={backgroundStyle}>
+      {/* Header Buttons */}
+      <Box
         sx={{
-          textTransform: "uppercase",
-          letterSpacing: 2,
-          textAlign: "center",
-          fontFamily: "Pacifico, cursive",
-          fontSize: "3rem",
-          textShadow: "6px 6px 8px rgba(0, 0, 0, 0.3)",
+          position: "absolute",
+          bottom: "300px",
+          right: "360px",
+          display: "flex",
+          gap: "10px",
+          padding: "10px 15px",
+          borderRadius: "8px",
         }}
       >
-        Chào mừng bạn đến với PRO MANAGE
-      </Typography>
-      <Paper
-        elevation={6}
-        sx={{
-          overflow: "hidden",
-          width: "90%",
-          height: "60vh",
-          borderRadius: 2,
-          marginBottom: 2,
-          position: "relative",
-        }}
-      >
-        {slides[currentIndex].type === "video" ? (
-          <video width="100%" height="100%" controls autoPlay loop>
-            <source src={slides[currentIndex].src} type="video/mp4" />
-            Trình duyệt của bạn không hỗ trợ thẻ video.
-          </video>
-        ) : (
-          <img
-            src={slides[currentIndex].src}
-            alt={`Slide ${currentIndex + 1}`}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              transition: "opacity 1s ease-in-out",
+        {user && (
+          <Button
+            variant="contained"
+            href={`u/${user.user_name}/boards`}
+            sx={{
+              paddingX: 2, // Giảm padding ngang
+              paddingY: 0.5, // Giảm padding dọc
+              fontWeight: "bold",
+              backgroundColor: "teal",
+              fontSize: "0.8rem", // Giảm kích thước chữ
             }}
-          />
+          >
+            Đến bảng của bạn
+          </Button>
         )}
-      </Paper>
-      {user && (
-        <Button
-          variant="contained"
-          color="primary"
-          href={`u/${user.user_name}/boards`}
-          sx={{ paddingX: 4, paddingY: 1, fontWeight: "bold" }}
+      </Box>
+
+      {/* Main Content */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "10%",
+          transform: "translateY(-50%)",
+          textAlign: "left",
+          maxWidth: "600px",
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            height: "2px",
+            backgroundColor: "#000",
+            marginBottom: "20px",
+          }}
+        ></Box>
+        <Typography
+          variant="h4"
+          fontWeight="bold"
+          gutterBottom
+          sx={{ color: "#000", marginBottom: "20px", fontSize: "1rem" }}
         >
-          Xem thông tin người dùng
-        </Button>
-      )}
-    </Container>
+          Promanage - Giải Pháp Quản Lý Công Việc Thông Minh
+        </Typography>
+        <Typography
+          variant="body1"
+          gutterBottom
+          sx={{ color: "#333", fontSize: "0.7rem", marginBottom: "15px" }}
+        >
+          Bạn đang tìm kiếm một công cụ giúp sắp xếp công việc cá nhân và nhóm
+          một cách trực quan, khoa học? TaskFlow chính là trợ thủ đắc lực dành
+          cho bạn!
+        </Typography>
+        <Typography
+          variant="body1"
+          gutterBottom
+          sx={{ color: "#333", fontSize: "0.7rem", marginBottom: "15px" }}
+        >
+          🌟 Tính Năng Nổi Bật
+        </Typography>
+        <Typography
+          variant="body1"
+          gutterBottom
+          sx={{ color: "#333", fontSize: "0.7rem", marginBottom: "10px" }}
+        >
+          ✔ Tạo và phân loại công việc theo từng cột (To-do, Doing, Done)
+        </Typography>
+        <Typography
+          variant="body1"
+          gutterBottom
+          sx={{ color: "#333", fontSize: "0.7rem", marginBottom: "10px" }}
+        >
+          ✔ Giao việc, đặt deadline và theo dõi tiến độ chi tiết
+        </Typography>
+        <Typography
+          variant="body1"
+          gutterBottom
+          sx={{ color: "#333", fontSize: "0.7rem", marginBottom: "10px" }}
+        >
+          ✔ Làm việc nhóm hiệu quả với tính năng bình luận, đính kèm file
+        </Typography>
+        <Typography
+          variant="body1"
+          gutterBottom
+          sx={{ color: "#333", fontSize: "0.7rem", marginBottom: "10px" }}
+        >
+          ✔ Nhắc nhở thông minh tự động thông báo khi công việc sắp đến hạn
+          hoặc có thay đổi quan trọng.
+        </Typography>
+        <Typography
+          variant="body1"
+          gutterBottom
+          sx={{ color: "#333", fontSize: "0.7rem", marginBottom: "15px" }}
+        >
+          🚀 Tại Sao Chọn ProManage?
+        </Typography>
+        <Typography
+          variant="body1"
+          gutterBottom
+          sx={{ color: "#333", fontSize: "0.7rem", marginBottom: "15px" }}
+        >
+          ✔ Dễ sử dụng
+        </Typography>
+        <Typography
+          variant="body1"
+          gutterBottom
+          sx={{ color: "#333", fontSize: "0.7rem", marginBottom: "15px" }}
+        >
+          ✔ Tiết kiệm thời gian
+        </Typography>
+      </Box>
+    </div>
   );
 };
 
