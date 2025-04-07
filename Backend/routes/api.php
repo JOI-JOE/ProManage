@@ -57,6 +57,7 @@ Route::middleware(['web'])->group(function () {
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
 Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
+Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
@@ -157,8 +158,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 });
 
-
-
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
 Route::delete('/boards/{boardId}', [BoardController::class, 'toggleBoardClosed']);
@@ -175,13 +174,6 @@ Route::prefix('boards/{id}/')->group(function () {
     Route::get('creater', [BoardController::class, 'showCreated']);  // Route cho người tạo bảng
 });
 
-// // Routes cho thành viên bảng
-// Route::prefix('boards/{boardId}/members')->group(function () {
-//     Route::get('', [BoardMemberController::class, 'index']);
-//     Route::post('', [BoardMemberController::class, 'addMember']);
-//     Route::put('{userId}/role', [BoardMemberController::class, 'updateMemberRole']);
-//     Route::delete('{userId}', [BoardMemberController::class, 'leaveBoard']);
-// });
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/boards/{boardId}/members', [BoardMemberController::class, 'getBoardMembers']);
@@ -199,14 +191,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Broadcast::routes();
 });
-Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
 
 // Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
     Route::post('recent-boards', [RecentBoardController::class, 'store']);
-
-    // Route cho bảng đã xóa
     Route::get('closed', [BoardController::class, 'closed']);
 });
 
@@ -246,16 +235,9 @@ Route::patch('/labels/{labelId}/update-name', [LabelController::class, 'updateLa
 
 // Comment
 Route::middleware(['auth:sanctum'])->group(function () {
-    // Lấy tất cả bình luận của card
     Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']);
-
-    // Thêm bình luận vào card
     Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']);
-
-    // Xóa bình luận
     Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']);
-
-    // Cập nhật bình luận
     Route::put('/comments/{id}', [CommentCardController::class, 'update']);
 });
 

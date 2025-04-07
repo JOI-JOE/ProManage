@@ -84,77 +84,158 @@ class ListController extends Controller
 
     //     return response()->json($response, 200);
     // }
-
     public function show($boardId, Request $request)
     {
         $userId = auth()->id();
 
-        // 1. Lấy thông tin board cơ bản và kiểm tra tồn tại
+        // 1. Get basic board info and check existence
         $board = DB::table('boards')
             ->select('id', 'visibility', 'workspace_id')
-            ->where('id', $boardId)
-            ->first();
+            ->find($boardId);
 
         if (!$board) {
             return response()->json(['message' => 'Board not found'], 404);
         }
 
-        // 2. Kiểm tra quyền truy cập
+        // 2. Check access rights
         if (!$this->hasBoardAccess($board, $userId)) {
             return response()->json(['message' => 'Access denied'], 403);
         }
 
-        // 3. Lấy danh sách lists với phân trang (mặc định 5 list mỗi lần)
-        $listsPerPage = 5; // Số lượng list mỗi lần
-        $listsPage = $request->query('page', 1);
+        // 3. Get all lists for the board
         $lists = DB::table('list_boards')
+            ->select('id', 'name', 'position', 'closed')
             ->where('board_id', $boardId)
             ->where('closed', 0)
             ->orderBy('position')
-            ->paginate($listsPerPage, ['*'], 'page', $listsPage);
+            ->get()
+            ->toArray(); // Convert Collection to array
 
-        // Nếu không có lists thì trả về luôn
-        if (empty($lists->items())) {
+        // Early return if no lists found
+        if (empty($lists)) {
             return response()->json([
-                'id' => $board->id,
-                'lists' => [],
-                'pagination' => [
-                    'total_lists' => 0,
-                    'per_page_lists' => $listsPerPage,
-                    'current_page_lists' => $listsPage,
-                    'has_more_lists' => false
-                ]
-            ], 200);
+                'id' => $boardId,
+                'lists' => []
+            ]);
         }
 
-        // 4. Lấy tất cả list IDs để query cards
-        $listIds = array_column($lists->items(), 'id');
+        // 4. Get list IDs for cards query
+        $listIds = array_column($lists, 'id');
 
-        // 5. Lấy cards với phân trang (10 cards mỗi list)
-        $cardsPerPage = 10;
-        $cardsPage = $request->query('cards_page', 1);
-
-        $cardsQuery = DB::table('cards')
+        // 5. Get all cards with counts and related data
+        $cards = DB::table('cards')
+            ->select([
+                'cards.id',
+                'cards.title',
+                'cards.thumbnail',
+                'cards.position',
+                'cards.start_date',
+                'cards.end_date',
+                'cards.end_time',
+                'cards.reminder',
+                'cards.is_completed',
+                'cards.is_archived',
+                'cards.list_board_id',
+                DB::raw('(SELECT COUNT(*) FROM comment_cards WHERE comment_cards.card_id = cards.id) as comment_count'),
+                DB::raw('(SELECT COUNT(*) FROM attachments WHERE attachments.card_id = cards.id) as attachment_count'),
+                DB::raw('(SELECT COUNT(*) FROM checklists cl JOIN checklist_items cli ON cl.id = cli.checklist_id WHERE cl.card_id = cards.id) as total_checklist_items'),
+                DB::raw('(SELECT COUNT(*) FROM checklists cl JOIN checklist_items cli ON cl.id = cli.checklist_id WHERE cl.card_id = cards.id AND cli.is_completed = 1) as completed_checklist_items'),
+                'list_boards.name as list_board_name',
+            ])
+            ->join('list_boards', 'cards.list_board_id', '=', 'list_boards.id')
             ->whereIn('list_board_id', $listIds)
             ->where('is_archived', 0)
             ->orderBy('position')
-            ->paginate($cardsPerPage * count($listIds), ['*'], 'page', $cardsPage);
+            ->get()
+            ->toArray(); // Convert Collection to array
 
-        // 6. Nhóm cards theo list_board_id
+        // 6. Get additional card data (labels and members)
+        $cardIds = array_column($cards, 'id');
+
+        // Get labels for cards
+        $cardLabels = DB::table('card_label')
+            ->join('labels', 'card_label.label_id', '=', 'labels.id')
+            ->select('card_label.card_id', 'labels.id as label_id', 'labels.title', 'labels.color_id')
+            ->whereIn('card_label.card_id', $cardIds)
+            ->get()
+            ->toArray(); // Convert Collection to array
+
+        // Group labels by card_id
+        $labelsByCard = [];
+        foreach ($cardLabels as $label) {
+            $labelsByCard[$label->card_id][] = $label;
+        }
+
+        $cardMembers = DB::table('card_user')
+            ->join('users', 'card_user.user_id', '=', 'users.id')
+            ->select('card_user.card_id', 'users.id as user_id', 'users.id')
+            ->whereIn('card_user.card_id', $cardIds)
+            ->get()
+            ->toArray();
+
+        // Group members by card_id
+        $membersByCard = [];
+        foreach ($cardMembers as $member) {
+            $membersByCard[$member->card_id][] = $member;
+        }
+
+        // 7. Group cards by list_board_id and format the response
         $groupedCards = [];
-        foreach ($cardsQuery->items() as $card) {
-            $groupedCards[$card->list_board_id][] = [
-                'id' => $card->id,
+        foreach ($cards as $card) {
+            $cardId = $card->id;
+            $listId = $card->list_board_id;
+
+            $labels = $labelsByCard[$cardId] ?? [];
+            $members = $membersByCard[$cardId] ?? [];
+
+            $labelIds = array_map(function ($label) {
+                return $label->label_id;
+            }, $labels);
+            $memberIds = array_map(function ($member) {
+                return $member->user_id;
+            }, $members);
+
+            $formattedLabels = [];
+            foreach ($labels as $label) {
+                $formattedLabels[] = [
+                    'id' => $label->label_id,
+                    'name' => $label->name,
+                    'color' => $label->color
+                ];
+            }
+
+            if (!isset($groupedCards[$listId])) {
+                $groupedCards[$listId] = [];
+            }
+
+            $groupedCards[$listId][] = [
+                'id' => $cardId,
                 'title' => $card->title,
-                'list_board_id' => $card->list_board_id,
+                'thumbnail' => $card->thumbnail,
                 'position' => (float)$card->position,
-                'closed' => (bool)$card->is_archived,
+                'is_archived' => (bool)$card->is_archived,
+                'list_board_id' => $listId,
+                'labelId' => $labelIds,
+                'labels' => $formattedLabels,
+                'membersId' => $memberIds,
+                "badges" => [
+                    'attachments' => (int)$card->attachment_count,
+                    'comments' => (int)$card->comment_count,
+                    'start' => $card->start_date,
+                    'due' => $card->end_date,
+                    'dueTime' => $card->end_time,
+                    'dueReminder' => $card->reminder,
+                    'dueComplete' => (bool)$card->is_completed,
+                    'checkItems' => (int)$card->total_checklist_items,
+                    'checkItemsChecked' => (int)$card->completed_checklist_items,
+                    'description' => !empty($card->description)
+                ]
             ];
         }
 
-        // 7. Format dữ liệu response
+        // 8. Format lists with their cards
         $formattedLists = [];
-        foreach ($lists->items() as $list) {
+        foreach ($lists as $list) {
             $formattedLists[] = [
                 'id' => $list->id,
                 'name' => $list->name,
@@ -164,29 +245,12 @@ class ListController extends Controller
             ];
         }
 
-        // Kiểm tra xem có dữ liệu tiếp theo không để quyết định `has_more_lists`
-        $hasMoreLists = $lists->hasMorePages();
-        $hasMoreCards = $cardsQuery->hasMorePages();
-
         return response()->json([
-            'id' => $board->id,
-            'lists' => $formattedLists,
-            'pagination' => [
-                'total_lists' => $lists->total(),
-                'per_page_lists' => $listsPerPage,
-                'current_page_lists' => $listsPage,
-                'has_more_lists' => $hasMoreLists,
-                'total_cards' => $cardsQuery->total(),
-                'per_page_cards' => $cardsPerPage,
-                'current_page_cards' => $cardsPage,
-                'has_more_cards' => $hasMoreCards
-            ]
-        ], 200);
+            'id' => $boardId,
+            'lists' => $formattedLists
+        ]);
     }
-    /**
-     * Kiểm tra quyền truy cập nghiêm ngặt
-     * Chỉ trả về true nếu user có quyền xem board
-     */
+
     private function hasBoardAccess($board, $userId)
     {
         // Nếu là thành viên của board
