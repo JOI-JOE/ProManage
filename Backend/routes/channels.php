@@ -21,9 +21,6 @@ use App\Models\ListBoard;
 Broadcast::channel('board.{boardId}', function ($user, $boardId) {
     return true;
 });
-// Broadcast::channel('workspace-invite-{workspaceId}', function ($user, $workspaceId) {
-//     return $user->isMemberOfWorkspace($workspaceId);
-// });
 
 Broadcast::channel('card.{cardId}', function ($user, $cardId) {
     return true; // Hoặc thêm logic kiểm tra quyền truy cập
@@ -54,8 +51,5 @@ Broadcast::channel('boards.{boardId}', function ($user, $boardId) {
 });
 
 Broadcast::channel('private-user.{userId}', function ($user, $userId) {
-    \Log::info("Auth user:", [$user->id]); // Ghi log kiểm tra user
-    \Log::info("Request userId:", [$userId]);
-
     return (int) $user->id === (int) $userId;
 });

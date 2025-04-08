@@ -13,9 +13,14 @@ import FolderIcon from "@mui/icons-material/Folder";
 import HomeIcon from "@mui/icons-material/Home";
 import { Link } from "react-router-dom";
 import WorkspaceMenu from "./WorkspaceMenu";
+import { useMe } from "../../contexts/MeContext";
+import { useWorkspace } from "../../contexts/WorkspaceContext";
 
 
-const SideBar = ({ workspaces, username }) => {
+const SideBar = () => {
+    const { user } = useMe()
+
+    const { workspaces } = useWorkspace()
     return (
         <Drawer
             variant="permanent"
@@ -36,7 +41,7 @@ const SideBar = ({ workspaces, username }) => {
         >
             <List sx={{ borderBottom: "1px solid #D3D3D3" }}>
                 <ListItem disablePadding>
-                    <ListItemButton component={Link} to={`/u/${username}/boards`}>
+                    <ListItemButton component={Link} to={`/u/${user?.user_name}/boards`}>
                         <ListItemIcon sx={{ color: "black" }}>
                             <DashboardIcon />
                         </ListItemIcon>

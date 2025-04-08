@@ -22,14 +22,14 @@ const Card_list = ({ cards }) => {
                     overflowY: "auto",
                     maxHeight: (theme) =>
                         `calc(
-    ${theme.trello.boardContentHeight} -
-    ${theme.spacing(5)} -
-    ${theme.trello.columnHeaderHeight} -
-    ${theme.trello.columnFooterHeight}
-    )`,
+                    ${theme.trello.boardContentHeight} -
+                    ${theme.spacing(5)} -
+                    ${theme.trello.columnHeaderHeight} -
+                    ${theme.trello.columnFooterHeight}
+                    )`,
 
                     "&::-webkit-scrollbar": {
-                        width: "6px", // Giảm kích thước scrollbar
+                        width: "3px", // Giảm kích thước scrollbar
                     },
                     "&::-webkit-scrollbar-thumb": {
                         backgroundColor: "#888", // Màu của thanh cuộn

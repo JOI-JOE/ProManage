@@ -2,6 +2,37 @@ import axios from "axios";
 import authClient from "../authClient";
 
 const UNSPLASH_ACCESS_KEY = "3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"; // Thay bằng Access Key của bạn
+///------------------------------------------------------
+
+export const fetchBoardById = async (boardId) => {
+  if (!boardId || typeof boardId !== "string") {
+    throw new Error("Board ID không hợp lệ");
+  }
+
+  try {
+    const { data } = await authClient.get(`/boards/${boardId}`);
+    if (!data?.board) {
+      throw new Error("Dữ liệu bảng không hợp lệ");
+    }
+    return {
+      ...data,
+    action: data.action || data.board?.action || null, // Normalize action field
+    };
+  } catch (error) {
+    // Handle 403 response with action
+    if (error.response?.status === 403 && error.response.data?.action) {
+      return { action: error.response.data.action };
+    }
+
+    // Log and throw for other errors
+    console.error("Lỗi khi lấy dữ liệu bảng:", error);
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi tải dữ liệu bảng"
+    );
+  }
+};
+
+///------------------------------------------------------
 
 export const getBoardsAllByClosed = async () => {
   try {
@@ -30,27 +61,6 @@ export const showBoardByWorkspaceId = async (workspaceId) => {
   } catch (error) {
     console.error("Lỗi khi lấy workspace của người dùng:", error);
     throw error;
-  }
-};
-
-export const getBoardById = async (boardId) => {
-  if (!boardId) {
-    throw new Error("boardId không hợp lệ");
-  }
-
-  try {
-    const response = await authClient.get(`/boards/${boardId}`);
-    return response.data;
-  } catch (error) {
-    console.error(
-      "Lỗi khi lấy bảng:",
-      error?.response?.data?.message || error.message
-    );
-
-    throw new Error(
-      error?.response?.data?.message ||
-        "Không thể lấy dữ liệu bảng, vui lòng thử lại sau."
-    );
   }
 };
 
@@ -128,7 +138,9 @@ export const updateBoardVisibility = async (boardId, visibility) => {
   }
 
   try {
-    const response = await authClient.patch(`/boards/${boardId}/visibility`, { visibility });
+    const response = await authClient.patch(`/boards/${boardId}/visibility`, {
+      visibility,
+    });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật visibility của bảng:", error);
@@ -155,11 +167,3 @@ export const getBoardClosed = async () => {
     throw error;
   }
 };
-
-
-
-
-
-
-
-

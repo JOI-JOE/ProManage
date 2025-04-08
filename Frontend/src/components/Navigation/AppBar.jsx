@@ -31,19 +31,14 @@ import Workspace from "./Menus/Workspace";
 import Recent from "./Menus/Recent";
 import Started from "./Menus/Started";
 import Template from "./Menus/Template";
-import { useUser } from "../../hooks/useUser";
 import useNotifications from "../../hooks/useNotification";
 import useSearch from "../../hooks/useSearch";
-// import useNotifications from "../../hooks/useNotification";
 import { formatTime } from "../../../utils/dateUtils";
+import { useMe } from "../../contexts/MeContext";
 
 const AppBar = ({ username, email }) => {
-  const { data: user } = useUser();
-
-  // console.log(user);
-
-  // console.log(user?.email);
-
+  // const { data: user } = useUser();
+  const { user, } = useMe();
   const userId = user?.id;
   const { notifications } = useNotifications(userId);
 
@@ -174,7 +169,7 @@ const AppBar = ({ username, email }) => {
 
         <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
           <Workspace />
-          <Recent />
+          {/* <Recent /> */}
           <Started />
           <Template />
         </Box>
@@ -206,16 +201,9 @@ const AppBar = ({ username, email }) => {
                 backgroundColor: "#1a1a1a",
                 borderRadius: "30px",
                 color: "white",
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "transparent",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#00C2A0",
-                },
-                "& .MuiInputBase-input": {
-                  fontSize: "14px",
-                  padding: "8px 12px",
-                },
+                "& .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#00C2A0" },
+                "& .MuiInputBase-input": { fontSize: "14px", padding: "8px 12px" },
               },
             }}
           />

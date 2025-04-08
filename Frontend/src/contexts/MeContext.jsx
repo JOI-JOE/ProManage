@@ -1,21 +1,57 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
+import { useBoardStars } from "../hooks/useBoardStar";
+import { useDispatch } from "react-redux";
+import { setStarredBoards } from "../redux/slices/starredBoardsSlice";
+// import { fetchUserData } from "../api/models/userApi";
 import { useUserData } from "../hooks/useUser";
 
-// Tạo Context
-const MeContext = createContext({ user: null, userProfile: null, userDashboard: null });
+const MeContext = createContext({
+    user: null,
+    workspaceId: null,
+    boardId: null,
+    boardStars: null,
+    isLoading: true,
+    isUserLoaded: false, // Thêm trạng thái này
+    error: null,
+});
 
-// Hook custom để dễ dàng sử dụng context
-export const useMe = () => useContext(MeContext);
+export const useMe = () => {
+    const context = useContext(MeContext);
+    if (context === undefined) {
+        throw new Error("useMe must be used within a MeProvider");
+    }
+    return context;
+};
 
-// Provider chính
 export const MeProvider = ({ children }) => {
+    const dispatch = useDispatch();
 
-    const { userProfile, userDashboard, isLoading, error } = useUserData();
-    const user = userProfile?.user
-    const workspace = userDashboard
-    return (
-        <MeContext.Provider value={{ user, userProfile, userDashboard }}>
-            {children}
-        </MeContext.Provider>
+    const { data: userInfo, userLoading, userError } = useUserData()
+
+    const user = userInfo?.user || null;
+    const workspaceId = userInfo?.workspaceId || null;
+    const boardId = userInfo?.boardId || null;
+
+    // Fetch board stars, chỉ chạy khi user.id tồn tại
+    const { data: boardStars, isLoading: starsLoading } = useBoardStars(); // Sửa lại để truyền user.id trực tiếp
+
+    useEffect(() => {
+        if (boardStars) {
+            dispatch(setStarredBoards(boardStars));
+        }
+    }, [boardStars, dispatch]);
+
+    const contextValue = useMemo(
+        () => ({
+            user,
+            workspaceId,
+            boardId,
+            boardStars,
+            userLoading,
+            userError,
+        }),
+        [user, workspaceId, boardId, boardStars, userLoading, userError]
     );
+
+    return <MeContext.Provider value={contextValue}>{children}</MeContext.Provider>;
 };

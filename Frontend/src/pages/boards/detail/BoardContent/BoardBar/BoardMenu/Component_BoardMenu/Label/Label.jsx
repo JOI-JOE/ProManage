@@ -13,7 +13,13 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
-import { useCreateLabel, useDeleteLabelByBoard, useLabels, useUpdateCardLabel, useUpdateLabelName } from "../../../../../../../../hooks/useLabel";
+import {
+  // useLabels,
+  useCreateLabel,
+  useDeleteLabelByBoard,
+  useUpdateCardLabel,
+  useUpdateLabelName
+} from "../../../../../../../../hooks/useLabel";
 import { useParams } from "react-router-dom";
 // const initialLabels = [
 //   { id: 1, color: "#137b13", name: "Label 1" },
@@ -25,8 +31,8 @@ import { useParams } from "react-router-dom";
 
 const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const { boardId } = useParams();
-  
-  const { data: fetchedLabels } = useLabels(boardId);
+
+  // const { data: fetchedLabels } = useLabels(boardId);
   // Cập nhật labels khi fetchedLabels thay đổi
   const createLabelMutation = useCreateLabel();
   const updateLabelMutation = useUpdateCardLabel();
@@ -38,29 +44,29 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const [NewUpdatedLabelName, setUpdatedLabelName] = useState("");
   const [search, setSearch] = useState("");
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
-    const [isEditingLabel, setIsEditingLabel] = useState(false);
+  const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [newLabelColor, setNewLabelColor] = useState("#000000");
 
-    useEffect(() => {
-      if (fetchedLabels) setLabels(fetchedLabels);
-     
-    }, [fetchedLabels]);
-  const handleCreateLabel = () => {
-    if (!newLabelName.trim()) {
-      alert("Tên nhãn không được để trống!");
-      return;
-    }
-    createLabelMutation.mutate(
-      { boardId, data: { title: newLabelName, color: newLabelColor } },
-      {
-        onSuccess: () => {
-          setIsCreatingLabel(false);
-          setNewLabelName("");
-          setNewLabelColor("#000000");
-        },
-      }
-    );
-  };
+  // useEffect(() => {
+  //   if (fetchedLabels) setLabels(fetchedLabels);
+
+  // }, [fetchedLabels]);
+  // const handleCreateLabel = () => {
+  //   if (!newLabelName.trim()) {
+  //     alert("Tên nhãn không được để trống!");
+  //     return;
+  //   }
+  //   createLabelMutation.mutate(
+  //     { boardId, data: { title: newLabelName, color: newLabelColor } },
+  //     {
+  //       onSuccess: () => {
+  //         setIsCreatingLabel(false);
+  //         setNewLabelName("");
+  //         setNewLabelColor("#000000");
+  //       },
+  //     }
+  //   );
+  // };
   // sửa tên
 
   const handleUpdateLabelName = () => {
@@ -90,7 +96,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       }
     );
   };
- const handleDeleteLabel = (labelId) => {
+  const handleDeleteLabel = (labelId) => {
     deleteLabelMutation.mutate(
       { labelId },
       {
@@ -102,26 +108,26 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
     );
     // fetchedLabels();
   };
- const filteredLabels = labels.filter((label) =>
+  const filteredLabels = labels.filter((label) =>
     label.title.toLowerCase().includes(search.toLowerCase())
   );
-// console.log(filteredLabels);
-const handleEditLabel = (id, title) => {
-  setEditLabelId(id);
-  setIsEditingLabel(true);
-  setUpdatedLabelName("");
-};
- 
+  // console.log(filteredLabels);
+  const handleEditLabel = (id, title) => {
+    setEditLabelId(id);
+    setIsEditingLabel(true);
+    setUpdatedLabelName("");
+  };
 
-const handleKeyPress = (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault(); // Ngăn chặn reload
-    handleUpdateLabelName(); // Cập nhật tên nhãn
-    setIsEditingLabel(false); // Thoát chế độ chỉnh sửa
-  }
-};
 
-  
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // Ngăn chặn reload
+      handleUpdateLabelName(); // Cập nhật tên nhãn
+      setIsEditingLabel(false); // Thoát chế độ chỉnh sửa
+    }
+  };
+
+
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
@@ -216,20 +222,20 @@ const handleKeyPress = (e) => {
               >
                 {isEditingLabel && editLabelId === label.id ? (
                   <TextField
-                  value={NewUpdatedLabelName}
-                  onChange={(e) => setUpdatedLabelName(e.target.value)}
-                  onBlur={handleUpdateLabelName}
-                  onKeyPress={handleKeyPress}
-                  size="small"
-                  autoFocus
-                  sx={{
-                    width: "80%",
-                    "& .MuiOutlinedInput-root": {
-                      "& fieldset": {
-                        border: "none",
+                    value={NewUpdatedLabelName}
+                    onChange={(e) => setUpdatedLabelName(e.target.value)}
+                    onBlur={handleUpdateLabelName}
+                    onKeyPress={handleKeyPress}
+                    size="small"
+                    autoFocus
+                    sx={{
+                      width: "80%",
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          border: "none",
+                        },
                       },
-                    },
-                  }}
+                    }}
                   />
                 ) : (
                   <>

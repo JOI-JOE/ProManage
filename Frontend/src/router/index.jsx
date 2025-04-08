@@ -19,15 +19,12 @@ import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import InviteHandling from "../pages/workspace/invite/InviteHandling";
-import InviteWithToken from "../pages/workspace/invite/child/InviteWithToken";
-import InviteWithoutToken from "../pages/workspace/invite/child/InviteWithoutToken";
 import NotFoundPage from "../pages/NotFoundPage";
 import Account from "../pages/boards/detail/Account";
 import AcceptTeam from "../pages/workspace/invite/AcceptTeam";
 import InvitePage from "../pages/boards/invite/InvitePage";
 import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
 import Board from "../pages/boards/detail/Board";
-import Calendar from "../pages/Boards/detail/SideBar/Calendar/Calendar";
 import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileDisplay";
 import Activity from "../components/Navigation/Menus/Profile and display/Activity";
 
@@ -73,11 +70,7 @@ const router = createBrowserRouter([
         path: "/",
         element: <BoardDetail />,
         children: [
-          {
-            path: "b/:boardId/:name",
-            element: <BoardContent />,
-            children: [{ path: "c/:cardId/:title", element: <CardModal /> }],
-          },
+          { path: "b/:boardId/:name", element: <BoardContent /> },
           { path: "w/:workspaceName", element: <Board /> },
           { path: "w/:workspaceName/members", element: <Member /> },
           { path: "w/:workspaceName/account", element: <Account /> },

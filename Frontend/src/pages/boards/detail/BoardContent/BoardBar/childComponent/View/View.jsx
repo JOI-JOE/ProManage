@@ -34,10 +34,7 @@ const ViewPermissionsDialog = ({ open, onClose , initialVisibility }) => {
     } catch (error) {
       console.error("Lỗi cập nhật visibility:", error);
     }
-  };
-  
-
-  
+  };  
 
   return (
     <Dialog open={open} onClose={onClose}>

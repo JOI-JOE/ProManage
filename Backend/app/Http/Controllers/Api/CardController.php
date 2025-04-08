@@ -30,26 +30,8 @@ use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
 { // app/Http/Controllers/CardController.php
-    public function getCardsByList($listId)
-    {
-        try {
-            $cards = Card::where('list_board_id', $listId)
-                ->where('is_archived', 0)
-                ->withCount('comments')
-                ->get();
-            return response()->json([
-                'status' => true,
-                'message' => 'Lấy dữ liệu card thành công',
-                'data' => $cards
-            ]);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Có lỗi lấy dữ liệu cardcard',
-                // 'data'=>$cards
-            ]);
-        }
-    }
+
+    //-------------------------------------------------------------------
     public function store(Request $request)
     {
         // 📌 Validate request
@@ -77,6 +59,48 @@ class CardController extends Controller
 
         return response()->json($card, 201);
     }
+
+
+    // public function show($cardId) {
+
+    // }
+
+    public function show($cardId)
+    {
+        $card = Card::with(['list.board', 'checklists.items'])->findOrFail($cardId);
+        return response()->json([
+            'id' => $card->id,
+            'title' => $card->title,
+            'description' => $card->description ?? '',
+            'listName' => $card->list->name ?? '', // Lấy tên danh sách chứa card
+            'boardName' => $card->list->board->name ?? '', // Lấy tên board
+        ]);
+    }
+    //-------------------------------------------------------------------
+
+
+    // ---------------------------------------------
+    public function getCardsByList($listId)
+    {
+        try {
+            $cards = Card::where('list_board_id', $listId)
+                ->where('is_archived', 0)
+                ->withCount('comments')
+                ->get();
+            return response()->json([
+                'status' => true,
+                'message' => 'Lấy dữ liệu card thành công',
+                'data' => $cards
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Có lỗi lấy dữ liệu cardcard',
+                // 'data'=>$cards
+            ]);
+        }
+    }
+
     // cập nhật tên
     public function updateName($cardId, Request $request)
     {
@@ -279,7 +303,6 @@ class CardController extends Controller
             // }
 
             Log::info("📌 Job được lên lịch chạy vào: " . Carbon::parse($card->reminder));
-
         }
         if (!empty($card->reminder) && strtotime($card->reminder)) {
             // dispatch(new SendReminderNotification($card))->delay(now()->addMinutes(1));
@@ -293,10 +316,6 @@ class CardController extends Controller
             'data' => $card,
         ]);
     }
-
-
-
-
     public function removeDates($cardId)
     {
         $card = Card::findOrFail($cardId);
@@ -337,19 +356,6 @@ class CardController extends Controller
         ]);
     }
 
-    public function show($id)
-    {
-        $card = Card::with(['list.board', 'checklists.items'])->findOrFail($id);
-        return response()->json([
-            'id' => $card->id,
-            'title' => $card->title,
-            'description' => $card->description ?? '',
-            'listName' => $card->list->name ?? '', // Lấy tên danh sách chứa card
-            'boardName' => $card->list->board->name ?? '', // Lấy tên board
-
-        ]);
-    }
-
 
     //// Lưu trữ , khôi phục thẻ, xóa vĩnh viễn
     public function toggleArchive($id)
@@ -379,7 +385,6 @@ class CardController extends Controller
             ], 500);
         }
     }
-
     public function getArchivedCardsByBoard($boardId)
     {
         try {
@@ -403,7 +408,6 @@ class CardController extends Controller
             ], 500);
         }
     }
-
     public function delete($id)
     {
         try {

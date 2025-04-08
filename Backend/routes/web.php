@@ -4,6 +4,7 @@
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
+    $userId = '18016799-2e6c-45cc-9f14-06e64cf424f4';
+    $user = User::find($userId);
+
     return view('welcome');
 });
 
@@ -66,4 +70,3 @@ Route::prefix('admin')->as('admin.')->group(function(){
             Route::delete('{color}/destroy', [ColorController::class, 'destroy'])->name('destroy');
         });
 });
-
