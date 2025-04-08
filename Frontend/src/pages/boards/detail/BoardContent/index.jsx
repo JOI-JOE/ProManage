@@ -33,7 +33,7 @@ const ACTIVE_DRAG_ITEM_TYPE = {
 
 const BoardContent = () => {
   const { boardId } = useParams();
-  const { board, listData, isActive, boardLoading, listLoading, error } = useBoard();
+  const { listData, isActive, boardLoading, listLoading, error } = useBoard();
 
   const updatePositionListMutation = useUpdatePositionList();
   const updateCardPositionMutation = useUpdateCardPosition();
@@ -56,7 +56,6 @@ const BoardContent = () => {
   const initialActiveRef = useRef(null);
   const initialOverRef = useRef(null);
 
-  // Reset state ngay khi boardId thay đổi
   useEffect(() => {
     setOrderedLists([]);
     setDragState({
@@ -71,31 +70,37 @@ const BoardContent = () => {
   }, [boardId]);
 
   useEffect(() => {
-    if (listLoading || error) {
-      // Chỉ reset nếu đang có dữ liệu
+    if (listLoading) {
+      // Reset if loading or error occurs
       if (orderedLists.length > 0) setOrderedLists([]);
       return;
     }
 
-    // Kiểm tra nếu không có dữ liệu hoặc không có lists
-    if (!listData || !listData.lists?.length) {
+    // Ensure we have valid data structure
+    const { lists = [], cards = [] } = listData || {};
+
+    // If no lists or empty array
+    if (!lists.length) {
       setOrderedLists([]);
       return;
     }
 
-    // Xử lý dữ liệu đã được nested từ API
-    const processedLists = listData.lists
-      .filter(list => list.closed !== 1)
-      .sort((a, b) => a.position - b.position) // Đã được convert sang number từ API
-      .map(list => ({
-        ...list,
-        cards: (list.cards || [])
-          .filter(card => !card.closed) // Lọc card đã đóng/archive
-          .sort((a, b) => a.position - b.position) // Đã được convert sang number từ API
-      }));
+    // Process lists and cards
+    const processedLists = lists
+      .filter(list => !list.closed) // Filter out closed lists
+      .sort((a, b) => a.position - b.position) // Sort lists by position
+      .map(list => {
+        const listCards = cards
+          .filter(card => card.list_board_id === list.id && !card.is_archived) // Filter cards by list_id and not archived
+          .sort((a, b) => a.position - b.position); // Sort cards by position
+        return {
+          ...list,
+          cards: listCards
+        };
+      });
 
     setOrderedLists(processedLists);
-  }, [listData, listLoading, error]);
+  }, [listData, listLoading]);
 
 
   // Utility functions
@@ -254,7 +259,6 @@ const BoardContent = () => {
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
         imageRendering: "auto",
-        backgroundImage: `url(${board?.logo || "https://images.unsplash.com/photo-1738249034651-1896f689be58?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"})`,
       }}
     >
       <BoardBar />

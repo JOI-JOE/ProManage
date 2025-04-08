@@ -59,7 +59,27 @@ class CardController extends Controller
 
         return response()->json($card, 201);
     }
+
+
+    // public function show($cardId) {
+
+    // }
+
+    public function show($cardId)
+    {
+        $card = Card::with(['list.board', 'checklists.items'])->findOrFail($cardId);
+        return response()->json([
+            'id' => $card->id,
+            'title' => $card->title,
+            'description' => $card->description ?? '',
+            'listName' => $card->list->name ?? '', // Lấy tên danh sách chứa card
+            'boardName' => $card->list->board->name ?? '', // Lấy tên board
+        ]);
+    }
     //-------------------------------------------------------------------
+
+
+    // ---------------------------------------------
     public function getCardsByList($listId)
     {
         try {
@@ -80,6 +100,7 @@ class CardController extends Controller
             ]);
         }
     }
+
     // cập nhật tên
     public function updateName($cardId, Request $request)
     {
@@ -282,7 +303,6 @@ class CardController extends Controller
             // }
 
             Log::info("📌 Job được lên lịch chạy vào: " . Carbon::parse($card->reminder));
-
         }
         if (!empty($card->reminder) && strtotime($card->reminder)) {
             // dispatch(new SendReminderNotification($card))->delay(now()->addMinutes(1));
@@ -336,18 +356,7 @@ class CardController extends Controller
         ]);
     }
 
-    public function show($id)
-    {
-        $card = Card::with(['list.board', 'checklists.items'])->findOrFail($id);
-        return response()->json([
-            'id' => $card->id,
-            'title' => $card->title,
-            'description' => $card->description ?? '',
-            'listName' => $card->list->name ?? '', // Lấy tên danh sách chứa card
-            'boardName' => $card->list->board->name ?? '', // Lấy tên board
 
-        ]);
-    }
     //// Lưu trữ , khôi phục thẻ, xóa vĩnh viễn
     public function toggleArchive($id)
     {

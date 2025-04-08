@@ -27,7 +27,7 @@ const HomeBoard = ({ workspaces }) => {
   const starredBoards = useSelector((state) => state.starredBoards.starred);
   const listStar = starredBoards?.board_stars || [];  // Sử dụng mảng rỗng nếu không có dữ liệu
 
-  const { guestWorkspace } = useWorkspace()
+const { guestWorkspace } = useWorkspace()
 
   // const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
   // const [openClosedBoards, setOpenClosedBoards] = useState(false);

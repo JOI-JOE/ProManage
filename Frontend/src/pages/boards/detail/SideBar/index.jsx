@@ -33,6 +33,7 @@ import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 import PrivateSideBar from "./component/PrivateSideBar";
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import LogoLoading from "../../../../components/LogoLoading";
+import WorkspaceAvatar from "../../../../components/Common/WorkspaceAvatar";
 
 // Custom hook chứa toàn bộ logic
 const useSideBarLogic = () => {
@@ -115,7 +116,6 @@ const useSideBarLogic = () => {
     isMember,
     isActive,
     boardLoading,
-    listLoading,
   };
 };
 
@@ -134,7 +134,6 @@ const SideBar = () => {
     isMember,
     isActive,
     boardLoading,
-    listLoading,
   } = useSideBarLogic();
 
   {
@@ -154,12 +153,16 @@ const SideBar = () => {
       <Drawer
         variant="permanent"
         sx={{
-          width: "19%",
+          width: "15%",
           height: (theme) => `calc(${theme.trello.boardContentHeight} + ${theme.trello.boardBarHeight})`,
-          borderTop: "1px solid #ffffff",
+          // borderTop: "1px solid #ffffff",
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
-            bgcolor: "#000",
+            // ---------------------------
+            backgroundColor: "rgba(46, 46, 46, 0.8)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(8px)",
+            // ---------------------------
             color: "#ffffff",
             position: "relative",
             overflowY: "auto",
@@ -174,7 +177,17 @@ const SideBar = () => {
         }}
       >
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2, bgcolor: "#292929" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            p: 1,
+            height: "56.8px",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.2)", // 👈 Viền dưới mờ như Trello
+            borderTop: "1px solid rgba(255, 255, 255, 0.2)", // 👈 Viền dưới mờ như Trello
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {!currentWorkspace ? (
               <>
@@ -197,24 +210,29 @@ const SideBar = () => {
                 </Typography>
               </>
             ) : (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Avatar
-                  sx={{
-                    bgcolor: "hsl(0deg 0% 92.16%)",
-                    color: "gray",
-                    width: 40,  // Đặt chiều rộng
-                    height: 40, // Đặt chiều cao
-                    borderRadius: '8px', // Bo góc nhẹ nếu cần
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  K
-                </Avatar>
-                <Typography variant="body1" sx={{ fontWeight: "bold", color: "gray" }}>
-                  {currentWorkspace?.display_name}
-                </Typography>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <WorkspaceAvatar workspace={currentWorkspace} />
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <Typography
+                    sx={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      display: "inline-block"
+                    }}
+                  >
+                    {currentWorkspace?.display_name}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "10px",
+                      fontWeight: 400,
+                      color: "gray",
+                      mt: "2px",
+                    }}
+                  >
+                    Premium
+                  </Typography>
+                </Box>
               </Box>
             )}
           </Box>
@@ -278,7 +296,7 @@ const SideBar = () => {
                 <ListItem key={board.id} disablePadding sx={{ p: 1, display: "flex", alignItems: "center" }}>
                   <ListItemButton
                     component={Link}
-                    
+
                     to={`/b/${board.id}/${board.name}`}
                     sx={{
                       flexGrow: 1,
@@ -344,7 +362,7 @@ const SideBar = () => {
             </Box>
           )}
         </List>
-      </Drawer>
+      </Drawer >
     );
   };
 }

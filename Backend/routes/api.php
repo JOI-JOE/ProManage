@@ -123,6 +123,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/workspace/{workspaceId}/member/{memberId}',  'addMemberToWorkspaceDirection');
     });
 
+
+    // Route::prefix('cards')->controller(CardController::class)->group(function () {
+    //     Route::post('/', 'store');
+    //     Route::get('/{cardId}', 'show');
+
+    // Route::put('/{cardId}/name', 'updateName');
+    // Route::put('/{cardId}/description', 'updateDescription');
+    // Route::put('/{cardId}/dates', 'updateDates');
+    // Route::delete('/{cardId}/dates', 'removeDates');
+    // Route::get('/{cardId}/history', 'getCardHistory');
+
+    // Member
+    // Route::post('/{cardId}/members/email', 'addMemberByEmail');
+    // Route::delete('/{cardId}/members/{user}', 'removeMember')->name('cards.removeMember');
+    // });
+
+
     Route::prefix('cards')->group(function () {
         Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
         Route::post('/', [CardController::class, 'store']);
@@ -188,8 +205,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/boards/{boardId}/members/{userId}/cards', [BoardMemberController::class, 'getMemberCards']);
     Route::get('/boards/{boardId}/members/{userId}/items', [BoardMemberController::class, 'getMemberChecklistItems']);
-
-    Broadcast::routes();
 });
 
 // Recent board cho user trong workspace
@@ -228,18 +243,7 @@ Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
     Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
 });
 
-Route::get('/boards/{boardId}/labels', [LabelController::class, 'getLabelsByBoard']); // hiển thị nhãn theo bảng
-Route::post('/boards/{boardId}/labels', [LabelController::class, 'createLabel']); // thêm nhãn chung
-Route::delete('/labels/{labelId}', [LabelController::class, 'deleteLabelByBoard']); // xóa nhãn
-Route::patch('/labels/{labelId}/update-name', [LabelController::class, 'updateLabelName']);
 
-// Comment
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']);
-    Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']);
-    Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']);
-    Route::put('/comments/{id}', [CommentCardController::class, 'update']);
-});
 
 // 📂 File đính kèm (Attachments)
 Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(function () {
@@ -277,3 +281,17 @@ Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNoti
 // });
 
 Route::get('/activities/{cardId}', [ActivityLogController::class, 'getActivitiesByCard']);
+
+
+// Route::get('/boards/{boardId}/labels', [LabelController::class, 'getLabelsByBoard']); // hiển thị nhãn theo bảng
+// Route::post('/boards/{boardId}/labels', [LabelController::class, 'createLabel']); // thêm nhãn chung
+// Route::delete('/labels/{labelId}', [LabelController::class, 'deleteLabelByBoard']); // xóa nhãn
+// Route::patch('/labels/{labelId}/update-name', [LabelController::class, 'updateLabelName']);
+
+// Comment
+// Route::middleware(['auth:sanctum'])->group(function () {
+//     Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']);
+//     Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']);
+//     Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']);
+//     Route::put('/comments/{id}', [CommentCardController::class, 'update']);
+// });

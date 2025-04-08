@@ -211,7 +211,8 @@ const ShareBoardDialog = ({ boardMembers, currentUser, open, onClose }) => {
                   fontWeight: "bold",
                 }}
               >
-                {member?.image || member?.full_name.charAt(0).toUpperCase()}
+                háksjafkj
+                {/* {member?.image || member?.full_name.charAt(0).toUpperCase()} */}
               </Avatar>
               <Box flexGrow={1}>
                 <Typography fontWeight="bold">{member.full_name}</Typography>

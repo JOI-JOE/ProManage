@@ -115,7 +115,8 @@ class ListController extends Controller
         if (empty($lists)) {
             return response()->json([
                 'id' => $boardId,
-                'lists' => []
+                'lists' => [],
+                'cards' => []
             ]);
         }
 
@@ -166,6 +167,7 @@ class ListController extends Controller
             $labelsByCard[$label->card_id][] = $label;
         }
 
+        // Get members for cards
         $cardMembers = DB::table('card_user')
             ->join('users', 'card_user.user_id', '=', 'users.id')
             ->select('card_user.card_id', 'users.id as user_id', 'users.id')
@@ -179,8 +181,8 @@ class ListController extends Controller
             $membersByCard[$member->card_id][] = $member;
         }
 
-        // 7. Group cards by list_board_id and format the response
-        $groupedCards = [];
+        // 7. Format cards data (without grouping by list_board_id)
+        $formattedCards = [];
         foreach ($cards as $card) {
             $cardId = $card->id;
             $listId = $card->list_board_id;
@@ -199,16 +201,12 @@ class ListController extends Controller
             foreach ($labels as $label) {
                 $formattedLabels[] = [
                     'id' => $label->label_id,
-                    'name' => $label->name,
-                    'color' => $label->color
+                    'name' => $label->title, // Sửa title thành name để khớp với SQL dump
+                    'color' => $label->color_id
                 ];
             }
 
-            if (!isset($groupedCards[$listId])) {
-                $groupedCards[$listId] = [];
-            }
-
-            $groupedCards[$listId][] = [
+            $formattedCards[] = [
                 'id' => $cardId,
                 'title' => $card->title,
                 'thumbnail' => $card->thumbnail,
@@ -233,7 +231,7 @@ class ListController extends Controller
             ];
         }
 
-        // 8. Format lists with their cards
+        // 8. Format lists (without cards)
         $formattedLists = [];
         foreach ($lists as $list) {
             $formattedLists[] = [
@@ -241,13 +239,14 @@ class ListController extends Controller
                 'name' => $list->name,
                 'position' => (float)$list->position,
                 'closed' => (bool)$list->closed,
-                'cards' => $groupedCards[$list->id] ?? [],
             ];
         }
 
+        // 9. Return the response with separated lists and cards
         return response()->json([
             'id' => $boardId,
-            'lists' => $formattedLists
+            'lists' => $formattedLists,
+            'cards' => $formattedCards,
         ]);
     }
 

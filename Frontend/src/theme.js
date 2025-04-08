@@ -1,7 +1,7 @@
 import { createTheme } from "@mui/material/styles";
 
 const App_Bar_Height = "48px";
-const Board_Bar_Height = "52px";
+const Board_Bar_Height = "56.8px";
 const Board_Content_Height = `calc(100vh - ${App_Bar_Height} - ${Board_Bar_Height})`;
 
 const Column_Header_Height = "50px";
@@ -29,7 +29,14 @@ const theme = createTheme({
       contrastText: "#ffffff",
     },
   },
-
+  //--------------------------------------------------------------------------------
+  /// Màu custom
+  alert: {
+    success: "#1F845A", // màu xanh đậm
+    warning: "#F5CD47", // màu vàng đậm
+    danger: "#C9372C", // màu đỏ đậm
+  },
+  //--------------------------------------------------------------------------------
   components: {
     MuiCssBaseline: {
       styleOverrides: {
@@ -95,25 +102,6 @@ const theme = createTheme({
         }),
       },
     },
-
-    // MuiOutlinedInput: {
-    //   styleOverrides: {
-    //     root: ({ theme }) => ({
-    //       color: theme.palette.secondary.contrastText,
-    //       ".MuiOutlinedInput-notchedOutline": {
-    //         borderColor: theme.palette.secondary.contrastText,
-    //       },
-    //       "&:hover": {
-    //         ".MuiOutlinedInput-notchedOutline": {
-    //           borderColor: theme.palette.primary.dark,
-    //         },
-    //       },
-    //       "& fieldset": {
-    //         borderWidth: "1px !important",
-    //       },
-    //     }),
-    //   },
-    // },
   },
 });
 export default theme;

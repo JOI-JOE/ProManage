@@ -3,10 +3,10 @@ import { Box, Typography, Snackbar } from "@mui/material";
 import { useDispatch } from "react-redux";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
-import { Link } from "react-router-dom";
 import { useMe } from "../contexts/MeContext";
 import { unStarToBoard } from "../api/models/boardStarApi";
 import { unstarBoard } from "../redux/slices/starredBoardsSlice";
+import { Link } from "react-router-dom";
 
 const MyStar = ({ star }) => {
     const dispatch = useDispatch();
@@ -14,7 +14,7 @@ const MyStar = ({ star }) => {
     const [error, setError] = useState(null); // State để hiển thị thông báo lỗi
 
     const handleToggleMarked = async (e) => {
-        e.stopPropagation(); // Ngăn sự kiện lan ra ngoài (ngăn bấm vào Link)
+        e.stopPropagation(); // Ngăn sự kiện lan ra ngoài
 
         try {
             const starredBoard = {
@@ -39,32 +39,42 @@ const MyStar = ({ star }) => {
         <Box
             sx={{
                 position: "relative",
-                width: "180px",
+                width: "193.88px", // Match the width from the screenshot
                 "&:hover .star-icon": {
-                    opacity: 1, // Hiển thị sao khi hover vào board
-                    transform: "scale(1.1)", // Hiển thị nguyên kích thước
+                    opacity: 1, // Show star icon on hover
+                    transform: "scale(1.1)", // Slightly scale up the star icon
                 },
             }}
         >
-            <Link to={`/b/${star?.board_id}/${star?.name}`} style={{ textDecoration: "none" }}>
+            {/* Replace Link with a div since you don't have routes */}
+            <Link to={`/b/${star.board_id}/${star.name}`}>
                 <Box
+                    component="div"
                     sx={{
-                        width: "180px",
-                        height: "100px",
+                        width: "193.88px", // Match the width from the screenshot
+                        height: "96px", // Match the height from the screenshot
                         background: star?.thumbnail
                             ? star?.thumbnail.startsWith("#")
                                 ? star?.thumbnail
                                 : `url(${star?.thumbnail}) center/cover no-repeat`
-                            : "#1693E1", // Màu mặc định nếu không có thumbnail
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
+                            : "#1693E1", // Default color if no thumbnail
+                        borderRadius: "8px", // Slightly rounded corners
                         position: "relative",
+                        cursor: "pointer",
                         transition: "opacity 0.2s ease-in-out",
                         "&:hover": {
-                            opacity: 0.8, // Hiệu ứng hover giống Trello
+                            opacity: 0.9, // Slightly dim on hover, like Trello
+                        },
+                        // Add a subtle overlay for text readability
+                        "&:before": {
+                            content: '""',
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: "rgba(0, 0, 0, 0.2)", // Subtle dark overlay
+                            borderRadius: "8px",
                         },
                     }}
                 >
@@ -72,8 +82,15 @@ const MyStar = ({ star }) => {
                         sx={{
                             color: "white",
                             fontWeight: "bold",
-                            textAlign: "center",
-                            px: 1, // Thêm padding để tránh text bị cắt
+                            fontSize: "14px", // Smaller font size to match Trello
+                            position: "absolute",
+                            top: "8px", // Position in the top-left corner
+                            left: "8px",
+                            textAlign: "left",
+                            maxWidth: "80%", // Prevent text from overflowing
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                         }}
                     >
                         {star?.name}
@@ -87,41 +104,41 @@ const MyStar = ({ star }) => {
                 onClick={handleToggleMarked}
                 sx={{
                     position: "absolute",
-                    bottom: "10px",
-                    right: "6px",
+                    bottom: "8px", // Position in the bottom-right corner
+                    right: "8px",
                     display: "block",
-                    transform: "scale(1)", // Nhỏ lại ban đầu
                     transition: "opacity 0.2s ease-out, transform 0.2s ease-out",
                     cursor: "pointer",
-                    opacity: star?.starred ? 1 : 0, // Nếu đã đánh dấu sao thì luôn hiện
-                    "&:hover": {
-                        opacity: 1, // Hiển thị khi hover
-                        transform: "scale(1.1)", // To lên khi hover
-                    },
+                    opacity: star?.starred ? 1 : 0, // Show star if starred, hide otherwise
+                    "&:hover, &:focus": star?.starred === false // Show star on hover if not starred
+                        ? {
+                            opacity: 1,
+                            transform: "scale(1.1)",
+                        }
+                        : {},
                 }}
             >
                 {star?.starred ? (
                     <StarRoundedIcon
                         sx={{
-                            color: "#F2D600", // Màu vàng khi đã đánh dấu
+                            color: "#F2D600", // Yellow color for starred state
+                            fontSize: "20px", // Smaller size to match Trello
                             transition: "transform 0.3s ease-in-out, color 0.3s ease-in-out",
                             "&:hover": {
                                 transform: "scale(1.1)",
-                                color: "transparent", // Xóa màu nền khi hover
-                                stroke: "#F2D600", // Viền vàng khi hover
-                                strokeWidth: 2,
+                                color: "#F2D600", // Keep yellow on hover
                             },
                         }}
                     />
                 ) : (
                     <StarOutlineRoundedIcon
                         sx={{
-                            color: "white", // Màu trắng khi chưa đánh dấu
-                            strokeWidth: "2", // Viền trắng
+                            color: "white", // White outline for unstarred state
+                            fontSize: "20px", // Smaller size to match Trello
                             transition: "color 0.2s ease-out, transform 0.2s ease-out",
                             "&:hover": {
-                                transform: "scale(1.2)", // To lên khi hover
-                                color: "#F2D600", // Chuyển thành màu vàng khi hover
+                                transform: "scale(1.1)",
+                                color: "#F2D600", // Turn yellow on hover
                             },
                         }}
                     />

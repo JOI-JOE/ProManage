@@ -244,8 +244,6 @@ const Col = ({ column, onArchive }) => {
         setAnchorEl(null);
     };
 
-    //======================================== ALERT ========================================
-
     //======================================== Render========================================
     const cardOrderIds = useMemo(() => localCards.map(card => card.id) || [], [localCards]);
 
@@ -259,8 +257,8 @@ const Col = ({ column, onArchive }) => {
             <Box
                 {...listeners}
                 sx={{
-                    minWidth: "245px",
-                    maxWidth: "245px",
+                    minWidth: "272px",
+                    maxWidth: "272px",
                     backgroundColor: "#dcdde1",
                     ml: 2,
                     borderRadius: "6px",
@@ -271,7 +269,7 @@ const Col = ({ column, onArchive }) => {
                 <Box
                     sx={{
                         height: (theme) => theme.trello.columnFooterHeight,
-                        p: 2,
+                        p: 1,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
@@ -287,7 +285,6 @@ const Col = ({ column, onArchive }) => {
                             variant="outlined"
                             size="bold"
                             sx={{
-                                height: "10px",
                                 width: "200px",
                                 "& .MuiInputBase-input": {
                                     fontSize: "0.765rem",
@@ -295,7 +292,7 @@ const Col = ({ column, onArchive }) => {
                                 },
                                 "& .MuiInputBase-input": {
                                     fontSize: "0.765rem",
-                                    padding: "10px", // Căn chỉnh padding để text không bị lệch
+                                    padding: "5px", // Căn chỉnh padding để text không bị lệch
                                 },
                                 "& .MuiOutlinedInput-root": {
                                     "& fieldset": {

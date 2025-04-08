@@ -10,11 +10,11 @@ import {
   Tooltip,
   Avatar,
   CardActionArea,
+  colors,
+  useTheme,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, useParams, Outlet } from "react-router-dom";
-import GroupIcon from "@mui/icons-material/Group";
-import CommentIcon from "@mui/icons-material/Comment";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import NotesIcon from '@mui/icons-material/Notes';
 import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined"; // Icon checklist
@@ -23,12 +23,10 @@ import { CSS } from "@dnd-kit/utilities";
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-// import { useCardLabels } from "../../../../../hooks/useLabel";
-// import { useCardById, useGetMemberInCard } from "../../../../../hooks/useCard";
-// import { useCommentsByCard } from "../../../../../hooks/useComment";
-// import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
-// import useAttachments from "../../../../../hooks/useAttachment";
-// import { LazyLoadImage } from "react-lazy-load-image-component";
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import { useBoard } from "../../../../../contexts/BoardContext";
+import InitialsAvatar from "../../../../../components/Common/InitialsAvatar";
+import Card_detail from "./Card_detail";
 
 const CardMetaItem = ({ icon, text, tooltip }) => {
   const content = (
@@ -37,7 +35,6 @@ const CardMetaItem = ({ icon, text, tooltip }) => {
         display: "flex",
         alignItems: "center",
         gap: "4px",
-        color: "#637087",
         fontSize: "10px",
       }}
     >
@@ -53,61 +50,60 @@ const CardMetaItem = ({ icon, text, tooltip }) => {
 
 
 const C_ard = ({ card }) => {
-  // const {
-  //   data: cardDetail,
-  //   isLoading,
-  //   error,
-  //   updateDescriptionCard,
-  // } = useCardById(card.id);
-  // const { data: cardLabels = [] } = useCardLabels(card.id);
-  // const { data: comments = [] } = useCommentsByCard(card.id);
-  // console.log(cardDetail);
-  // const { data: checklists = [], isLoadingChecklist } = useChecklistsByCard(
-  //   card.id
-  // );
+  const [open, setOpen] = useState(false);
+  const { members } = useBoard();
 
-  // const { data: members = [], toggleMember } = useGetMemberInCard(card.id);
 
-  // const {
-  //   attachments = [],
-  //   addAttachment,
-  //   updateAttachment,
-  //   removeAttachment,
-  // } = useAttachments(card.id);
+  /// =---------------------------------------------------------------------
+  const [badges, setBadges] = useState({
+    attachments: 0,
+    comments: 0,
+    checkItems: 0,
+    checkItemsChecked: 0,
+    description: false,
+    due: null,
+    dueTime: null,
+    dueComplete: false,
+    dueReminder: null,
+    start: null
+  });
 
-  // const coverImageAttachment = attachments?.data?.find((file) => file.is_cover);
-  // const coverImageBackGround = coverImageAttachment
-  //   ? coverImageAttachment.path_url
-  //   : null;
+  const membersInCard = useMemo(() => {
+    return members.filter(member =>
+      card?.membersId?.includes(member.id)
+    );
+  }, [members, card?.membersId]);
 
-  const [open, setOpen] = useState(false); // State mở/đóng Dialog
-  const navigate = useNavigate(); // Điều hướng URL
-  const location = useLocation(); // Lấy URL hiện tại
-  const { cardId } = useParams();
-
-  // const handleOpen = () => {
-  //   setOpen(true);
-  //   navigate(`c/${card.id}/${card.title.replace(/\s+/g, "-")}`, {
-  //     replace: false,
-  //     state: { background: location.pathname }, // Lưu lại trang trước khi mở modal
-  //   });
-  // };
-
-  const handleClose1 = () => {
-    setOpen(false);
-    const pathSegments = location.pathname.split("/");
-    const newPath = `/${pathSegments[1]}/${pathSegments[2]}/${pathSegments[3]}`;
-    navigate(newPath, { replace: true });
-  };
+  console.log(membersInCard)
 
   useEffect(() => {
-    if (cardId && cardId === String(card.id)) {
-      setOpen(true);
-    } else {
-      setOpen(false); // Đảm bảo tắt khi không có cardId trong URL
+    if (card?.badges) {
+      setBadges({
+        attachments: card.badges.attachments || 0,
+        comments: card.badges.comments || 0,
+        checkItems: card.badges.checkItems || 0,
+        checkItemsChecked: card.badges.checkItemsChecked || 0,
+        description: card.badges.description || false,
+        due: card.badges.due || null,
+        dueTime: card.badges.dueTime || null,
+        dueComplete: card.badges.dueComplete || false,
+        dueReminder: card.badges.dueReminder || null,
+        start: card.badges.start || null
+      });
     }
-  }, [cardId, card.id]);
+  }, [card?.badges]);
+  /// =---------------------------------------------------------------------
 
+  // Mở modal
+  const handleOpenCard = () => {
+    setOpen(true);
+  };
+
+  // Đóng modal
+  const handleCloseCard = () => {
+    setOpen(false);
+  };
+  ///-----------------------------------------------------------------------------------
   const {
     attributes,
     listeners,
@@ -115,7 +111,10 @@ const C_ard = ({ card }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: card.id, data: card }); // Không cần spread object
+  } = useSortable({
+    id: card.id, data: card,
+    disabled: open,
+  });
 
   const cardStyle = {
     transform: transform ? CSS.Translate.toString(transform) : "none",
@@ -123,20 +122,6 @@ const C_ard = ({ card }) => {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  // const showCardActions = () => {
-  //   return (
-  //     // !!card?.memberIds?.length ||
-  //     !!comments?.length ||
-  //     !!attachments?.data?.length ||
-  //     !!cardDetail?.description ||
-  //     !!checklists?.some((checklist) => checklist.items.length > 0) ||
-  //     !!members?.length
-  //   );
-  // };
-
-  // const allChecklistsCompleted = checklists?.every(
-  //   (checklist) => checklist.items?.every((item) => item.is_completed) ?? false
-  // );
 
   return (
     <>
@@ -145,6 +130,7 @@ const C_ard = ({ card }) => {
         style={cardStyle}
         {...attributes}
         {...listeners}
+        onClick={handleOpenCard}
         sx={{
           maxWidth: 260,
           borderRadius: '9px',
@@ -162,7 +148,7 @@ const C_ard = ({ card }) => {
           component="div"
           onClick={(e) => {
             if (!e.defaultPrevented) {
-              handleOpen();
+              handleOpenCard();
             }
           }}
           onMouseDown={(e) => {
@@ -173,32 +159,35 @@ const C_ard = ({ card }) => {
         >
           <CardActionArea>
             {/* Thêm Box wrapper với borderRadius để làm mềm góc ảnh */}
-            {/* <Box
-              sx={{
-                width: '100%',
-                height: '159.828px',
-                overflow: 'hidden',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#f0f0f0',
-                borderTopLeftRadius: '9px', // Thêm bo góc phía trên
-                borderTopRightRadius: '9px', // Thêm bo góc phía trên
-              }}
-            >
-              <LazyLoadImage
-                // src="https://i.pinimg.com/736x/46/72/4b/46724b52751a9bbcbb8343ea6c377850.jpg"
-                alt="Card Cover"
-                effect="blur"
-                style={{
+            {/* {card} */}
+            {card?.thumbnail && (
+              <Box
+                sx={{
                   width: '100%',
-                  height: '100%',
-                  objectFit: 'cover', // Thay đổi từ 'contain' sang 'cover' để đảm bảo ảnh phủ đầy không gian
+                  height: '130px',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#f0f0f0',
                   borderTopLeftRadius: '9px', // Thêm bo góc phía trên
                   borderTopRightRadius: '9px', // Thêm bo góc phía trên
                 }}
-              />
-            </Box> */}
+              >
+                <LazyLoadImage
+                  src={card?.thumbnail}
+                  alt="Card Cover"
+                  effect="blur"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover', // Thay đổi từ 'contain' sang 'cover' để đảm bảo ảnh phủ đầy không gian
+                    borderTopLeftRadius: '9px', // Thêm bo góc phía trên
+                    borderTopRightRadius: '9px', // Thêm bo góc phía trên
+                  }}
+                />
+              </Box>
+            )}
             <CardContent
               sx={{
                 padding: '8px',
@@ -217,7 +206,7 @@ const C_ard = ({ card }) => {
                   gap: 1
                 }}
               >
-                {/* Checklist*/}
+                {/* Checklist và các badges khác */}
                 <Box
                   sx={{
                     display: 'flex',
@@ -226,61 +215,141 @@ const C_ard = ({ card }) => {
                     alignItems: 'center'
                   }}
                 >
-                  <CardMetaItem
-                    icon={<CheckBoxOutlinedIcon sx={{ fontSize: 16 }} />}
-                    text="0/5"
-                    tooltip="Checklist"
-                  />
-                  <CardMetaItem
-                    icon={<AttachmentIcon sx={{ fontSize: 16 }} />}
-                    text="2"
-                    tooltip="Các tệp tin đính kèm"
-                  />
-                  <CardMetaItem
-                    icon={<ChatBubbleOutlineIcon sx={{ fontSize: 14 }} />}
-                    text="5"
-                    tooltip="Bình luận"
-                  />
-                  <CardMetaItem
-                    icon={<NotesIcon sx={{ fontSize: 16 }} />}
-                    text="2"
-                    tooltip="Thẻ đã có mô tả"
-                  />
+                  {/* Due date badge - chỉ hiển thị nếu có ngày hết hạn */}
+                  {badges.due && (
+                    <Box
+                      sx={(theme) => {
+                        const now = new Date();
+                        const due = new Date(badges.due);
+                        const timeDiff = due.getTime() - now.getTime();
+                        const hoursLeft = timeDiff / (1000 * 60 * 60);
+
+                        let bgColor = 'transparent';
+                        let textColor = 'white';
+
+                        if (badges.dueComplete) {
+                          bgColor = theme.alert.success; // xanh đậm từ theme
+                        } else if (due < now) {
+                          bgColor = theme.alert.danger; // đỏ đậm từ theme
+                        } else if (hoursLeft <= 24) {
+                          bgColor = theme.alert.warning; // vàng đậm từ theme
+                        } else {
+                          bgColor = theme.palette.grey[300]; // xám nhạt từ theme
+                          textColor = 'black'
+                        }
+
+                        return {
+                          backgroundColor: bgColor,
+                          color: textColor,
+                          padding: '4px 8px',
+                          borderRadius: '8px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        };
+                      }}
+                    >
+                      <CardMetaItem
+                        icon={<AccessTimeRoundedIcon sx={{ fontSize: 16 }} />}
+                        text={new Date(badges.due).toLocaleDateString('vi-VN', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                        tooltip={`Hạn chót: ${new Date(badges.due).toLocaleDateString('vi-VN', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}`}
+                      />
+                    </Box>
+                  )}
+
+                  {/* Checklist badge */}
+                  {badges.checkItems > 0 && (
+                    <CardMetaItem
+                      icon={<CheckBoxOutlinedIcon sx={{ fontSize: 16 }} />}
+                      text={`${badges.checkItemsChecked}/${badges.checkItems}`}
+                      tooltip="Checklist"
+                    />
+                  )}
+
+                  {/* Attachment badge */}
+                  {badges.attachments > 0 && (
+                    <CardMetaItem
+                      icon={<AttachmentIcon sx={{ fontSize: 16 }} />}
+                      text={badges.attachments.toString()}
+                      tooltip="Các tệp tin đính kèm"
+                    />
+                  )}
+
+                  {/* Comment badge */}
+                  {badges.comments > 0 && (
+                    <CardMetaItem
+                      icon={<ChatBubbleOutlineIcon sx={{ fontSize: 14 }} />}
+                      text={badges.comments.toString()}
+                      tooltip="Bình luận"
+                    />
+                  )}
+
+                  {/* Description badge - chỉ hiển thị nếu có mô tả */}
+                  {badges.description && (
+                    <CardMetaItem
+                      icon={<NotesIcon sx={{ fontSize: 16 }} />}
+                      text=""
+                      tooltip="Thẻ đã có mô tả"
+                    />
+                  )}
                 </Box>
 
-                {/* Member avatars */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "4px",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  {[...Array(5)].map((_, i) => (
-                    <Tooltip title="No name" key={i}>
-                      <Avatar
-                        sx={{
-                          width: 22,
-                          height: 22,
-                          fontSize: "0.6rem",
-                          bgcolor: "primary.main",
-                        }}
-                      >
-                        HA
-                      </Avatar>
-                    </Tooltip>
-                  ))}
-                </Box>
+                {/* Member avatars - bạn cần thay thế bằng dữ liệu thực tế */}
+
+                {membersInCard.length > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "4px",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    {membersInCard.map((member) => (
+                      <Tooltip title={member.name || "Không tên"} key={member.id}>
+                        <InitialsAvatar
+                          key={member.id}
+                          initials={member.initials}
+                          name={member.user_name}
+                          avatarSrc={member.image}
+                        />
+                      </Tooltip>
+                    ))}
+                  </Box>
+                )}
               </Box>
+
             </CardContent>
           </CardActionArea>
         </Box>
       </Card>
-      {/* <Dialog open={open} onClose={handleClose1} fullWidth maxWidth="md">
-        <CardModal card={card} closeDetail={handleClose1} handleClose1={handleClose1} />
-      </Dialog> */}
-      < Outlet />
+      <Dialog
+        open={open}
+        onClose={handleCloseCard}
+        fullWidth
+        maxWidth="md"
+        aria-labelledby="dialog-title"
+        aria-describedby="dialog-description"
+        disableEnforceFocus={false} // giữ focus trong dialog
+        disableEscapeKeyDown={false} // cho phép ESC để đóng
+        hideBackdrop={false} // đảm bảo có backdrop
+      >
+        <Card_detail
+          cardId={card?.id}
+          closeCard={handleCloseCard}
+          openCard={open}
+        />
+        {/* <CardModal
+          cardId={card?.id}
+        /> */}
+      </Dialog>
     </>
   );
 };
