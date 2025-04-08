@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useLogin } from "../../hooks/useUser";
 import GitHubAuth from "./GitHubAuth";
 import GoogleAuth from "./GoogleAuth";
+import anh4 from "../../assets/anh4.jpg";
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -14,8 +15,17 @@ const LoginForm = () => {
     password: "",
     general: "",
   });
+  // Add state to track error timers
+  const [errorTimers, setErrorTimers] = useState({});
 
   const { mutate: login, isLoading } = useLogin();
+
+  // Clear timers on component unmount
+  useEffect(() => {
+    return () => {
+      Object.values(errorTimers).forEach((timer) => clearTimeout(timer));
+    };
+  }, [errorTimers]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,82 +33,115 @@ const LoginForm = () => {
       ...formData,
       [name]: value,
     });
-    setErrors({ ...errors, [name]: "" }); // Clear error when user types
+    setErrors({ ...errors, [name]: "" });
+
+    // Clear the timer for this field if it exists
+    if (errorTimers[name]) {
+      clearTimeout(errorTimers[name]);
+      setErrorTimers((prev) => {
+        const newTimers = { ...prev };
+        delete newTimers[name];
+        return newTimers;
+      });
+    }
   };
 
+  // Function to set errors with timeout
+  const setErrorWithTimeout = (fieldName, errorMessage, duration = 5000) => {
+    // Longer duration for password and authentication errors (15 seconds)
+    const errorDuration =
+      fieldName === "password" ||
+      fieldName === "general" ||
+      fieldName === "email"
+        ? 15000
+        : duration;
+
+    setErrors((prev) => ({ ...prev, [fieldName]: errorMessage }));
+
+    // Clear any existing timer for this field
+    if (errorTimers[fieldName]) {
+      clearTimeout(errorTimers[fieldName]);
+    }
+
+    // Set new timer
+    const timerId = setTimeout(() => {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+      setErrorTimers((prev) => {
+        const newTimers = { ...prev };
+        delete newTimers[fieldName];
+        return newTimers;
+      });
+    }, errorDuration);
+
+    // Store the timer
+    setErrorTimers((prev) => ({ ...prev, [fieldName]: timerId }));
+  };
+
+  // Thay đổi cách quản lý các thông báo lỗi để đảm bảo chúng tồn tại đủ lâu
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Clear previous errors
-    setErrors({ email: "", password: "", general: "" });
-
-    // Basic client-side validation
+    // Kiểm tra validation phía client
     if (!formData.email) {
-      setErrors((prev) => ({ ...prev, email: "Vui lòng nhập email." }));
+      setErrorWithTimeout("email", "Vui lòng nhập email.");
       return;
     }
     if (!formData.password) {
-      setErrors((prev) => ({ ...prev, password: "Vui lòng nhập mật khẩu." }));
+      setErrorWithTimeout("password", "Vui lòng nhập mật khẩu.");
       return;
     }
 
-    // Call the login mutation
+    // Gọi mutation login
     login(formData, {
       onSuccess: (data) => {
-        localStorage.setItem("token", data.token); // Lưu token
-
+        // Xử lý thành công
+        localStorage.setItem("token", data.token);
         if (inviteToken) {
           navigate(`/accept-invite/${inviteToken}`);
         } else {
           navigate("/home");
         }
-
-        // alert("Đăng nhập thành công"); // Thông báo
       },
       onError: (err) => {
         console.error("Lỗi đăng nhập:", err);
 
-        if (err.response) {
-          // Server returned an error (e.g., 400, 401, 500)
-          console.error("Lỗi từ server:", err.response.data);
+        // Đảm bảo lỗi đăng nhập được hiển thị đủ lâu
+        if (err.response && err.response.status === 401) {
+          // Kiểm tra lỗi cụ thể từ server (nếu có)
+          const errorData = err.response.data;
 
-          if (err.response.status === 401) {
-            // Handle 401 (Unauthorized) - likely invalid credentials
-            setErrors((prev) => ({
-              ...prev,
-              general: "Tài khoản hoặc mật khẩu không chính xác.",
-            }));
-          } else if (err.response.status === 422) {
-            // Validation errors
-            const serverErrors = err.response.data.errors;
-            if (serverErrors) {
-              setErrors((prev) => ({
-                ...prev,
-                email: serverErrors.email ? serverErrors.email[0] : "",
-                password: serverErrors.password ? serverErrors.password[0] : "",
-              }));
-            }
+          // Nếu lỗi liên quan đến email không tồn tại
+          if (errorData && errorData.email) {
+            setErrorWithTimeout("email", "Email không tồn tại.");
+          } else if (errorData && errorData.password) {
+            setErrorWithTimeout("password", "Mật khẩu không đúng.");
           } else {
-            // Other server errors
-            setErrors((prev) => ({
-              ...prev,
-              general: "Lỗi đăng nhập. Vui lòng thử lại sau.",
-            }));
+            // Thông báo lỗi chung nếu không xác định được lỗi cụ thể
+            setErrorWithTimeout(
+              "general",
+              "Tài khoản hoặc mật khẩu không chính xác."
+            );
           }
-        } else if (err.request) {
-          // Request was made but no response was received
-          console.error("Lỗi không có response:", err.request);
-          setErrors((prev) => ({
-            ...prev,
-            general: "Lỗi kết nối. Vui lòng kiểm tra internet.",
-          }));
+        } else if (err.response && err.response.status === 422) {
+          // Xử lý lỗi validation
+          const validationErrors = err.response.data.errors;
+          if (validationErrors) {
+            if (validationErrors.email) {
+              setErrorWithTimeout("email", validationErrors.email[0]);
+            }
+            if (validationErrors.password) {
+              setErrorWithTimeout("password", validationErrors.password[0]);
+            }
+          }
+        } else if (err.response && err.response.status === 404) {
+          // Lỗi email không tồn tại
+          setErrorWithTimeout("email", "Email không tồn tại trong hệ thống.");
         } else {
-          // Something happened in setting up the request that triggered an Error
-          console.error("Lỗi khác:", err.message);
-          setErrors((prev) => ({
-            ...prev,
-            general: "Lỗi đăng nhập. Vui lòng thử lại sau.",
-          }));
+          // Xử lý các lỗi khác
+          setErrorWithTimeout(
+            "general",
+            "Có lỗi xảy ra. Vui lòng thử lại sau."
+          );
         }
       },
     });
@@ -108,89 +151,141 @@ const LoginForm = () => {
     <section
       className="min-h-screen flex items-center justify-center bg-cover bg-center"
       style={{
-        backgroundImage:
-          "linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('https://i.pinimg.com/736x/64/38/b3/6438b38a762d52d83727aef56fc75863.jpg')",
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("${anh4}")`,
       }}
     >
-      <div className="w-full max-w-[400px] rounded-lg p-8 text-center shadow-lg bg-white bg-opacity-90">
-        <h3 className="mb-8 text-center text-base font-semibold text-black">
-          Đăng nhập vào tài khoản
-        </h3>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
+      <div className="w-full max-w-xs rounded-lg p-6 shadow-lg bg-white bg-opacity-95">
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-gray-800">Đăng nhập</h2>
+          <p className="text-sm text-gray-600 mt-1">Đăng nhập để tiếp tục</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-xs font-medium text-gray-700 mb-1 ml-1"
+            >
+              Email
+            </label>
             <input
+              id="email"
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Email"
-              className={`w-full rounded-md border bg-[#FCFDFE] h-[40px] px-5 text-sm text-body-color placeholder-[#ACB6BE] outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-50 transition ${
+              placeholder="Nhập email"
+              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
                 errors.email ? "border-red-500" : "border-gray-300"
               }`}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+              <p className="text-red-500 text-xs mt-1 ml-1">{errors.email}</p>
             )}
           </div>
 
-          <div className="mb-4">
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label
+                htmlFor="password"
+                className="block text-xs font-medium text-gray-700 ml-1"
+              >
+                Mật khẩu
+              </label>
+              <button
+                type="button"
+                onClick={() => navigate("/forgort-password")}
+                className="text-xs text-teal-600 hover:text-teal-800 transition"
+              >
+                Quên mật khẩu?
+              </button>
+            </div>
             <input
+              id="password"
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Password"
-              className={`w-full rounded-md border bg-[#FCFDFE] h-[40px] px-5 text-sm text-body-color placeholder-[#ACB6BE] outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-50 transition ${
+              placeholder="Nhập mật khẩu"
+              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
                 errors.password ? "border-red-500" : "border-gray-300"
               }`}
             />
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              <p className="text-red-500 text-xs mt-1 ml-1">
+                {errors.password}
+              </p>
             )}
           </div>
 
           {errors.general && (
-            <p className="text-red-500 text-sm mb-4">{errors.general}</p>
+            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-xs">
+              {errors.general}
+            </div>
           )}
 
           <button
             type="submit"
-            className="w-full bg-teal-500 text-white text-sm h-[40px] rounded-md hover:bg-teal-600 transition disabled:opacity-50"
+            className="w-full bg-teal-600 text-white font-medium py-2 px-4 text-sm rounded hover:bg-teal-700 transition shadow-sm disabled:opacity-50"
             disabled={isLoading}
           >
-            {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-3 w-3 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Đang xử lý...
+              </span>
+            ) : (
+              "Đăng nhập"
+            )}
           </button>
         </form>
 
-        <p className="text-center mt-3 text-sm">
-          <button
-            onClick={() => navigate("/forgort-password")}
-            className="text-teal-500  hover:text-teal-700 transition"
-          >
-            Quên mật khẩu?
-          </button>
-        </p>
-
-        <p className="text-center mt-3 text-sm">
-          <button
-            onClick={() => navigate("/register")}
-            className="text-teal-500  hover:text-teal-700 transition"
-          >
-            Đăng ký tài khoản
-          </button>
-        </p>
-
-        <p className="text-center mt-3 pb-3 text-gray-600 text-sm">
-          Hoặc đăng nhập bằng
-        </p>
-        <div className="flex items-center justify-center gap-4">
-          <div className="text-sm">
-            <GitHubAuth showText={false} />
+        <div className="mt-6">
+          <div className="relative flex items-center justify-center">
+            <div className="border-t w-full border-gray-300"></div>
+            <div className="absolute bg-white px-2 text-xs text-gray-500">
+              hoặc
+            </div>
           </div>
-          <div className="text-sm">
-            <GoogleAuth showText={false} />
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="flex justify-center">
+              <GitHubAuth showText={false} />
+            </div>
+            <div className="flex justify-center">
+              <GoogleAuth showText={false} />
+            </div>
           </div>
         </div>
+
+        <p className="text-center mt-4 text-xs text-gray-600">
+          Chưa có tài khoản?{" "}
+          <button
+            onClick={() => navigate("/register")}
+            className="text-teal-600 font-medium hover:text-teal-800 transition"
+          >
+            Đăng ký
+          </button>
+        </p>
       </div>
     </section>
   );
