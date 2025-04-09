@@ -79,7 +79,7 @@ const router = createBrowserRouter([
           {
             path: "b/:boardId/:name",
             element: <BoardContent />,
-            children: [{ path: "c/:cardId/:title", element: <CardModal /> }],
+            children: [{ path: "c/:cardId", element: <CardModal /> }],
           },
           { path: "w/:workspaceName", element: <Board /> },
           { path: "w/:workspaceName/members", element: <Member /> },

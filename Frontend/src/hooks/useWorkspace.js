@@ -7,6 +7,7 @@ import {
   getWorkspaceById,
   getBoardMarkedByWorkspace,
   getGuestWorkspace,
+  getUserWorkspaces,
 } from "../api/models/workspacesApi";
 
 /**
@@ -108,5 +109,15 @@ export const useUpdateInforWorkspace = () => {
     onError: (error) => {
       console.error("Lỗi khi cập nhật workspace:", error);
     },
+  });
+};
+
+export const useGetUserWorkspaces = () => {
+  return useQuery({
+    queryKey: ['userWorkspaces'], // Key để cache dữ liệu
+    queryFn: getUserWorkspaces,
+    staleTime: 1000 * 60 * 5, // Dữ liệu sẽ hết hạn sau 5 phút
+    cacheTime: 1000 * 60 * 30, // Dữ liệu sẽ được cache trong 30 phút
+    retry: 2, // Thử lại 2 lần nếu có lỗi
   });
 };

@@ -20,7 +20,7 @@ const BoardDetail = () => {
 
 
   const currentUserId = user?.id;
-  console.log(boardMembers);
+  // console.log(boardMembers);
 
   const isMember = Array.isArray(boardMembers?.data)
     ? boardMembers.data.some(member =>

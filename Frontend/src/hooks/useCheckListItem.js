@@ -120,7 +120,7 @@ export const useDeleteCheckListItem = () => {
             // Làm mới dữ liệu sau cùng
             // queryClient.invalidateQueries({ queryKey: ["checklistItems", checklist_id], exact: true });
             queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+            // queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
     });
 };

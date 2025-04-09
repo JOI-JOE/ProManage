@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createBoard,
+  fetchBoardDetails,
   getBoardById,
   getBoardClosed,
   getBoardMarked,
@@ -65,11 +66,19 @@ export const useGetBoardByID = (boardId) => {
         console.log("🔄 Nhận sự kiện BoardStatusUpdated:", event);
 
         // queryClient.invalidateQueries({ queryKey: ["checklist-item-members", itemId]});
-        queryClient.invalidateQueries({queryKey:["boards"]});
+        queryClient.invalidateQueries({queryKey:["boards", boardId]});
+        // queryClient.invalidateQueries(["boards"]);
+
+    });
+
+    channel.listen(".BoardUpdatedName", (data) => {
+      console.log("📡 Board name updated: ", data);
+      queryClient.invalidateQueries(["boards", boardId]); // Cập nhật dữ liệu
     });
 
     return () => {
         channel.stopListening(".BoardStatusUpdated");
+        channel.stopListening(".BoardUpdatedName");
         echoInstance.leave(`boards.${boardId}`);
     };
 }, [boardId, queryClient]);
@@ -151,6 +160,7 @@ export const useUpdateBoardName = () => {
 
       // queryClient.invalidateQueries({ queryKey: ["boards", currentWorkspace.id], exact: true });
       queryClient.invalidateQueries(["boards"]);
+      
       // queryClient.invalidateQueries({ queryKey: ["boardDetail", boardId], exact: true });
     },
     onError: (error) => {
@@ -295,6 +305,13 @@ export const useClosedBoards = () => {
 };
 
 
+export const useBoardDetails = (boardId) => {
+  return useQuery({
+    queryKey: ["boardDetails", boardId],
+    queryFn: () => fetchBoardDetails(boardId),
+    enabled: !!boardId, // chỉ fetch khi có boardId
+  });
+};
 
 
 

@@ -64,3 +64,8 @@ export const updateWorkspaceInfo = async (id, data) => {
       return Promise.reject(error);
     });
 };
+
+export const getUserWorkspaces = async () => {
+  const response = await authClient.get('/workspaces/all');
+  return response.data;
+};

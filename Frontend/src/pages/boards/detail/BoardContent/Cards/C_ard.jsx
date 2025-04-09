@@ -18,10 +18,12 @@ import AttachmentIcon from "@mui/icons-material/Attachment";
 import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined"; // Icon checklist
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // Icon khi hoàn thành
 import DescriptionIcon from "@mui/icons-material/Description";
 import CardModal from "../ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import { useCardLabels } from "../../../../../hooks/useLabel";
-import { useCardById, useGetMemberInCard } from "../../../../../hooks/useCard";
+import { useCardById, useGetMemberInCard, useToggleCardCompletion } from "../../../../../hooks/useCard";
 import { useCommentsByCard } from "../../../../../hooks/useComment";
 import { useChecklistsByCard } from "../../../../../hooks/useCheckList";
 import useAttachments from "../../../../../hooks/useAttachment";
@@ -40,6 +42,8 @@ const C_ard = ({ card }) => {
   const { data: checklists = [], isLoadingChecklist } = useChecklistsByCard(
     card.id
   );
+  const toggleCompletion = useToggleCardCompletion();
+
 
   const { data: members = [], toggleMember } = useGetMemberInCard(card.id);
 
@@ -62,7 +66,7 @@ const C_ard = ({ card }) => {
 
   const handleOpen = () => {
     setOpen(true);
-    navigate(`c/${card.id}/${card.title.replace(/\s+/g, "-")}`, {
+    navigate(`c/${card.id}`, {
       replace: false,
       state: { background: location.pathname }, // Lưu lại trang trước khi mở modal
     });
@@ -107,11 +111,11 @@ const C_ard = ({ card }) => {
   const showCardActions = () => {
     return (
       // !!card?.memberIds?.length ||
+      !!members?.data?.length || // Kiểm tra nếu có thành viên
       !!comments?.length ||
       !!attachments?.data?.length ||
       !!cardDetail?.description ||
-      !!checklists?.some((checklist) => checklist.items.length > 0) ||
-      !!members?.length
+      !!checklists?.some((checklist) => checklist.items.length > 0)
     );
   };
 
@@ -134,11 +138,12 @@ const C_ard = ({ card }) => {
           overflow: "unset",
           display: card?.FE_PlaceholderCard ? "none" : "block",
           border: "1px solid transparent",
-          transition: "border 0.2s ease-in-out, box-shadow 0.2s ease-in-out", // Thêm transition
+          transition: "border 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
           ":hover": {
-            border: "1px solid #0079bf", // Border màu xanh khi hover (giống Trello)
+            border: "1px solid #0079bf",
+            "& .checkbox-wrapper": { opacity: 1, transform: "translateX(0px)" }, // Khi hover, hiển thị checkbox
+            "& .card-title": { transform: "translateX(12px)" }, // Đẩy tiêu đề sang phải
           },
-          // height: "110px"
         }}
       >
 
@@ -180,9 +185,37 @@ const C_ard = ({ card }) => {
             </Box>
           )}
 
-          <Typography sx={{ fontSize: "0.7rem" }}>
-            {cardDetail?.title}
-          </Typography>
+          {/* display="flex" alignItems="center"  */}
+          <Box display="flex" alignItems="center" gap={1} onClick={(e) => e.stopPropagation()}>
+            {/* Checkbox hoàn thành */}
+            <Tooltip title={cardDetail?.is_completed ? "Đánh dấu chưa hoàn tất" : "Đánh dấu hoàn tất"}>
+              {cardDetail?.is_completed ? (
+                <CheckCircleIcon
+                  sx={{ color: "green", fontSize: 18, cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCompletion.mutate(cardDetail?.id);
+                  }}
+                />
+              ) : (
+                <RadioButtonUncheckedIcon
+                  sx={{ fontSize: 18, cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCompletion.mutate(cardDetail?.id);
+                  }}
+                />
+              )}
+            </Tooltip>
+
+            {/* Tiêu đề của Card */}
+            <Typography sx={{ fontSize: "0.7rem" }}>
+              {cardDetail?.title}
+            </Typography>
+          </Box>
+
+
+
         </CardContent>
         {showCardActions() && (
           <CardActions
@@ -299,7 +332,10 @@ const C_ard = ({ card }) => {
                     </Box>
                   </Tooltip>
                 )}
+
+
             </Box>
+
             {Array.isArray(members?.data) && members.data.length > 0 && (
               <Box
                 sx={{
@@ -327,8 +363,8 @@ const C_ard = ({ card }) => {
                 ))}
               </Box>
             )}
-
           </CardActions>
+
 
         )}
       </Card>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\AttachmentDeletedWithActivity;
 use App\Events\AttachmentUploaded;
+use App\Events\CoverImageUpdated;
+use App\Events\FileNameUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
 use App\Models\Card;
@@ -200,6 +202,8 @@ class AttachmentController extends Controller
                 }
             });
 
+            broadcast(new CoverImageUpdated($attachment->fresh()))->toOthers();
+
             return response()->json([
                 'message' => $attachment->is_cover ? 'Cập nhật ảnh bìa thành công!' : 'Đã bỏ ảnh bìa!',
                 'status' => true,
@@ -241,6 +245,8 @@ class AttachmentController extends Controller
             // Cập nhật tên file
             $attachment->file_name_defaut = $validatedData['file_name_defaut'];
             $attachment->save();
+
+            broadcast(new FileNameUpdated($attachment))->toOthers();
 
             return response()->json([
                 'message' => 'Cập nhật tên tệp thành công',

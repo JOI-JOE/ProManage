@@ -60,50 +60,6 @@ class Card extends Model
         return $this->belongsTo(ListBoard::class, 'list_board_id');
     }
 
-    // /**
-    //  * Tùy chỉnh mô tả log hoạt động.
-    //  */
-
-    // public function tapActivity(Activity $activity, string $eventName,)
-    // //      $activity: Đối tượng Activity, chứa dữ liệu log.
-    // // $eventName: Chuỗi mô tả sự kiện, như created, updated, deleted, restored
-    // {
-    //     $memberName = $activity->properties['member_name'] ?? '';
-
-    //     $activity->description = $this->getCustomDescription($eventName, $memberName); // lấy mô tả chi tiết về sự kiện
-    //     $activity->properties = [
-    //         'old' => $activity->changes['old'] ?? [], // giá trị cũ
-    //         'new' => $activity->changes['attributes'] ?? [], // giá trị mới
-    //     ];
-    // }
-    // public function getCustomDescription(string $eventName, string $memberName = ""): string
-    // {
-    //     $user = optional(auth()->user())->user_name ?? 'Ai đó';
-
-    //     switch ($eventName) {
-    //         case 'created':
-    //             return "$user đã tạo thẻ '{$this->title}'.";
-    //         case 'updated_name':
-    //             return "$user đã cập nhật tên thẻ thành '{$this->title}'.";
-    //         case 'updated_description':
-    //             return "$user đã cập nhật mô tả của thẻ '{$this->title}'.";
-    //         case 'updated_datetime':
-    //             $startDate = $this->start_date ?? 'chưa xác định';
-    //             $endDate = $this->end_date ?? 'chưa xác định';
-    //             $endTime = $this->end_time ?? 'chưa xác định';
-    //             return "$user đã cập nhật ngày bắt đầu: '$startDate', ngày kết thúc: '$endDate', giờ kết thúc: '$endTime' cho thẻ '{$this->title}'.";
-    //         case 'deleted':
-    //             return "$user đã xóa thẻ '{$this->title}'.";
-    //         case 'restored':
-    //             return "$user đã khôi phục thẻ '{$this->title}'.";
-    //         case 'added_member':
-    //             return "$user đã thêm '$memberName' vào thẻ '{$this->title}'.";
-    //         case 'removed_member':
-    //             return "$user đã xóa '$memberName' khỏi thẻ '{$this->title}'.";
-    //         default:
-    //             return "$user đã $eventName thẻ '{$this->title}'.";
-    //     }
-    // }
 
    /////  Quốc đã sửa tên function này từ members thành users để lầm được đính kèm(chiều ngày 18/3)
     public function users()
@@ -135,5 +91,10 @@ class Card extends Model
     public function board()
     {
         return $this->belongsTo(Board::class);
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(Attachment::class, 'card_id');
     }
 }

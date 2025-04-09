@@ -40,7 +40,7 @@ class ReminderNotificationCard extends Notification implements ShouldQueue
             ->line("Bạn có một công việc cần hoàn thành:")
             ->line("**📌 Thẻ: {$this->card->title}**")
             ->line("⏳ Hạn chót: {$deadline}")
-            ->action('Xem chi tiết', "http://localhost:5173/b/{$this->card->list->board->id}/{$this->card->list->board->name}/c/{$this->card->id}/{$this->card->title}") // Thêm nút xem thẻ
+            ->action('Xem chi tiết', "http://localhost:5173/b/{$this->card->list->board->id}/{$this->card->list->board->name}/c/{$this->card->id}") // Thêm nút xem thẻ
             ->line("Vui lòng kiểm tra ngay để không bỏ lỡ!");
     }
 

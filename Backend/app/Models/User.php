@@ -145,6 +145,13 @@ class User extends Authenticatable
             ->withPivot('member_type'); // Nếu có cột role
     }
 
+    public function guestWorkspaces()
+    {
+        return Workspace::whereHas('boards.boardMembers', function ($query) {
+            $query->where('user_id', $this->id);
+        })->where('id_member_creator', '!=', $this->id);
+    }
+
 
     // Quan hệ để lấy Guest Workspaces
     //    / Trong User.php

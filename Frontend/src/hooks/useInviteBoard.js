@@ -34,7 +34,7 @@ export const useGetBoardMembers = (boardId) => {
     channel.listen(".BoardUpdateRole", (data) => {
       // console.log('Realtime archive changed: ', boardId);
 
-      queryClient.invalidateQueries({ queryKey: ["boardMembers", boardId], exact: true });
+      queryClient.invalidateQueries(["boardMembers"]);
 
     });
 

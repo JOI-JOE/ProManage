@@ -18,11 +18,11 @@ export const useLabels = (boardId) => {
         // console.log(`📡 Đang lắng nghe kênh: board.${boardId}`);
 
         channel.listen(".label.created", (event) => {
-            console.log("📡 Nhận sự kiện Label Created:", event);
+            // console.log("📡 Nhận sự kiện Label Created:", event);
 
-            queryClient.setQueryData(["labels", boardId], (oldData) => {
-                return oldData ? [...oldData, event.label] : [event.label];
-            });
+            // queryClient.setQueryData(["labels", boardId], (oldData) => {
+            //     return oldData ? [...oldData, event.label] : [event.label];
+            // });
 
             // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
             queryClient.invalidateQueries({ queryKey: ["labels", boardId], exact: true });
@@ -151,7 +151,7 @@ export const useUpdateCardLabel = () => {
 
         onSuccess: (_, { cardId, labelId, action, boardId }) => {
             // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] })
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+            // queryClient.invalidateQueries({ queryKey: ["lists"] });
             queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId], exact: true });
 
         },
@@ -166,7 +166,7 @@ export const useUpdateLabelName = () => {
         onSuccess: (_, { boardId }) => {
             // Invalidate lại dữ liệu để cập nhật UI
             queryClient.invalidateQueries({ queryKey: ["labels", boardId], exact: true });
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+            // queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi cập nhật tên nhãn:", error.response?.data || error.message);
@@ -181,7 +181,7 @@ export const useDeleteLabelByBoard = () => {
         mutationFn: ({ labelId }) => deleteLabelByBoard(labelId),
         onSuccess: (_, variables) => {
             const { boardId, cardId } = variables || {};
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+            // queryClient.invalidateQueries({ queryKey: ["lists"] });
 
             if (boardId) {
                 queryClient.invalidateQueries({ queryKey: ["labels", boardId], exact: true });
