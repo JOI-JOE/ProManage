@@ -29,7 +29,7 @@ export const useCommentsByCard = (card_id) => {
 
                     // Gọi API lại để lấy thông tin đầy đủ của comment
                     await queryClient.invalidateQueries({ queryKey: ["comments", card_id] });
-                    queryClient.invalidateQueries({ queryKey: ["lists"] });
+                    // queryClient.invalidateQueries({ queryKey: ["lists"] });
                     return;
                 }
 
@@ -53,7 +53,7 @@ export const useCommentsByCard = (card_id) => {
                 return oldData ? oldData.filter(comment => comment.id !== event.commentId) : [];
             });
 
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+         
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
     
         });
@@ -95,7 +95,7 @@ export const useCreateComment = () => {
         onSuccess: (newComment, { card_id }) => {
             // Sau khi comment thành công, tự động invalidate để lấy danh sách comments mới và cập nhật lists
             queryClient.invalidateQueries({ queryKey: ["comments", card_id], exact: true });
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+            // queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
 
         onError: (error) => {
@@ -117,7 +117,7 @@ export const useDeleteComment = () => {
             console.log(`✅ Bình luận ${commentId} đã được xóa thành công!`);
             // Invalidate để cập nhật danh sách comments và danh sách lists nếu có ảnh hưởng
             queryClient.invalidateQueries({ queryKey: ["comments"], exact: false });
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+            // queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
 
         onError: (error) => {
@@ -134,7 +134,7 @@ export const useUpdateComment = () => {
         onSuccess: (_, variables) => {
             console.log(`✅ Đã cập nhật bình luận ${variables.commentId} thành công!`);
             queryClient.invalidateQueries({ queryKey: ["comments"], exact: false });
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+            // queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
         onError: (error) => {
             console.error("❌ Lỗi khi chỉnh sửa bình luận:", error);

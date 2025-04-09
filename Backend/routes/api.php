@@ -2,6 +2,7 @@
 
 
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkspaceInvitationsController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Api\AttachmentController;
@@ -54,6 +55,10 @@ Route::middleware(['web'])->group(function () {
         Route::get('/auth/callback/google', 'handleProviderCallback');
     });
 });
+
+// Route::middleware('auth:sanctum')->get('/user/hierarchy', [UserController::class, 'getUserHierarchy']);
+Route::middleware('auth:sanctum')->get('/workspaces/all', [WorkspaceController::class, 'getUserWorkspaces']);
+
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
 Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
@@ -155,12 +160,13 @@ Route::delete('/boards/{boardId}', [BoardController::class, 'toggleBoardClosed']
 Route::get('/boards', [BoardController::class, 'index']);
 
 
-
+Route::get('/boards/{board}/details', [BoardController::class, 'getBoardDetails']);
 Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
 Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
 
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
+
 
 Route::prefix('boards/{id}/')->group(function () {
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
@@ -215,7 +221,10 @@ Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
     Route::get('/boards/{boardId}/archived', [CardController::class, 'getArchivedCardsByBoard']);
     Route::patch('/{id}/toggle-archive', [CardController::class, 'toggleArchive']);
     Route::delete('/{id}/delete', [CardController::class, 'delete']);
+    Route::patch('/{id}/toggle-complete', [CardController::class, 'toggleComplete']);
 
+    Route::post('/copy', [CardController::class, 'copyCard']);
+    Route::post('/move', [CardController::class, 'moveCard']);
     Route::get('/{id}/show', [CardController::class, 'show']);
     Route::patch('/{cardID}/description', [CardController::class, 'updateDescription']);
     Route::post('/', [CardController::class, 'store']);

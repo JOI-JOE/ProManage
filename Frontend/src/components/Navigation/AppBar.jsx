@@ -120,7 +120,7 @@ const AppBar = ({ username, email }) => {
           cardTitle: notif.data.card_title,
           boardName: notif.data.board_name,
           listName: notif.data.list_name,
-          cardUrl: `/b/${notif.data.board_id}/${notif.data.board_name}/c/${notif.data.card_id}/${notif.data.card_title}`,
+          cardUrl: `/b/${notif.data.board_id}/${notif.data.board_name}/c/${notif.data.card_id}`,
           notifications: [],
         };
       }

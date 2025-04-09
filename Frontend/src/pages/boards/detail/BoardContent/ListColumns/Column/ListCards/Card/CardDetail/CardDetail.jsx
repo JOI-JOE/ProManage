@@ -49,6 +49,7 @@ import ChecklistIcon from "@mui/icons-material/Checklist";
 import EventIcon from "@mui/icons-material/Event";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import MoveUpIcon from "@mui/icons-material/MoveUp";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import SpeakerGroupIcon from "@mui/icons-material/SpeakerGroup";
 import ArchiveIcon from "@mui/icons-material/Archive";
@@ -62,6 +63,7 @@ import {
   useCardById,
   useCardSchedule,
   useGetMemberInCard,
+  useToggleCardCompletion,
   useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
 import {
@@ -95,6 +97,7 @@ import dayjs from "dayjs";
 import LinkIcon from "@mui/icons-material/Link";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import { AccessTime, ArrowBack } from "@mui/icons-material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // Icon khi hoàn thành
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useActivityByCardId } from "../../../../../../../../../hooks/useActivity.js";
 import { useStateContext } from "../../../../../../../../../contexts/ContextProvider.jsx";
@@ -105,10 +108,10 @@ import useAttachments from "../../../../../../../../../hooks/useAttachment.js";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import InputAdornment from "@mui/material/InputAdornment";
+import { useGetBoardByID } from "../../../../../../../../../hooks/useBoard.js";
 
-const CardModal = ({ closeDetail  }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const { cardId, title } = useParams();
+const CardModal = ({ }) => {
+  const { cardId, boardId } = useParams();
   const { data: schedule } = useCardSchedule(cardId);
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
@@ -117,7 +120,7 @@ const CardModal = ({ closeDetail  }) => {
   const [comment, setComment] = useState("");
   const [isEditingComment, setIsEditingComment] = useState(false);
   // const [setComments] = useState([]);
-  const { data: cardLabels = [] } = useCardLabels(cardId, { enabled: isModalOpen });
+  const { data: cardLabels = [] } = useCardLabels(cardId);
   const [labels, setLabels] = useState([]);
 
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
@@ -134,11 +137,15 @@ const CardModal = ({ closeDetail  }) => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [cardName, setCardName] = useState(title);
-  const [previousCardName, setPreviousCardName] = useState(title);
+
   const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+
+  const { data: board } = useGetBoardByID(boardId);
+
+
+  const isBoardClosed = board?.closed;
 
   const [checklistItems, setChecklistItems] = useState([]);
   const [newItem, setNewItem] = useState("");
@@ -209,12 +216,30 @@ const CardModal = ({ closeDetail  }) => {
   const { mutate: updateCheckListItemName } = useUpdateCheckListItemName();
   const { mutate: deleteItem } = useDeleteCheckListItem();
   const { mutate: toggleCheckListItemMember } = useToggleCheckListItemMember();
+  const [isCompleted, setIsCompleted] = useState(cardDetail?.is_completed);
+  // console.log(cardDetail.is_completed);
+  const [cardName, setCardName] = useState(cardDetail?.title);
+  const [previousCardName, setPreviousCardName] = useState(cardDetail?.title);
+
 
   const {
     data: activities = [],
     isLoadingActivity,
     errorActivity,
   } = useActivityByCardId(cardId);
+
+  const toggleCompletion = useToggleCardCompletion();
+
+
+  const handleToggle = () => {
+    toggleCompletion.mutate(cardId, {
+      onSuccess: () => {
+        setIsCompleted((prev) => !prev);
+      },
+    });
+  };
+
+
 
   // console.log(activities);
 
@@ -285,7 +310,7 @@ const CardModal = ({ closeDetail  }) => {
   // if (listError) return <Box>Error: {error.message}</Box>;
 
   const handleArchiveCard = (cardId) => {
-    archiveCard(cardId);
+    archiveCard(cardId); // Truyền cả cardId và boardId
     navigate(-1);
   };
 
@@ -377,11 +402,11 @@ const CardModal = ({ closeDetail  }) => {
     // Tìm trạng thái hiện tại để rollback sau nếu lỗi
 
     // Optimistic update: cập nhật UI trước
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, is_completed: !item.is_completed } : item
-      )
-    );
+    // setItems((prevItems) =>
+    //   prevItems.map((item) =>
+    //     item.id === id ? { ...item, is_completed: !item.is_completed } : item
+    //   )
+    // );
 
     // Gọi API
     toggleItemStatus(
@@ -606,26 +631,26 @@ const CardModal = ({ closeDetail  }) => {
 
   const handleOpen = (imageUrl) => {
     // console.log(imageUrl);
-    
-    // Trích xuất phần mở rộng tệp từ URL
-  const fileExt = imageUrl.match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase();
-  const imageTypes = ["jpg", "jpeg", "png", "webp"]; // Danh sách định dạng ảnh
 
-  if (imageTypes.includes(fileExt)) {
-    // Nếu là ảnh, hiển thị trong dialog
-    setSelectedImage(imageUrl);
-    setOpen(true);
-  } else if( fileExt === "pdf" ){
-    window.open(imageUrl, "_blank", "noopener,noreferrer");
-  } else {
-    // Nếu không phải ảnh (Word, Excel,...), tải về máy
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = imageUrl.split("/").pop() || "file"; // Lấy tên tệp từ URL hoặc đặt mặc định
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+    // Trích xuất phần mở rộng tệp từ URL
+    const fileExt = imageUrl.match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase();
+    const imageTypes = ["jpg", "jpeg", "png", "webp"]; // Danh sách định dạng ảnh
+
+    if (imageTypes.includes(fileExt)) {
+      // Nếu là ảnh, hiển thị trong dialog
+      setSelectedImage(imageUrl);
+      setOpen(true);
+    } else if (fileExt === "pdf") {
+      window.open(imageUrl, "_blank", "noopener,noreferrer");
+    } else {
+      // Nếu không phải ảnh (Word, Excel,...), tải về máy
+      const link = document.createElement("a");
+      link.href = imageUrl;
+      link.download = imageUrl.split("/").pop() || "file"; // Lấy tên tệp từ URL hoặc đặt mặc định
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   // Hàm đóng modal
@@ -750,8 +775,8 @@ const CardModal = ({ closeDetail  }) => {
 
   const handleSave1 = () => {
     if (!editedDisplayText.trim()) return; // Không cho phép tên trống
-    updateAttachment({cardId, attachmentId: editingLinkId, newFileName: editedDisplayText});
-    
+    updateAttachment({ cardId, attachmentId: editingLinkId, newFileName: editedDisplayText });
+
   };
 
 
@@ -895,13 +920,27 @@ const CardModal = ({ closeDetail  }) => {
               }}
             />
           ) : (
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              onClick={handleNameClick}
-            >
-              {cardDetail?.title}
-            </Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              {cardDetail?.is_completed ? (
+                <CheckCircleIcon
+                  onClick={handleToggle}
+                  sx={{ cursor: "pointer", color: "green" }} // Màu xanh khi hoàn thành
+                />
+              ) : (
+                <RadioButtonUncheckedIcon
+                  onClick={handleToggle}
+                  sx={{ cursor: "pointer" }} // Con trỏ chuột chỉ ra có thể click
+                />
+              )}
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                onClick={handleNameClick}
+              // sx={{ textDecoration: cardDetail?.is_completed ? "line-through" : "none" }}
+              >
+                {cardDetail?.title}
+              </Typography>
+            </Box>
           )}
           <Typography variant="body2" color="text.secondary">
             trong danh sách{" "}
@@ -932,7 +971,8 @@ const CardModal = ({ closeDetail  }) => {
                 ))}
 
                 {/* Nút thêm thành viên */}
-                {members?.data?.length > 0 && (
+                {members?.data?.length > 0  && (
+                  
                   <AddIcon
                     sx={{
                       fontSize: 14,
@@ -940,6 +980,7 @@ const CardModal = ({ closeDetail  }) => {
                       cursor: "pointer",
                       mr: 1,
                       "&:hover": { color: "black" },
+                      pointerEvents: isBoardClosed ? "none" : "auto" 
                     }}
                     onClick={() =>
                       setMemberListConfig({
@@ -948,6 +989,8 @@ const CardModal = ({ closeDetail  }) => {
                         targetId: cardId,
                       })
                     }
+                    disabled={isBoardClosed}
+                   
                   />
                 )}
 
@@ -965,7 +1008,8 @@ const CardModal = ({ closeDetail  }) => {
                       width: "fit-content",
                       maxWidth: "100%",
                     }}
-                    onClick={() => setIsLabelListOpen(true)}
+                    // onClick={() => setIsLabelListOpen(true)}
+                    
                   >
                     {label.title}
                   </Button>
@@ -980,8 +1024,10 @@ const CardModal = ({ closeDetail  }) => {
                       cursor: "pointer",
                       mr: 1,
                       "&:hover": { color: "black" },
+                      pointerEvents: isBoardClosed ? "none" : "auto" 
                     }}
                     onClick={() => setIsLabelListOpen(true)}
+                    disabled={isBoardClosed}
                   />
                 )}
               </>
@@ -1068,7 +1114,19 @@ const CardModal = ({ closeDetail  }) => {
                   sx={{ fontSize: 12, height: 22 }}
                 />
               )}
-              <ArrowDropDownIcon />
+              {!isBoardClosed && (
+                <ArrowDropDownIcon
+                  sx={{ cursor: "pointer" }}
+                  onClick={() => {
+                    setDateConfig({
+                      open: true,
+                      type: "card",
+                      targetId: cardId,
+                    });
+                  }}
+                />
+              )}
+
             </Box>
           </>
         )}
@@ -1197,6 +1255,7 @@ const CardModal = ({ closeDetail  }) => {
               )}
 
               {/* ĐÍNH KÈM */}
+              {/* // Sử dụng biến isBoardClosed hiện có */}
               <Box sx={{ mt: "30px", pl: "5" }}>
                 {attachments?.data?.length > 0 && (
                   <Box
@@ -1215,21 +1274,21 @@ const CardModal = ({ closeDetail  }) => {
                         alignItems: "center",
                       }}
                     >
-                      <AttachmentIcon sx={{ marginRight: "8px" }} /> Các tập tin
-                      đính kèm
+                      <AttachmentIcon sx={{ marginRight: "8px" }} /> Các tập tin đính kèm
                     </Typography>
 
-                    <Button onClick={() => setIsAttachmentModalOpen(true)}>
-                      Thêm
-                    </Button>
+                    {/* Chỉ hiển thị nút Thêm khi bảng chưa đóng */}
+                    {!isBoardClosed && (
+                      <Button onClick={() => setIsAttachmentModalOpen(true)}>
+                        Thêm
+                      </Button>
+                    )}
                   </Box>
                 )}
-                {/* ///////////////////// CHECK LENGTH////////////////////////////// */}
-                {/* Liên kết */}
+
+                {/* Phần hiển thị liên kết */}
                 {linkItems?.length > 0 && (
                   <Box key={updateTrigger}>
-                    {" "}
-                    {/* Key để ép re-render khi update link */}
                     <Typography
                       variant="h6"
                       sx={{
@@ -1307,15 +1366,20 @@ const CardModal = ({ closeDetail  }) => {
                                 {file.file_name_defaut || domain}
                               </a>
                             </Box>
-                            <IconButton
-                              onClick={(e) => handleMenuOpen1(e, file)}
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
+
+                            {/* Chỉ hiển thị nút menu khi bảng chưa đóng */}
+                            {!isBoardClosed && (
+                              <IconButton
+                                onClick={(e) => handleMenuOpen1(e, file)}
+                              >
+                                <MoreVertIcon />
+                              </IconButton>
+                            )}
                           </ListItem>
                         );
                       })}
                     </List>
+
                     {/* Nút ẩn hiện */}
                     {linkItems.length > 4 && (
                       <Button
@@ -1330,135 +1394,138 @@ const CardModal = ({ closeDetail  }) => {
                   </Box>
                 )}
 
-                <Menu
-                  anchorEl={anchorEl1}
-                  open={Boolean(anchorEl1)}
-                  onClose={handleMenuClose1}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                  transformOrigin={{ vertical: "top", horizontal: "left" }}
-                >
-                  <MenuItem
-                    onClick={() => {
-                      if (currentFile) {
-                        handleEditLink(currentFile);
-                        setEditedUrl(currentFile.path_url);
-                        setEditedDisplayText(currentFile.file_name_defaut);
-                        setEditingLinkId(currentFile.id);
-                        setPopoverAnchorEl(anchorEl1);
-                        handleMenuClose1();
-                      }
-                    }}
-                  >
-                    Sửa
-                  </MenuItem>
-                  {/* <MenuItem>Nhận xét</MenuItem> */}
-                  <MenuItem
-                    onClick={() => {
-                      if (currentFile) {
-                        handleDelete(currentFile.id);
-                        handleMenuClose1();
-                      }
-                    }}
-                    sx={{ color: "red" }}
-                  >
-                    Xóa
-                  </MenuItem>
-                </Menu>
-
-                <Popover
-                  open={Boolean(popoverAnchorEl)}
-                  anchorEl={popoverAnchorEl}
-                  onClose={() => setPopoverAnchorEl(null)}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                  transformOrigin={{ vertical: "top", horizontal: "left" }}
-                >
-                  <Box sx={{ padding: 2, width: 300 }}>
-                    {/* Title and Back Icon in same row */}
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <IconButton
-                        onClick={() => setPopoverAnchorEl(null)}
-                        size="small"
-                      >
-                        <ArrowBack />
-                      </IconButton>
-                      <Typography
-                        variant="h6"
-                        sx={{ flexGrow: 1, textAlign: "center" }}
-                      >
-                        Sửa tệp đính kèm
-                      </Typography>
-                    </Box>
-
-                    <Typography variant="subtitle2">
-                      Tìm kiếm hoặc dán liên kết
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      value={editedUrl}
-                      onChange={(e) => setEditedUrl(e.target.value)}
-                      margin="normal"
-                      placeholder="Nhập URL"
-                      InputProps={{
-                        endAdornment: editedUrl && (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setEditedUrl("")}
-                              size="small"
-                            >
-                              <CloseIcon fontSize="small" />
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-
-                    <Typography variant="subtitle2" sx={{ marginTop: "10px" }}>
-                      Văn bản hiển thị (không bắt buộc)
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      value={editedDisplayText}
-                      onChange={(e) => setEditedDisplayText(e.target.value)}
-                      margin="normal"
-                      placeholder="Nhập văn bản hiển thị"
-                      InputProps={{
-                        endAdornment: editedDisplayText && (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setEditedDisplayText("")}
-                              size="small"
-                            >
-                              <CloseIcon fontSize="small" />
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        marginTop: 2,
-                      }}
+                {/* Các menu và popover cho liên kết - chỉ render khi bảng chưa đóng */}
+                {!isBoardClosed && (
+                  <>
+                    <Menu
+                      anchorEl={anchorEl1}
+                      open={Boolean(anchorEl1)}
+                      onClose={handleMenuClose1}
+                      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                      transformOrigin={{ vertical: "top", horizontal: "left" }}
                     >
-                      <Button onClick={() => setPopoverAnchorEl(null)}>
-                        Hủy
-                      </Button>
-                      <Button
-                        variant="contained"
+                      <MenuItem
                         onClick={() => {
-                          handleSave1();
-                          setPopoverAnchorEl(null);
+                          if (currentFile) {
+                            handleEditLink(currentFile);
+                            setEditedUrl(currentFile.path_url);
+                            setEditedDisplayText(currentFile.file_name_defaut);
+                            setEditingLinkId(currentFile.id);
+                            setPopoverAnchorEl(anchorEl1);
+                            handleMenuClose1();
+                          }
                         }}
                       >
-                        Lưu
-                      </Button>
-                    </Box>
-                  </Box>
-                </Popover>
+                        Sửa
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          if (currentFile) {
+                            handleDelete(currentFile.id);
+                            handleMenuClose1();
+                          }
+                        }}
+                        sx={{ color: "red" }}
+                      >
+                        Xóa
+                      </MenuItem>
+                    </Menu>
 
-                {/* Tệp */}
+                    <Popover
+                      open={Boolean(popoverAnchorEl)}
+                      anchorEl={popoverAnchorEl}
+                      onClose={() => setPopoverAnchorEl(null)}
+                      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                      transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    >
+                      <Box sx={{ padding: 2, width: 300 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                          <IconButton
+                            onClick={() => setPopoverAnchorEl(null)}
+                            size="small"
+                          >
+                            <ArrowBack />
+                          </IconButton>
+                          <Typography
+                            variant="h6"
+                            sx={{ flexGrow: 1, textAlign: "center" }}
+                          >
+                            Sửa tệp đính kèm
+                          </Typography>
+                        </Box>
+
+                        <Typography variant="subtitle2">
+                          Tìm kiếm hoặc dán liên kết
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          value={editedUrl}
+                          onChange={(e) => setEditedUrl(e.target.value)}
+                          margin="normal"
+                          placeholder="Nhập URL"
+                          InputProps={{
+                            endAdornment: editedUrl && (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  onClick={() => setEditedUrl("")}
+                                  size="small"
+                                >
+                                  <CloseIcon fontSize="small" />
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+
+                        <Typography variant="subtitle2" sx={{ marginTop: "10px" }}>
+                          Văn bản hiển thị (không bắt buộc)
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          value={editedDisplayText}
+                          onChange={(e) => setEditedDisplayText(e.target.value)}
+                          margin="normal"
+                          placeholder="Nhập văn bản hiển thị"
+                          InputProps={{
+                            endAdornment: editedDisplayText && (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  onClick={() => setEditedDisplayText("")}
+                                  size="small"
+                                >
+                                  <CloseIcon fontSize="small" />
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            marginTop: 2,
+                          }}
+                        >
+                          <Button onClick={() => setPopoverAnchorEl(null)}>
+                            Hủy
+                          </Button>
+                          <Button
+                            variant="contained"
+                            onClick={() => {
+                              handleSave1();
+                              setPopoverAnchorEl(null);
+                            }}
+                          >
+                            Lưu
+                          </Button>
+                        </Box>
+                      </Box>
+                    </Popover>
+                  </>
+                )}
+
+                {/* Phần hiển thị tệp */}
                 {fileItems?.length > 0 && (
                   <Box>
                     <Typography
@@ -1517,7 +1584,7 @@ const CardModal = ({ closeDetail  }) => {
                               ml: "10px",
                               pr: "40px",
                               cursor: "pointer",
-                              gap: "12px", // <<< GIẢI QUYẾT DÍNH NHAU
+                              gap: "12px",
                             }}
                           >
                             {/* Thumbnail hoặc icon */}
@@ -1602,13 +1669,15 @@ const CardModal = ({ closeDetail  }) => {
                               </Typography>
                             </Box>
 
-                            {/* Icon 3 chấm */}
-                            <IconButton
-                              onClick={(e) => handleMenuOpen2(e, file.id)}
-                              sx={{ ml: "auto" }}
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
+                            {/* Chỉ hiển thị nút menu khi bảng chưa đóng */}
+                            {!isBoardClosed && (
+                              <IconButton
+                                onClick={(e) => handleMenuOpen2(e, file.id)}
+                                sx={{ ml: "auto" }}
+                              >
+                                <MoreVertIcon />
+                              </IconButton>
+                            )}
                           </ListItem>
                         );
                       })}
@@ -1627,111 +1696,117 @@ const CardModal = ({ closeDetail  }) => {
                     )}
                   </Box>
                 )}
-                {/* Menu con */}
-                <Menu
-                  anchorEl={anchorEl2}
-                  open={Boolean(anchorEl2)}
-                  onClose={handleMenuClose2}
-                >
-                  <MenuItem
-                    onClick={(e) => {
-                      handleOpenPopover(e.currentTarget, selectedFile);
-                      handleMenuClose2(); // Đóng menu 3 chấm
-                      setTimeout(() => {
-                        setEditAnchorEl(anchorEl2); // Mở popover sửa
-                      }, 0);
-                    }}
-                  >
-                    Sửa
-                  </MenuItem>
 
-                  <MenuItem onClick={() => downloadFile(selectedFile)}>
-                    Tải xuống
-                  </MenuItem>
-                  {/* <MenuItem>Nhận xét</MenuItem> */}
-                 {/* Kiểm tra nếu là file hình ảnh thì hiển thị tùy chọn "Tạo ảnh bìa" */}
-                 {(() => {
-                    const file = attachments?.data?.find(
-                      (f) => f.id === selectedFile
-                    );
-                    if (file) {
-                      const fileExt = file.path_url
-                        .match(/\.([a-zA-Z0-9]+)$/)?.[1]
-                        ?.toLowerCase();
-                      const imageTypes = ["jpg", "jpeg", "png", "webp", "pdf"];
-                      const isImage = imageTypes.includes(fileExt);
-
-                      if (isImage) {
-                        return (
-                          <MenuItem
-                            onClick={() => handleCoverImageChange(selectedFile)}
-                          >
-                            {file.is_cover ? "Gỡ ảnh bìa" : "Tạo ảnh bìa"}
-                          </MenuItem>
-                        );
-                      }
-                    }
-                    return null; // Không hiển thị nếu không phải file hình ảnh
-                  })()}
-                  <MenuItem onClick={handleDeleteFile} sx={{ color: "red" }}>
-                    Xóa
-                  </MenuItem>
-                </Menu>
-                {/* Edit Popover */}
-                <Popover
-                  open={Boolean(editAnchorEl)}
-                  anchorEl={editAnchorEl}
-                  onClose={handleClosePopover}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                  transformOrigin={{ vertical: "top", horizontal: "left" }}
-                >
-                  <Box sx={{ padding: "16px", minWidth: "200px" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <IconButton onClick={handleClosePopover}>
-                        <ArrowBackIcon />
-                      </IconButton>
-                      <Typography variant="h6" sx={{ fontSize: "14px", ml: 1 }}>
-                        Sửa tệp đính kèm
-                      </Typography>
-                    </Box>
-
-                    <TextField
-                      fullWidth
-                      value={newFileName}
-                      onChange={(e) => setNewFileName(e.target.value)}
-                      placeholder="Nhập tên mới"
-                      InputProps={{
-                        endAdornment: newFileName && (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setNewFileName("")}
-                              size="small"
-                            >
-                              <CloseIcon fontSize="small" />
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        mt: 1,
-                      }}
+                {/* Các menu và popover cho tệp - chỉ render khi bảng chưa đóng */}
+                {!isBoardClosed && (
+                  <>
+                    <Menu
+                      anchorEl={anchorEl2}
+                      open={Boolean(anchorEl2)}
+                      onClose={handleMenuClose2}
                     >
-                      <Button onClick={handleClosePopover}>Hủy</Button>
-                      <Button
-                        onClick={handleRename}
-                        variant="contained"
-                        sx={{ ml: 1 }}
+                      <MenuItem
+                        onClick={(e) => {
+                          handleOpenPopover(e.currentTarget, selectedFile);
+                          handleMenuClose2();
+                          setTimeout(() => {
+                            setEditAnchorEl(anchorEl2);
+                          }, 0);
+                        }}
                       >
-                        Cập nhật
-                      </Button>
-                    </Box>
-                  </Box>
-                </Popover>
+                        Sửa
+                      </MenuItem>
+
+                      <MenuItem onClick={() => downloadFile(selectedFile)}>
+                        Tải xuống
+                      </MenuItem>
+
+                      {(() => {
+                        const file = attachments?.data?.find(
+                          (f) => f.id === selectedFile
+                        );
+                        if (file) {
+                          const fileExt = file.path_url
+                            .match(/\.([a-zA-Z0-9]+)$/)?.[1]
+                            ?.toLowerCase();
+                          const imageTypes = ["jpg", "jpeg", "png", "webp", "pdf"];
+                          const isImage = imageTypes.includes(fileExt);
+
+                          if (isImage) {
+                            return (
+                              <MenuItem
+                                onClick={() => handleCoverImageChange(selectedFile)}
+                              >
+                                {file.is_cover ? "Gỡ ảnh bìa" : "Tạo ảnh bìa"}
+                              </MenuItem>
+                            );
+                          }
+                        }
+                        return null;
+                      })()}
+                      <MenuItem onClick={handleDeleteFile} sx={{ color: "red" }}>
+                        Xóa
+                      </MenuItem>
+                    </Menu>
+
+                    <Popover
+                      open={Boolean(editAnchorEl)}
+                      anchorEl={editAnchorEl}
+                      onClose={handleClosePopover}
+                      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                      transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    >
+                      <Box sx={{ padding: "16px", minWidth: "200px" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                          <IconButton onClick={handleClosePopover}>
+                            <ArrowBackIcon />
+                          </IconButton>
+                          <Typography variant="h6" sx={{ fontSize: "14px", ml: 1 }}>
+                            Sửa tệp đính kèm
+                          </Typography>
+                        </Box>
+
+                        <TextField
+                          fullWidth
+                          value={newFileName}
+                          onChange={(e) => setNewFileName(e.target.value)}
+                          placeholder="Nhập tên mới"
+                          InputProps={{
+                            endAdornment: newFileName && (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  onClick={() => setNewFileName("")}
+                                  size="small"
+                                >
+                                  <CloseIcon fontSize="small" />
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            mt: 1,
+                          }}
+                        >
+                          <Button onClick={handleClosePopover}>Hủy</Button>
+                          <Button
+                            onClick={handleRename}
+                            variant="contained"
+                            sx={{ ml: 1 }}
+                          >
+                            Cập nhật
+                          </Button>
+                        </Box>
+                      </Box>
+                    </Popover>
+                  </>
+                )}
+
+                {/* Dialog luôn hiển thị khi cần, nhưng nút "Tải xuống" sẽ chỉ xuất hiện khi không bị đóng */}
                 <Dialog
                   open={open}
                   onClose={handleClose}
@@ -1739,13 +1814,13 @@ const CardModal = ({ closeDetail  }) => {
                   maxWidth="sm"
                   sx={{
                     "& .MuiDialog-paper": {
-                      backgroundColor: "transparent", // Loại bỏ nền trắng của hộp thoại
-                      boxShadow: "none", // Xóa viền hộp thoại
+                      backgroundColor: "transparent",
+                      boxShadow: "none",
                       padding: 0,
                       overflow: "visible",
                     },
                     "& .MuiBackdrop-root": {
-                      backgroundColor: "rgba(0, 0, 0, 0.5)", // Nền tối mờ nhẹ (có thể chỉnh mức độ mờ)
+                      backgroundColor: "rgba(0, 0, 0, 0.5)",
                     },
                   }}
                 >
@@ -1772,74 +1847,36 @@ const CardModal = ({ closeDetail  }) => {
                 <Box sx={{ mt: 2 }}>
                   <List>
                     {checklists.map((checklist) => {
-                      const taskItems = Array.isArray(checklist.items)
-                        ? checklist.items
-                        : [];
-                      const completedItems = taskItems.filter(
-                        (item) => item.is_completed
-                      ).length;
+                      const taskItems = Array.isArray(checklist.items) ? checklist.items : [];
+                      const completedItems = taskItems.filter((item) => item.is_completed).length;
                       const totalItems = taskItems.length;
-                      const taskProgress =
-                        totalItems > 0
-                          ? (completedItems / totalItems) * 100
-                          : 0;
+                      const taskProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
                       return (
-                        <Box
-                          key={checklist.id}
-                          sx={{ mb: 3, p: 2, marginLeft: "-12px" }}
-                        >
+                        <Box key={checklist.id} sx={{ mb: 3, p: 2, marginLeft: "-12px" }}>
                           {/* Hiển thị tên checklist */}
-
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                flexGrow: 1,
-                              }}
-                            >
-                              <CheckBoxIcon
-                                sx={{
-                                  width: "30px",
-                                  height: "30px",
-                                  color: "gray",
-                                  flexShrink: 0, // Giữ icon luôn cố định, không bị đẩy đi
-                                }}
-                              />
+                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexGrow: 1 }}>
+                              <CheckBoxIcon sx={{ width: "30px", height: "30px", color: "gray", flexShrink: 0 }} />
                               {editingTaskId === checklist.id ? (
                                 <TextField
                                   fullWidth
                                   variant="outlined"
                                   size="small"
                                   value={editedTaskName}
-                                  onChange={(e) =>
-                                    setEditedTaskName(e.target.value)
-                                  }
+                                  onChange={(e) => setEditedTaskName(e.target.value)}
                                   onBlur={() => handleSaveTask(checklist.id)}
-                                  onKeyDown={(e) =>
-                                    handleKeyPressTask(e, checklist.id)
-                                  }
+                                  onKeyDown={(e) => handleKeyPressTask(e, checklist.id)}
                                   autoFocus
-                                  sx={{
-                                    flexGrow: 1, // Giúp input co giãn nhưng không đẩy icon đi
-                                  }}
+                                  sx={{ flexGrow: 1 }}
+                                  disabled={isBoardClosed} // ✅ Chỉ chặn nhập liệu
                                 />
                               ) : (
                                 <Typography
                                   variant="h6"
                                   fontWeight="bold"
-                                  onClick={() =>
-                                    handleEditTask(checklist.id, checklist.name)
-                                  }
-                                  sx={{ cursor: "pointer", flexGrow: 1 }}
+                                  sx={{ cursor: isBoardClosed ? "default" : "pointer", flexGrow: 1 }}
+                                  onClick={() => !isBoardClosed && handleEditTask(checklist.id, checklist.name)}
                                 >
                                   {checklist.name}
                                 </Typography>
@@ -1851,23 +1888,16 @@ const CardModal = ({ closeDetail  }) => {
                               color="error"
                               size="small"
                               onClick={() => handleDeleteTask(checklist.id)}
+                              disabled={isBoardClosed} // ✅ Chặn xóa khi bảng đóng
                             >
                               Xóa
                             </Button>
                           </Box>
 
-                          {/* Thanh tiến trình riêng */}
+                          {/* Thanh tiến trình */}
                           <Box sx={{ mt: 2 }}>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                mb: 1,
-                              }}
-                            >
-                              <Typography variant="body2" fontWeight="bold">
-                                {Math.round(taskProgress)}%
-                              </Typography>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                              <Typography variant="body2" fontWeight="bold">{Math.round(taskProgress)}%</Typography>
                             </Box>
                             <LinearProgress
                               variant="determinate"
@@ -1875,12 +1905,9 @@ const CardModal = ({ closeDetail  }) => {
                               sx={{
                                 height: 8,
                                 borderRadius: 4,
-                                backgroundColor: "#ddd", // Màu nền mặc định
+                                backgroundColor: "#ddd",
                                 "& .MuiLinearProgress-bar": {
-                                  backgroundColor:
-                                    taskProgress === 100
-                                      ? "#4CAF50"
-                                      : "#0079BF", // Xanh lá khi đạt 100%
+                                  backgroundColor: taskProgress === 100 ? "#4CAF50" : "#0079BF",
                                 },
                               }}
                             />
@@ -1892,38 +1919,31 @@ const CardModal = ({ closeDetail  }) => {
                               <ChecklistItemRow
                                 key={item.id}
                                 item={item}
-                                toggleItemCompletion={toggleItemCompletion}
-                                handleEditItem={handleEditItem}
-                                handleSaveItem={handleSaveItem}
-                                handleKeyPressItem={handleKeyPressItem}
+                                toggleItemCompletion={isBoardClosed ? null : toggleItemCompletion}
+                                handleEditItem={isBoardClosed ? null : handleEditItem}
+                                handleSaveItem={isBoardClosed ? null : handleSaveItem}
+                                handleKeyPressItem={isBoardClosed ? null : handleKeyPressItem}
                                 editingItemId={editingItemId}
                                 editedItemName={editedItemName}
                                 setEditedItemName={setEditedItemName}
-                                handleMenuOpen={handleMenuOpen}
+                                handleMenuOpen={isBoardClosed ? null : handleMenuOpen}
                                 setMemberListConfig={setMemberListConfig}
                                 setDateConfig={setDateConfig}
                               />
                             ))}
                           </List>
 
+                          {/* Menu thao tác */}
                           <Menu
                             anchorEl={menuAnchor}
-                            open={Boolean(menuAnchor)}
+                            open={!isBoardClosed && Boolean(menuAnchor)}
                             onClose={handleMenuClose}
+                            sx={{ pointerEvents: isBoardClosed ? "none" : "auto" }} // ✅ Không chặn hiển thị, chỉ chặn thao tác
                           >
-                            <MenuItem
-                              onClick={() =>
-                                toggleItemCompletion(selectedItemId)
-                              }
-                            >
-                              Chuyển đổi trạng thái
-                            </MenuItem>
-                            <MenuItem
-                              onClick={() => handleDeleteItem(selectedItemId)}
-                            >
-                              Xóa
-                            </MenuItem>
+                            <MenuItem onClick={() => toggleItemCompletion(selectedItemId)}>Chuyển đổi trạng thái</MenuItem>
+                            <MenuItem onClick={() => handleDeleteItem(selectedItemId)}>Xóa</MenuItem>
                           </Menu>
+
                           {/* Thêm mục vào checklist */}
                           {addingItemForTask === checklist.id ? (
                             <>
@@ -1933,12 +1953,8 @@ const CardModal = ({ closeDetail  }) => {
                                 variant="outlined"
                                 size="small"
                                 value={taskInputs[checklist.id] || ""}
-                                onChange={(e) =>
-                                  setTaskInputs({
-                                    ...taskInputs,
-                                    [checklist.id]: e.target.value,
-                                  })
-                                }
+                                onChange={(e) => setTaskInputs({ ...taskInputs, [checklist.id]: e.target.value })}
+                                disabled={isBoardClosed} // ✅ Chặn nhập liệu
                               />
                               <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
                                 <Button
@@ -1946,30 +1962,16 @@ const CardModal = ({ closeDetail  }) => {
                                   color="primary"
                                   size="small"
                                   onClick={() => {
-                                    if (
-                                      (
-                                        taskInputs[checklist.id] || ""
-                                      ).trim() === ""
-                                    )
-                                      return;
-                                    handleAddItem(
-                                      checklist.id,
-                                      taskInputs[checklist.id]
-                                    );
-                                    setTaskInputs({
-                                      ...taskInputs,
-                                      [checklist.id]: "",
-                                    });
+                                    if ((taskInputs[checklist.id] || "").trim() === "") return;
+                                    handleAddItem(checklist.id, taskInputs[checklist.id]);
+                                    setTaskInputs({ ...taskInputs, [checklist.id]: "" });
                                     setAddingItemForTask(null);
                                   }}
+                                  disabled={isBoardClosed} // ✅ Chặn nút thêm
                                 >
                                   Thêm
                                 </Button>
-                                <Button
-                                  variant="text"
-                                  size="small"
-                                  onClick={() => setAddingItemForTask(null)}
-                                >
+                                <Button variant="text" size="small" onClick={() => setAddingItemForTask(null)}>
                                   Hủy
                                 </Button>
                               </Box>
@@ -1981,6 +1983,7 @@ const CardModal = ({ closeDetail  }) => {
                               size="small"
                               sx={{ mt: 0, bgcolor: "teal" }}
                               onClick={() => setAddingItemForTask(checklist.id)}
+                              disabled={isBoardClosed} // ✅ Chặn nút mở form thêm mục
                             >
                               Thêm một mục
                             </Button>
@@ -1991,6 +1994,8 @@ const CardModal = ({ closeDetail  }) => {
                   </List>
                 </Box>
               )}
+
+
 
               {/* Thêm comment */}
               <Box
@@ -2013,7 +2018,7 @@ const CardModal = ({ closeDetail  }) => {
                   {isDetailHidden ? "Hiện chi tiết" : "Ẩn chi tiết"}
                 </Button>
               </Box>
-              {!isEditingComment && (
+              {!isBoardClosed && !isEditingComment && (
                 <Typography
                   variant="body1"
                   sx={{
@@ -2030,7 +2035,7 @@ const CardModal = ({ closeDetail  }) => {
                   Viết bình luận...
                 </Typography>
               )}
-              {isEditingComment && (
+              {isEditingComment && !isBoardClosed && (
                 <>
                   <ReactQuill
                     value={comment}
@@ -2161,7 +2166,7 @@ const CardModal = ({ closeDetail  }) => {
                             borderRadius: "8px",
                           }}
                         >
-                          {editingCommentIndex === item.id ? (
+                          {editingCommentIndex === item.id && !isBoardClosed ? (
                             <>
                               <ReactQuill
                                 value={editingCommentText}
@@ -2260,39 +2265,42 @@ const CardModal = ({ closeDetail  }) => {
                               >
                                 {content.replace(/<\/?p>/g, "")}
                               </Typography>
-                              <Box sx={{ display: "flex", mt: "-4px" }}>
-                                <Button
-                                  size="small"
-                                  onClick={() =>
-                                    handleEditComment(item.id, item.content)
-                                  }
-                                  sx={{
-                                    width: "20px",
-                                    minWidth: "20px",
-                                    ml: "4px",
-                                    mr: "-8px",
-                                    fontSize: "0.4rem", // Smaller font size
-                                    textTransform: "none",
-                                    padding: "2px 4px", // Smaller padding
-                                  }}
-                                >
-                                  Sửa
-                                </Button>
-                                <Button
-                                  size="small"
-                                  onClick={() => handleDeleteComment(item.id)}
-                                  sx={{
-                                    width: "20px",
-                                    minWidth: "20px",
-                                    ml: "10px",
-                                    fontSize: "0.4rem", // Smaller font size
-                                    textTransform: "none",
-                                    padding: "2px 4px", // Smaller padding
-                                  }}
-                                >
-                                  Xóa
-                                </Button>
-                              </Box>
+                              {!isBoardClosed && (
+
+                                <Box sx={{ display: "flex", mt: "-4px" }}>
+                                  <Button
+                                    size="small"
+                                    onClick={() =>
+                                      handleEditComment(item.id, item.content)
+                                    }
+                                    sx={{
+                                      width: "20px",
+                                      minWidth: "20px",
+                                      ml: "4px",
+                                      mr: "-8px",
+                                      fontSize: "0.4rem", // Smaller font size
+                                      textTransform: "none",
+                                      padding: "2px 4px", // Smaller padding
+                                    }}
+                                  >
+                                    Sửa
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    onClick={() => handleDeleteComment(item.id)}
+                                    sx={{
+                                      width: "20px",
+                                      minWidth: "20px",
+                                      ml: "10px",
+                                      fontSize: "0.4rem", // Smaller font size
+                                      textTransform: "none",
+                                      padding: "2px 4px", // Smaller padding
+                                    }}
+                                  >
+                                    Xóa
+                                  </Button>
+                                </Box>
+                              )}
                             </>
                           )}
                         </Box>
@@ -2479,10 +2487,12 @@ const CardModal = ({ closeDetail  }) => {
 
             {/* Cột phải (Sidebar) */}
             <Grid item xs={4}>
+              {/* {!isBoardClosed && ( */}
               <Box sx={{ borderLeft: "1px solid #ddd", pl: 2 }}>
                 <List>
                   <ListItem disablePadding>
-                    <ListItemButton onClick={handleJoinCard}>
+                    <ListItemButton onClick={handleJoinCard} disabled={isBoardClosed}
+                      sx={{ pointerEvents: isBoardClosed ? "none" : "auto" }}>
                       <ListItemIcon>
                         <PersonAddAlt1Icon
                           sx={{ color: "black", fontSize: "0.8rem" }}
@@ -2503,6 +2513,9 @@ const CardModal = ({ closeDetail  }) => {
                           targetId: cardId,
                         })
                       }
+
+                      disabled={isBoardClosed}
+                      sx={{ pointerEvents: isBoardClosed ? "none" : "auto" }}
                     >
                       <ListItemIcon>
                         <GroupIcon
@@ -2514,7 +2527,8 @@ const CardModal = ({ closeDetail  }) => {
                   </ListItem>
 
                   <ListItem disablePadding>
-                    <ListItemButton onClick={() => setIsLabelListOpen(true)}>
+                    <ListItemButton onClick={() => setIsLabelListOpen(true)} disabled={isBoardClosed}
+                      sx={{ pointerEvents: isBoardClosed ? "none" : "auto" }}>
                       <ListItemIcon>
                         <LabelIcon
                           sx={{ color: "black", fontSize: "0.8rem" }}
@@ -2525,7 +2539,10 @@ const CardModal = ({ closeDetail  }) => {
                   </ListItem>
 
                   <ListItem disablePadding>
-                    <ListItemButton onClick={() => setIsTaskModalOpen(true)} sx={{ width: "100%" }}>
+                    <ListItemButton
+                      onClick={() => setIsTaskModalOpen(true)}
+                      sx={{ width: "100%", pointerEvents: isBoardClosed ? "none" : "auto" }}
+                      disabled={isBoardClosed}>
                       <ListItemIcon>
                         <ChecklistIcon sx={{ color: "black", fontSize: "1rem" }} />
                       </ListItemIcon>
@@ -2542,10 +2559,11 @@ const CardModal = ({ closeDetail  }) => {
                           targetId: cardId,
                         });
                       }}
-                      sx={{ width: "100%" }}
+                      sx={{ width: "100%", pointerEvents: isBoardClosed ? "none" : "auto" }}
+                      disabled={isBoardClosed}
                     >
                       <ListItemIcon>
-                        <EventIcon sx={{ color: "black", fontSize: "1rem" }} />
+                        <EventIcon sx={{ color: "black", fontSize: "1rem", pointerEvents: isBoardClosed ? "none" : "auto" }} disabled={isBoardClosed} />
                       </ListItemIcon>
                       <ListItemText primary="Ngày" />
                     </ListItemButton>
@@ -2554,6 +2572,8 @@ const CardModal = ({ closeDetail  }) => {
                   <ListItem disablePadding>
                     <ListItemButton
                       onClick={() => setIsAttachmentModalOpen(true)}
+                      disabled={isBoardClosed}
+                      sx={{ pointerEvents: isBoardClosed ? "none" : "auto" }}
                     >
                       <ListItemIcon>
                         <AttachFileIcon
@@ -2563,7 +2583,7 @@ const CardModal = ({ closeDetail  }) => {
                       <ListItemText primary="Đính kèm" />
                     </ListItemButton>
                   </ListItem>
-
+                  {/* 
                   <ListItem disablePadding>
                     <ListItemButton onClick={() => setIsCoverPhotoOpen(true)}>
                       <ListItemIcon>
@@ -2573,7 +2593,7 @@ const CardModal = ({ closeDetail  }) => {
                       </ListItemIcon>
                       <ListItemText primary="Ảnh bìa" />
                     </ListItemButton>
-                  </ListItem>
+                  </ListItem> */}
                 </List>
 
                 <Divider sx={{ my: 1 }} />
@@ -2594,7 +2614,7 @@ const CardModal = ({ closeDetail  }) => {
                       <ListItemText primary="Di chuyển" />
                     </ListItemButton>
                   </ListItem>
-
+                  
                   <ListItem disablePadding>
                     <ListItemButton
                       onClick={() => setIsCopyCardModalOpen(true)}
@@ -2608,7 +2628,7 @@ const CardModal = ({ closeDetail  }) => {
                     </ListItemButton>
                   </ListItem>
 
-                  <ListItem disablePadding>
+                  {/* <ListItem disablePadding>
                     <ListItemButton>
                       <ListItemIcon>
                         <SpeakerGroupIcon
@@ -2617,10 +2637,11 @@ const CardModal = ({ closeDetail  }) => {
                       </ListItemIcon>
                       <ListItemText primary="Tạo mẫu" />
                     </ListItemButton>
-                  </ListItem>
+                  </ListItem> */}
 
                   <ListItem disablePadding>
-                    <ListItemButton onClick={() => handleArchiveCard(cardId)}>
+                    <ListItemButton onClick={() => handleArchiveCard(cardId)} disabled={isBoardClosed}
+                      sx={{ pointerEvents: isBoardClosed ? "none" : "auto" }}>
                       <ListItemIcon>
                         <ArchiveIcon
                           sx={{ color: "black", fontSize: "0.8rem" }}
@@ -2630,7 +2651,7 @@ const CardModal = ({ closeDetail  }) => {
                     </ListItemButton>
                   </ListItem>
 
-                  <ListItem disablePadding>
+                  {/* <ListItem disablePadding>
                     <ListItemButton onClick={() => setIsShareModalOpen(true)}>
                       <ListItemIcon>
                         <ShareIcon
@@ -2639,9 +2660,10 @@ const CardModal = ({ closeDetail  }) => {
                       </ListItemIcon>
                       <ListItemText primary="Chia sẻ" />
                     </ListItemButton>
-                  </ListItem>
+                  </ListItem> */}
                 </List>
               </Box>
+              {/* )} */}
             </Grid>
           </Grid>
         </DialogContent>

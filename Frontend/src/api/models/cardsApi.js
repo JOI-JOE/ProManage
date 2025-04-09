@@ -195,3 +195,63 @@ export const removeMember = async (cardId, userId) => {
     throw error;
   }
 };
+
+export const toggleIsCompleted = async (cardId) => {
+  try {
+    const response = await authClient.patch(`/cards/${cardId}/toggle-complete`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái hoàn thành:", error);
+    throw error;
+  }
+};
+
+export const copyCard = async ({
+  card_id,
+  board_id,
+  list_board_id,
+  title,
+  position,
+  keep_checklist = false,
+  keep_labels = false,
+  keep_members = false,
+  keep_attachments = false,
+  keep_comments = false,
+  members = [], // Thêm tham số members
+}) => {
+  return authClient.post("cards/copy", {
+    card_id,
+    board_id,
+    list_board_id,
+    title,
+    position,
+    keep_checklist,
+    keep_labels,
+    keep_members,
+    keep_attachments,
+    keep_comments,
+    members, // Thêm members vào request
+  });
+};
+
+
+
+export const moveCard = async ({
+  card_id,
+  board_id,
+  list_board_id,
+  position,
+  members = [],
+}) => {
+  return authClient.post("cards/move", {
+    card_id,
+    board_id,
+    list_board_id,
+    position,
+    members,
+  });
+};
+
+
+
+
