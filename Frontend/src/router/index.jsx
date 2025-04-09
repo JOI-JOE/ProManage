@@ -9,14 +9,14 @@ import BoardContent from "../pages/boards/detail/BoardContent";
 import Member from "../pages/boards/detail/Member";
 import Home from "../pages/Home";
 
-import LoginForm from "../pages/Auth/LoginForm";
+// import LoginForm from "../pages/Auth/LoginForm";
 
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 
 // import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
-import GoogleAuth from "../pages/Auth/GoogleAuth";
-import GitHubAuth from "../pages/Auth/GitHubAuth";
+// import GoogleAuth from "../pages/Auth/GoogleAuth";
+// import GitHubAuth from "../pages/Auth/GitHubAuth";
 import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import InviteHandling from "../pages/workspace/invite/InviteHandling";
 import InviteWithToken from "../pages/workspace/invite/child/InviteWithToken";
@@ -30,6 +30,9 @@ import Board from "../pages/boards/detail/Board";
 import Calendar from "../pages/Boards/detail/SideBar/Calendar/Calendar";
 import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileDisplay";
 import Activity from "../components/Navigation/Menus/Profile and display/Activity";
+import LoginForm from "../pages/auth/LoginForm";
+import GoogleAuth from "../pages/auth/GoogleAuth";
+import GitHubAuth from "../pages/auth/GitHubAuth";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -86,10 +89,6 @@ const router = createBrowserRouter([
       {
         path: "profile-display",
         element: <ProfileDisplay />,
-      },
-      {
-        path: "activity",
-        element: <Activity />,
       },
     ],
   },
