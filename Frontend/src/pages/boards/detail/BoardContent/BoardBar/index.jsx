@@ -21,7 +21,7 @@ import BoardMenu from "./BoardMenu";
 
 import { useUpdateBoardName } from "../../../../../hooks/useBoard";
 import BoardContext from "../../../../../contexts/BoardContext";
-import { useGetBoardMembers, useMemberJoinedListener } from "../../../../../hooks/useInviteBoard";
+import { useGetBoardMembers, useMemberJoinedListener, useRequestJoinBoard } from "../../../../../hooks/useInviteBoard";
 import { useParams } from "react-router-dom";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
 import { useUser } from "../../../../../hooks/useUser";
@@ -49,7 +49,7 @@ const BoardBar = () => {
   useMemberJoinedListener(user?.id)
 
   const currentUserId = user?.id; 
-
+  const joinBoardMutation = useRequestJoinBoard(); // Sử dụng custom hook
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
   const handleFilterDialogOpen = () => setOpenFilterDialog(true);
   const handleFilterDialogClose = () => setOpenFilterDialog(false);
@@ -73,6 +73,8 @@ const BoardBar = () => {
   const [teamName, setTeamName] = useState(board?.title);
   const updateBoardName = useUpdateBoardName();
 
+  const [isMember, setIsMember] = useState(true); // Trạng thái thành viên
+
   const admins = Array.isArray(boardMembers?.data) 
   ? boardMembers.data.filter(member => member.pivot.role === "admin") 
   : [];
@@ -83,6 +85,36 @@ const BoardBar = () => {
     ) 
   : false;
 
+  const isCreator = board?.created_by === currentUserId;
+  // console.log("Is creator:", isCreator);
+  
+
+// Kiểm tra trạng thái thành viên
+useEffect(() => {
+  const isCurrentUserMember = Array.isArray(boardMembers?.data)
+    ? boardMembers.data.some((member) => member.id === currentUserId)
+    : false;
+  setIsMember(isCurrentUserMember);
+}, [boardMembers?.data, currentUserId]);
+
+
+const handleJoinRequest = () => {
+  joinBoardMutation.mutate(
+    { boardId, userId: currentUserId }, // Truyền dữ liệu trực tiếp
+    {
+      onSuccess: (data) => {
+        if (data.is_member) {
+          setIsMember(true);
+          toast.success(data.message);
+        }
+      },
+      onError: (error) => {
+        toast.error("Có lỗi khi tham gia bảng!");
+      },
+    }
+  );
+};
+
 
   // Quản lý trạng thái sao (isStarred)
   const [isStarred, setIsStarred] = useState(false);
@@ -91,45 +123,6 @@ const BoardBar = () => {
     setIsStarred((prev) => !prev); // Đảo ngược trạng thái sao
   };
 
-
-  // const handleTitleClick = () => setEditTitle(true);
-
-  // const handleTitleChange = (e) => setTeamName(e.target.value);
-
-  // const handleTitleBlur = () => setEditTitle(false);
-
-  // const handleTitleKeyPress = (e) => {
-  //   if (e.key === "Enter") {
-  //     setEditTitle(false);
-  //   }
-  // };
-
-  // const { boardId } = useParams(); // Lấy boardId từ URL
-  // console.log("🔍 user từ useParams:", user);
-
-  // const { data, isLoading, error } = useQuery({
-  //   queryKey: ["board", boardId],
-  //   queryFn: () => getBoardById(boardId),
-  // });
-
-  // console.log(isAdmin);
-
-  // // console.log("🔍 Dữ liệu board từ API:", data?.data);
-
-  // const board = data?.data;
-
-  // console.log("🔍 Dữ liệu board từ API:", board);
-
-  // const updateBoardName = useUpdateBoardName();
-
-
-
-  // Cập nhật khi dữ liệu board thay đổi
-  // React.useEffect(() => {
-  //   if (board) {
-  //     setTeamName(board.name || "Team WD-51");
-  //   }
-  // }, [board]);
 
   const handleTitleClick = () => setEditTitle(true);
 
@@ -277,19 +270,34 @@ const BoardBar = () => {
             </Tooltip>
           ))}
         </AvatarGroup>
-        <Button
-          variant="contained"
-          startIcon={<PersonAddAltIcon />}
-          sx={{
-            color: "white",
-            backgroundColor: "primary.dark",
-            fontSize: "0.75rem",
-            textTransform: "none",
-          }}
-          onClick={() => setOpenShareDialog(true)}
-        >
-          Chia sẻ
-        </Button>
+        {isMember ? (
+          <Button
+            variant="contained"
+            startIcon={<PersonAddAltIcon />}
+            sx={{
+              color: "white",
+              backgroundColor: "primary.dark",
+              fontSize: "0.75rem",
+              textTransform: "none",
+            }}
+            onClick={() => setOpenShareDialog(true)}
+          >
+            Chia sẻ
+          </Button>
+        ) : isCreator ? (
+          <Button
+            variant="contained"
+            sx={{
+              color: "white",
+              backgroundColor: "primary.dark",
+              fontSize: "0.75rem",
+              textTransform: "none",
+            }}
+            onClick={handleJoinRequest}
+          >
+            Tham gia bảng
+          </Button>
+        ) : null}
         <BoardMenu board={board} />
       </Box>
 

@@ -88,4 +88,66 @@ export const getGuestBoards = async () => {
     
 };
 
+export const inviteMemberIntoBoardByEmail = async (data) => {
+    try {
+    const response = await authClient.post(`/inviteMemberIntoBoardByEmail`,data);
+    return response.data;
+    } catch (error) {
+        console.error("Lỗi khi lấy ra thành viên của bảng", error);
+        throw error;
+    }
+    
+};
+
+
+export const requestJoinBoard = async ({ boardId, userId }) => {
+    try {
+    const response = await authClient.post(`/request-join-board/${boardId}`,{
+        user_id: userId,
+    });
+    return response.data;
+    } catch (error) {
+        console.error("Lỗi khi yêu cầu tham gia bảng ", error);
+        throw error;
+    }
+    
+};
+
+
+export const getRequestJoinBoard = async ( boardId ) => {
+    try {
+    const response = await authClient.get(`/get-requests/${boardId}`);
+    return response.data;
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách yêu cầu tham gia vào bảng  ", error);
+        throw error;
+    }
+    
+};
+
+
+export const acceptRequestJoinBoard = async (requestId) => {
+    try {
+    const response = await authClient.post(`/accept-request/${requestId}`);
+    return response.data;
+    } catch (error) {
+        console.error("Lỗi khi chấp nhận yêu cầu tham gia bảng ", error);
+        throw error;
+    }
+    
+};
+
+
+export const rejectRequestJoinBoard = async (requestId) => {
+    try {
+    const response = await authClient.post(`/reject-request/${requestId}`);
+    return response.data;
+    } catch (error) {
+        console.error("Lỗi khi từ chối yêu cầu tham gia bảng ", error);
+        throw error;
+    }
+    
+};
+
+
 

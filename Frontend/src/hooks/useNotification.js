@@ -25,9 +25,9 @@ const useNotifications = (userId) => {
     const channel = echoInstance.private(`App.Models.User.${userId}`);
     
     channel.notification((notification) => {
-      if (notification.type === "App\\Notifications\\MemberRemovedNotification") {
-        navigate("/home");
-      }
+      // if (notification.type === "App\\Notifications\\MemberRemovedNotification") {
+      //   navigate("/home");
+      // }
 
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] ,exact:true});
       // queryClient.invalidateQueries({ queryKey: ['notifications', userId] });

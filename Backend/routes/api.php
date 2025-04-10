@@ -26,7 +26,9 @@ use App\Http\Controllers\Api\LabelController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\RequestInvitationController;
 use Illuminate\Support\Facades\Broadcast;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -195,10 +197,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
     Route::put('/boards/update-role', [BoardMemberController::class, 'updateRoleMemberInBoard']);
     Route::delete('{boardId}/boards/removeMember', [BoardMemberController::class, 'removeMemberFromBoard']);
+    Route::post('/inviteMemberIntoBoardByEmail', [BoardMemberController::class, 'inviteMemberIntoBoardByEmail']);
+
 
     Route::get('/boards/{boardId}/members/{userId}/cards', [BoardMemberController::class, 'getMemberCards']);
     Route::get('/boards/{boardId}/members/{userId}/items', [BoardMemberController::class, 'getMemberChecklistItems']);
 
+
+    Route::post('/request-join-board/{boardId}', [RequestInvitationController::class, 'requestJoinBoard']);
+    Route::get('/get-requests/{boardId}', [RequestInvitationController::class, 'getRequestsForBoard']);
+    Route::post('/accept-request/{request_id}', [RequestInvitationController::class, 'acceptRequest']);
+    Route::post('/reject-request/{request_id}', [RequestInvitationController::class, 'rejectRequest']);
+    
     Broadcast::routes();
 });
 Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);

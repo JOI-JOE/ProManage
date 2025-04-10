@@ -71,6 +71,7 @@ class ListController extends Controller
             'workspaceId' => $board->workspace_id,
             'isMarked' => (bool) $board->is_marked,
             'thumbnail' => $board->thumbnail ?? null,
+            'created_by' => $board->created_by,
             'columns' => $board->listBoards->map(function ($list) {
                 return [
                     'id' => $list->id,

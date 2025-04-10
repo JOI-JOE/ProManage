@@ -11,13 +11,17 @@ use App\Models\BoardInvitation;
 use App\Models\BoardMember;
 use App\Models\Card;
 use App\Models\ChecklistItem;
+use App\Models\RequestInvitation;
 use App\Models\User;
 use App\Notifications\BoardInvitationReceivedNotification;
 use App\Notifications\BoardMemberRoleUpdatedNotification;
 use App\Notifications\MemberRemovedNotification;
+use App\Notifications\MessageMailInviteToBoard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -120,16 +124,22 @@ class BoardMemberController extends Controller
         }
 
         $board = Board::find($invite->board_id);
+        $userExists = $invite->email ? User::where('email', $invite->email)->exists() : false;
+
         return response()->json([
             'board' => $board,
             'token' => $token,
+            'email' => $invite->email,
+            'user_exists' => $userExists,
         ]);
     }
 
 
     public function join(Request $request, $token)
     {
-        $invite = BoardInvitation::where('invite_token', $token)->first();
+        $invite = BoardInvitation::where('invite_token', $token)
+            ->where('status', 'pending')
+            ->first();
 
         if (!$invite) {
             return response()->json(['message' => 'Invalid or expired invite link'], 404);
@@ -147,8 +157,10 @@ class BoardMemberController extends Controller
         // Thêm user vào board với role mặc định là 'member'
         $board->members()->attach($user->id, [
             'id' => Str::uuid(),
-            'role' => 'member'
+            'role' => 'member',
+
         ]);
+        $invite->update(['status' => 'accepted']);
 
         $user->notify(new BoardInvitationReceivedNotification($board, $inviter));
         // Gửi event tới chủ bảng
@@ -157,7 +169,11 @@ class BoardMemberController extends Controller
         // Xóa invite token sau khi sử dụng (tùy chọn)
         // $invite->delete();
 
-        return response()->json(['message' => 'Successfully joined the board', 'board' => $board]);
+        return response()->json([
+            'message' => 'Successfully joined the board',
+            'board_name' => $board->name,
+            'board_id' => $board->id,
+        ]);
     }
 
     public function updateRoleMemberInBoard(Request $request)
@@ -186,8 +202,8 @@ class BoardMemberController extends Controller
                 $request->role === 'member' &&
                 $board->countAdmins() === 1 &&
                 $board->members()->where('board_members.user_id', $request->user_id)
-                    ->where('board_members.role', 'admin')
-                    ->exists()
+                ->where('board_members.role', 'admin')
+                ->exists()
             ) {
                 return response()->json(['success' => false, 'message' => 'Cannot downgrade the last admin'], 400);
             }
@@ -196,13 +212,19 @@ class BoardMemberController extends Controller
 
             $targetUser = User::find($request->user_id);
 
-            $targetUser->notify(new BoardMemberRoleUpdatedNotification($board, $request->role, $currentUser));
+            // $targetUser->notify(new BoardMemberRoleUpdatedNotification($board, $request->role, $currentUser));
+
+            // Chỉ gửi thông báo nếu không phải tự chỉnh quyền
+            if ($currentUser->id !== $targetUser->id) {
+                $targetUser->notify(new BoardMemberRoleUpdatedNotification($board, $request->role, $currentUser));
+            }
 
             broadcast(new BoardMemberRoleUpdated($board->id, $request->user_id, $request->role))->toOthers();
 
             // Trả thêm thông tin để client biết có mở menu rời bảng không
             $isCreator = $board->isCreator($currentUser->id);
             $canLeave = $isCreator && $board->countAdmins() > 1;
+
             return response()->json([
                 'success' => true,
                 'message' => 'Role updated successfully',
@@ -224,7 +246,7 @@ class BoardMemberController extends Controller
             $board = Board::findOrFail($boardId);
             $currentUser = auth()->user();
             $removeUser = User::findOrFail($request->user_id);
-
+            Log::info("Current User ID: " . $currentUser->id . " | Remove User ID: " . $removeUser->id);
             // Kiểm tra quyền admin
             if (
                 !$board->members()->where('board_members.user_id', $currentUser->id)
@@ -238,8 +260,8 @@ class BoardMemberController extends Controller
             if (
                 $board->countAdmins() === 1 &&
                 $board->members()->where('board_members.user_id', $request->user_id)
-                    ->where('board_members.role', 'admin')
-                    ->exists()
+                ->where('board_members.role', 'admin')
+                ->exists()
             ) {
                 return response()->json([
                     'success' => false,
@@ -247,6 +269,7 @@ class BoardMemberController extends Controller
                 ], 400);
             }
 
+            $memberIds = $board->members()->pluck('users.id')->toArray();
             DB::transaction(function () use ($board, $request) {
                 // Xóa thành viên khỏi bảng
                 $board->members()->detach($request->user_id);
@@ -271,12 +294,35 @@ class BoardMemberController extends Controller
             });
 
             // Gửi thông báo lưu vào database
-            $removeUser->notify(new MemberRemovedNotification($board->id, $board->name));
+            // $removeUser->notify(new MemberRemovedNotification($board->id, $board->name));
+            // Chỉ gửi thông báo nếu người bị xóa không phải là người thực hiện hành động
+            // Kiểm tra và gửi thông báo
+            if ($currentUser->id !== $removeUser->id) {
+                Log::info("Sending MemberRemovedNotification to user: " . $removeUser->id);
+                $removeUser->notify(new MemberRemovedNotification($board->id, $board->name));
+            } else {
+                Log::info("Skipping notification as user " . $currentUser->id . " removed themselves");
+            }
+            // Lấy danh sách tất cả member_ids SAu khi xóa
+            // Lấy danh sách thành viên còn lại sau khi xóa
+         
 
-            // Gửi event realtime
-            event(new MemberRemovedFromBoard($request->user_id, $boardId));
-
-            return response()->json(['success' => true, 'message' => 'Member removed successfully'], 200);
+            // Chỉ gửi event tới các thành viên còn lại, không gửi tới người bị xóa
+            broadcast(new MemberRemovedFromBoard($board->id, $request->user_id, $removeUser->full_name, $memberIds));
+            Log::info("Broadcasting to memberIds", ['memberIds' => $memberIds]);
+            // Kiểm tra xem currentUser còn là thành viên không
+            $isMember = $board->members()->where('board_members.user_id', $currentUser->id)->exists();
+            // $isCreator = $board->created_by === $currentUser->id;
+            return response()->json(
+                [
+                    'success' => true,
+                    'message' => 'Member removed successfully',
+                    'is_member' => $isMember,
+                    'removed_user_id' => $request->user_id, // ID của người bị xóa
+                    'was_self_removed' => $currentUser->id === $removeUser->id, // Kiểm tra có phải tự xóa không
+                ],
+                200
+            );
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -328,10 +374,10 @@ class BoardMemberController extends Controller
             $cards = Card::whereHas('list', function ($query) use ($boardId) {
                 $query->where('board_id', $boardId);
             })
-            ->whereHas('members', function ($query) use ($userId) {
-                $query->where('user_id', $userId);
-            })
-            ->get();
+                ->whereHas('members', function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                })
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -347,28 +393,85 @@ class BoardMemberController extends Controller
     }
 
     public function getMemberCheckListItems($boardId, $userId)
-{
-    try {
-        $items = ChecklistItem::whereHas('checklist.card.list', function ($query) use ($boardId) {
-                        $query->where('board_id', $boardId);
-                    })
-                    ->whereHas('members', function ($query) use ($userId) {
-                        $query->where('user_id', $userId);
-                    })
-                    ->get();
+    {
+        try {
+            $items = ChecklistItem::whereHas('checklist.card.list', function ($query) use ($boardId) {
+                $query->where('board_id', $boardId);
+            })
+                ->whereHas('members', function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                })
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => "Lấy danh sách mục checklist của thành viên thành công",
-            'data' => $items
-        ]);
-    } catch (\Throwable $th) {
-        return response()->json([
-            'success' => false,
-            'message' => "Lấy danh sách mục checklist của thành viên không thành công",
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => "Lấy danh sách mục checklist của thành viên thành công",
+                'data' => $items
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => "Lấy danh sách mục checklist của thành viên không thành công",
+            ]);
+        }
     }
-}
 
+    public function inviteMemberIntoBoardByEmail(Request $request)
+    {
 
+        // Validate request
+        $request->validate([
+            'board_id' => 'required|uuid|exists:boards,id', // Kiểm tra board_id hợp lệ và tồn tại
+            'emails' => 'required|array', // Mảng email phải có
+            'emails.*' => 'required|email', // Kiểm tra từng email hợp lệ
+            'message' => 'nullable|string|max:500', // Tin nhắn mời (optional)
+        ]);
+
+        $board = Board::findOrFail($request->board_id);
+        $emails = $request->emails;
+        $message = $request->message ?? 'Bạn đã được mời tham gia bảng: ' . $board->name;
+
+        $invitations = [];
+
+        // Lặp qua các email và gửi mời
+        foreach ($emails as $email) {
+            $user = User::where('email', $email)->first();
+
+            if ($user) {
+                $invitation = BoardInvitation::create([
+                    'board_id' => $board->id,
+                    'invited_member_id' => $user->id,
+                    'status' => 'pending',
+                    'invite_token' => Str::random(16),
+                    'invitation_message' => $message,
+                    'invited_by' => auth()->id(),
+                    'accept_unconfirmed' => false,
+                ]);
+                $invitation->load('board'); // Load quan hệ board
+                $invitations[] = $invitation;
+
+                // Gửi notification cho user đã có tài khoản
+                $user->notify(new MessageMailInviteToBoard($invitation));
+            } else {
+                $invitation = BoardInvitation::create([
+                    'board_id' => $board->id,
+                    'email' => $email,
+                    'status' => 'pending',
+                    'invite_token' => Str::random(16),
+                    'invitation_message' => $message,
+                    'invited_by' => auth()->id(),
+                    'accept_unconfirmed' => true,
+                ]);
+                $invitation->load('board'); // Load quan hệ board
+                $invitations[] = $invitation;
+
+                // Gửi notification cho email chưa có tài khoản
+                Notification::route('mail', $email)->notify(new MessageMailInviteToBoard($invitation));
+            }
+        }
+        return response()->json([
+            'message' => 'Invitations have been sent successfully!',
+            'data' => $invitations
+        ], 200);
+    }
 }

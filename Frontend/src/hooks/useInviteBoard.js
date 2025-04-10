@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { generateInviteLink, getBoardMembers, getGuestBoards, removeInviteLink, removeMemberFromBoard, updateRoleMemberInBoards } from "../api/models/inviteBoardApi";
+import { acceptRequestJoinBoard, generateInviteLink, getBoardMembers, getGuestBoards, getRequestJoinBoard, rejectRequestJoinBoard, removeInviteLink, removeMemberFromBoard, requestJoinBoard, updateRoleMemberInBoards } from "../api/models/inviteBoardApi";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import echoInstance from "./realtime/useRealtime";
@@ -34,7 +34,7 @@ export const useGetBoardMembers = (boardId) => {
     channel.listen(".BoardUpdateRole", (data) => {
       // console.log('Realtime archive changed: ', boardId);
 
-      queryClient.invalidateQueries(["boardMembers"]);
+      queryClient.invalidateQueries({ queryKey: ["boardMembers", boardId], exact: true });
 
     });
 
@@ -90,7 +90,7 @@ export const useUpdateRoleMemberInBoards = () => {
     onSuccess: (data, {boardId}) => {
       if (data.success) {
       
-        queryClient.invalidateQueries({ queryKey: ["boardMembers", boardId], exact: false });
+        queryClient.invalidateQueries({ queryKey: ["boardMembers", boardId], exact: true });
         
       }
     },
@@ -151,28 +151,51 @@ export const useRemoveMemberFromBoard = (currentUserId) => {
   // Lắng nghe event realtime cho người dùng hiện tại
   useEffect(() => {
     if (!currentUserId) return;
-
+  
     // Subscribe vào private channel của user hiện tại
-    const channel = echoInstance.private(`user.${currentUserId}`);
-
+    const channel = echoInstance.private(`App.Models.User.${currentUserId}`);
+  
     channel.listen("MemberRemovedFromBoard", (data) => {
-
-      // toast.info(data.message); // Hiển thị thông báo
-
-      // Cập nhật cache boardMembers
-     
-      // Làm mới dữ liệu từ server
-      // queryClient.invalidateQueries({ queryKey: ["boardMembers", variables.boardId], exact: true });
-      // queryClient.invalidateQueries({ queryKey: ["membersInCard", variables.boardId], exact: true });
-      // queryClient.invalidateQueries({ queryKey: ["checklist-item-members", variables.boardId], exact: true });
-
-      // navigate("/home"); // Điều hướng ngay
+      console.log("MemberRemovedFromBoard", data);
+  
+      // Lấy thông tin bảng từ cache
+      const boardData = queryClient.getQueryData(["boards", data.board_id]);
+      console.log("Board data:", boardData);
+  
+      const isCreator = boardData?.created_by === currentUserId;
+      const isSelfRemoved = data.user_id === currentUserId;
+  
+      // Chỉ điều hướng nếu là người rời bảng
+      if (isSelfRemoved && !isCreator) {
+        // toast.info(`${data.user_name} đã rời khỏi bảng.`);
+        navigate(`/request-join/${data.board_id}`);
+      } else if (isSelfRemoved && isCreator) {
+        toast.info("Bạn đã rời khỏi bảng, có thể tham gia lại bất cứ lúc nào.");
+      } else {
+        // Thông báo cho các thành viên khác (bao gồm creator) mà không điều hướng
+        toast.info(`${data.user_name} đã rời khỏi bảng.`);
+      }
+  
+      // Cập nhật cache cho tất cả user
+      queryClient.setQueryData(["boardMembers", data.board_id], (oldData) => {
+        if (!oldData || !oldData.data) return oldData;
+        return {
+          ...oldData,
+          data: oldData.data.filter((member) => member.id !== data.user_id),
+        };
+      });
+  
+      // Invalidate các query liên quan
+      queryClient.invalidateQueries({ queryKey: ["boardMembers", data.board_id], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["membersInCard", data.board_id], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["checklist-item-members", data.board_id], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["guestBoards"], exact: true });
     });
-
+  
     // Cleanup khi unmount
     return () => {
       channel.stopListening("MemberRemovedFromBoard");
-      echoInstance.leave(`user.${currentUserId}`);
+      echoInstance.leave(`App.Models.User.${currentUserId}`);
     };
   }, [currentUserId, navigate, queryClient]);
 
@@ -189,9 +212,12 @@ export const useMemberJoinedListener = (currentUserId) => {
     channel.listen('MemberJoinedBoard', (data) => {
       // Hiển thị toast
       toast.success(data.message);
+      console.log("MemberJoinedBoard", data.message); // Hiển thị thông báo
+      
       // console.log('helloo')
       // Làm mới danh sách BoardMember
       queryClient.invalidateQueries({ queryKey: ['boardMembers', data.board_id], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["guestBoards"], exact: true });
     });
 
     return () => {
@@ -225,4 +251,118 @@ export const useRemoveInviteLink = () => {
   });
 
 }
+
+
+export const useRequestJoinBoard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ boardId, userId }) => requestJoinBoard({ boardId, userId }),
+    onSuccess: (data, variables) => {
+      // console.log(data);
+      // console.log(variables);
+      
+      if (data.is_member) {
+        queryClient.invalidateQueries({ queryKey: ['boardMembers', variables.boardId], exact: true });
+      }
+    },
+    onError: (error) => {
+      console.error("Lỗi khi yêu cầu tham gia bảng:", error);
+    },
+  });
+};
+
+
+
+
+export const useGetRequestBoard = (boardId, options = {}) => {
+  return useQuery({
+    queryKey: ["request-board", boardId],
+    queryFn: () => getRequestJoinBoard(boardId),
+    enabled: !!boardId, // Chỉ gọi nếu boardId và enabled được bật
+    staleTime: 0,
+    cacheTime: 5 * 60 * 1000,
+    retry: 2,
+    refetchOnWindowFocus: false,
+    // ...options, // Gộp các options được truyền vào sau cùng
+  });
+};
+
+
+export const useAcceptRequestJoinBoard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ( requestId ) => acceptRequestJoinBoard(requestId),
+    onSuccess: (data, variables) => {
+      toast.success("Chấp nhận yêu cầu tham gia bảng thành công!")
+      console.log(data);
+      // console.log(variables);
+      
+     
+      queryClient.invalidateQueries({ queryKey: ['boardMembers', data.board_id], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['request-board', data.board_id], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["guestBoards"], exact: true });
+      
+    },
+    onError: (error) => {
+      console.error("Lỗi khi yêu cầu tham gia bảng:", error);
+      // Kiểm tra nếu lỗi do yêu cầu đã được xử lý
+      const errorMessage = error.response?.data?.message || "Lỗi không xác định";
+      if (errorMessage.includes("Yêu cầu không tồn tại.") || errorMessage.includes("không tồn tại")) {
+        toast.info("Yêu cầu này đã được xử lý bởi quản trị viên khác.");
+      } else {
+        toast.error("Lỗi khi chấp nhận yêu cầu: " + errorMessage);
+      }
+    },
+  });
+};
+
+export const useJoinBoardRequestListener = (userId) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = echoInstance.private(`App.Models.User.${userId}`);
+
+    channel.listen("RequestJoinBoard", (data) => {
+      console.log("New join request:", data);
+      toast.info(data.message); // Hiển thị thông báo giống Trello
+
+     // Invalidate cache để gọi lại API lấy danh sách mới
+     queryClient.invalidateQueries({ queryKey: ["request-board", data.board_id], exact: true });
+    });
+
+    return () => {
+      channel.stopListening("RequestJoinBoard");
+      echoInstance.leave(`App.Models.User.${userId}`);
+    };
+  }, [userId, queryClient]);
+};
+
+
+export const useRejectRequestJoinBoard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ( requestId ) => rejectRequestJoinBoard(requestId),
+    onSuccess: (data, variables) => {
+      toast.success("Xóa yêu cầu tham gia bảng thành công!")
+      console.log(data);
+      // console.log(variables);
+      
+     
+      queryClient.invalidateQueries({ queryKey: ['boardMembers', data.board_id], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['request-board', data.board_id], exact: true });
+      
+    },
+    onError: (error) => {
+      console.error("Lỗi khi xóa yêu cầu tham gia bảng:", error);
+    },
+  });
+};
+
+
+
 

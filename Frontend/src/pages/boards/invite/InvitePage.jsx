@@ -11,15 +11,26 @@ const InvitePage = () => {
     const checkInvite = async () => {
       try {
         const response = await axios.get(`http://localhost:8000/api/invite-board/${token}`);
-        const { board } = response.data;
-
+        const { user_exists, email } = response.data;
+        // console.log('user_exists', user_exists);
+        console.log('API response:', { email, user_exists }); // Debug
+        
         if (isAuthenticated) {
-          // Nếu đã đăng nhập, chuyển thẳng tới trang accept-invite
           navigate(`/accept-invite/${token}`);
         } else {
-          // Nếu chưa đăng nhập, chuyển tới login và lưu token
-          navigate('/login', { state: { inviteToken: token } });
+          if (email) {
+            // Mời qua email
+            if (user_exists) {
+              navigate('/login', { state: { inviteToken: token } });
+            } else {
+              navigate(`/register?token=${token}&email=${encodeURIComponent(email)}`);
+            }
+          } else {
+            // Link chung
+            navigate('/login', { state: { inviteToken: token } });
+          }
         }
+
       } catch (error) {
         console.error('Invalid invite link', error);
         navigate('/404');
