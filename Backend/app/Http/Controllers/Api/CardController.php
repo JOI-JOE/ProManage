@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\api;
 
-use App\Events\ActivityEvent;
 use App\Events\CardArchiveToggled;
-use App\Events\CardCreate;
 use App\Events\CardCreated;
 use App\Events\CardDeleted;
 use App\Events\CardDescriptionUpdated;
@@ -13,14 +11,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\ListBoard;
 use App\Models\User;
-use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Events\CardPositionUpdated;
-use App\Events\ColumnPositionUpdated;
-use App\Jobs\SendReminderNotification;
 use App\Jobs\SendReminderNotificationCard;
 use Carbon\Carbon;
 use Exception;
@@ -59,23 +53,140 @@ class CardController extends Controller
 
         return response()->json($card, 201);
     }
-
-
-    // public function show($cardId) {
-
-    // }
-
     public function show($cardId)
     {
-        $card = Card::with(['list.board', 'checklists.items'])->findOrFail($cardId);
-        return response()->json([
+        // 1. Lấy thông tin cơ bản của card cùng với list board
+        $card = DB::table('cards')
+            ->select([
+                'cards.id',
+                'cards.title',
+                'cards.description',
+                'cards.thumbnail',
+                'cards.position',
+                'cards.start_date',
+                'cards.end_date',
+                'cards.end_time',
+                'cards.reminder',
+                'cards.is_completed',
+                'cards.is_archived',
+                'cards.list_board_id',
+                'list_boards.name as list_board_name',
+                DB::raw('(SELECT COUNT(*) FROM comment_cards WHERE comment_cards.card_id = cards.id) as comment_count'),
+                DB::raw('(SELECT COUNT(*) FROM attachments WHERE attachments.card_id = cards.id) as attachment_count'),
+                DB::raw('(
+                SELECT COUNT(*) 
+                FROM checklists cl 
+                JOIN checklist_items cli ON cl.id = cli.checklist_id 
+                WHERE cl.card_id = cards.id
+            ) as total_checklist_items'),
+                DB::raw('(
+                SELECT COUNT(*) 
+                FROM checklists cl 
+                JOIN checklist_items cli ON cl.id = cli.checklist_id 
+                WHERE cl.card_id = cards.id AND cli.is_completed = 1
+            ) as completed_checklist_items')
+            ])
+            ->join('list_boards', 'cards.list_board_id', '=', 'list_boards.id')
+            ->where('cards.id', $cardId)
+            ->where('cards.is_archived', 0)
+            ->first();
+
+        if (!$card) {
+            return response()->json(['message' => 'Card not found'], 404);
+        }
+
+        // 2. Lấy labels
+        $labels = DB::table('card_label')
+            ->join('labels', 'card_label.label_id', '=', 'labels.id')
+            ->select('labels.id as label_id', 'labels.title', 'labels.color_id')
+            ->where('card_label.card_id', $cardId)
+            ->get()
+            ->map(function ($label) {
+                return [
+                    'id' => $label->label_id,
+                    'name' => $label->title,
+                    'color' => $label->color_id,
+                ];
+            });
+
+        $labelIds = $labels->pluck('id');
+
+        // 3. Lấy member IDs
+        $memberIds = DB::table('card_user')
+            ->where('card_user.card_id', $cardId)
+            ->pluck('user_id');
+
+        // 4. Lấy checklists IDs
+        $checklistsIds = DB::table('checklists')
+            ->where('card_id', $cardId)
+            ->pluck('id');
+
+        // 5. Trả về dữ liệu
+        return [
             'id' => $card->id,
             'title' => $card->title,
-            'description' => $card->description ?? '',
-            'listName' => $card->list->name ?? '', // Lấy tên danh sách chứa card
-            'boardName' => $card->list->board->name ?? '', // Lấy tên board
+            'description' => $card->description,
+            'thumbnail' => $card->thumbnail,
+            'position' => (float)$card->position,
+            'is_archived' => (bool)$card->is_archived,
+            'list_board_id' => $card->list_board_id,
+            'list_board_name' => $card->list_board_name,
+            'labelId' => $labelIds,
+            'labels' => $labels,
+            'membersId' => $memberIds,
+            'checklistsId' => $checklistsIds, // Chỉ trả về mảng checklistsId
+            'badges' => [
+                'attachments' => (int)$card->attachment_count,
+                'comments' => (int)$card->comment_count,
+                'start' => $card->start_date,
+                'due' => $card->end_date,
+                'dueTime' => $card->end_time,
+                'dueReminder' => $card->reminder,
+                'dueComplete' => (bool)$card->is_completed,
+                'checkItems' => (int)$card->total_checklist_items,
+                'checkItemsChecked' => (int)$card->completed_checklist_items,
+                'description' => !empty($card->description),
+            ],
+        ];
+    }
+
+    public function update(Request $request, $cardId)
+    {
+        $validatedData = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|nullable|string',
+        ]);
+
+        if (isset($validatedData['title'])) {
+            $this->updateCardTitle($cardId, $validatedData['title']);
+        }
+
+        if (array_key_exists('description', $validatedData)) {
+            $this->updateCardDescription($cardId, $validatedData['description']);
+        }
+
+        $card = DB::table('cards')->where('id', $cardId)->first();
+
+        return response()->json([
+            'message' => 'Card updated successfully.',
+            'card' => $card
         ]);
     }
+    private function updateCardTitle($cardId, $title)
+    {
+        DB::table('cards')
+            ->where('id', $cardId)
+            ->update(['title' => $title]);
+    }
+
+    private function updateCardDescription($cardId, $description)
+    {
+        DB::table('cards')
+            ->where('id', $cardId)
+            ->update(['description' => $description]);
+    }
+
+
     //-------------------------------------------------------------------
 
 

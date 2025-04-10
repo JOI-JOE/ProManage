@@ -5,22 +5,22 @@ import "react-quill/dist/quill.snow.css";
 
 // Custom styles for the toolbar and editor
 const CommentEditor = ({
-    value,
-    onChange,
-    onSave,
-    onCancel,
-    isSaveDisabled = false,
-    isLoading = false,
-    saveLabel = "Lưu",
-    cancelLabel = "Hủy",
-    placeholder = "Edit your comment...",
-    autoFocus = false,
-    editorHeight = "150px",
-    minHeight = "100px",
-    maxWidth = "100%",
+  value,
+  onChange,
+  onSave,
+  onCancel,
+  isSaveDisabled = false,
+  isLoading = false,
+  saveLabel = "Lưu",
+  cancelLabel = "Hủy",
+  placeholder = "Edit your comment...",
+  autoFocus = false,
+  editorHeight = "150px",
+  minHeight = "100px",
+  maxWidth = "100%",
 }) => {
-    // Define styles with dynamic values
-    const editorStyles = `
+  // Define styles with dynamic values
+  const editorStyles = `
     .ql-toolbar.ql-snow {
       border: 1px solid #d1d1d1;
       border-radius: 4px 4px 0 0;
@@ -63,83 +63,83 @@ const CommentEditor = ({
     }
   `;
 
-    return (
-        <Box sx={{ maxWidth: maxWidth, width: "100%" }}>
-            {/* Inject custom styles */}
-            <style>{editorStyles}</style>
+  return (
+    <Box sx={{ maxWidth: maxWidth, width: "100%" }}>
+      {/* Inject custom styles */}
+      <style>{editorStyles}</style>
 
-            <ReactQuill
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder}
-                theme="snow"
-                modules={{
-                    toolbar: [
-                        [{ font: [] }], // Font dropdown
-                        ["bold", "italic"], // Bold, Italic
-                        [{ list: "bullet" }], // Bullet list
-                        [{ header: [1, 2, 3, false] }], // Heading dropdown
-                        ["link", "image"], // Link and Image
-                        ["clean"], // Clear formatting
-                    ],
-                }}
-                formats={["font", "bold", "italic", "list", "bullet", "header", "link", "image"]}
-                autoFocus={autoFocus}
-            />
+      <ReactQuill
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        theme="snow"
+        modules={{
+          toolbar: [
+            [{ font: [] }], // Font dropdown
+            ["bold", "italic"], // Bold, Italic
+            [{ list: "bullet" }], // Bullet list
+            [{ header: [1, 2, 3, false] }], // Heading dropdown
+            ["link", "image"], // Link and Image
+            ["clean"], // Clear formatting
+          ],
+        }}
+        formats={["font", "bold", "italic", "list", "bullet", "header", "link", "image"]}
+        autoFocus={autoFocus}
+      />
 
-            {/* Add Save, Cancel buttons, and Formatting Help link */}
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 1,
-                    mt: 1,
-                }}
-            >
-                <Box sx={{ display: "flex", gap: 1 }}>
-                    <Button
-                        variant="contained"
-                        size="small"
-                        sx={{
-                            backgroundColor: "#0052cc", // Blue color to match the screenshot
-                            color: "#FFF",
-                            fontSize: "0.75rem",
-                            height: "28px",
-                            minWidth: "60px",
-                            "&:hover": {
-                                backgroundColor: "#003087", // Darker blue on hover
-                            },
-                        }}
-                        onClick={onSave}
-                        disabled={isSaveDisabled || isLoading}
-                        startIcon={isLoading ? <CircularProgress size={12} color="inherit" /> : null}
-                    >
-                        {saveLabel}
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        sx={{
-                            color: "#172B4D",
-                            borderColor: "#d1d1d1",
-                            fontSize: "0.75rem",
-                            height: "28px",
-                            minWidth: "60px",
-                            "&:hover": {
-                                backgroundColor: "#E4E7EB",
-                                borderColor: "#bbb",
-                            },
-                        }}
-                        onClick={onCancel}
-                        disabled={isLoading}
-                    >
-                        {cancelLabel}
-                    </Button>
-                </Box>
-            </Box>
+      {/* Add Save, Cancel buttons, and Formatting Help link */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 1,
+          mt: 1,
+        }}
+      >
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            variant="contained"
+            size="small"
+            sx={{
+              backgroundColor: "#0052cc", // Blue color to match the screenshot
+              color: "#FFF",
+              fontSize: "0.75rem",
+              height: "28px",
+              minWidth: "60px",
+              "&:hover": {
+                backgroundColor: "#003087", // Darker blue on hover
+              },
+            }}
+            onClick={onSave}
+            disabled={isSaveDisabled || isLoading}
+            startIcon={isLoading ? <CircularProgress size={12} color="inherit" /> : null}
+          >
+            {saveLabel}
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            sx={{
+              color: "#172B4D",
+              borderColor: "#d1d1d1",
+              fontSize: "0.75rem",
+              height: "28px",
+              minWidth: "60px",
+              "&:hover": {
+                backgroundColor: "#E4E7EB",
+                borderColor: "#bbb",
+              },
+            }}
+            onClick={onCancel}
+            disabled={isLoading}
+          >
+            {cancelLabel}
+          </Button>
         </Box>
-    );
+      </Box>
+    </Box>
+  );
 };
 
 export default CommentEditor;

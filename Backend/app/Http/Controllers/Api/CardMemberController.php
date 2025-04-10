@@ -8,10 +8,107 @@ use App\Models\Card;
 use App\Models\User;
 use App\Notifications\CardMemberUpdatedNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Activity;
 
 class CardMemberController extends Controller
 {
+    // Function Store
+    public function toggleJoin($cardId)
+    {
+        $userId = auth()->id(); // Lấy user hiện tại
+
+        $exists = DB::table('card_user')
+            ->where('card_id', $cardId)
+            ->where('user_id', $userId)
+            ->exists();
+
+        if ($exists) {
+            // Nếu đã là member thì xoá (rời khỏi card)
+            DB::table('card_user')
+                ->where('card_id', $cardId)
+                ->where('user_id', $userId)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Rời khỏi card thành công.',
+                'joined' => false,
+            ]);
+        } else {
+            // Nếu chưa là member thì thêm (tham gia card)
+            DB::table('card_user')->insert([
+                'card_id' => $cardId,
+                'user_id' => $userId,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tham gia card thành công.',
+                'joined' => true,
+            ]);
+        }
+    }
+
+    public function store($cardId, $memberId)
+    {
+        // Kiểm tra nếu user tồn tại
+        $userExists = DB::table('users')->where('id', $memberId)->exists();
+        if (!$userExists) {
+            return response()->json(['message' => 'Thành viên không tồn tại.'], 404);
+        }
+
+        // Kiểm tra nếu đã là member rồi thì bỏ qua
+        $exists = DB::table('card_user')
+            ->where('card_id', $cardId)
+            ->where('user_id', $memberId)
+            ->exists();
+
+        if (!$exists) {
+            DB::table('card_user')->insert([
+                'card_id' => $cardId,
+                'user_id' => $memberId,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Thêm thành viên vào card thành công.',
+            'success' => true,
+            'memberId' => $memberId,
+        ]);
+    }
+
+    public function remove($cardId, $memberId)
+    {
+        $userExists = DB::table('users')->where('id', $memberId)->exists();
+        if (!$userExists) {
+            return response()->json(['message' => 'Thành viên không tồn tại.'], 404);
+        }
+
+        // Kiểm tra nếu là member thì xóa
+        $deleted = DB::table('card_user')
+            ->where('card_id', $cardId)
+            ->where('user_id', $memberId)
+            ->delete();
+
+        if ($deleted) {
+            return response()->json([
+                'message' => 'Xóa thành viên khỏi card thành công.',
+                'success' => true,
+                'memberId' => $memberId,
+                'removed' => true,
+            ]);
+        } else {
+            return response()->json([
+                'message' => 'Thành viên này không có trong card.',
+                'success' => false,
+                'memberId' => $memberId,
+                'removed' => false,
+            ]);
+        }
+    }
+
+    //-------------------------------------------------------
 
     public function getCardMembers($cardId)
     {
@@ -79,8 +176,7 @@ class CardMemberController extends Controller
                     ])
                     ->log("{$authUser->full_name} đã gỡ {$user->full_name} khỏi thẻ này");
 
-                    $user->notify(new CardMemberUpdatedNotification($card, 'removed', $authUser, $activity, $user->id));
-
+                $user->notify(new CardMemberUpdatedNotification($card, 'removed', $authUser, $activity, $user->id));
             } else {
                 $activity = null;
             }
@@ -119,8 +215,7 @@ class CardMemberController extends Controller
                     ])
                     ->log("{$authUser->full_name} đã thêm {$user->full_name} vào thẻ này");
 
-                    $user->notify(new CardMemberUpdatedNotification($card, 'added', $authUser, $activity, $user->id));
-
+                $user->notify(new CardMemberUpdatedNotification($card, 'added', $authUser, $activity, $user->id));
             }
 
             broadcast(new CardMemberUpdated($card, $user, 'added', $activity))->toOthers();
@@ -128,6 +223,4 @@ class CardMemberController extends Controller
             return response()->json(['message' => 'Thành viên đã được thêm vào thẻ']);
         }
     }
-
-
 }

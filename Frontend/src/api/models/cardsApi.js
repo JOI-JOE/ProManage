@@ -1,13 +1,90 @@
+import { data } from "react-router-dom";
 import authClient from "../authClient";
 // Lấy danh sách card theo list
-export const getCardByList = async (listId) => {
-  const response = await authClient.get(`/cards/${listId}/getCardsByList`);
-  return response.data.data;
+
+// Fetch dữ liệu card -------------------------------------------------------
+export const fetchCardById = async (cardId) => {
+  try {
+    const response = await authClient.get(`/card/${cardId}`);
+    if (response.data) {
+      return response.data;
+    } else {
+      console.error("No data returned from API.");
+      throw new Error("No data from API.");
+    }
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error;
+  }
 };
+
+export const fetchCheckLists = async (cardId) => {
+  const { data } = await authClient.get(`/card/${cardId}/checklists`);
+  return data;
+};
+// function create ----------------------------------------------------------
+// - checklist
+export const postCheckLists = async ({ cardId, data }) => {
+  const response = await authClient.post(`/card/${cardId}/checklists`, data);
+  return response.data;
+};
+// - checklistitem
+//----
+export const postChecklistItem = async ({ checklistId, data }) => {
+  const response = await authClient.post(
+    `/checklist/${checklistId}/items`,
+    data
+  );
+  return response.data;
+};
+
+/// function update --------------------------------------------------------
+// ChecklistItem
+export const updateCheckListItem = async (checklistItemId, data) => {
+  const response = await authClient.put(
+    `/checklist/${checklistItemId}/items`,
+    data
+  );
+  return response.data;
+};
+// Card
+export const updateCardById = async (cardId, data) => {
+  const response = await authClient.put(`/card/${cardId}`, data);
+  return response.data;
+};
+// Member card
+export const joinCard = async (cardId) => {
+  const { data } = await authClient.post(`/card/${cardId}/idMember`);
+  return data;
+};
+// Thêm thành viên cụ thể vào card
+export const putMemberToCard = async (cardId, memberId) => {
+  const { data } = await authClient.post(
+    `/card/${cardId}/idMember/${memberId}`
+  );
+  return data;
+};
+
+//fucntion delete
+// Bỏ ra
+export const removeMemberFromCard = async (cardId, memberId) => {
+  const { data } = await authClient.delete(
+    `/card/${cardId}/idMember/${memberId}`
+  );
+  return data;
+};
+
+// checklist
+export const removeCheckListFromCard = async (checklistId) => {
+  const { data } = await authClient.delete(`/checklist/${checklistId}`);
+  return data;
+};
+
+/// ---------------------------------------------------------------
 
 // Tạo card mới
 export const createCard = async (data) => {
-  const response = await authClient.post("/cards", data);
+  const response = await authClient.post("/card", data);
   return response.data;
 };
 
@@ -24,20 +101,9 @@ export const updatePositionCard = async ({ cardId, listId, position }) => {
   }
 };
 
-export const getCardById = async (cardId) => {
-  try {
-    const response = await authClient.get(`/cards/${cardId}/show`);
-    // console.log("API response:", response); // Kiểm tra toàn bộ response
-    if (response.data) {
-      return response.data;
-    } else {
-      console.error("No data returned from API.");
-      throw new Error("No data from API.");
-    }
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    throw error;
-  }
+export const getCardByList = async (listId) => {
+  const response = await authClient.get(`/cards/${listId}/getCardsByList`);
+  return response.data.data;
 };
 
 export const updateDescription = async (cardId, description) => {

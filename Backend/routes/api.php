@@ -123,40 +123,67 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/workspace/{workspaceId}/member/{memberId}',  'addMemberToWorkspaceDirection');
     });
 
+    // Card
+    Route::prefix('card')->controller(CardController::class)->group(function () {
+        Route::post('/', 'store');
+        Route::get('/{cardId}', 'show');
+        Route::put('/{cardId}', 'update');
+    });
+    // Card Member
+    Route::prefix('card')->controller(CardMemberController::class)->group(function () {
+        Route::post('/{cardId}/idMember', 'toggleJoin');
+        Route::post('/{cardId}/idMember/{memberId}', 'store');
+        Route::delete('/{cardId}/idMember/{memberId}', 'remove');
+    });
+    // Checklist
+    Route::prefix('card')->controller(ChecklistController::class)->group(function () {
+        Route::get('/{cardId}/checklists', 'index'); // Lấy danh sách checklist của 1 card
+        Route::post('/{cardId}/checklists', 'store'); // Tạo checklist mới cho 1 card
+    });
 
-    // Route::prefix('cards')->controller(CardController::class)->group(function () {
-    //     Route::post('/', 'store');
-    //     Route::get('/{cardId}', 'show');
+    Route::delete('checklist/{checklistItemId}',  [ChecklistController::class, 'delete']);
 
-    // Route::put('/{cardId}/name', 'updateName');
-    // Route::put('/{cardId}/description', 'updateDescription');
-    // Route::put('/{cardId}/dates', 'updateDates');
-    // Route::delete('/{cardId}/dates', 'removeDates');
-    // Route::get('/{cardId}/history', 'getCardHistory');
+    Route::prefix('checklist')->controller(ChecklistItemController::class)->group(function () {
+        Route::post('/{checklistId}/items',  'store');
+        Route::put('/{checklistItemId}/items',  'update');
+    });
 
-    // Member
-    // Route::post('/{cardId}/members/email', 'addMemberByEmail');
-    // Route::delete('/{cardId}/members/{user}', 'removeMember')->name('cards.removeMember');
+
+
+
+    // Route::controller(CardController::class)->group(function () {
+    //     Route::prefix('card')->group(function () {
+    //         Route::post('/', 'store');
+    //         Route::get('/{cardId}', 'show');
+    //     });
+    //     // Route::put('/{cardId}/name', 'updateName');
+    //     // Route::put('/{cardId}/description', 'updateDescription');
+    //     // Route::put('/{cardId}/dates', 'updateDates');
+    //     // Route::delete('/{cardId}/dates', 'removeDates');
+    //     // Route::get('/{cardId}/history', 'getCardHistory');
+
+    //     // Route::post('/{cardId}/members/email', 'addMemberByEmail');
+    //     // Route::delete('/{cardId}/members/{user}', 'removeMember')->name('cards.removeMember');
     // });
 
 
-    Route::prefix('cards')->group(function () {
-        Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
-        Route::post('/', [CardController::class, 'store']);
+    // Route::prefix('cards')->group(function () {
+    //     Route::get('/list/{listId}', [CardController::class, 'getCardsByList']);
+    //     Route::post('/', [CardController::class, 'store']);
 
-        Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
-        Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);
-        Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail']);
-        Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])
-            ->name('cards.removeMember');
+    //     Route::put('/{cardId}/updatename', [CardController::class, 'updateName']);
+    //     Route::put('/{cardID}/description', [CardController::class, 'updateDescription']);
+    //     Route::post('/{cardId}/members/email', [CardController::class, 'addMemberByEmail']);
+    //     Route::delete('/{card}/members/{user}', [CardController::class, 'removeMember'])
+    //         ->name('cards.removeMember');
 
-        Route::put('/{cardId}/dates', [CardController::class, 'updateDates']);
-        Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']);
-        Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']);
-        Route::post('/{cardId}/labels', [LabelController::class, 'addLabelToCard']);
-        Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']);
-        Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
-    });
+    //     Route::put('/{cardId}/dates', [CardController::class, 'updateDates']);
+    //     Route::delete('/{cardId}/dates', [CardController::class, 'removeDates']);
+    //     Route::get('/{cardId}/labels', [LabelController::class, 'getLabels']);
+    //     Route::post('/{cardId}/labels', [LabelController::class, 'addLabelToCard']);
+    //     Route::delete('/{cardId}/labels/{labelId}', [LabelController::class, 'removeLabelFromCard']);
+    //     Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
+    // });
 
 
     // Route::get('/search', [SearchController::class, 'search']);

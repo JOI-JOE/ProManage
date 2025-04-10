@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useEffect, useState } from 'react';
 import Menu from '@mui/material/Menu';
 import {
     TextField,
@@ -12,6 +12,7 @@ import {
     ListItemButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import InitialsAvatar from '../../../../../../../components/Common/InitialsAvatar';
 
 export default function MemberMenu({
     open,
@@ -23,13 +24,12 @@ export default function MemberMenu({
     setAnchorEl,
     onMemberSelect,
 }) {
-    const [searchTerm, setSearchTerm] = React.useState('');
-    const [filteredCardMembers, setFilteredCardMembers] = React.useState(cardMembers || []);
-    const [filteredBoardMembers, setFilteredBoardMembers] = React.useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filteredCardMembers, setFilteredCardMembers] = useState(cardMembers || []);
+    const [filteredBoardMembers, setFilteredBoardMembers] = useState([]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const term = searchTerm.toLowerCase();
-
         // Lọc thành viên đã có trong card ra khỏi board
         const boardWithoutCard = (boardMembers || []).filter(
             (bm) => !(cardMembers || []).some((cm) => cm.id === bm.id)
@@ -37,13 +37,13 @@ export default function MemberMenu({
 
         setFilteredCardMembers(
             (cardMembers || []).filter((member) =>
-                member.name.toLowerCase().includes(term)
+                member.user_name.toLowerCase().includes(term)
             )
         );
 
         setFilteredBoardMembers(
             boardWithoutCard.filter((member) =>
-                member.name.toLowerCase().includes(term)
+                member.user_name.toLowerCase().includes(term)
             )
         );
     }, [searchTerm, boardMembers, cardMembers]);
@@ -60,9 +60,13 @@ export default function MemberMenu({
 
     const handleRemoveCardMember = (memberId) => () => {
         if (onRemoveCardMember) {
+            const remaining = (cardMembers || []).filter((m) => m.id !== memberId);
+            // Nếu sau khi xoá sẽ không còn ai trong card
+            if (remaining.length === 0) {
+                handleClose(); // Đóng popover
+            }
             onRemoveCardMember(memberId);
         }
-        handleClose();
     };
 
     const handleClose = () => {
@@ -83,20 +87,16 @@ export default function MemberMenu({
             }}
             anchorOrigin={{
                 vertical: 'bottom',
-                horizontal: 'right',
+                horizontal: 'left',
             }}
             transformOrigin={{
                 vertical: 'top',
                 horizontal: 'left',
             }}
+            sx={{
+                mt: "20px"
+            }}
         >
-            <Typography variant="h6" sx={{ p: 2 }}>
-                Thành viên
-                <IconButton onClick={handleClose} sx={{ position: 'absolute', top: 5, right: 5 }}>
-                    <CloseIcon fontSize="small" />
-                </IconButton>
-            </Typography>
-
             <TextField
                 label="Tìm kiếm các thành viên"
                 variant="outlined"
@@ -104,7 +104,14 @@ export default function MemberMenu({
                 margin="dense"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                sx={{ mx: 2, mb: 1, width: 280 }}
+                sx={{
+                    mx: 2,
+                    mb: 1,
+                    width: 280,
+                }}
+                InputLabelProps={{
+                    sx: { color: 'black' }
+                }}
             />
 
             {filteredCardMembers.length > 0 && (
@@ -124,9 +131,20 @@ export default function MemberMenu({
                                 }
                             >
                                 <ListItemAvatar>
-                                    <Avatar>{member.initials}</Avatar>
+                                    <InitialsAvatar
+                                        sx={{
+                                            fontSize: "14px",
+                                            width: "32px",
+                                            height: "32px",
+                                        }}
+                                        key={member.id}
+                                        size={"32px"}
+                                        initials={member.initials}
+                                        name={member.full_name}
+                                        avatarSrc={member.image}
+                                    />
                                 </ListItemAvatar>
-                                <ListItemText primary={member.name} />
+                                <ListItemText primary={member.full_name} />
                             </ListItem>
                         ))}
                     </List>
@@ -146,12 +164,24 @@ export default function MemberMenu({
                                 sx={{ cursor: 'pointer' }}
                             >
                                 <ListItemAvatar>
-                                    <Avatar>{member.initials}</Avatar>
+                                    <InitialsAvatar
+                                        sx={{
+                                            fontSize: "14px",
+                                            width: "32px",
+                                            height: "32px",
+                                        }}
+                                        key={member.id}
+                                        size={"32px"}
+                                        initials={member.initials}
+                                        name={member.full_name}
+                                        avatarSrc={member.image}
+                                    />
                                 </ListItemAvatar>
-                                <ListItemText primary={member.name} />
+                                <ListItemText primary={member.full_name} />
                             </ListItemButton>
                         ))}
                     </List>
+                    
                 </>
             )}
 

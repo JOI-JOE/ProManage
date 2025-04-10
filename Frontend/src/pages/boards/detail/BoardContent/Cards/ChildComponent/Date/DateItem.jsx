@@ -50,10 +50,12 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
         // Initialize end_date
         setEndDate(item.end_date ? dayjs(item.end_date) : null);
 
-        // Initialize end_time: If not provided, round down current time to nearest hour and subtract 1 hour
-        const now = dayjs();
-        const defaultTime = now.startOf("hour").subtract(1, "hour"); // Round down to nearest hour, then subtract 1 hour
-        setEndTime(item.end_time ? dayjs(item.end_time, "HH:mm") : defaultTime);
+        // Initialize end_time with a default of 12:00 if not provided
+        setEndTime(
+            item.end_time
+                ? dayjs(item.end_time, "HH:mm")
+                : dayjs().set("hour", 12).set("minute", 0) // Default to 12:00
+        );
 
         // Initialize reminder
         if (item.reminder && item.end_date && item.end_time) {
@@ -291,9 +293,7 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                                                 setEndDate(dayjs());
                                             }
                                             if (!endTime) {
-                                                const now = dayjs();
-                                                const defaultTime = now.startOf("hour").subtract(1, "hour");
-                                                setEndTime(defaultTime);
+                                                setEndTime(dayjs().set("hour", 12).set("minute", 0));
                                             }
                                             setSelectionMode("end");
                                         } else {

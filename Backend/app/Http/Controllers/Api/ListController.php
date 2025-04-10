@@ -13,77 +13,6 @@ use App\Http\Controllers\Controller;
 
 class ListController extends Controller
 {
-    // ----------------------------------------------------
-    // public function show($boardId)
-    // {
-    //     $userId = auth()->id();
-
-    //     // 1. Lấy thông tin board cơ bản và kiểm tra tồn tại
-    //     $board = DB::table('boards')
-    //         ->select('id', 'visibility', 'workspace_id')
-    //         ->where('id', $boardId)
-    //         ->first();
-
-    //     if (!$board) {
-    //         return response()->json(['message' => 'Board not found'], 404);
-    //     }
-
-    //     // 2. Kiểm tra quyền truy cập
-    //     if (!$this->hasBoardAccess($board, $userId)) {
-    //         return response()->json(['message' => 'Access denied'], 403);
-    //     }
-
-    //     // 3. Lấy danh sách lists và cards trong một query duy nhất
-    //     $lists = DB::table('list_boards')
-    //         ->where('board_id', $boardId)
-    //         ->where('closed', 0)
-    //         ->orderBy('position')
-    //         ->get(['id', 'name', 'position', 'closed', 'board_id']);
-
-    //     // Nếu không có lists thì trả về luôn
-    //     if ($lists->isEmpty()) {
-    //         return response()->json([
-    //             'id' => $board->id,
-    //             'lists' => []
-    //         ], 200);
-    //     }
-
-    //     // 4. Lấy tất cả cards thuộc các lists trong một query
-    //     $cards = DB::table('cards')
-    //         ->whereIn('list_board_id', $lists->pluck('id'))
-    //         ->where('is_archived', 0)
-    //         ->orderBy('position')
-    //         ->get(['id', 'title', 'list_board_id', 'position', 'is_archived']);
-
-    //     // 5. Nhóm cards theo list_board_id để tối ưu hiệu năng
-    //     $groupedCards = $cards->groupBy('list_board_id');
-
-    //     // 6. Format dữ liệu response
-    //     $response = [
-    //         'id' => $board->id,
-    //         'lists' => $lists->map(function ($list) use ($groupedCards) {
-    //             return [
-    //                 'id' => $list->id,
-    //                 'name' => $list->name,
-    //                 'position' => (float)$list->position,
-    //                 'closed' => (bool)$list->closed,
-    //                 'cards' => isset($groupedCards[$list->id])
-    //                     ? $groupedCards[$list->id]->map(function ($card) {
-    //                         return [
-    //                             'id' => $card->id,
-    //                             'title' => $card->title,
-    //                             'list_board_id' => $card->list_board_id,
-    //                             'position' => (float)$card->position,
-    //                             'closed' => (bool)$card->is_archived,
-    //                         ];
-    //                     })->values()
-    //                     : []
-    //             ];
-    //         })->values()
-    //     ];
-
-    //     return response()->json($response, 200);
-    // }
     public function show($boardId, Request $request)
     {
         $userId = auth()->id();
@@ -273,6 +202,8 @@ class ListController extends Controller
         // Các trường hợp khác không có quyền
         return false;
     }
+
+    
     // ----------------------------------------------------
 
     public function index($boardId)

@@ -185,7 +185,7 @@ class BoardController extends Controller
             $access['members'] = DB::table('board_members')
                 ->join('users', 'board_members.user_id', '=', 'users.id')
                 ->where('board_members.board_id', $board->id)
-                ->select('users.id', 'users.user_name', 'users.initials', 'users.email', 'users.image')
+                ->select('users.id', 'users.user_name', 'users.initials', 'users.email', 'users.image','users.full_name')
                 ->get();
 
             $access['memberships'] = DB::table('board_members')
