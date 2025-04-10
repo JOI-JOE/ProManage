@@ -27,7 +27,7 @@ const Home = () => {
                 px: 2,
               }}
             >
-              Đến bảng của bạn
+              Đến workspaces của bạn
             </Button>
           )}
         </div>

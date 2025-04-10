@@ -6,7 +6,7 @@ const Board_Content_Height = `calc(100vh - ${App_Bar_Height} - ${Board_Bar_Heigh
 
 const Column_Header_Height = "50px";
 const Column_Footer_Height = "45px";
-// Create a theme instance.
+
 const theme = createTheme({
   trello: {
     appBarHeight: App_Bar_Height,
@@ -20,8 +20,8 @@ const theme = createTheme({
       light: "#d1d8e0",
       main: "#34495e",
       dark: "teal",
-      // contrastText: "#03a9f4",
     },
+
     secondary: {
       light: "#ff7961",
       main: "#000",
@@ -74,18 +74,15 @@ const theme = createTheme({
           width: "1rem",
         },
       },
-    }, //Chỉnh kích thước logo của SideBar
+    },
 
     MuiTypography: {
       styleOverrides: {
         root: {
           fontSize: "14px",
-          // "&.MuiTypography-body1": {
-          //   fontSize: "14px",
-          // },
         },
       },
-    }, //Chỉnh cỡ chữ của SideBar
+    },
 
     MuiInputLabel: {
       styleOverrides: {
@@ -95,25 +92,6 @@ const theme = createTheme({
         }),
       },
     },
-
-    // MuiOutlinedInput: {
-    //   styleOverrides: {
-    //     root: ({ theme }) => ({
-    //       color: theme.palette.secondary.contrastText,
-    //       ".MuiOutlinedInput-notchedOutline": {
-    //         borderColor: theme.palette.secondary.contrastText,
-    //       },
-    //       "&:hover": {
-    //         ".MuiOutlinedInput-notchedOutline": {
-    //           borderColor: theme.palette.primary.dark,
-    //         },
-    //       },
-    //       "& fieldset": {
-    //         borderWidth: "1px !important",
-    //       },
-    //     }),
-    //   },
-    // },
   },
 });
 export default theme;
