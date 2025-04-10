@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getActivityByCardId } from "../api/models/activitysApi";
+import { getActivityByCardId, getActivityByUser } from "../api/models/activitysApi";
 
 export const useActivityByCardId = (cardId) => {
   return useQuery({
@@ -14,3 +14,12 @@ export const useActivityByCardId = (cardId) => {
     cacheTime: 1000 * 60 * 30, // Giữ cache trong 30 phút
   });
 };
+
+export const useActivitiesByUser = () => {
+
+  return useQuery({
+    queryKey: ["activities", "me"],
+    queryFn: getActivityByUser,
+  });
+};
+

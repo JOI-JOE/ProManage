@@ -128,8 +128,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     //user profile
     Route::get('/user', [ApiUserController::class, 'getUserById']);
+    
     Route::put('/user/update-profile', [ApiUserController::class, 'updateProfile']);
+
+    Route::get('/user/activities', [ActivityLogController::class, 'getMyActivities']);
+    
+    Route::get('/user/workspaces', [WorkspaceMembersController::class, 'getUserWorkspaces']);
+
+    Route::get('/user/{id}/cards', [CardController::class, 'getCardsByUserBoards']);
 });
+
 
 
 Route::get('/color', [ColorController::class, 'index']);

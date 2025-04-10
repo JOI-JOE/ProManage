@@ -14,6 +14,7 @@ import {
   getDateByCard,
   addMemberToCard,
   removeMember,
+  getCardsByUserBoards,
 } from "../api/models/cardsApi";
 import { useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
@@ -294,3 +295,12 @@ export const useUpdateCardDate = () => {
     },
   });
 };
+
+export const useUserBoardCards = (userId) => {
+  return useQuery({
+    queryKey: ["userBoardCards", userId],
+    queryFn: () => getCardsByUserBoards(userId),
+    enabled: !!userId, // chỉ gọi khi userId có giá trị
+  });
+};
+

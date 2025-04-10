@@ -25,6 +25,7 @@ use App\Jobs\SendReminderNotificationCard;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
@@ -440,4 +441,45 @@ class CardController extends Controller
             'reminder'   => $card->reminder,
         ]);
     }
+    public function getCardsByUserBoards($id)
+{
+    $user = User::findOrFail($id);
+
+    $boards = $user->boards()->with([
+        'workspace',
+        'lists' => function ($q) {
+            $q->with([
+                'cards' => function ($q) {
+                    $q->where('is_archived', false)->with('labels');
+                }
+            ]);
+        }
+    ])->get();
+
+    // Format lại dữ liệu để trả về danh sách thẻ với đầy đủ thông tin
+    $cards = [];
+
+    foreach ($boards as $board) {
+        foreach ($board->lists as $list) {
+            foreach ($list->cards as $card) {
+                $cards[] = [
+                    'id' => $card->id,
+                    'title' => $card->title,
+                    'end_date' => $card->end_date,
+                    'list_name' => $list->name,
+                    'labels' => $card->labels->map(fn($label) => ['name' => $label->name, 'color' => $label->color]),
+                    'board_name' => $board->name,
+                    'board_thumbnail' => $board->thumbnail,
+                    'workspace_name' => $board->workspace->name ?? '',
+                ];
+            }
+        }
+    }
+
+    return response()->json([
+        'cards' => $cards,
+    ]);
+}
+
+
 }

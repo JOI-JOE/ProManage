@@ -159,14 +159,10 @@ export const userRegister = async (userData) => {
   }
 };
 
-/**
- * Lấy thông tin người dùng theo ID
- * @param {string} id - ID của người dùng
- * @returns {Promise<object>} - Thông tin người dùng
- */
-export const getUserById = async (id) => {
+
+export const getUserById = async () => {
   try {
-    const response = await authClient.get(`/user/`);
+    const response = await authClient.get(`/user`);
     return response.data.user; // do API trả về { user: ... }
   } catch (error) {
     console.error("Lỗi khi lấy người dùng theo ID:", error);
@@ -176,13 +172,8 @@ export const getUserById = async (id) => {
 
 
 
-/**
- * Cập nhật thông tin user (user_name, biography)
- * @param {string} id - ID của user cần cập nhật
- * @param {object} data - Dữ liệu cập nhật (user_name, biography)
- * @returns {Promise<object>} - Dữ liệu người dùng sau khi cập nhật
- */
-export const updateUserProfile = async (id, data) => {
+
+export const updateUserProfile = async (data) => {
   try {
     const response = await authClient.put(`/user/update-profile`, data);
     return response.data;

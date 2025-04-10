@@ -64,3 +64,15 @@ export const updateWorkspaceInfo = async (id, data) => {
       return Promise.reject(error);
     });
 };
+
+
+export const getUserWorkspaces = async () => {
+  try {
+    const response = await authClient.get("user/workspaces");
+    
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy workspace của người dùng:", error);
+    throw error;
+  }
+};

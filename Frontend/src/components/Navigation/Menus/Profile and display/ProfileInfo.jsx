@@ -13,7 +13,7 @@ const ProfileInfo = () => {
   const { data: user, isLoading: isUserLoading } = useUserById();
   
 
-  const actualUsername = user.user_name || user?.user_name;
+  const actualUsername = user?.user_name;
 
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -69,7 +69,7 @@ const ProfileInfo = () => {
           }}
         >
           <Avatar sx={{ bgcolor: "#00A3BF", width: 50, height: 50, marginRight:3,}}>
-            {user.email?.charAt(0)?.toUpperCase() || ""}
+            {user?.email?.charAt(0)?.toUpperCase() || ""}
           </Avatar>
           <Box>
           <Typography
@@ -82,7 +82,7 @@ const ProfileInfo = () => {
             variant="h6"
             sx={{ fontWeight: "", color: "#000000", fontSize: "0.8rem" }} // Changed to black
           >
-            {user.email}
+            {user?.email}
           </Typography>
             
           </Box>

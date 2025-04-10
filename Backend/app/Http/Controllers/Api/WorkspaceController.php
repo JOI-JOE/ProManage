@@ -302,4 +302,29 @@ class WorkspaceController extends Controller
             'data' => $guestWorkspaces,
         ]);
     }
+
+    // public function getWorkSpacesOfUser(){
+    //     $user = Auth::user();
+
+    //     // Tìm bản ghi workspace_member tương ứng
+    //     $workspaceMember = WorkspaceMembers::where('user_id', $user->id)->first();
+
+    //     if (!$workspaceMember) {
+    //         return response()->json([
+    //             'message' => 'User is not a member of any workspace.'
+    //         ], 404);
+    //     }
+
+    //     // Lấy thông tin workspace
+    //     $workspace = Workspace::find($workspaceMember->workspace_id);
+
+    //     if (!$workspace) {
+    //         return response()->json([
+    //             'message' => 'Workspace not found.'
+    //         ], 404);
+    //     }
+
+    //     return response()->json($workspace);
+        
+    // }
 }

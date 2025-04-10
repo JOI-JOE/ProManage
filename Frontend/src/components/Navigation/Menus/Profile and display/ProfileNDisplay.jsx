@@ -79,9 +79,10 @@ const ProfileNDisplay = () => {
         padding: 3,
         borderRadius: 2,
         width: "100%",
-        maxWidth: "450px",
+        maxWidth: "650px",
         boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
         margin: "auto",
+        marginTop:"20px"
       }}
     >
       <Typography
@@ -97,9 +98,16 @@ const ProfileNDisplay = () => {
         Quản lý thông tin cá nhân
       </Typography>
 
+
+      <Typography
+        variant="body2"
+        sx={{ mb: 1, color: "#555", fontWeight: 500 }}
+      >
+        Tên người dùng
+      </Typography>
+
       <TextField
         fullWidth
-        label="Tên người dùng"
         variant="outlined"
         size="small"
         value={userName}

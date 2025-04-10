@@ -35,7 +35,7 @@ export default function ProfileMenu({ email }) {
 
   const goToProfile = () => {
     if (user?.user_name) {
-      navigate(`/u/${user.user_name}`);
+      navigate(`/u/${user?.user_name}`);
     }
   };
 

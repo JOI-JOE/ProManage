@@ -496,4 +496,20 @@ class BoardController extends Controller
             return response()->json(['error' => 'Board not found'], 404);
         }
     }
+
+    // public function getCardsByUserBoards($id)
+    // {
+    //     $user = User::findOrFail($id);
+
+    //     $boards = $user->boards()->with([
+    //         'lists.cards' => function ($q) {
+    //             $q->where('is_archived', false); // nếu bạn muốn lọc các thẻ đã lưu trữ
+    //         }
+    //     ])->get();
+        
+    //     return response()->json([
+    //         'user' => $user,
+    //         'boards' => $boards,
+    //     ]);
+    // }   
 }

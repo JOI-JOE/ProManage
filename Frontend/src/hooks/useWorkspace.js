@@ -7,6 +7,7 @@ import {
   getWorkspaceById,
   getBoardMarkedByWorkspace,
   getGuestWorkspace,
+  getUserWorkspaces,
 } from "../api/models/workspacesApi";
 
 /**
@@ -108,5 +109,13 @@ export const useUpdateInforWorkspace = () => {
     onError: (error) => {
       console.error("Lỗi khi cập nhật workspace:", error);
     },
+  });
+};
+
+
+export const useUserWorkspaces = () => {
+  return useQuery({
+    queryKey: ["userWorkspaces"],
+    queryFn: getUserWorkspaces,
   });
 };
