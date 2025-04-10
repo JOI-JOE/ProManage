@@ -2,6 +2,7 @@
 
 
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\GanttController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkspaceInvitationsController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
@@ -327,3 +328,7 @@ Route::get('/calendar', [CalendarController::class, 'index']);
 Route::put('board/{boardId}/calendar/{cardId}', [CalendarController::class, 'update']);
 
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/boards/{boardId}/gantt', [GanttController::class, 'getGanttData']);
+    Route::post('/gantt/update-task', [GanttController::class, 'updateTask']);
+});

@@ -31,11 +31,14 @@ import Calendar from "../pages/Boards/detail/SideBar/Calendar/Calendar";
 import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileDisplay";
 import Activity from "../components/Navigation/Menus/Profile and display/Activity";
 import LoginForm from "../pages/auth/LoginForm";
-import GoogleAuth from "../pages/auth/GoogleAuth";
-import GitHubAuth from "../pages/auth/GitHubAuth";
+// import GoogleAuth from "../pages/auth/GoogleAuth";
+// import GitHubAuth from "../pages/auth/GitHubAuth";
 import RequestJoinBoard from "../pages/boards/invite/RequestJoinBoard";
 import VerifyCodePage from "../pages/auth/VerifyCodePage";
 import UpdatePass from "../pages/auth/UpdatePass";
+import GanttChart from "../pages/boards/detail/SideBar/GanttChart/GanttChart";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
+import GitHubAuth from "../pages/Auth/GitHubAuth";
 
 
 const isAuthenticated = () => !!localStorage.getItem("token");
@@ -94,7 +97,10 @@ const router = createBrowserRouter([
           { path: "w/:workspaceName", element: <Board /> },
           { path: "w/:workspaceName/members", element: <Member /> },
           { path: "w/:workspaceName/account", element: <Account /> },
+          { path: "b/:boardId/gantt-chart", element: <GanttChart /> },
           { path: "w/:workspaceName/calendar", element: <Calendar /> },
+
+
 
         ],
       },
