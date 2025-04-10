@@ -33,6 +33,7 @@ import Activity from "../components/Navigation/Menus/Profile and display/Activit
 import LoginForm from "../pages/auth/LoginForm";
 import GoogleAuth from "../pages/auth/GoogleAuth";
 import GitHubAuth from "../pages/auth/GitHubAuth";
+import RequestJoinBoard from "../pages/boards/invite/RequestJoinBoard";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -97,6 +98,10 @@ const router = createBrowserRouter([
     path: "/",
     element: <LayoutWrapper />,
     children: [
+      {
+        path: "request-join/:boardId",
+        element: <RequestJoinBoard />,
+      },
       {
         path: "invite-board/:token",
         element: <InvitePage />, // Tự động kiểm tra đăng nhập và chuyển hướng

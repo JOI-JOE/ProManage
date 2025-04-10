@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Broadcast;
 use App\Models\Board;
 use App\Models\Card;
 use App\Models\ListBoard;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,6 +41,10 @@ Broadcast::channel('checklist-item.{checklistItemId}', function ($checklistItemI
 });
 
 Broadcast::channel('App.Models.User.{userId}', function ($user, $userId) {
+    Log::info("Authenticating channel", [
+        'user_id' => $user ? $user->id : null,
+        'requested_userId' => $userId,
+    ]);
     return (string) $user->id === (string) $userId;
 });
 
@@ -54,8 +59,19 @@ Broadcast::channel('boards.{boardId}', function ($user, $boardId) {
 });
 
 Broadcast::channel('private-user.{userId}', function ($user, $userId) {
-    \Log::info("Auth user:", [$user->id]); // Ghi log kiểm tra user
-    \Log::info("Request userId:", [$userId]);
+    Log::info("Auth user:", [$user->id]); // Ghi log kiểm tra user
+    Log::info("Request userId:", [$userId]);
 
     return (int) $user->id === (int) $userId;
+});
+
+
+Broadcast::channel('board.{boardId}.admins', function ($user, $boardId) {
+    $board = Board::findOrFail($boardId);
+    
+    // Kiểm tra xem user có phải admin của bảng không
+    return $board->members()
+        ->where('user_id', $user->id)
+        ->where('role', 'admin')
+        ->exists();
 });

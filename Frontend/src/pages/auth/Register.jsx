@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useRegister } from "../../hooks/useUser";
 import anh4 from "../../assets/anh4.jpg";
 
@@ -13,6 +13,22 @@ const Register = () => {
   });
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Lấy email và token từ query string
+  const query = new URLSearchParams(location.search);
+  const inviteEmail = query.get("email") || "";
+  const inviteToken = query.get("token") || "";
+  console.log("inviteEmail", inviteEmail);
+  console.log("inviteToken", inviteToken);
+  
+
+  // Cập nhật email từ query string khi component mount
+  useEffect(() => {
+    if (inviteEmail) {
+      setFormData((prev) => ({ ...prev, email: inviteEmail }));
+    }
+  }, [inviteEmail]);
 
   const { mutate, isLoading } = useRegister();
 
@@ -92,6 +108,17 @@ const Register = () => {
   const handleRegister = (e) => {
     e.preventDefault();
     setErrors({});
+ // Nếu có inviteToken mà email không khớp, bỏ qua inviteToken
+ let effectiveInviteToken = inviteToken;
+ if (inviteToken && formData.email !== inviteEmail) {
+   setErrors((prev) => ({
+     ...prev,
+     email: 'Email phải khớp với email trong lời mời.',
+   }));
+   effectiveInviteToken = null; // Bỏ inviteToken nếu email không khớp
+ } else {
+   setErrors({});
+ }
 
     mutate(formData, {
       onSuccess: (data) => {
@@ -136,6 +163,7 @@ const Register = () => {
             <input
               type="text"
               placeholder="Tên đăng nhập"
+            
               name="user_name"
               value={formData.user_name}
               onChange={handleChange}
@@ -175,6 +203,7 @@ const Register = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
+              disabled={!!inviteEmail} 
               className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
                 errors.email ? "border-red-500" : "border-gray-300"
               }`}
