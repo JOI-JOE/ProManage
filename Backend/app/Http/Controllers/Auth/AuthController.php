@@ -71,6 +71,7 @@ class AuthController extends Controller
             'id',
             'user_name',
             'full_name',
+            'biography',
             'initials',
             'image',
             'email',

@@ -28,8 +28,11 @@ import InvitePage from "../pages/boards/invite/InvitePage";
 import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
 import Board from "../pages/boards/detail/Board";
 import Calendar from "../pages/Boards/detail/SideBar/Calendar/Calendar";
-import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileDisplay";
+import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileInfo";
 import Activity from "../components/Navigation/Menus/Profile and display/Activity";
+import TagCard from "../components/Navigation/Menus/Profile and display/TagCard";
+import ProfileNDisplay from "../components/Navigation/Menus/Profile and display/ProfileNDisplay";
+import ProfileInfo from "../components/Navigation/Menus/Profile and display/ProfileInfo";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -84,12 +87,15 @@ const router = createBrowserRouter([
         ],
       },
       {
-        path: "profile-display",
-        element: <ProfileDisplay />,
-      },
-      {
-        path: "activity",
-        element: <Activity />,
+        path: "u/:UserName",
+        element: <ProfileInfo />,
+        children: [
+          { path: "profile", element: <ProfileNDisplay /> },
+          { path: "activity", element: <Activity /> },
+          { path: "cards", element: <TagCard /> },
+
+          { index: true, element: <Navigate to="profile" replace /> },
+        ],
       },
     ],
   },

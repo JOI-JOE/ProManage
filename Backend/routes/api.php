@@ -1,6 +1,6 @@
 <?php
 
-
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\WorkspaceInvitationsController;
 use App\Http\Controllers\Api\WorkspaceMembersController;
@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\LabelController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\UserController as ApiUserController;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -124,6 +125,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('lists/{boardId}', [ListController::class, 'index']);
 
     Route::get('/search', [SearchController::class, 'search']);
+
+    //user profile
+    Route::get('/user', [ApiUserController::class, 'getUserById']);
+    Route::put('/user/update-profile', [ApiUserController::class, 'updateProfile']);
 });
 
 
@@ -293,3 +298,5 @@ Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNoti
 // });
 
 Route::get('/activities/{cardId}', [ActivityLogController::class, 'getActivitiesByCard']);
+
+

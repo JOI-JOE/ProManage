@@ -34,20 +34,16 @@ import Template from "./Menus/Template";
 import { useUser } from "../../hooks/useUser";
 import useNotifications from "../../hooks/useNotification";
 import useSearch from "../../hooks/useSearch";
-// import useNotifications from "../../hooks/useNotification";
 import { formatTime } from "../../../utils/dateUtils";
+import { useRecentBoards } from "../../hooks/useBoard";
 
 const AppBar = ({ username, email }) => {
   const { data: user } = useUser();
-
-  // console.log(user);
-
-  // console.log(user?.email);
-
   const userId = user?.id;
   const { notifications } = useNotifications(userId);
 
   const [searchText, setSearchText] = useState("");
+  const [isFocused, setIsFocused] = useState(false); // Thêm state để theo dõi focus
   const [anchorEl, setAnchorEl] = useState(null);
   const [showUnread, setShowUnread] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
@@ -60,12 +56,11 @@ const AppBar = ({ username, email }) => {
     setUnreadCount(notifications?.data?.length || 0);
   }, [notifications]);
 
-  const [query, setQuery] = useState("");
-
   const { searchResults, isLoadingSearch, errorSearch } = useSearch(
     searchText,
     userId
   );
+
   const searchRef = useRef(null);
 
   const handleSearchChange = (e) => {
@@ -73,14 +68,13 @@ const AppBar = ({ username, email }) => {
   };
 
   const handleClickOutside = (e) => {
-    // Kiểm tra nếu click ngoài vùng search thì đóng kết quả
     if (searchRef.current && !searchRef.current.contains(e.target)) {
       setSearchText("");
+      setIsFocused(false); // Đóng dropdown khi click ngoài
     }
   };
 
   useEffect(() => {
-    // Cập nhật kết quả tìm kiếm khi có thay đổi trong searchText
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -88,7 +82,6 @@ const AppBar = ({ username, email }) => {
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
-    // setUnreadCount(0);
     setLastSeenTime(new Date());
   };
 
@@ -128,15 +121,19 @@ const AppBar = ({ username, email }) => {
       return acc;
     }, {});
 
-  // Sắp xếp thông báo theo thời gian (mới nhất trước)
   Object.values(groupedNotifications || {}).forEach((group) => {
     group.notifications.sort(
       (a, b) => new Date(b.created_at) - new Date(a.created_at)
     );
   });
 
+  
+  // Lấy dữ liệu từ useRecentBoards hook
+  const { data: recentBoards, isLoading: isLoadingRecent, error: errorRecent } = useRecentBoards();
+
+
   return (
-    <Box
+    <Box  
       px={2}
       sx={{
         width: "100%",
@@ -189,7 +186,7 @@ const AppBar = ({ username, email }) => {
         }}
       >
         {/* Bọc ô tìm kiếm và kết quả trong một box có position: relative */}
-        <Box sx={{ position: "relative", width: "280px" }} ref={searchRef}>
+        <Box sx={{ position: "relative", width: "480px" }} ref={searchRef}>
           <TextField
             autoComplete="off"
             id="outlined-search"
@@ -198,11 +195,13 @@ const AppBar = ({ username, email }) => {
             size="small"
             value={searchText}
             onChange={handleSearchChange}
+            onFocus={() => setIsFocused(true)} // Khi focus vào input
+            onBlur={() => setIsFocused(false)} // Khi rời focus
             InputLabelProps={{ sx: { fontSize: "14px", color: "white" } }}
             InputProps={{
               sx: {
                 height: 40,
-                width: 280,
+                width: 480,
                 backgroundColor: "#1a1a1a",
                 borderRadius: "30px",
                 color: "white",
@@ -221,16 +220,28 @@ const AppBar = ({ username, email }) => {
           />
 
           {isLoadingSearch && (
-            <CircularProgress
-              size={24}
-              sx={{ color: "white", marginTop: "10px" }}
-            />
+            <Box sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: "20px",
+            }}
+            > 
+              <CircularProgress
+                size={24}
+                sx={{ color: "white", marginTop: "10px", }}
+              />
+              <Typography sx={{ color: "white", ml: 2 }}>
+                Đang tìm kiếm...
+              </Typography>
+            </Box>
           )}
           {errorSearch && (
             <p style={{ color: "red" }}>Lỗi khi tìm kiếm. Vui lòng thử lại.</p>
           )}
 
-          {searchText && !isLoadingSearch && !errorSearch && searchResults && (
+          {/* Hiển thị bảng gần đây hoặc kết quả tìm kiếm */}
+          {(isFocused || searchText) && !isLoadingSearch && !errorSearch && (
             <Box
               sx={{
                 position: "absolute",
@@ -244,85 +255,265 @@ const AppBar = ({ username, email }) => {
                 zIndex: 10,
               }}
             >
-              <h3 style={{ color: "white" }}>Kết quả tìm kiếm:</h3>
-
-              {Array.isArray(searchResults.boards) &&
-                searchResults.boards.length > 0 && (
-                  <Box sx={{ marginBottom: "15px" }}>
-                    <h4 style={{ color: "#00C2A0" }}>Bảng:</h4>
-                    <ul style={{ listStyle: "none", paddingLeft: 0 }}>
-                      {searchResults.boards.map((board) => (
-                        <li
+              {/* Hiển thị bảng gần đây nếu không có từ khóa tìm kiếm */}
+              {!searchText && isFocused && (
+                <Box sx={{ marginBottom: "15px" }}>
+                  <Typography variant="h6" sx={{ color: "#00C2A0", mb: 1,ml:2 }}>
+                    Các bảng thông tin gần đây
+                  </Typography>
+                  {isLoadingRecent ? (
+                    <Box sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      padding: "20px",
+                    }}
+                    > 
+                      <CircularProgress
+                        size={24}
+                        sx={{ color: "white", marginTop: "10px", }}
+                      />
+                      <Typography sx={{ color: "white", ml: 2 }}>
+                        Đang tìm kiếm...
+                      </Typography>
+                    </Box>
+                  ) : errorRecent ? (
+                    <Typography sx={{ color: "red" }}>
+                      Lỗi khi tải bảng gần đây. Vui lòng thử lại.
+                    </Typography>
+                  ) : !recentBoards?.data || recentBoards?.data?.length === 0 ? (
+                    <Typography sx={{ color: "white" }}>
+                      Không có bảng gần đây nào.
+                    </Typography>
+                  ) : (
+                    <Box sx={{  borderRadius: "6px", p: 1 }}>
+                      {recentBoards?.data?.map((board) => (
+                        <Box
                           key={board.id}
-                          style={{
+                          component={Link}
+                          to={`/b/${board.id}/${board.name}`} // Adjust based on your data
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
                             color: "white",
-                            padding: "5px 0",
-                            borderBottom: "1px solid #444",
-                            cursor: "pointer",
+                            textDecoration: "none",
+                            padding: "8px 12px",
+                            borderRadius: "4px",
+                            "&:hover": {
+                              backgroundColor: "#3A3E48",
+                            },
                           }}
-                          onClick={() => setSearchText("")} // Đóng kết quả sau khi chọn
-                        >
-                          {board.name}
-                        </li>
-                      ))}
-                    </ul>
-                  </Box>
-                )}
-
-              {Array.isArray(searchResults.cards) &&
-                searchResults.cards.length > 0 && (
-                  <Box sx={{ marginBottom: "15px" }}>
-                    <h4 style={{ color: "#00C2A0" }}>Thẻ:</h4>
-                    <ul style={{ listStyle: "none", paddingLeft: 0 }}>
-                      {searchResults.cards.map((card) => (
-                        <li
-                          key={card.id}
-                          style={{
-                            color: "white",
-                            padding: "5px 0",
-                            borderBottom: "1px solid #444",
-                            cursor: "pointer",
+                          onClick={() => {
+                            setSearchText("");
+                            setIsFocused(false); // Close dropdown after selection
                           }}
-                          onClick={() => setSearchText("")}
                         >
-                          {card.title}
-                        </li>
-                      ))}
-                    </ul>
-                  </Box>
-                )}
+                          {/* Thumbnail/Avatar */}
+                          <Avatar
+                            src={board.thumbnail || ""}
+                            alt={board.board_name}
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: "4px",
+                              mr: 2,
+                              background: board.thumbnail
+                                ? board.thumbnail.startsWith("#")
+                                  ? board.thumbnail
+                                  : `url(${board.thumbnail}) center/cover no-repeat`
+                                : "#1693E1",
+                            }}
+                          >
+                            {!board.thumbnail && board.board_name?.charAt(0)?.toUpperCase()}
+                          </Avatar>
 
-              {Array.isArray(searchResults.users) &&
-                searchResults.users.length > 0 && (
-                  <Box sx={{ marginBottom: "15px" }}>
-                    <h4 style={{ color: "#00C2A0" }}>Người dùng:</h4>
-                    <ul style={{ listStyle: "none", paddingLeft: 0 }}>
-                      {searchResults.users.map((user) => (
-                        <li
-                          key={user.id}
-                          style={{
-                            color: "white",
-                            padding: "5px 0",
-                            borderBottom: "1px solid #444",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => setSearchText("")}
-                        >
-                          {user.user_name}
-                        </li>
+                          {/* Board Name and Workspace */}
+                          <Box>
+                            <Typography variant="body1" sx={{ color: "white", fontWeight: 500 }}>
+                              {board.board_name}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: "gray" }}>
+                              {board.workspace_display_name || "No workspace"}
+                            </Typography>
+                          </Box>
+                        </Box>
                       ))}
-                    </ul>
-                  </Box>
-                )}
+                    </Box>
+                  )}
+                  
+                </Box>
+              )}
 
-              {(!Array.isArray(searchResults.boards) ||
-                searchResults.boards.length === 0) &&
-                (!Array.isArray(searchResults.cards) ||
-                  searchResults.cards.length === 0) &&
-                (!Array.isArray(searchResults.users) ||
-                  searchResults.users.length === 0) && (
-                  <p style={{ color: "white" }}>Không tìm thấy kết quả nào.</p>
-                )}
+              {/* Hiển thị kết quả tìm kiếm nếu có từ khóa */}
+              {searchText && searchResults && (
+                <>
+                  {Array.isArray(searchResults.boards) && searchResults.boards.length > 0 && (
+                    <Box >
+                      <h5 style={{ color: "#00C2A0",fontSize:"14px",marginLeft:"20px" }}>Bảng:</h5>
+                      <Box sx={{ marginBottom: "15px", marginTop:"20px", marginLeft:"20px" }} 
+                      style={{ listStyle: "none", paddingLeft: 0 }}>
+                        {searchResults.boards.map((board) => (
+                          <li
+                            key={board.id}
+                            style={{
+                              color: "white",
+                              padding: "5px 0",
+                              borderBottom: "1px solid #444",
+                              cursor: "pointer",
+                              "&:hover": {
+                              backgroundColor: "#3A3E48",
+                            },
+                              
+                            }}
+                            onClick={() => {
+                              setSearchText("");
+                              setIsFocused(false); // Đóng dropdown sau khi chọn
+                            }}
+                          >
+                            <Box
+                              component={Link}
+                              to={`/b/${board.id}/${board.name}`}
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                color: "white",
+                                textDecoration: "none",
+                                "&:hover": {
+                              backgroundColor: "#3A3E48",
+                            },
+                              }}
+                            >
+                              {/* Thumbnail/Avatar cho Board */}
+                              <Avatar
+                                src={board.thumbnail || ""}
+                                alt={board.name}
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: "4px",
+                                  mr: 2,
+                                  background: board.thumbnail
+                                    ? board.thumbnail.startsWith("#")
+                                      ? board.thumbnail
+                                      : `url(${board.thumbnail}) center/cover no-repeat`
+                                    : "#1693E1",
+                                }}
+                              >
+                                {!board.thumbnail && board.name?.charAt(0)?.toUpperCase()}
+                              </Avatar>
+                              {/* <Typography variant="body1" sx={{ color: "white" }}>
+                                {board.name}
+                              </Typography> */}
+                              <Box>
+                                <Typography variant="body1" sx={{ color: "white", fontWeight: 500 }}>
+                                  {board.name}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: "gray" }}>
+                                  {board.workspace_display_name || "No workspace"}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </li>
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {Array.isArray(searchResults.cards) && searchResults.cards.length > 0 && (
+                    <Box>
+                      <h5 style={{ color: "#00C2A0",fontSize:"14px",marginLeft:"20px" }}>Thẻ:</h5>
+                      <Box sx={{ marginBottom: "15px", marginTop:"10px", marginLeft:"20px"  }} >
+
+                      <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                        {searchResults.cards.map((card) => (
+                          <li
+                            key={card.id}
+                            style={{
+                              color: "white",
+                              padding: "5px 0",
+                              borderBottom: "1px solid #444",
+                              cursor: "pointer",
+                              
+                              
+                            }}
+                            onClick={() => {
+                              setSearchText("");
+                              setIsFocused(false);
+                            }}
+                            >
+                            <Box
+                              component={Link}
+                              to={`/b/${card.board_id}/${card.board_name}/c/${card.id}/${card.title}`}
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                color: "white",
+                                textDecoration: "none",
+                                "&:hover": {
+                                  backgroundColor: "#3A3E48",
+                                },
+                              }}
+                              >
+                              {/* Icon hình card thay vì thumbnail */}
+                              <Box
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  mr: 2,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  backgroundColor: "#1693E1",
+                                  borderRadius: "4px",
+                                  
+                                }}
+                              >
+                                <svg
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                  <rect
+                                    x="4"
+                                    y="4"
+                                    width="16"
+                                    height="16"
+                                    rx="2"
+                                    fill="white"
+                                    />
+                                  <path
+                                    d="M8 8H16V10H8V8ZM8 12H14V14H8V12Z"
+                                    fill="#1693E1"
+                                    />
+                                </svg>
+                              </Box>
+                              {/* <Typography variant="body1" sx={{ color: "white" }}>
+                                {card.title}
+                              </Typography> */}
+                              <Box>
+                                <Typography variant="body1" sx={{ color: "white", fontWeight: 500 }}>
+                                  {card.title}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: "gray" }}>
+                                  {card.board_name || "No workspace"} : {card.listboard_name || "No List Board"}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </li>
+                        ))}
+                      </ul>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {(!Array.isArray(searchResults.boards) || searchResults.boards.length === 0) &&
+                    (!Array.isArray(searchResults.cards) || searchResults.cards.length === 0) && (
+                        <p style={{ color: "white" }}>Không tìm thấy kết quả nào.</p>
+                    )}
+                </>
+              )}
             </Box>
           )}
         </Box>
@@ -405,8 +596,8 @@ const AppBar = ({ username, email }) => {
               )}
 
               {Object.values(groupedNotifications || {}).map((group) => {
-                const firstNotification = group.notifications[0]; // Thông báo đầu tiên (mới nhất)
-                const remainingNotifications = group.notifications.slice(1); // Các thông báo còn lại
+                const firstNotification = group.notifications[0];
+                const remainingNotifications = group.notifications.slice(1);
 
                 return (
                   <Box
@@ -439,7 +630,7 @@ const AppBar = ({ username, email }) => {
                       >
                         {group.cardTitle}
                       </Typography>
-                      {remainingNotifications.length > 0 && ( // Chỉ hiển thị nút nếu có thông báo còn lại
+                      {remainingNotifications.length > 0 && (
                         <IconButton
                           onClick={() => toggleGroup(group.cardUrl)}
                           size="small"
@@ -456,7 +647,6 @@ const AppBar = ({ username, email }) => {
                       {group.boardName}: {group.listName}
                     </Typography>
 
-                    {/* Luôn hiển thị thông báo đầu tiên */}
                     {firstNotification && (
                       <Box
                         sx={{
@@ -495,7 +685,6 @@ const AppBar = ({ username, email }) => {
                       </Box>
                     )}
 
-                    {/* Hiển thị các thông báo còn lại khi mở rộng */}
                     {remainingNotifications.length > 0 && (
                       <Collapse in={expandedGroups[group.cardUrl]}>
                         {remainingNotifications.map((notif) => (
@@ -537,16 +726,10 @@ const AppBar = ({ username, email }) => {
                         ))}
                       </Collapse>
                     )}
-                  </Box>
+                  </Box>  
                 );
               })}
             </Box>
-
-            {/* <Box mt={2} textAlign="center">
-              <Button size="small" variant="text" sx={{ color: "#1976d2" }}>
-                Hiển Thị Hoạt Động Thẻ Trước
-              </Button>
-            </Box> */}
           </Box>
         </Popover>
       </Box>

@@ -6,6 +6,8 @@ import {
   fetchUserProfile,
   forgotPassword,
   getUser,
+  getUserById,
+  updateUserProfile,
   userRegister,
 } from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
@@ -104,5 +106,25 @@ export const useLogout = () => {
 export const useForgotPassword = () => {
   return useMutation({
     mutationFn: forgotPassword, // Gọi API quên mật khẩu
+  });
+};
+
+export const useUserById = () => {
+  return useQuery({
+    queryKey: ["userProfile"],
+    queryFn: () => getUserById(),
+  });
+};
+
+
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => updateUserProfile(null, data), // ID không còn cần nữa
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProfile"], exact: true });
+    },
   });
 };

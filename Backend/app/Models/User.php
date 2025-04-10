@@ -38,6 +38,7 @@ class User extends Authenticatable
         'id',  // Đảm bảo có thể tạo ID UUID thủ công
         'user_name',
         'full_name',
+        'biography',
         'initials',
         'image',
         'email',

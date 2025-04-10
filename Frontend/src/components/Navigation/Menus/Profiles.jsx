@@ -18,10 +18,11 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
+import { useMe } from "../../../contexts/MeContext";
 
 export default function ProfileMenu({ email }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -29,6 +30,14 @@ export default function ProfileMenu({ email }) {
   const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
   const [selectedTheme, setSelectedTheme] = React.useState("system");
   const [workspaceType, setWorkspaceType] = React.useState("");
+
+  const { user } = useMe();
+
+  const goToProfile = () => {
+    if (user?.user_name) {
+      navigate(`/u/${user.user_name}`);
+    }
+  };
 
   const open = Boolean(anchorEl);
   const themeOpen = Boolean(themeAnchorEl);
@@ -121,7 +130,7 @@ export default function ProfileMenu({ email }) {
         >
           ProManage
         </Typography>
-        <MenuItem onClick={() => navigate("/profile-display")}>
+        <MenuItem onClick={goToProfile}>
           Hồ sơ và Hiển thị
         </MenuItem>
         <MenuItem>Hoạt động</MenuItem>

@@ -18,7 +18,7 @@ const fetchUserDataWithParams = async (params, userId = "me") => {
 
 export const fetchUserProfile = () => {
   return fetchUserDataWithParams({
-    fields: "id,user_name,full_name,email,image",
+    fields: "id,user_name,biography,full_name,email,image",
     workspaces: "all",
     workspace_fields: "id,name,display_name",
   });
@@ -158,3 +158,37 @@ export const userRegister = async (userData) => {
     throw error;
   }
 };
+
+/**
+ * Lấy thông tin người dùng theo ID
+ * @param {string} id - ID của người dùng
+ * @returns {Promise<object>} - Thông tin người dùng
+ */
+export const getUserById = async (id) => {
+  try {
+    const response = await authClient.get(`/user/`);
+    return response.data.user; // do API trả về { user: ... }
+  } catch (error) {
+    console.error("Lỗi khi lấy người dùng theo ID:", error);
+    throw error;
+  }
+};
+
+
+
+/**
+ * Cập nhật thông tin user (user_name, biography)
+ * @param {string} id - ID của user cần cập nhật
+ * @param {object} data - Dữ liệu cập nhật (user_name, biography)
+ * @returns {Promise<object>} - Dữ liệu người dùng sau khi cập nhật
+ */
+export const updateUserProfile = async (id, data) => {
+  try {
+    const response = await authClient.put(`/user/update-profile`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật hồ sơ người dùng:", error);
+    throw error;
+  }
+};
+

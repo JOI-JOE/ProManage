@@ -27,9 +27,10 @@ class UserSeeder extends Seeder
         //     'activity_block' => 1,  // Hoạt động
         // ]);
         $user = User::create([
-            'user_name' => 'quoc',
-            'full_name' => 'quoc',
-            'email' => 'quoc@example.com',
+            'user_name' => 'hau',
+            'full_name' => 'hau',
+            'email' => 'hau@example.com',
+            'biography' => 'Coder',
             'email_verified_at' => now(),
             'password' => Hash::make('password123'),  // Mã hóa mật khẩu
             'role' => 'member',
