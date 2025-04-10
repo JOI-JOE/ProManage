@@ -25,4 +25,9 @@ class Label extends Model
     {
         return $this->hasMany(CardLabel::class);
     }
+
+    public function board()
+    {
+        return $this->belongsTo(Board::class);
+    }
 }

@@ -65,8 +65,12 @@ export const updateWorkspaceInfo = async (id, data) => {
     });
 };
 
-
 export const getUserWorkspaces = async () => {
+  const response = await authClient.get('/workspaces/all');
+  return response.data;
+};
+
+export const getUserWorkspaces2 = async () => {
   try {
     const response = await authClient.get("user/workspaces");
     

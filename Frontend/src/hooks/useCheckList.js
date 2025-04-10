@@ -98,7 +98,7 @@ export const useChecklistsByCard = (cardId) => {
         channel.listen(".checklistItem.toggle", () => {
             queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
             queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
-            queryClient.invalidateQueries({ queryKey: ["lists"] });
+            // queryClient.invalidateQueries({ queryKey: ["lists"] });
         });
         
 

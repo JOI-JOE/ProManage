@@ -8,6 +8,7 @@ import {
   getBoardMarkedByWorkspace,
   getGuestWorkspace,
   getUserWorkspaces,
+  getUserWorkspaces2,
 } from "../api/models/workspacesApi";
 
 /**
@@ -112,10 +113,19 @@ export const useUpdateInforWorkspace = () => {
   });
 };
 
+export const useGetUserWorkspaces = () => {
+  return useQuery({
+    queryKey: ['userWorkspaces'], // Key để cache dữ liệu
+    queryFn: getUserWorkspaces,
+    staleTime: 1000 * 60 * 5, // Dữ liệu sẽ hết hạn sau 5 phút
+    cacheTime: 1000 * 60 * 30, // Dữ liệu sẽ được cache trong 30 phút
+    retry: 2, // Thử lại 2 lần nếu có lỗi
+  });
+};
 
 export const useUserWorkspaces = () => {
   return useQuery({
     queryKey: ["userWorkspaces"],
-    queryFn: getUserWorkspaces,
+    queryFn: getUserWorkspaces2,
   });
 };

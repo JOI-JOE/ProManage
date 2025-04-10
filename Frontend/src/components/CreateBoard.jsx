@@ -79,7 +79,7 @@ const CreateBoard = React.memo(() => {
     createBoard(boardData, {
       onSuccess: (data) => {
         console.log(data);
-        alert(`🎉 Bảng "${boardTitle}" đã được tạo thành công!`);
+        // alert(`🎉 Bảng "${boardTitle}" đã được tạo thành công!`);
         handleClose();
       },
       onError: (error) => {

@@ -40,9 +40,28 @@ const useAttachments = (cardId) => {
 
     });
 
+    channel.listen(".attachment.coverUpload", (data) => {
+      // console.log('Realtime archive changed: ', data);
+
+
+      queryClient.invalidateQueries({ queryKey: ["attachments", cardId], exact: true });
+      // queryClient.invalidateQueries({ queryKey: ["activities"] });
+
+    });
+    channel.listen(".attachment.fileNameUpload", (data) => {
+      // console.log('Realtime archive changed: ', data);
+
+
+      queryClient.invalidateQueries({ queryKey: ["attachments", cardId], exact: true });
+      // queryClient.invalidateQueries({ queryKey: ["activities"] });
+
+    });
+
     return () => {
       channel.stopListening(".attachment.uploaded");
       channel.stopListening(".attachment.deleted_with_activity");
+      channel.stopListening(".attachment.coverUpload");
+      channel.stopListening(".attachment.fileNameUpload");
       //   channel.stopListening(".CardDelete");
       echoInstance.leave(`card.${cardId}`);
     };
@@ -124,7 +143,9 @@ const useAttachments = (cardId) => {
       return { previousAttachments };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["attachments", cardId], { exact: true });
+      queryClient.invalidateQueries({ queryKey: ["attachments",cardId], exact: true });
+      // queryClient.invalidateQueries({ queryKey: ["lists"] });
+
     },
     onError: (_error, _attachmentId, context) => {
       queryClient.setQueryData(["attachments", cardId], context.previousAttachments);

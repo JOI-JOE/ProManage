@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\BoardUpdatedName;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MeResource;
 use App\Models\Board;
@@ -268,6 +269,9 @@ class BoardController extends Controller
                 $board->update(['name' => $request->input('name')]);
                 DB::commit();
 
+                broadcast(new BoardUpdatedName($board))->toOthers();
+
+
                 return response()->json([
                     'result' => true,
                     'message' => 'Board name updated successfully.',
@@ -497,19 +501,16 @@ class BoardController extends Controller
         }
     }
 
-    // public function getCardsByUserBoards($id)
-    // {
-    //     $user = User::findOrFail($id);
+    public function getBoardDetails($boardId)
+    {
+        $board = Board::with(['workspace', 'listBoards']) // đảm bảo quan hệ là đúng tên
+            ->findOrFail($boardId);
 
-    //     $boards = $user->boards()->with([
-    //         'lists.cards' => function ($q) {
-    //             $q->where('is_archived', false); // nếu bạn muốn lọc các thẻ đã lưu trữ
-    //         }
-    //     ])->get();
-        
-    //     return response()->json([
-    //         'user' => $user,
-    //         'boards' => $boards,
-    //     ]);
-    // }   
+        return response()->json([
+            'board' => $board,
+            'workspace' => $board->workspace,
+            'lists' => $board->listBoards, // hoặc 'list_board' nếu bạn dùng tên khác
+        ]);
+    }
+
 }

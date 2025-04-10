@@ -156,6 +156,11 @@ export const getBoardClosed = async () => {
   }
 };
 
+export const fetchBoardDetails = async (boardId) => {
+  const response = await authClient.get(`/boards/${boardId}/details`);
+  return response.data;
+};
+
 
 
 

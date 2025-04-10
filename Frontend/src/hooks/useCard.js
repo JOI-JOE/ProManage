@@ -14,6 +14,9 @@ import {
   getDateByCard,
   addMemberToCard,
   removeMember,
+  toggleIsCompleted,
+  copyCard,
+  moveCard,
   getCardsByUserBoards,
 } from "../api/models/cardsApi";
 import { useEffect, useMemo } from "react";
@@ -88,20 +91,41 @@ export const useCardById = (cardId) => {
       }
     });
 
+
+    channel.listen(".card.toggled", (event) => {
+      // console.log("📡 Card Completion Toggled Event:", event);
+
+      // queryClient.setQueryData(["cards", event.card.id], (oldCard) => {
+      //   if (!oldCard) return null;
+      //   return { ...oldCard, is_completed: event.card.is_completed };
+      // });
+      queryClient.invalidateQueries({ queryKey: ["cards", cardId], exact: true });
+
+
+      // queryClient.invalidateQueries({ queryKey: ["lists"] });
+    });
+
+   
+
+    
+
+
     return () => {
       channel.stopListening(".card.updated");
       channel.stopListening(".card.description.updated");
+      channel.stopListening(".card.toggled");
+
       echoInstance.leave(`card.${cardId}`);
     };
   }, [cardId, queryClient]);
 
   const updateDescriptionMutation = useMutation({
     mutationFn: (description) => updateDescription(cardId, description), // Gọi API cập nhật mô tả
-    onSuccess: (data, {cardId}) => {
-      console.log("Mô tả đã được cập nhật:", data);
+    onSuccess: (data, { cardId }) => {
+      // console.log("Mô tả đã được cập nhật:", data);
 
       queryClient.invalidateQueries({ queryKey: ["cardDetail", cardId], exact: true });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      // queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật mô tả:", error);
@@ -127,7 +151,7 @@ export const useUpdateCardTitle = () => {
     onSuccess: (data, variables) => {
       // Cập nhật dữ liệu card trong cache sau khi update thành công
       queryClient.invalidateQueries({ queryKey: ["cards", variables.cardId] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      // queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật tên card:", error);
@@ -157,21 +181,44 @@ export const useCardActions = (boardId) => {
 
 
     channel.listen(".CardArchiveToggled", (data) => {
-      // console.log('Realtime archive changed: ', data);
+      console.log('Realtime archive changed: ', data);
 
-      queryClient.invalidateQueries(["lists"]);
+
+      queryClient.invalidateQueries({ queryKey: ["cardsArchivedByBoard", boardId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
 
     });
     channel.listen(".CardDelete", (data) => {
-      // console.log('Realtime archive changed: ', data);
+      console.log('Realtime archive changed: ', data);
+      // cardsArchivedByBoard", boardId
+      // queryClient.invalidateQueries(["lists"]);
+      queryClient.invalidateQueries({ queryKey: ["cardsArchivedByBoard", boardId], exact: true });
 
-      queryClient.invalidateQueries(["lists"]);
+    });
+
+    channel.listen(".card.copied", (event) => {
+      // console.log('Realtime copy: ', event.card.id);
+      // cardsArchivedByBoard", boardId
+      // queryClient.invalidateQueries(["lists"]);
+      queryClient.invalidateQueries({ queryKey: ["cards",  event.card.id] });
+
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      // queryClient.invalidateQueries({ queryKey: ["cardsArchivedByBoard", boardId], exact: true });
+
+    });
+
+    channel.listen(".card.moved", (event) => {
+      console.log("Card moved realtime: ", event);
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      queryClient.invalidateQueries({ queryKey: ["membersInCard", event.card.id] });
 
     });
 
     return () => {
       channel.stopListening(".CardArchiveToggled");
       channel.stopListening(".CardDelete");
+      channel.stopListening(".card.copied");
+      channel.stopListening(".card.moved");
       echoInstance.leave(`boards.${boardId}`);
     };
   }, [boardId, queryClient]);
@@ -182,9 +229,9 @@ export const useCardActions = (boardId) => {
   const archiveCard = useMutation({
     mutationFn: updateArchivedCard,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cardsArchivedByBoard"], exact: true });
-      queryClient.invalidateQueries(["lists"]);
-      toast.success("Đổi trạng thái thẻ thành công!");
+      queryClient.invalidateQueries({ queryKey: ["cardsArchivedByBoard"] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      // toast.success("Đổi trạng thái thẻ thành công!");
     },
     onError: (error) => {
       toast.error(`Lỗi lưu trữ: ${error.message}`);
@@ -195,7 +242,7 @@ export const useCardActions = (boardId) => {
   const deleteCardMutation = useMutation({
     mutationFn: deleteCard,
     onSuccess: () => {
-      queryClient.invalidateQueries(["cardsArchivedByBoard"]);
+      queryClient.invalidateQueries({ queryKey: ["cardsArchivedByBoard"] });
       toast.success("Xóa thẻ thành công!");
     },
     onError: (error) => {
@@ -240,7 +287,7 @@ export const useGetMemberInCard = (cardId) => {
         queryClient.invalidateQueries({ queryKey: ["card", cardId], exact: true });
         queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] });
         queryClient.invalidateQueries({ queryKey: ["activities"] });
-        queryClient.invalidateQueries({ queryKey: ["lists"] });
+
 
       }
     });
@@ -259,7 +306,7 @@ export const useGetMemberInCard = (cardId) => {
       queryClient.invalidateQueries({ queryKey: ["card", cardId], exact: true });
       queryClient.invalidateQueries({ queryKey: ["membersInCard", cardId] });
       queryClient.invalidateQueries({ queryKey: ["activities"] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
+
     },
   });
 
@@ -276,7 +323,7 @@ export const useCardSchedule = (targetId) => {
     queryKey: ["cardSchedule", targetId],
     queryFn: () => getDateByCard(targetId),
     enabled: !!targetId, // Chỉ gọi API nếu cardId tồn tại
-  
+
   });
 };
 export const useUpdateCardDate = () => {
@@ -286,12 +333,79 @@ export const useUpdateCardDate = () => {
     mutationFn: ({ targetId, startDate, endDate, endTime, reminder }) =>
       updateCardDate(targetId, startDate, endDate, endTime, reminder),
     onSuccess: (data, variables) => {
-     
+
       // queryClient.invalidateQueries(["cardSchedule"],variables.cardId);
       queryClient.invalidateQueries({ queryKey: ["cardSchedule", variables.targetId], exact: true });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật ngày card:", error);
+    },
+  });
+};
+
+export const useToggleCardCompletion = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: toggleIsCompleted,
+    onSuccess: (_, cardId) => {
+      // Cập nhật dữ liệu sau khi toggle thành công
+      // console.log(cardId);
+      queryClient.invalidateQueries({ queryKey: ["cards", cardId], exact: true });
+      // queryClient.invalidateQueries({ queryKey: ["cards", cardId] });
+
+      // queryClient.invalidateQueries({ queryKey: ["lists"] }); // Cập nhật danh sách
+
+      // toast.success("Cập nhật trạng thái hoàn thành thẻ thành công!");
+    },
+    onError: (error) => {
+      toast.error(`Lỗi cập nhật trạng thái: ${error.message}`);
+    },
+  });
+};
+
+export const useCopyCard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: copyCard,
+    onSuccess: (res) => {
+      console.log("✅ Move card response:", res);
+      const newCard = res.data.card;
+
+      // Xoá cache cũ để fetch lại nếu cần
+      queryClient.invalidateQueries({ queryKey: ["cards", newCard.id] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+
+      // toast.success("Sao chép thẻ thành công!");
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.message || error.message;
+      toast.error(`Lỗi sao chép thẻ: ${errorMessage}`);
+    },
+  });
+};
+
+export const useMoveCard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: moveCard,
+    onSuccess: (res) => {
+      const { card, old_list_id, new_list_id } = res.data;
+      
+      // Invalidate các cache liên quan
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      queryClient.invalidateQueries({ queryKey: ["membersInCard", card.id] });
+      //  queryClient.invalidateQueries({ queryKey: ["["membersInCard", card.id]", new_list_id] });
+
+    
+
+      // toast.success("Di chuyển thẻ thành công!");
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.message || error.message;
+      toast.error(`Lỗi di chuyển thẻ: ${errorMessage}`);
     },
   });
 };
@@ -303,4 +417,3 @@ export const useUserBoardCards = (userId) => {
     enabled: !!userId, // chỉ gọi khi userId có giá trị
   });
 };
-
