@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\WorkspaceMembersController;
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
+use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\ChecklistItemMemberController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\CardController;
@@ -27,6 +28,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\RequestInvitationController;
+use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use Illuminate\Support\Facades\Broadcast;
 
 
@@ -47,6 +50,11 @@ Route::post('/login', [AuthController::class, 'handleLogin']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
 Route::post('/forgot-password', [AuthController::class, 'sendResetPassword']);
+Route::post('/password/email', [PasswordResetController::class, 'sendResetLink']);
+Route::post('/password/code', [PasswordResetController::class, 'checkResetCode']);
+Route::put('/password/update', [PasswordResetController::class, 'updatePassword']);
+
+
 
 // Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
 // Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
@@ -208,7 +216,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-requests/{boardId}', [RequestInvitationController::class, 'getRequestsForBoard']);
     Route::post('/accept-request/{request_id}', [RequestInvitationController::class, 'acceptRequest']);
     Route::post('/reject-request/{request_id}', [RequestInvitationController::class, 'rejectRequest']);
-    
+
     Broadcast::routes();
 });
 Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
@@ -296,6 +304,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/item/{id}/show', [ChecklistItemController::class, 'show']);
     Route::get('/item/{id}/dates-item', [ChecklistItemController::class, 'getChecklistItemDate']);
     Route::put('/update-date/{id}/item', [ChecklistItemController::class, 'updateDate']);
+    Route::delete('/item/{id}/dates', [ChecklistItemController::class, 'removeDates']); // xóa ngày
+
+
 
     // Checklist Item routes
     Route::get('/checklist-items/{id}/item', [ChecklistItemController::class, 'getChecklistItems']); // Lấy danh sách checklist item theo checklist
@@ -310,5 +321,9 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNotifications']);
 
 // });
-
+Route::get('/settings', [SettingController::class, 'index']);
 Route::get('/activities/{cardId}', [ActivityLogController::class, 'getActivitiesByCard']);
+Route::get('/calendar', [CalendarController::class, 'index']);
+Route::put('board/{boardId}/calendar/{cardId}', [CalendarController::class, 'update']);
+
+

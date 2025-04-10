@@ -1,11 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import {
+  checkCode,
   fetchUserBoardsWithWorkspaces,
   fetchUserDashboardData,
   fetchUserProfile,
   forgotPassword,
   getUser,
+  updatePass,
   userRegister,
 } from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
@@ -103,6 +105,30 @@ export const useLogout = () => {
  */
 export const useForgotPassword = () => {
   return useMutation({
-    mutationFn: forgotPassword, // Gọi API quên mật khẩu
+    mutationFn:({email})=> forgotPassword(email), // Gọi API quên mật khẩu
+  });
+};
+
+export const useCheckCode = () => {
+
+    
+
+    return useMutation({
+      
+        mutationFn: ({ email,code }) => checkCode(email,code),
+        
+        
+
+    });
+};
+export const useUpdatePass = () => {
+
+    
+
+  return useMutation({
+    
+      mutationFn: ({ email,password }) => updatePass(email,password),
+      
+
   });
 };

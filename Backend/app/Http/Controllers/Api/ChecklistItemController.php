@@ -182,6 +182,7 @@ class ChecklistItemController extends Controller
             'message' => 'Xóa ChecklistItem thành công!',
         ], 200);
     }
+
     public function updateDate(Request $request, $id)
     {
         $request->validate([
@@ -223,6 +224,20 @@ class ChecklistItemController extends Controller
             'item' => $item
         ], 200);
 
+    }
+    public function removeDates($itemId)
+    {
+        $item = ChecklistItem::findOrFail($itemId);
+        $item->end_date = null;
+        $item->end_time = null;
+        $item->reminder = null;
+        $item->save();
+
+        return response()->json([
+            'message' => 'Đã xóa ngày bắt đầu & ngày kết thúc khỏi thẻ!',
+            'data' => $item,
+
+        ]);
     }
     public function getChecklistItemDate($id)
     {

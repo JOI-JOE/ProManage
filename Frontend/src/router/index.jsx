@@ -34,6 +34,9 @@ import LoginForm from "../pages/auth/LoginForm";
 import GoogleAuth from "../pages/auth/GoogleAuth";
 import GitHubAuth from "../pages/auth/GitHubAuth";
 import RequestJoinBoard from "../pages/boards/invite/RequestJoinBoard";
+import VerifyCodePage from "../pages/auth/VerifyCodePage";
+import UpdatePass from "../pages/auth/UpdatePass";
+
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -58,7 +61,13 @@ const router = createBrowserRouter([
       { path: "register", element: <Register /> },
       { path: "login/google", element: <GoogleAuth /> },
       { path: "auth/callback", element: <GitHubAuth /> },
-      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/forgort-password", element: <ForgotPassword /> },
+      { path: "/verify-code", element: <VerifyCodePage /> },
+      { path: "/update-password", element: <UpdatePass /> },
+     
+
+
+
     ],
   },
   {
@@ -85,6 +94,8 @@ const router = createBrowserRouter([
           { path: "w/:workspaceName", element: <Board /> },
           { path: "w/:workspaceName/members", element: <Member /> },
           { path: "w/:workspaceName/account", element: <Account /> },
+          { path: "w/:workspaceName/calendar", element: <Calendar /> },
+
         ],
       },
       {

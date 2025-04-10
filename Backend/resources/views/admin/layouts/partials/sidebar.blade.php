@@ -3,8 +3,10 @@
         <!-- Logo Header -->
         <div class="logo-header" data-background-color="dark">
             <a href="{{ route('admin.') }}" class="logo">
-                <img src="{{asset('asset/assets/img/kaiadmin/logo_light.svg')}}" alt="navbar brand" class="navbar-brand"
-                    height="20" />
+                @if($setting->logo)
+                <img src="{{ Storage::url($setting->logo) }}" alt="{{ $setting->site_name }}" class="navbar-brand" height="30">
+            @endif
+            <span class="ml-3 text-white font-weight-bold">{{ $setting->site_name }}</span>
             </a>
             <div class="nav-toggle">
                 <button class="btn btn-toggle toggle-sidebar">
@@ -89,6 +91,30 @@
 
                                 </a>
                             </li>
+
+                        </ul>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a data-bs-toggle="collapse" href="#base">
+                        <i class="fas fa-layer-group"></i>
+                        <p>Settings</p>
+                        <span class="caret"></span>
+                    </a>
+                    <div class="collapse" id="base">
+                        <ul class="nav nav-collapse">
+                            <li>
+                                <a href="{{ route('admin.settings.index') }}">
+                                    <span class="sub-item">List</span>
+
+                                </a>
+                            </li>
+                            {{-- <li>
+                                <a href="{{ route('admin.settings.edit') }}">
+                                    <span class="sub-item">Edit</span>
+
+                                </a>
+                            </li> --}}
 
                         </ul>
                     </div>

@@ -18,12 +18,12 @@ import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 import { useParams } from "react-router-dom";
-import { useCardSchedule, useUpdateCardDate } from "../../../../../../../../../../hooks/useCard";
-import { useChecklistsItemByDate, useUpdateItemDate } from "../../../../../../../../../../hooks/useCheckListItem";
+import { useCardSchedule, useDeleteCardDate, useUpdateCardDate } from "../../../../../../../../../../hooks/useCard";
+import { useChecklistsItemByDate, useDeleteItemDate, useUpdateItemDate } from "../../../../../../../../../../hooks/useCheckListItem";
 import "dayjs/locale/vi"; // Import locale tiếng Việt
 
 dayjs.locale("vi"); // Set locale
-const DateModal = ({ open, onClose, onSave, initialData,type,targetId }) => {
+const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
   const { cardId } = useParams();
   // console.log("Parent component re-rendered!");
   //  const { data: checklistItemMembers } = useGetMemberInCheckListItem(
@@ -31,7 +31,7 @@ const DateModal = ({ open, onClose, onSave, initialData,type,targetId }) => {
   //   );
   const { data: cardSchedule = [] } = useCardSchedule(type === 'card' ? targetId : null); // Chỉ gọi API khi type là "card" và có targetId hợp lệ;
   const { data: checklistSchedule = [] } = useChecklistsItemByDate(type === 'checklist-item' ? targetId : null)// Chỉ gọi API khi type là "checklist-item" và có targetId hợp lệ);
-// console.log(checklistSchedule)
+  // console.log(checklistSchedule)
   let schedule = [];
   if (type === "card" && targetId) {
     schedule = cardSchedule;
@@ -46,6 +46,10 @@ const DateModal = ({ open, onClose, onSave, initialData,type,targetId }) => {
   // console.log(targetId);
   const { mutate: updateCardDate } = useUpdateCardDate();
   const { mutate: updateChecklistItemDate } = useUpdateItemDate();
+  const { mutate: deleteDateCard } = useDeleteCardDate();
+  const { mutate: deleteDateItem } = useDeleteItemDate();
+
+  // const { mutate: updateChecklistItemDate } = useUpdateItemDate();
 
   const [startDate, setStartDate] = useState(dayjs().startOf("day"));
   const [endDate, setEndDate] = useState(dayjs().startOf("day"));
@@ -176,6 +180,20 @@ const DateModal = ({ open, onClose, onSave, initialData,type,targetId }) => {
 
     onClose();
   }
+  const handleDelete = () => {
+    // Gọi API xóa ngày
+    if (type === "card") {
+      
+      // Nếu là card, cập nhật ngày cho card
+      deleteDateCard({ targetId }); // Truyền object { targetId }
+     
+    } else if (type === "checklist-item") {
+      // console.log("đã ấn checklist")
+      // Nếu là checklist_item, cập nhật ngày cho checklist_item
+      deleteDateItem({targetId})
+    }
+      onClose();
+  };
 
 
 
@@ -216,28 +234,28 @@ const DateModal = ({ open, onClose, onSave, initialData,type,targetId }) => {
 
       {/* Ngày bắt đầu */}
       {type !== "checklist-item" && (
-      <Box sx={{ paddingX: 1, mb: 0.5 }}>
-        <Typography sx={{ fontWeight: "bold" }}>Ngày bắt đầu</Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <Checkbox
-            size="small"
-            checked={isStartDateChecked}
-            onChange={(e) => {
-              setIsStartDateChecked(e.target.checked);
-              setStartDate(e.target.checked ? dayjs() : null);
-            }}
-          />
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
-            <DatePicker
-              disabled={!isStartDateChecked}
-              value={startDate}
-              onChange={(newDate) => setStartDate(newDate)}
-              format="DD/MM/YYYY" // Định dạng ngày/tháng/năm
+        <Box sx={{ paddingX: 1, mb: 0.5 }}>
+          <Typography sx={{ fontWeight: "bold" }}>Ngày bắt đầu</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Checkbox
+              size="small"
+              checked={isStartDateChecked}
+              onChange={(e) => {
+                setIsStartDateChecked(e.target.checked);
+                setStartDate(e.target.checked ? dayjs() : null);
+              }}
             />
-          </LocalizationProvider>
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+              <DatePicker
+                disabled={!isStartDateChecked}
+                value={startDate}
+                onChange={(newDate) => setStartDate(newDate)}
+                format="DD/MM/YYYY" // Định dạng ngày/tháng/năm
+              />
+            </LocalizationProvider>
+          </Box>
         </Box>
-      </Box>
-       )}
+      )}
 
       {/* Ngày kết thúc */}
       <Box sx={{ paddingX: 1, mb: 0.5 }}>
@@ -301,6 +319,15 @@ const DateModal = ({ open, onClose, onSave, initialData,type,targetId }) => {
           size="small"
         >
           Lưu
+        </Button>
+        <Button
+          onClick={handleDelete} // Hàm xử lý khi nhấn nút Xóa, bạn cần định nghĩa hàm này
+          color="error" // Màu đỏ trong Material-UI
+          variant="contained"
+          size="small"
+          sx={{ ml: 5 }} // Thêm khoảng cách giữa hai nút
+        >
+          Xóa
         </Button>
       </DialogActions>
     </Dialog>
