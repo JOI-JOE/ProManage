@@ -36,9 +36,13 @@ import useNotifications from "../../hooks/useNotification";
 import useSearch from "../../hooks/useSearch";
 // import useNotifications from "../../hooks/useNotification";
 import { formatTime } from "../../../utils/dateUtils";
+import { useSetting } from "../../hooks/useSetting";
 
 const AppBar = ({ username, email }) => {
   const { data: user } = useUser();
+    const { data: settings  } = useSetting();// Chỉ gọi API khi type là "card" và có targetId hợp lệ;
+    // console.log(settings);
+  
 
   // console.log(user);
 
@@ -154,12 +158,15 @@ const AppBar = ({ username, email }) => {
           to={`/u/${user?.user_name}/boards`}
           sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
         >
+          {settings?.logo_url && (
           <SvgIcon
             component={trelloLogo}
             inheritViewBox
+            src={settings?.logo_url}
             fontSize="24px"
             sx={{ color: "secondary.contrastText" }}
           />
+        )}
           <Typography
             variant="span"
             sx={{
@@ -168,7 +175,7 @@ const AppBar = ({ username, email }) => {
               fontSize: "18px",
             }}
           >
-            Pro Manage
+           {settings?.site_name || "Pro Manage"}
           </Typography>
         </Box>
 

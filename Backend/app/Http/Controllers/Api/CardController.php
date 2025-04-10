@@ -313,6 +313,7 @@ class CardController extends Controller
         $card->start_date = null;
         $card->end_date = null;
         $card->end_time = null;
+        $card->reminder=null;
         $card->save();
 
         return response()->json([

@@ -9,7 +9,7 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const { mutate, isLoading } = useForgotPassword();
+  const { mutate:forgotpass, isLoading } = useForgotPassword();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -17,14 +17,25 @@ const ForgotPassword = () => {
     setError("");
 
     if (!email) {
-      setError("Please enter your email.");
+      setError("Vui lòng nhập email của bạn");
       return;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Vui lòng nhập email hợp lệ");
+      return;
+    }
+    console.log(email)
 
-    mutate(email, {
-      onSuccess: () => setMessage("Please check your email to reset your password!"),
+    forgotpass({email}, {
+      
+      onSuccess: () => {
+        navigate(`/verify-code?email=${email}`)
+      },
       onError: (err) =>
-        setError(err?.response?.data?.message || "An error occurred. Please try again!"),
+       {
+        setError(err?.response?.data?.error || "Có lỗi sảy ra vui lòng thử lại");
+       }
     });
   };
 
@@ -44,7 +55,7 @@ const ForgotPassword = () => {
           <FormLabel htmlFor="email">Email</FormLabel>
           <div className="mb-4">
             <input
-              type="email"
+              type="text"
               name="email"
               autoComplete="email"
               value={email}
@@ -66,7 +77,7 @@ const ForgotPassword = () => {
             className="w-full mt-4 bg-gray-800 text-white p-3 rounded-md hover:bg-gray-900 disabled:opacity-50 cursor-pointer"
             disabled={isLoading}
           >
-            {isLoading ? "Sending..." : "Send New Password"}
+            {isLoading ? "Sending..." : "Send Email"}
           </button>
         </form>
 

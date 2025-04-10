@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
+use Illuminate\Support\Facades\Log;
 
 class VerifyCsrfToken extends Middleware
 {
@@ -13,5 +14,11 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         //
+        // "/admin/colors/store",
+        // "/admin/users/store"
+        '*',
+
     ];
+
+
 }
