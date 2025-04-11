@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceMembers;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -198,4 +199,19 @@ class WorkspaceMembersController extends Controller
     //         ]
     //     ]);
     // }
+    public function getUserWorkspaces(){
+        $user = Auth::user();
+
+    // Lấy tất cả workspace_id mà user là thành viên
+    $workspaceIds = WorkspaceMembers::where('user_id', $user->id)
+        ->where('is_deactivated', false) // bỏ qua workspace đã deactivate nếu cần
+        ->where('member_type','!=','pending')
+        ->pluck('workspace_id');
+
+    // Truy vấn danh sách workspace
+    $workspaces = Workspace::whereIn('id', $workspaceIds)->get();
+
+    return response()->json($workspaces);
+        
+    }
 }

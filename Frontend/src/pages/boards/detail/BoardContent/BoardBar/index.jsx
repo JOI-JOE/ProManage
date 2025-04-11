@@ -28,6 +28,10 @@ import { useParams } from "react-router-dom";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
 import { useUser } from "../../../../../hooks/useUser";
 
+import LockIcon from "@mui/icons-material/Lock"; // Icon cho Riêng tư
+import GroupIcon from "@mui/icons-material/Group"; // Icon cho Không gian làm việc
+import PublicIcon from "@mui/icons-material/Public";
+
 const style = {
   border: "none",
   fontWeight: "bold",
@@ -157,6 +161,30 @@ const BoardBar = () => {
 
   const boardVisibility = board?.visibility || "test"; // Default to "Private"
 
+  const getVisibilityProps = (boardVisibility) => {
+    switch (boardVisibility) {
+      case "private":
+        return {
+          icon: <LockIcon sx={{ color: "red" }} />,
+          label: "Riêng tư",
+        };
+      case "workspace":
+        return {
+          icon: <GroupIcon sx={{ color: "blue" }} />,
+          label: "Không gian làm việc",
+        };
+      case "public":
+        return {
+          icon: <PublicIcon sx={{ color: "green" }} />,
+          label: "Công khai",
+        };
+      default:
+        return {
+          icon: <LockIcon sx={{ color: "red" }} />,
+          label: "Riêng tư", // Giá trị mặc định nếu boardVisibility không hợp lệ
+        };
+    }
+  };
   return (
     <Box
       sx={{
@@ -198,8 +226,8 @@ const BoardBar = () => {
 
         {/* <StarButton isStarred={isStarred} onStarClick={handleStarClick} /> */}
         <Chip
-          icon={<LockOpenIcon />}
-          label={`Khả năng xem: ${boardVisibility}`} // Display the visibility status
+          icon={getVisibilityProps(boardVisibility).icon}
+          label={getVisibilityProps(boardVisibility).label}
           variant="outlined"
           clickable
           sx={style}

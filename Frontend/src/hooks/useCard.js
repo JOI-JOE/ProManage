@@ -17,7 +17,8 @@ import {
   toggleIsCompleted,
   copyCard,
   moveCard,
-  removeDates
+  removeDates,
+  getCardsByUserBoards,
 } from "../api/models/cardsApi";
 import { useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
@@ -426,5 +427,12 @@ export const useDeleteCardDate = () => {
       onError: (error) => {
           console.error("❌ Lỗi khi xóa nhãn:", error.response?.data || error.message);
       },
+  });
+};
+export const useUserBoardCards = (userId) => {
+  return useQuery({
+    queryKey: ["userBoardCards", userId],
+    queryFn: () => getCardsByUserBoards(userId),
+    enabled: !!userId, // chỉ gọi khi userId có giá trị
   });
 };

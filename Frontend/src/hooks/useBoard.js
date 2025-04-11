@@ -86,6 +86,7 @@ export const useGetBoardByID = (boardId) => {
 
    return boardDetail;
 };
+
 export const getBoardByClosed = () => {
   return useQuery({
     queryKey: ["boards"], // Key duy nhất để xác định và cache dữ liệu người dùng.
