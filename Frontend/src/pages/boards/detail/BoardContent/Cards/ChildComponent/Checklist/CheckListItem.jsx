@@ -6,7 +6,7 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import InitialsAvatar from '../../../../../../../components/Common/InitialsAvatar';
-import { useUpdateCheckListItem } from '../../../../../../../hooks/useCard';
+import { useRemoveCheckListItem, useUpdateCheckListItem } from '../../../../../../../hooks/useCard';
 import ChecklistItemMenu from './ChecklistItemMenu';
 import DateItem from '../Date/DateItem';
 
@@ -18,13 +18,19 @@ const ChecklistItem = ({
     onAssign,
     onDeleteItem,
     onNameChange,
+    onDateChange, // Nhận callback từ parent
 }) => {
     const {
         updateStatus,
         updateAssignee,
         updateName,
+        updateEndDate,
+        updateEndTime,
+        updateReminder,
         isPending: isUpdating,
     } = useUpdateCheckListItem(item.id);
+
+    const { removeItem } = useRemoveCheckListItem();
 
     const assignedMember =
         Array.isArray(item.assignees) && item.assignees.length > 0
@@ -43,6 +49,7 @@ const ChecklistItem = ({
 
     const handleDeleteItem = () => {
         onDeleteItem?.(item.checklistId, item.id);
+        removeItem(item.id);
     };
 
     // State for editing name
@@ -90,22 +97,69 @@ const ChecklistItem = ({
     // State & handler for Date Dialog
     const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
     const [selectedChecklistItem, setSelectedChecklistItem] = useState(null);
-
     const handleOpenDateDialog = () => {
-        setSelectedChecklistItem(item);
+        setSelectedChecklistItem({
+            ...item,
+            end_date: item.end_date ? new Date(item.end_date) : null, // Chuyển sang Date object nếu có
+            end_time: item.end_time || null,
+        });
         setIsDateDialogOpen(true);
     };
-
     const handleCloseDateDialog = () => {
         setIsDateDialogOpen(false);
         setSelectedChecklistItem(null);
     };
 
-    // Determine if a due date exists (using end_date for this example)
-    const hasDueDate = item.end_date !== null;
-    const dueDate = hasDueDate ? new Date(item.end_date) : null;
+    // Handle date update from DateItem
+    const handleDateUpdate = async (newDateData) => {
+        try {
+            const { endDate, endTime, reminder } = newDateData;
 
-    console.log(item)
+            const formattedEndTime = endTime
+                ? new Date(`1970-01-01T${endTime}`).toLocaleTimeString('en-GB', {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                })
+                : null;
+
+            const promises = [];
+
+            if (endDate !== item.end_date) {
+                promises.push(updateEndDate(endDate));
+            }
+
+            if (formattedEndTime && formattedEndTime !== item.end_time) {
+                promises.push(updateEndTime(formattedEndTime));
+            }
+
+            if (reminder !== item.reminder) {
+                promises.push(updateReminder(reminder));
+            }
+
+            if (promises.length > 0) {
+                await Promise.all(promises);
+
+                onDateChange?.({
+                    end_date: endDate,
+                    end_time: formattedEndTime,
+                    reminder,
+                });
+            }
+
+            handleCloseDateDialog();
+        } catch (error) {
+            console.error('❌ Failed to update checklist item date:', error);
+        }
+    };
+
+
+    const hasDueDate = item.end_date !== null && item.end_time !== null;
+    const dueDate = hasDueDate ? new Date(`${item.end_date}T${item.end_time}`) : null;
+    const now = new Date();
+    const timeLeftInMilliseconds = hasDueDate && dueDate ? dueDate.getTime() - now.getTime() : null;
+    const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
 
     return (
         <>
@@ -180,8 +234,6 @@ const ChecklistItem = ({
                                 {item.name}
                             </Typography>
                         )}
-                        {/* Display due date if it exists */}
-
                     </Box>
                 </Box>
                 <Box
@@ -200,33 +252,17 @@ const ChecklistItem = ({
                         <Box
                             onClick={handleOpenDateDialog}
                             sx={(theme) => {
-                                const now = new Date(); // Thời gian hiện tại
-                                const due = new Date(item.end_date); // Thời gian đến hạn
-                                const timeDiff = due.getTime() - now.getTime(); // Khoảng cách thời gian (ms)
-                                const hoursLeft = timeDiff / (1000 * 60 * 60); // Số giờ còn lại
-
                                 let bgColor = 'transparent';
                                 let textColor = 'white';
 
-                                // ✅ TH1: ĐÃ HOÀN THÀNH
-                                // Nếu checklist item đã hoàn thành => hiển thị màu xanh (success)
                                 if (item.is_completed) {
-                                    bgColor = theme.alert?.success || '#28a745'; // Màu xanh
-                                }
-                                // ❌ TH2: QUÁ HẠN
-                                // Nếu thời hạn < hiện tại => quá hạn => hiển thị màu đỏ (danger)
-                                else if (due < now) {
-                                    bgColor = theme.alert?.danger || '#dc3545'; // Màu đỏ
-                                }
-                                // ⚠️ TH3: SẮP ĐẾN HẠN
-                                // Nếu còn <= 24 giờ đến hạn => hiển thị màu vàng (warning)
-                                else if (hoursLeft <= 24) {
-                                    bgColor = theme.alert?.warning || '#ffc107'; // Màu vàng
-                                }
-                                // ℹ️ TH4: CHƯA ĐẾN HẠN XA
-                                // Nếu còn nhiều hơn 24 giờ => màu xám mặc định
-                                else {
-                                    bgColor = theme.palette.grey[300] || '#e0e0e0'; // Màu xám
+                                    bgColor = theme.alert?.success || '#28a745';
+                                } else if (hasDueDate && dueDate < now) {
+                                    bgColor = theme.alert?.danger || '#dc3545';
+                                } else if (hasDueDate && timeLeftInMilliseconds > 0 && timeLeftInMilliseconds <= twentyFourHoursInMs) {
+                                    bgColor = theme.alert?.warning || '#ffc107';
+                                } else {
+                                    bgColor = '#091e420f';
                                     textColor = 'black';
                                 }
 
@@ -234,35 +270,33 @@ const ChecklistItem = ({
                                     cursor: 'pointer',
                                     backgroundColor: bgColor,
                                     color: textColor,
-                                    padding: '0.5px 8px',
+                                    padding: '0px 5px',
                                     borderRadius: '32px',
                                     display: 'inline-flex',
-                                    fontSize: "0px",
+                                    fontSize: '0px',
                                     alignItems: 'center',
                                     gap: '4px',
                                     transition: 'background-color 0.2s ease, opacity 0.2s ease',
                                     '&:hover': {
                                         opacity: 0.9,
-                                        backgroundColor: bgColor, // vẫn giữ màu nhưng tạo hiệu ứng mờ nhẹ
+                                        backgroundColor: bgColor,
                                     },
                                 };
                             }}
                         >
-                            <AccessTimeRoundedIcon sx={{ fontSize: 16 }} />
-                            <Typography variant="caption" >
-                                {new Date(item.end_date).toLocaleDateString('vi-VN', {
+                            <AccessTimeRoundedIcon sx={{ fontSize: 15 }} />
+                            <Typography variant="caption">
+                                {dueDate.toLocaleDateString('vi-VN', {
                                     day: 'numeric',
                                     month: 'short',
                                 })}
                             </Typography>
                         </Box>
                     ) : (
-                        <IconButton size="small">
-                            <AccessTimeIcon fontSize="small" onClick={handleOpenDateDialog} />
+                        <IconButton size="small" onClick={handleOpenDateDialog}>
+                            <AccessTimeIcon fontSize="small" />
                         </IconButton>
                     )}
-
-
                     <IconButton
                         size="small"
                         onClick={(e) => onOpenMemberMenu(e, item, handleAssign)}
@@ -288,15 +322,19 @@ const ChecklistItem = ({
                         icon={<MoreHorizIcon fontSize="small" />}
                     />
                 </Box>
-            </Box >
+            </Box>
 
             {/* Dialog chọn ngày */}
             <DateItem
                 open={isDateDialogOpen}
                 onClose={handleCloseDateDialog}
                 type="checklist-item"
-                item={selectedChecklistItem}
-            // onSave={handleUpdateDueDate}
+                item={{
+                    ...selectedChecklistItem,
+                    end_date: selectedChecklistItem?.end_date || null,
+                    end_time: selectedChecklistItem?.end_time || null,
+                }}
+                onSave={handleDateUpdate}
             />
         </>
     );

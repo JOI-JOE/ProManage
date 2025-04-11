@@ -35,7 +35,6 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
     const [selectedItem, setSelectedItem] = useState(null);
 
     // State để quản lý DateItem và MemberMenu
-    const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
     const [memberAnchorEl, setMemberAnchorEl] = useState(null);
     const [selectedChecklistItem, setSelectedChecklistItem] = useState(null);
     const [memberSearch, setMemberSearch] = useState('');
@@ -51,6 +50,7 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                     is_completed: item.is_completed,
                     start_date: item.start_date,
                     end_date: item.end_date,
+                    end_time: item.end_time,
                     assignees: item.assignees,
                     reminder: item.reminder,
                 }))
@@ -94,8 +94,6 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
             );
         },
     }));
-
-
     const handleDeleteChecklist = (checklistId) => {
         setChecklists((prev) => prev.filter((cl) => cl.id !== checklistId));
         removeChecklist(checklistId, {
@@ -104,7 +102,7 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
             },
         });
     };
-
+    // Thêm mới checklistitem
     const handleAddItem = (checklistId) => {
         const trimmedText = newItemText.trim();
         if (!trimmedText) return;
@@ -130,11 +128,9 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                     : cl
             )
         );
-
         // Reset input & trạng thái thêm
         setNewItemText('');
         setIsAddingItemId(null);
-
         // Gọi API tạo item thật
         createItem(
             {
@@ -142,24 +138,7 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                 data: { name: trimmedText },
             },
             {
-                onSuccess: (data) => {
-                    setChecklists((prev) =>
-                        prev.map((cl) =>
-                            cl.id === checklistId
-                                ? {
-                                    ...cl,
-                                    items: cl.items.map((item) =>
-                                        item.id === tempId
-                                            ? { ...data, isPending: false }
-                                            : item
-                                    ),
-                                }
-                                : cl
-                        )
-                    );
-                },
                 onError: () => {
-                    // Nếu lỗi thì xoá item tạm
                     setChecklists((prev) =>
                         prev.map((cl) =>
                             cl.id === checklistId
@@ -170,12 +149,11 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                                 : cl
                         )
                     );
-                    console.error("❌ Lỗi khi tạo checklist item");
                 },
             }
         );
     };
-
+    // Chính sửa 
     const handleToggleItem = (checklistId, itemId) => {
         const updatedChecklists = checklists.map((cl) =>
             cl.id === checklistId
@@ -249,12 +227,29 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
             }))
         );
     };
+    // Hàn sửa date
+    const handleUpdateItemDate = (checklistId, itemId, newDateData) => {
+        const { end_date, end_time } = newDateData;
 
+        setChecklists((prev) =>
+            prev.map((cl) =>
+                cl.id === checklistId
+                    ? {
+                        ...cl,
+                        items: cl.items.map((item) =>
+                            item.id === itemId
+                                ? { ...item, end_date, end_time }
+                                : item
+                        ),
+                    }
+                    : cl
+            )
+        );
+    };
+    // ----------------------------------------------------------------
     const filteredMembers = members.filter((m) =>
         m?.full_name?.toLowerCase().includes(memberSearch.toLowerCase())
     );
-
-    // ----------------------------------------------------------------
     // const handleMenuOpen = (event, checklistId, itemId) => {
     //     setAnchorEl(event.currentTarget);
     //     setSelectedItem({ checklistId, itemId });
@@ -344,8 +339,8 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                                 onOpenMemberMenu={(e, item, assignFn) => handleOpenMemberMenu(e, item, assignFn)}
                                 // onMenuOpen={() => handleMenuOpen(item)}
                                 onDeleteItem={handleDeleteItem}
-                                onNameChange={handleUpdateItemName} // 👈 truyền vào đây
-                            />
+                                onNameChange={handleUpdateItemName} // xử lý tên
+                                onDateChange={(newDateData) => handleUpdateItemDate(checklist.id, item.id, newDateData)} />
                         ))}
 
                         {isAddingItemId === checklist.id ? (

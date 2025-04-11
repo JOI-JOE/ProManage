@@ -46,7 +46,7 @@ class ChecklistController extends Controller
             ->get();
 
         if ($checklists->isEmpty()) {
-            return response()->json(['message' => 'No checklists found for this card'], 404);
+            return response()->json([]);
         }
 
         // 2. Lấy danh sách checklist items cho tất cả checklists
@@ -97,7 +97,7 @@ class ChecklistController extends Controller
                 'updated_at' => $checklist->updated_at,
             ];
         });
-        // 3. Trả về tất cả checklists
+
         return $result;
     }
 

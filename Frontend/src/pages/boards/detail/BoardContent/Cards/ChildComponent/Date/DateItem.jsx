@@ -18,6 +18,7 @@ import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { StaticDatePicker } from "@mui/x-date-pickers/StaticDatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
 import "dayjs/locale/vi";
@@ -35,7 +36,13 @@ const REMINDER_OPTIONS = [
     "2 ngày trước",
 ];
 
-const DateItem = ({ open, onClose, type, item, targetId }) => {
+const roundToNearest5Minutes = (time) => {
+    const minutes = time.minute();
+    const roundedMinutes = Math.round(minutes / 5) * 5;
+    return time.set("minute", roundedMinutes).set("second", 0);
+};
+
+const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave vào props
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [endTime, setEndTime] = useState(null);
@@ -45,21 +52,30 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
     const [selectionMode, setSelectionMode] = useState("end");
 
     useEffect(() => {
-        if (!item) return;
+        if (!item) {
+            const now = dayjs();
+            setEndDate(now);
+            const defaultTime = roundToNearest5Minutes(now.add(30, "minute"));
+            setEndTime(defaultTime);
+            return;
+        }
 
-        // Initialize end_date
-        setEndDate(item.end_date ? dayjs(item.end_date) : null);
+        const newEndDate = item.end_date ? dayjs(item.end_date).startOf("day") : dayjs();
+        setEndDate(newEndDate);
 
-        // Initialize end_time with a default of 12:00 if not provided
-        setEndTime(
-            item.end_time
-                ? dayjs(item.end_time, "HH:mm")
-                : dayjs().set("hour", 12).set("minute", 0) // Default to 12:00
-        );
+        let defaultTime;
+        if (item.end_time) {
+            const [hours, minutes] = item.end_time.split(":");
+            defaultTime = dayjs().set("hour", parseInt(hours)).set("minute", parseInt(minutes));
+        } else {
+            const now = dayjs();
+            defaultTime = now.add(30, "minute");
+        }
+        const roundedTime = roundToNearest5Minutes(defaultTime);
+        setEndTime(roundedTime);
 
-        // Initialize reminder
         if (item.reminder && item.end_date && item.end_time) {
-            const endDateTime = dayjs(`${item.end_date} ${item.end_time}`);
+            const endDateTime = dayjs(item.end_date).set("hour", defaultTime.hour()).set("minute", defaultTime.minute());
             const reminderDateTime = dayjs(item.reminder);
             const diff = endDateTime.diff(reminderDateTime, "minute");
 
@@ -82,9 +98,10 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
             setReminder("Không có");
         }
 
-        // For card type, initialize start_date
         if (type === "card") {
-            setStartDate(item.start_date ? dayjs(item.start_date) : null);
+            const newStartDate = item.start_date ? dayjs(item.start_date) : null;
+            setStartDate(newStartDate);
+            setIsStartDateChecked(!!item.start_date);
         }
     }, [item, type]);
 
@@ -110,6 +127,11 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                 }
             }
         }
+    };
+
+    const handleTimeChange = (newTime) => {
+        const roundedTime = roundToNearest5Minutes(newTime);
+        setEndTime(roundedTime);
     };
 
     const handleSave = (e) => {
@@ -158,14 +180,58 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
             payload.startDate = isStartDateChecked && startDate ? startDate.format("YYYY-MM-DD") : null;
         }
 
-        payload.targetId = targetId;
-
-        console.log("Saved payload:", payload);
+        // Gọi onSave với dữ liệu payload trước khi đóng dialog
+        onSave(payload);
         onClose();
     };
 
-    // Custom day labels to match Trello
-    const dayLabels = ["CN", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7"];
+    const renderDay = (day, selectedDays, pickersDayProps) => {
+        const isInRange =
+            type === "card" &&
+            isStartDateChecked &&
+            isEndDateChecked &&
+            startDate &&
+            endDate &&
+            day.isAfter(startDate, "day") &&
+            day.isBefore(endDate, "day");
+
+        const isStartDay =
+            type === "card" &&
+            isStartDateChecked &&
+            startDate &&
+            day.isSame(startDate, "day");
+
+        const isEndDay =
+            type === "card" &&
+            isEndDateChecked &&
+            endDate &&
+            day.isSame(endDate, "day");
+
+        return (
+            <PickersDay
+                {...pickersDayProps}
+                sx={{
+                    ...(isInRange && {
+                        backgroundColor: "#e3f2fd",
+                        borderRadius: 0,
+                        "&:hover": { backgroundColor: "#bbdefb" },
+                    }),
+                    ...(isStartDay && {
+                        backgroundColor: "#00C4B4",
+                        color: "white",
+                        borderRadius: "50%",
+                        "&:hover": { backgroundColor: "#00b3a3" },
+                    }),
+                    ...(isEndDay && {
+                        backgroundColor: "#00C4B4",
+                        color: "white",
+                        borderRadius: "50%",
+                        "&:hover": { backgroundColor: "#00b3a3" },
+                    }),
+                }}
+            />
+        );
+    };
 
     return (
         <Dialog
@@ -197,23 +263,14 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                     <StaticDatePicker
                         value={type === "checklist-item" || selectionMode === "end" ? endDate : startDate}
                         onChange={handleDateChange}
-                        dayOfWeekFormatter={(day) => {
-                            const dayIndex = dayjs(day).day();
-                            return dayLabels[dayIndex];
-                        }}
+                        dayOfWeekFormatter={(day) => ["CN", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7"][dayjs(day).day()]}
+                        renderDay={renderDay}
                         sx={{
                             mr: 2,
                             bgcolor: "white",
                             borderRadius: 2,
                             "& .MuiPickersDay-root": {
-                                "&.Mui-selected": {
-                                    backgroundColor: "#00C4B4",
-                                    color: "white",
-                                    borderRadius: "50%",
-                                },
-                                "&:hover": {
-                                    backgroundColor: "#e3f2fd",
-                                },
+                                "&:hover": { backgroundColor: "#e3f2fd" },
                                 "&.MuiPickersDay-today": {
                                     border: "1px solid #1976d2",
                                     borderRadius: "50%",
@@ -231,9 +288,7 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                                 color: "#1976d2",
                             },
                         }}
-                        slotProps={{
-                            actionBar: { actions: ["today"] },
-                        }}
+                        slotProps={{ actionBar: { actions: ["today"] } }}
                     />
                 </LocalizationProvider>
 
@@ -248,9 +303,7 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                                         onChange={(e) => {
                                             setIsStartDateChecked(e.target.checked);
                                             if (e.target.checked) {
-                                                if (!startDate) {
-                                                    setStartDate(dayjs());
-                                                }
+                                                if (!startDate) setStartDate(dayjs());
                                                 setSelectionMode("start");
                                             } else {
                                                 setSelectionMode("end");
@@ -261,15 +314,8 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                                 label={
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                         Ngày bắt đầu: <br />
-                                        <Typography
-                                            component="span"
-                                            sx={{
-                                                fontSize: "1rem",
-                                                fontWeight: 500,
-                                                color: "#1976d2",
-                                            }}
-                                        >
-                                            {startDate ? startDate.format("DD/MM/YYYY") : "Chưa chọn"}
+                                        <Typography component="span" sx={{ fontSize: "1rem", fontWeight: 500, color: "#1976d2" }}>
+                                            {isStartDateChecked && startDate ? startDate.format("DD/MM/YYYY") : "N/T/NNNN"}
                                         </Typography>
                                     </Typography>
                                 }
@@ -279,9 +325,7 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
 
                     <Box sx={{ mb: 2, p: 2, bgcolor: "white", borderRadius: 2 }}>
                         <FormControlLabel
-                            sx={{
-                                mb: "10px",
-                            }}
+                            sx={{ mb: "10px" }}
                             control={
                                 <Checkbox
                                     size="small"
@@ -289,11 +333,11 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                                     onChange={(e) => {
                                         setIsEndDateChecked(e.target.checked);
                                         if (e.target.checked) {
-                                            if (!endDate) {
-                                                setEndDate(dayjs());
-                                            }
+                                            if (!endDate) setEndDate(dayjs());
                                             if (!endTime) {
-                                                setEndTime(dayjs().set("hour", 12).set("minute", 0));
+                                                const now = dayjs();
+                                                const defaultTime = roundToNearest5Minutes(now.add(30, "minute"));
+                                                setEndTime(defaultTime);
                                             }
                                             setSelectionMode("end");
                                         } else {
@@ -308,15 +352,9 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                             label={
                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                     Ngày hết hạn:<br />
-                                    <Typography
-                                        component="span"
-                                        sx={{
-                                            fontSize: "1rem",
-                                            fontWeight: 500,
-                                            color: "#1976d2",
-                                        }}
-                                    >
-                                        {endDate ? endDate.format("DD/MM/YYYY") : "Chưa chọn"}
+                                    <Typography component="span" sx={{ fontSize: "1rem", fontWeight: 500, color: "#1976d2" }}>
+                                        {isEndDateChecked && endDate ? endDate.format("DD/MM/YYYY") : "N/T/NNNN"}
+                                        {isEndDateChecked && endTime ? ` ${endTime.format("HH:mm")}` : ""}
                                     </Typography>
                                 </Typography>
                             }
@@ -325,12 +363,12 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                                 <TimePicker
                                     value={endTime}
-                                    onChange={setEndTime}
+                                    onChange={handleTimeChange}
                                     format="HH:mm"
                                     sx={{ mt: 1, width: "120px" }}
+                                    minutesStep={5}
                                     slotProps={{
                                         textField: {
-                                            size: "small",
                                             sx: {
                                                 bgcolor: "#fff",
                                                 borderRadius: 1,
@@ -351,16 +389,9 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                                                     width: "70px",
                                                     scrollbarWidth: "thin",
                                                     scrollbarColor: "#1976d2 transparent",
-                                                    "&::-webkit-scrollbar": {
-                                                        width: "4px",
-                                                    },
-                                                    "&::-webkit-scrollbar-thumb": {
-                                                        backgroundColor: "#1976d2",
-                                                        borderRadius: "4px",
-                                                    },
-                                                    "&::-webkit-scrollbar-track": {
-                                                        backgroundColor: "transparent",
-                                                    },
+                                                    "&::-webkit-scrollbar": { width: "4px" },
+                                                    "&::-webkit-scrollbar-thumb": { backgroundColor: "#1976d2", borderRadius: "4px" },
+                                                    "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
                                                 },
                                                 "& .MuiMultiSectionDigitalClockSection-item": {
                                                     borderRadius: "6px",
@@ -368,23 +399,12 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                                                     padding: "6px 0",
                                                     textAlign: "center",
                                                     transition: "background-color 0.2s",
-                                                    "&:hover": {
-                                                        backgroundColor: "#e3f2fd",
-                                                        color: "#1976d2",
-                                                    },
-                                                    "&.Mui-selected": {
-                                                        backgroundColor: "#1976d2",
-                                                        color: "white",
-                                                        "&:hover": {
-                                                            backgroundColor: "#1565c0",
-                                                        },
-                                                    },
+                                                    "&:hover": { backgroundColor: "#e3f2fd", color: "#1976d2" },
+                                                    "&.Mui-selected": { backgroundColor: "#1976d2", color: "white", "&:hover": { backgroundColor: "#1565c0" } },
                                                 },
                                             },
                                         },
-                                        actionBar: {
-                                            actions: ["accept"],
-                                        },
+                                        actionBar: { actions: ["accept"] },
                                     }}
                                 />
                             </LocalizationProvider>
@@ -403,9 +423,7 @@ const DateItem = ({ open, onClose, type, item, targetId }) => {
                                 disabled={!isEndDateChecked}
                             >
                                 {REMINDER_OPTIONS.map((option) => (
-                                    <MenuItem key={option} value={option}>
-                                        {option}
-                                    </MenuItem>
+                                    <MenuItem key={option} value={option}>{option}</MenuItem>
                                 ))}
                             </Select>
                         </FormControl>

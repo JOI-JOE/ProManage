@@ -17,10 +17,14 @@ export const fetchCardById = async (cardId) => {
     throw error;
   }
 };
-
 export const fetchCheckLists = async (cardId) => {
   const { data } = await authClient.get(`/card/${cardId}/checklists`);
   return data;
+};
+// - attachment
+export const fetchAttachments = async (cardId) => {
+  const response = await authClient.get(`/card/${cardId}/attachments`);
+  return response.data;
 };
 // function create ----------------------------------------------------------
 // - checklist
@@ -37,7 +41,38 @@ export const postChecklistItem = async ({ checklistId, data }) => {
   );
   return response.data;
 };
+// - attachment
+export const postAttachmentFile = async ({ cardId, file }) => {
+  try {
+    const response = await authClient.post(
+      `/card/${cardId}/attachments`,
+      file,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data", // Explicitly set the content type for file uploads
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tải lên file:", error);
+    throw error;
+  }
+};
 
+// Function for adding links
+export const postAttachmentLink = async ({ cardId, linkData }) => {
+  try {
+    const response = await authClient.post(
+      `/card/${cardId}/attachments`,
+      linkData
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi thêm link:", error);
+    throw error;
+  }
+};
 /// function update --------------------------------------------------------
 // ChecklistItem
 export const updateCheckListItem = async (checklistItemId, data) => {
@@ -64,7 +99,6 @@ export const putMemberToCard = async (cardId, memberId) => {
   );
   return data;
 };
-
 //fucntion delete
 // Bỏ ra
 export const removeMemberFromCard = async (cardId, memberId) => {
@@ -73,11 +107,18 @@ export const removeMemberFromCard = async (cardId, memberId) => {
   );
   return data;
 };
-
 // checklist
 export const removeCheckListFromCard = async (checklistId) => {
   const { data } = await authClient.delete(`/checklist/${checklistId}`);
   return data;
+};
+// checklistitem
+export const removeCheckListItem = async (checklistItemId) => {
+  const response = await authClient.delete(
+    `/checklist/${checklistItemId}/items`,
+    data
+  );
+  return response.data;
 };
 
 /// ---------------------------------------------------------------

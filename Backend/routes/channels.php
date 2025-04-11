@@ -29,12 +29,11 @@ Broadcast::channel('card.{cardId}', function ($user, $cardId) {
 Broadcast::channel('checklist.{cardId}', function ($cardId) {
     return true; // 🔥 Public channel, ai cũng nghe được
 });
-
-
 Broadcast::channel('checklist-item.{checklistItemId}', function ($checklistItemId) {
     // Vì đây là public channel, ai cũng có thể đăng ký
     return true;
 });
+
 
 Broadcast::channel('App.Models.User.{userId}', function ($user, $userId) {
     return (string) $user->id === (string) $userId;

@@ -129,16 +129,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{cardId}', 'show');
         Route::put('/{cardId}', 'update');
     });
-    // Card Member
-    Route::prefix('card')->controller(CardMemberController::class)->group(function () {
-        Route::post('/{cardId}/idMember', 'toggleJoin');
-        Route::post('/{cardId}/idMember/{memberId}', 'store');
-        Route::delete('/{cardId}/idMember/{memberId}', 'remove');
-    });
-    // Checklist
-    Route::prefix('card')->controller(ChecklistController::class)->group(function () {
-        Route::get('/{cardId}/checklists', 'index'); // Lấy danh sách checklist của 1 card
-        Route::post('/{cardId}/checklists', 'store'); // Tạo checklist mới cho 1 card
+    Route::prefix('card')->group(function () {
+        // Card Member
+        Route::controller(CardMemberController::class)->group(function () {
+            Route::post('/{cardId}/idMember', 'toggleJoin');
+            Route::post('/{cardId}/idMember/{memberId}', 'store');
+            Route::delete('/{cardId}/idMember/{memberId}', 'remove');
+        });
+        // Checklist
+        Route::controller(ChecklistController::class)->group(function () {
+            Route::get('/{cardId}/checklists', 'index'); // Lấy danh sách checklist của 1 card
+            Route::post('/{cardId}/checklists', 'store'); // Tạo checklist mới cho 1 card
+        });
+        Route::controller(AttachmentController::class)->group(function () {
+            Route::get('/{cardId}/attachments', 'index');
+            Route::post('/{cardId}/attachments', 'store');
+        });
     });
 
     Route::delete('checklist/{checklistItemId}',  [ChecklistController::class, 'delete']);
@@ -146,9 +152,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('checklist')->controller(ChecklistItemController::class)->group(function () {
         Route::post('/{checklistId}/items',  'store');
         Route::put('/{checklistItemId}/items',  'update');
+        Route::delete('/{checklistItemId}/items',  'delete');
     });
 
-
+    // Route::controller(ChecklistItemController::class)->group(function () {
+    //     Route::prefix('attac')
+    // });
 
 
     // Route::controller(CardController::class)->group(function () {

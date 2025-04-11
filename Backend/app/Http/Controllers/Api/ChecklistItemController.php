@@ -96,7 +96,6 @@ class ChecklistItemController extends Controller
             'assignee' => 'sometimes|nullable|exists:users,id', // Chỉ một user_id, có thể null
         ]);
     }
-
     private function updateChecklistItemName($id, $name)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -104,7 +103,6 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
-
     private function updateChecklistItemStatus($id, $status)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -112,7 +110,6 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
-
     private function updateChecklistItemStartDate($id, $startDate)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -120,7 +117,6 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
-
     private function updateChecklistItemEndDate($id, $endDate)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -128,7 +124,6 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
-
     private function updateChecklistItemEndTime($id, $endTime)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -136,7 +131,6 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
-
     private function updateChecklistItemReminder($id, $reminder)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -144,7 +138,6 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
-
     private function updateChecklistItemAssignee($id, $userId)
     {
         // Xóa assignee hiện tại (nếu có)
@@ -160,7 +153,6 @@ class ChecklistItemController extends Controller
             ]);
         }
     }
-
     private function buildChecklistItemResponse($id)
     {
         $item = DB::table('checklist_items')->where('id', $id)->first();
@@ -187,6 +179,18 @@ class ChecklistItemController extends Controller
             'created_at' => $item->created_at,
             'updated_at' => $item->updated_at,
         ]);
+    }
+
+    public function delete($checklistItemId)
+    {
+        // Xóa checklist item
+        $deleted = DB::table('checklist_items')->where('id', $checklistItemId)->delete();
+
+        if ($deleted) {
+            return response()->json(['message' => 'Checklist item deleted'], 200);
+        }
+
+        return response()->json(['message' => 'Checklist item not found'], 404);
     }
 
     ///-----------------------------------------------------------
@@ -345,7 +349,7 @@ class ChecklistItemController extends Controller
     //     $item = ChecklistItem::findOrFail($id);
     //     $cardId = $item->checklist->card_id;
 
-    //     // Xóa ChecklistItem
+    //     // Xóa ChecklistItemp
     //     $item->delete();
 
     //     broadcast(new ChecklistItemDeleted($id, $cardId))->toOthers();

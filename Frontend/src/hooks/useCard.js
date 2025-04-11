@@ -22,11 +22,14 @@ import {
   postChecklistItem,
   updateCheckListItem,
   removeCheckListFromCard,
+  removeCheckListItem,
+  postAttachmentFile,
+  postAttachmentLink,
+  fetchAttachments,
 } from "../api/models/cardsApi";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { toast } from "react-toastify";
 import echoInstance from "./realtime/useRealtime";
-import { data } from "react-router-dom";
 
 // GET FUNCTION ------------------------------------------------------
 export const useCardById = (cardId) => {
@@ -38,17 +41,24 @@ export const useCardById = (cardId) => {
     enabled: !!cardId,
   });
 };
-
 // Checklist card
-export const useChecklist = (checklistId) => {
+export const useChecklist = (cardId) => {
   return useQuery({
-    queryKey: ["checklist", checklistId],
-    queryFn: () => fetchCheckLists(checklistId),
-    enabled: Boolean(checklistId),
+    queryKey: ["checklist", cardId],
+    queryFn: () => fetchCheckLists(cardId),
+    enabled: Boolean(cardId),
     staleTime: 1000 * 60 * 5, // 5 phút, tránh gọi lại nếu chưa cần thiết
   });
 };
-
+// Attachment card
+export const useFetchAttachments = (cardId) => {
+  return useQuery({
+    queryKey: ["attachments", cardId],
+    queryFn: () => fetchAttachments(cardId),
+    enabled: Boolean(cardId),
+    staleTime: 1000 * 60 * 5, // 5 phút, tránh gọi lại nếu chưa cần thiết
+  });
+};
 // POST FUNCTION ------------------------------------------------------
 // thêm mới list
 export const usePostCheckList = () => {
@@ -66,6 +76,30 @@ export const usePostChecklistItem = () => {
       postChecklistItem({ checklistId, data }),
     onError: (error) => {
       console.error("❌ Lỗi khi tạo checklist item:", error);
+    },
+  });
+};
+// Thêm mới attachment
+export const usePostAttachmentFile = () => {
+  return useMutation({
+    mutationFn: ({ cardId, file }) => postAttachmentFile({ cardId, file }),
+    onError: (error) => {
+      console.error("❌ Lỗi khi tải lên file:", error);
+    },
+  });
+};
+// Hook for adding links
+export const usePostAttachmentLink = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cardId, linkData }) =>
+      postAttachmentLink({ cardId, linkData }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+    },
+    onError: (error) => {
+      console.error("❌ Lỗi khi thêm link:", error);
     },
   });
 };
@@ -94,7 +128,6 @@ export const useUpdateCheckListItem = (checklistItemId) => {
     isUpdating: mutation.isLoading,
   };
 };
-
 // Card
 export const useUpdateCardById = (cardId) => {
   const queryClient = useQueryClient();
@@ -177,7 +210,6 @@ export const useJoinOrPutMember = (cardId) => {
     isRemoving: removeMemberFromCardMutation.isLoading,
   };
 };
-
 // DELETE FUNCTION -----------------------------------------------------
 export const useRemoveChecklistFromCard = () => {
   return useMutation({
@@ -187,7 +219,19 @@ export const useRemoveChecklistFromCard = () => {
     },
   });
 };
+export const useRemoveCheckListItem = () => {
+  const mutation = useMutation({
+    mutationFn: (checklistItemId) => removeCheckListItem(checklistItemId),
+    onError: (error) => {
+      console.error("❌ Failed to remove checklist item:", error);
+    },
+  });
 
+  return {
+    removeItem: mutation.mutate, // 👈 Đây mới là thứ bạn dùng trong component
+    ...mutation,
+  };
+};
 // ------------------------------------------------------
 
 // export const useCardById = (cardId) => {

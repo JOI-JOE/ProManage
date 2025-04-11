@@ -1,428 +1,1070 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Dialog,
-    DialogTitle,
     DialogContent,
-    DialogActions,
-    Button,
-    Box,
-    Checkbox,
+    DialogTitle,
     Typography,
-    FormControlLabel,
+    Box,
+    Chip,
     IconButton,
-    Select,
-    MenuItem,
-    FormControl,
+    Button,
+    Avatar,
+    List,
+    TextField,
+    Paper,
+    Divider,
 } from "@mui/material";
-import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { StaticDatePicker } from "@mui/x-date-pickers/StaticDatePicker";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
-import CloseIcon from "@mui/icons-material/Close";
-import "dayjs/locale/vi";
+import "react-lazy-load-image-component/src/effects/blur.css";
+import CustomButton from "../../../../../components/Common/CustomButton.jsx";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+// ICON
+import GroupIcon from "@mui/icons-material/Group";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { PlusIcon } from "@heroicons/react/24/solid";
+import { KeyboardArrowDown } from "@mui/icons-material";
+import PersonRemoveAlt1Icon from '@mui/icons-material/PersonRemoveAlt1';
+// PAGE --------------------------------------------------------------------
+import dayjs from 'dayjs';
+import ChecklistGroup from "./ChildComponent/Checklist/ChecklistGroup.jsx";
+import CommentEditor from "./ChildComponent/EditorForm.jsx";
+import FileItem from "./ChildComponent/Attachment/FileItem.jsx";
+import LinkItem from "./ChildComponent/Attachment/LinkItem.jsx";
+import relativeTime from 'dayjs/plugin/relativeTime';
+import MemberMenu from "./ChildComponent/Members/MemberMenu.jsx";
+import DateItem from "./ChildComponent/Date/DateItem.jsx";
+// HOOK --------------------------------------------------------------------
+import { useCardById, useJoinOrPutMember, useUpdateCardById } from "../../../../../hooks/useCard.js";
+import { useBoard } from "../../../../../contexts/BoardContext.jsx";
+import LogoLoading from "../../../../../components/LogoLoading.jsx";
+import InitialsAvatar from "../../../../../components/Common/InitialsAvatar.jsx";
+import { useMe } from "../../../../../contexts/MeContext.jsx";
+import CheckMenu from "./ChildComponent/Checklist/CheckMenu.jsx";
+import LabelsPopover from "./ChildComponent/Label/LabelsPopover.jsx";
+import AttachmentMenu from "./ChildComponent/Attachment/AttachmentMenu.jsx";
+import AttachmentFolder from "./ChildComponent/Attachment/AttachmentFolder.jsx";
+import { AttachmentsProvider } from "../../../../../contexts/AttachmentsContext.jsx";
 
-dayjs.locale("vi");
+dayjs.extend(relativeTime);
 
-const REMINDER_OPTIONS = [
-    "Không có",
-    "5 phút trước",
-    "10 phút trước",
-    "15 phút trước",
-    "1 giờ trước",
-    "2 giờ trước",
-    "1 ngày trước",
-    "2 ngày trước",
-];
+const Card_detail = ({ cardId, closeCard, openCard }) => {
+    // Lấy dữ liệu từ hook ---------------------------------------------
+    // const { listData } = useBoard()
+    const { user } = useMe();
+    const { listData, members } = useBoard()
+    const { data: fetchedCard, isLoading: isLoadingCard, isError } = useCardById(cardId);
+    // Function ------------------------------------------
+    const {
+        updateTitle,
+        updateDescription,
+        isUpdating
+    } = useUpdateCardById(cardId || card?.id);
 
-const DateItem = ({ open, onClose, type, item, targetId }) => {
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
-    const [endTime, setEndTime] = useState(null);
-    const [isStartDateChecked, setIsStartDateChecked] = useState(false);
-    const [isEndDateChecked, setIsEndDateChecked] = useState(true);
-    const [reminder, setReminder] = useState("Không có");
-    const [selectionMode, setSelectionMode] = useState("end");
-
+    const {
+        joinCard,
+        isJoining,
+        putMember,
+        isPutting,
+        removeMember,
+        isRemoving
+    } = useJoinOrPutMember(cardId || card?.id);
+    // State -----------
+    const [card, setCard] = useState(null);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
     useEffect(() => {
-        if (!item) return;
+        if (fetchedCard) {
+            setCard(fetchedCard);
+        }
+    }, [fetchedCard]);
+    // Lọc dữ liệu list
+    const list = listData?.lists?.find(
+        (item) => item.id === card?.list_board_id
+    );
+    // End ============================================================================
 
-        // Initialize end_date
-        setEndDate(item.end_date ? dayjs(item.end_date) : null);
+    // Test
 
-        // Initialize end_time: If not provided, round down current time to nearest hour and subtract 1 hour
-        const now = dayjs();
-        const defaultTime = now.startOf("hour").subtract(1, "hour"); // Round down to nearest hour, then subtract 1 hour
-        setEndTime(item.end_time ? dayjs(item.end_time, "HH:mm") : defaultTime);
+    // FUNCTION TITLE - 1 ------------------------------------------------------------
+    const handleTitleChange = (e) => {
+        const newTitle = e.target.value;
+        setCard(prev => ({
+            ...prev,
+            title: newTitle
+        }));
+    };
+    const handleTitleClick = () => {
+        setIsEditingTitle(true);
+    };
 
-        // Initialize reminder
-        if (item.reminder && item.end_date && item.end_time) {
-            const endDateTime = dayjs(`${item.end_date} ${item.end_time}`);
-            const reminderDateTime = dayjs(item.reminder);
-            const diff = endDateTime.diff(reminderDateTime, "minute");
+    const handleSaveTitle = async () => {
+        const currentTitle = card?.title || "";
 
-            const foundLabel = REMINDER_OPTIONS.find((option) => {
-                const minutes = {
-                    "Không có": null,
-                    "5 phút trước": 5,
-                    "10 phút trước": 10,
-                    "15 phút trước": 15,
-                    "1 giờ trước": 60,
-                    "2 giờ trước": 120,
-                    "1 ngày trước": 1440,
-                    "2 ngày trước": 2880,
-                }[option];
-                return minutes === diff;
-            });
-
-            setReminder(foundLabel || "Không có");
-        } else {
-            setReminder("Không có");
+        if (isEmptyHTML(currentTitle)) {
+            // Nếu người dùng để trống thì khôi phục lại title ban đầu
+            setCard(prev => ({
+                ...prev,
+                title: fetchedCard?.title || ""
+            }));
+            setIsEditingTitle(false);
+            return;
         }
 
-        // For card type, initialize start_date
-        if (type === "card") {
-            setStartDate(item.start_date ? dayjs(item.start_date) : null);
-        }
-    }, [item, type]);
+        setIsEditingTitle(false);
 
-    const handleDateChange = (newValue) => {
-        if (type === "checklist-item") {
-            setEndDate(newValue);
-        } else if (type === "card") {
-            if (selectionMode === "start") {
-                if (isEndDateChecked && endDate && newValue.isAfter(endDate)) {
-                    setEndDate(newValue.add(1, "day"));
-                }
-                setStartDate(newValue);
-                if (isStartDateChecked && isEndDateChecked) {
-                    setSelectionMode("end");
-                }
-            } else {
-                if (isStartDateChecked && startDate && newValue.isBefore(startDate)) {
-                    setStartDate(newValue.subtract(1, "day"));
-                }
-                setEndDate(newValue);
-                if (isStartDateChecked && isEndDateChecked) {
-                    setSelectionMode("start");
-                }
+        if (currentTitle !== fetchedCard?.title) {
+            try {
+                await updateTitle(currentTitle); // Gọi hook để update title
+            } catch (error) {
+                console.error("Lỗi khi cập nhật tiêu đề:", error);
             }
         }
     };
 
-    const handleSave = (e) => {
-        e.preventDefault();
-
-        if (isEndDateChecked && (!endDate || !endTime)) {
-            console.error("Ngày kết thúc hoặc thời gian chưa được chọn!");
-            return;
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            handleSaveTitle();
+        } else if (e.key === "Escape") {
+            // Khôi phục lại tiêu đề ban đầu
+            setCard(prev => ({
+                ...prev,
+                title: fetchedCard?.title || ""
+            }));
+            setIsEditingTitle(false);
         }
+    };
+    // End ============================================================================
 
-        if (type === "card" && isStartDateChecked && startDate && endDate && startDate.isAfter(endDate)) {
-            console.error("Ngày bắt đầu không thể lớn hơn ngày kết thúc!");
-            return;
-        }
+    // FUNCTION MEMBER - 2 ----------------------------------------------------------
+    const [memberMenuAnchorEl, setMemberMenuAnchorEl] = useState(null);
+    const openMemberMenu = Boolean(memberMenuAnchorEl);
 
-        const payload = {};
+    // Lấy danh sách ID thành viên trong card
+    const memberIdsInCard = card?.membersId || [];
 
-        if (isEndDateChecked && endDate && endTime) {
-            const endDateTime = dayjs(`${endDate.format("YYYY-MM-DD")} ${endTime.format("HH:mm")}`);
-            if (!endDateTime.isValid()) return;
+    // Thành viên đã có trong card
+    const cardMembersData = React.useMemo(() => (
+        members?.filter(member => memberIdsInCard.includes(member.id)) || []
+    ), [members, memberIdsInCard]);
 
-            const reminderMinutes = {
-                "Không có": null,
-                "5 phút trước": 5,
-                "10 phút trước": 10,
-                "15 phút trước": 15,
-                "1 giờ trước": 60,
-                "2 giờ trước": 120,
-                "1 ngày trước": 1440,
-                "2 ngày trước": 2880,
-            }[reminder];
+    // Thành viên thuộc board nhưng chưa có trong card
+    const boardMembersData = React.useMemo(() => (
+        members?.filter(member => !memberIdsInCard.includes(member.id)) || []
+    ), [members, memberIdsInCard]);
 
-            const reminderDateTime =
-                reminderMinutes !== null ? endDateTime.subtract(reminderMinutes, "minute") : null;
-
-            payload.endDate = endDate.format("YYYY-MM-DD");
-            payload.endTime = endTime.format("HH:mm");
-            payload.reminder = reminderDateTime ? reminderDateTime.format("YYYY-MM-DD HH:mm") : null;
-        } else {
-            payload.endDate = null;
-            payload.endTime = null;
-            payload.reminder = null;
-        }
-
-        if (type === "card") {
-            payload.startDate = isStartDateChecked && startDate ? startDate.format("YYYY-MM-DD") : null;
-        }
-
-        payload.targetId = targetId;
-
-        console.log("Saved payload:", payload);
-        onClose();
+    const handleOpenMemberMenu = (event) => {
+        console.log('dang mở')
+        setMemberMenuAnchorEl(event?.currentTarget || null); // dùng event nếu có, không thì null
     };
 
-    // Custom day labels to match Trello
-    const dayLabels = ["CN", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7"];
+    const handleCloseMemberMenu = () => {
+        setMemberMenuAnchorEl(null);
+    };
+    // Rời khỏi / tham gia card
+    const hanleAttendMember = async () => {
+        if (!card) return;
+
+        const isMember = card.membersId?.includes(user.id);
+
+        try {
+            if (isMember) {
+                const res = await joinCard(user.id);
+
+                setCard(prev => ({
+                    ...prev,
+                    membersId: prev.membersId.filter(id => id !== user.id),
+                }));
+
+                if (res?.success === true && res.joined === false) {
+                    setCard(prev => ({
+                        ...prev,
+                        membersId: prev.membersId.filter(id => id !== user.id),
+                    }));
+                }
+
+            } else {
+                const res = await joinCard();
+                setCard(prev => ({
+                    ...prev,
+                    membersId: [...(prev.membersId || []), user.id],
+                }));
+
+                if (res?.success === true && res.joined === true) {
+                    setCard(prev => ({
+                        ...prev,
+                        membersId: [...(prev.membersId || []), user.id],
+                    }));
+                }
+            }
+        } catch (error) {
+            console.error('Lỗi khi xử lý thành viên:', error);
+        }
+    };
+    // Thêm thành viên từ danh sách board
+    const handleUserSelected = async (member) => {
+        if (!card || memberIdsInCard.includes(member.id)) return;
+
+        try {
+            await putMember(member.id);
+            setCard(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    membersId: [...(prev.membersId || []), member.id],
+                };
+            });
+        } catch (error) {
+            console.error('Lỗi khi thêm member vào card:', error);
+        }
+    };
+    // Xoá member khỏi card
+    const handleRemoveMemberFromCard = async (memberId) => {
+        if (!card) return;
+
+        try {
+            await removeMember(memberId);
+            setCard(prev => ({
+                ...prev,
+                membersId: prev.membersId?.filter(id => id !== memberId)
+            }));
+        } catch (error) {
+            console.error('Lỗi khi xoá member khỏi card:', error);
+        }
+    };
+    // End ============================================================================
+
+    // FUNCTION MEMBER - 3 ----------------------------------------------------------
+    const [descriptionText, setDescriptionText] = useState("");
+    const [isEditingDescription, setIsEditingDescription] = useState(false);
+
+    const isEmptyHTML = (html) => {
+        const div = document.createElement("div");
+        div.innerHTML = html;
+        return div.innerText.trim() === "";
+    };
+    // Lưu mô tả sau khi chỉnh sửa
+    const handleSaveDescription = async () => {
+        // if (isEmptyHTML(descriptionText)) return
+        if (descriptionText === card?.description) {
+            setIsEditingDescription(false);
+            return;
+        }
+
+        try {
+            await updateDescription(descriptionText); // Gọi mutation
+            setCard(prev => ({
+                ...prev,
+                description: descriptionText,
+            }));
+            setIsEditingDescription(false);
+        } catch (error) {
+            console.error("Lỗi khi lưu mô tả:", error);
+        }
+    };
+    // Huỷ chỉnh sửa mô tả
+    const handleCancelDescriptionEdit = () => {
+        setDescriptionText(card?.description || "");
+        setIsEditingDescription(false);
+    };
+    // Mở chế độ chỉnh sửa mô tả
+    const handleEditDescription = () => {
+        setDescriptionText(card?.description || "");
+        setIsEditingDescription(true);
+    };
+    // ----------------------------------------------------------------------------
+
+    // FUNCTION CHECKLIST - 4 ----------------------------------------------------------
+    const [anchorElCheckList, setAnchorElCheckList] = useState(null);
+    const checklistGroupRef = useRef();
+
+    // Mở menu
+    const handleOpenCheckList = (event) => {
+        setAnchorElCheckList(event.currentTarget);
+    };
+    // Đóng menu
+    const handleCloseCheckList = () => {
+        setAnchorElCheckList(null);
+    };
+    // Thêm checklist mới từ component cha
+    const handleAddChecklist = ({ title, copyFrom }) => {
+        const newChecklist = {
+            id: Date.now(),
+            title,
+            copyFrom,
+            items: [],
+        };
+        // Gọi hàm trong ChecklistGroup để thêm checklist
+        if (checklistGroupRef.current?.addChecklistFromOutside) {
+            checklistGroupRef.current.addChecklistFromOutside(newChecklist);
+        }
+        handleCloseCheckList();
+    };
+
+    // ----------------------------------------------------------------------------
+    const [comment, setComment] = useState("");
+    const [comments, setComments] = useState([]);     // danh sách các comment đã lưu
+    const [isEditingComment, setIsEditingComment] = useState(false);
+
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+    const handleCommentClick = () => {
+        setIsEditingComment(true);
+    };
+
+    const handleSaveComment = async () => {
+        if (isEmptyHTML(comment)) return;
+
+        setIsSubmittingComment(true);
+        try {
+            // Có thể gọi API lưu comment ở đây
+            const newComment = {
+                id: Date.now(), // hoặc dùng uuid
+                content: comment,
+                created_at: new Date().toISOString(),
+                author: {
+                    name: "Hoàng", // Có thể lấy từ user đang đăng nhập
+                    avatar: "",    // URL nếu có
+                },
+            };
+
+            setComments((prev) => [newComment, ...prev]); // Thêm comment mới lên đầu
+            setComment("");
+            setIsEditingComment(false);
+        } catch (error) {
+            console.error("Lỗi khi lưu bình luận:", error);
+        } finally {
+            setIsSubmittingComment(false);
+        }
+    };
+    // ----------------------------------------------------------------------------
+    //---------------------------------------------------------------
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [preview, setPreview] = useState(false);
+
+    const isImageFile = (url) => {
+        const ext = url.match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase();
+        const imageTypes = ["jpg", "jpeg", "png", "webp", "gif"];
+        return imageTypes.includes(ext);
+    };
+    const handleOpenPreview = (url) => {
+        if (isImageFile(url)) {
+            setSelectedImage(url);
+            setPreview(true);
+        }
+    };
+    const handleClosePreview = () => {
+        setPreview(false);
+        setSelectedImage(null);
+    };
+    //-------------------------------------------------------------
+    const [labelsAnchorEl, setLabelsAnchorEl] = useState(null);
+    // Handler to open the labels popover
+    const handleOpenLabelsMenu = (event) => {
+        setLabelsAnchorEl(event.currentTarget);
+    };
+    // Handler to close the labels popover
+    const handleCloseLabelsMenu = () => {
+        setLabelsAnchorEl(null);
+    };
+    //-----------------
+    const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
+    // Hàm mở dialog
+    const handleOpenDateDialog = () => {
+        setIsDateDialogOpen(true);
+    };
+    // Hàm đóng dialog
+    const handleCloseDateDialog = () => {
+        setIsDateDialogOpen(false);
+    };
+
+    // ---------------------------------------------------------------------
+    const [anchorElFile, setAnchorElFile] = useState(null);
+
+    const handleOpenFile = (event) => {
+        setAnchorElFile(event.currentTarget);
+    };
+
+    const handleCloseFile = () => {
+        setAnchorElFile(null);
+    };
+
+    const isCurrentUserInCard = card?.membersId?.includes(user.id);
+    const actions = [
+        {
+            label: isCurrentUserInCard ? "Rời khỏi" : "Tham gia",
+            icon: isCurrentUserInCard ? <PersonRemoveAlt1Icon fontSize="small" /> : <PersonAddIcon fontSize="small" />,
+            onClick: hanleAttendMember
+        },
+        {
+            label: "Thành viên",
+            icon: <GroupIcon fontSize="small" />,
+            onClick: (e) => handleOpenMemberMenu(e)
+        },
+        { label: "Nhãn", icon: <LocalOfferIcon fontSize="small" /> },
+        {
+            label: "Việc cần làm",
+            icon: <CheckBoxIcon fontSize="small" />,
+            onClick: handleOpenCheckList
+        },
+        { label: "Ngày", icon: <ScheduleIcon fontSize="small" /> },
+        {
+            label: "Đính kèm",
+            icon: <AttachFileIcon fontSize="small" />,
+            onClick: handleOpenFile
+        },
+    ];
+
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth="md"
-            sx={{ "& .MuiDialog-paper": { width: "600px", borderRadius: 2, boxShadow: "0 8px 16px rgba(0,0,0,0.1)" } }}
-        >
-            <DialogTitle
-                sx={{
-                    fontWeight: "bold",
-                    borderBottom: "1px solid #eee",
-                    py: 1.5,
-                    px: 2,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    bgcolor: "#f5f5f5",
-                }}
-            >
-                Ngày
-                <IconButton size="small" onClick={onClose}>
-                    <CloseIcon fontSize="small" />
-                </IconButton>
-            </DialogTitle>
+        <>
+            <AttachmentsProvider cardId={cardId}>
+                <Dialog
+                    open={openCard}
+                    onClose={closeCard}
+                    fullWidth
+                    maxWidth="md"
+                    disableEnforceFocus={false} // vẫn giữ focus bên trong dialog
+                    disableEscapeKeyDown={false}
+                    hideBackdrop={false}
+                    BackdropProps={{
+                        sx: {
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            backdropFilter: "blur(3px)",
+                            mt: "10px",
+                        },
+                    }}
 
-            <DialogContent sx={{ p: 2, display: "flex", alignItems: "center", bgcolor: "#fafafa" }}>
-                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
-                    <StaticDatePicker
-                        value={type === "checklist-item" || selectionMode === "end" ? endDate : startDate}
-                        onChange={handleDateChange}
-                        dayOfWeekFormatter={(day) => {
-                            const dayIndex = dayjs(day).day();
-                            return dayLabels[dayIndex];
-                        }}
-                        sx={{
-                            mr: 2,
-                            bgcolor: "white",
-                            borderRadius: 2,
-                            "& .MuiPickersDay-root": {
-                                "&.Mui-selected": {
-                                    backgroundColor: "#00C4B4",
-                                    color: "white",
-                                    borderRadius: "50%",
-                                },
-                                "&:hover": {
-                                    backgroundColor: "#e3f2fd",
-                                },
-                                "&.MuiPickersDay-today": {
-                                    border: "1px solid #1976d2",
-                                    borderRadius: "50%",
-                                    backgroundColor: "white",
-                                    color: "black",
-                                },
-                            },
-                            "& .MuiPickersCalendarHeader-root": {
-                                bgcolor: "#1976d2",
-                                color: "white",
-                                borderRadius: "8px 8px 0 0",
-                            },
-                            "& .MuiDayPicker-weekDayLabel": {
-                                fontWeight: 500,
-                                color: "#1976d2",
-                            },
-                        }}
-                        slotProps={{
-                            actionBar: { actions: ["today"] },
-                        }}
-                    />
-                </LocalizationProvider>
+                    sx={{
+                        "& .MuiDialog-container": {
+                            alignItems: "flex-start",
+                            justifyContent: "center",
+                        },
+                        "& .MuiPaper-root": {
+                            width: "100%",
+                            maxHeight: "calc(100vh)", // Giới hạn chiều cao để giống Trello
+                            margin: "20px",
+                            display: "flex",
+                            flexDirection: "column",
+                            borderRadius: "18px",
+                            overflow: "hidden",
+                        },
+                        height: "100vh"
+                    }}
+                >
 
-                <Box sx={{ flex: 1 }}>
-                    {type === "card" && (
-                        <Box sx={{ mb: 2, p: 2, bgcolor: "white", borderRadius: 2 }}>
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        size="small"
-                                        checked={isStartDateChecked}
-                                        onChange={(e) => {
-                                            setIsStartDateChecked(e.target.checked);
-                                            if (e.target.checked) {
-                                                if (!startDate) {
-                                                    setStartDate(dayjs());
-                                                }
-                                                setSelectionMode("start");
-                                            } else {
-                                                setSelectionMode("end");
-                                            }
-                                        }}
-                                    />
-                                }
-                                label={
-                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        Ngày bắt đầu: <br />
-                                        <Typography
-                                            component="span"
-                                            sx={{
-                                                fontSize: "1rem",
-                                                fontWeight: 500,
-                                                color: "#1976d2",
-                                            }}
-                                        >
-                                            {startDate ? startDate.format("DD/MM/YYYY") : "Chưa chọn"}
-                                        </Typography>
-                                    </Typography>
-                                }
-                            />
-                        </Box>
-                    )}
+                    {isLoadingCard ? (
+                        <LogoLoading />
+                    ) : (
+                        <>
+                            <DialogContent
+                                sx={{
+                                    flex: 1,
+                                    padding: "0px",
+                                    flexDirection: "column",
+                                    overflowY: "auto",
 
-                    <Box sx={{ mb: 2, p: 2, bgcolor: "white", borderRadius: 2 }}>
-                        <FormControlLabel
-                            sx={{
-                                mb: "10px",
-                            }}
-                            control={
-                                <Checkbox
-                                    size="small"
-                                    checked={isEndDateChecked}
-                                    onChange={(e) => {
-                                        setIsEndDateChecked(e.target.checked);
-                                        if (e.target.checked) {
-                                            if (!endDate) {
-                                                setEndDate(dayjs());
-                                            }
-                                            if (!endTime) {
-                                                const now = dayjs();
-                                                const defaultTime = now.startOf("hour").subtract(1, "hour");
-                                                setEndTime(defaultTime);
-                                            }
-                                            setSelectionMode("end");
-                                        } else {
-                                            setEndDate(null);
-                                            setEndTime(null);
-                                            setReminder("Không có");
-                                            if (type === "card" && isStartDateChecked) setSelectionMode("start");
-                                        }
+                                    "&::-webkit-scrollbar": {
+                                        width: "6px", // Độ rộng hợp lý cho UI
+                                    },
+                                    "&::-webkit-scrollbar-thumb": {
+                                        backgroundColor: "#bbb", // Màu mặc định của thanh kéo
+                                        borderRadius: "10px",
+                                    },
+                                    "&::-webkit-scrollbar-thumb:hover": {
+                                        backgroundColor: "#999", // Hover rõ ràng hơn
+                                    },
+                                    "&::-webkit-scrollbar-track": {
+                                        backgroundColor: "#f1f1f1", // Màu nền thanh trượt
+                                    },
+                                }}
+                            >
+                                {/* Ảnh bìa */}
+                                <Box
+                                    sx={{
+                                        position: "relative",
+                                        overflow: "hidden",
+                                        flexShrink: 0,
+                                        borderRadius: "12px 12px 0 0",
+                                        backgroundColor: "rgb(150 151 159)"
                                     }}
-                                />
-                            }
-                            label={
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                    Ngày hết hạn:<br />
-                                    <Typography
-                                        component="span"
+                                >
+                                    <Box
+                                        sx={{ display: "flex", justifyContent: "center", cursor: "pointer" }}
+                                        onClick={() =>
+                                            handleOpenPreview(
+                                                "https://wallpapers.com/images/hd/the-wind-rises-1920-x-1080-wallpaper-fouebsfnbvnf3rz4.jpg"
+                                            )
+                                        }
+                                    >
+                                        <LazyLoadImage
+                                            src="https://wallpapers.com/images/hd/the-wind-rises-1920-x-1080-wallpaper-fouebsfnbvnf3rz4.jpg"
+                                            alt="Card Cover"
+                                            effect="blur"
+                                            style={{
+                                                minHeight: '116px',
+                                                width: "100%",
+                                                maxHeight: "160px",
+                                                objectFit: "contain",
+                                                background: 'white',
+                                            }}
+                                        />
+                                    </Box>
+
+                                    <CustomButton
                                         sx={{
-                                            fontSize: "1rem",
-                                            fontWeight: 500,
-                                            color: "#1976d2",
+                                            position: "absolute",
+                                            right: 8,
+                                            top: 8,
+                                            zIndex: 10000,
+                                            color: "#fff",
+                                        }}
+                                        type="close"
+                                        onClick={closeCard}
+                                    />
+                                </Box>
+
+                                <Box sx={{ padding: "16px" }}>
+                                    {/* Header */}
+                                    <DialogTitle sx={{ paddingLeft: "40px" }}>
+                                        <Box sx={{ display: "flex", marginBottom: "20px" }}>
+                                            <Box>
+                                                {isEditingTitle ? (
+                                                    <TextField
+                                                        fullWidth
+                                                        value={card?.title || ""}
+                                                        onChange={handleTitleChange}
+                                                        onBlur={handleSaveTitle}
+                                                        onKeyDown={handleKeyDown}
+                                                        autoFocus
+                                                        variant="standard"
+                                                        sx={{ fontSize: "20px", pb: "10px" }}
+                                                    />
+                                                ) : (
+                                                    <Typography
+                                                        variant="h1"
+                                                        sx={{ fontSize: "20px", pb: "10px", cursor: "pointer" }}
+                                                        onClick={handleTitleClick}
+                                                    >
+                                                        {card?.title}
+                                                    </Typography>
+                                                )}
+
+                                                <Typography variant="body1" sx={{ color: "#757575" }}>
+                                                    trong danh sách{" "}
+                                                    <Box
+                                                        component="span"
+                                                        sx={{
+                                                            p: 0.5,
+                                                            color: "black",
+                                                            fontWeight: "bold",
+                                                            borderRadius: "3px",
+                                                            background: "#e0e0e0",
+                                                            fontSize: "0.875rem",
+                                                        }}
+                                                    >
+                                                        {list?.name}
+                                                    </Box>
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </DialogTitle>
+                                    {/* End Header */}
+
+                                    {/* Main */}
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            gap: 2,
+                                            alignItems: "flex-start",
                                         }}
                                     >
-                                        {endDate ? endDate.format("DD/MM/YYYY") : "Chưa chọn"}
-                                    </Typography>
-                                </Typography>
-                            }
-                        />
-                        {isEndDateChecked && (
-                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
-                                <TimePicker
-                                    value={endTime}
-                                    onChange={setEndTime}
-                                    format="HH:mm"
-                                    sx={{ mt: 1, width: "120px" }}
-                                    slotProps={{
-                                        textField: {
-                                            size: "small",
-                                            sx: {
-                                                bgcolor: "#fff",
-                                                borderRadius: 1,
-                                                "& .MuiInputBase-input": {
-                                                    fontSize: "1rem",
-                                                    fontWeight: 500,
-                                                    color: "#1976d2",
-                                                    textAlign: "center",
-                                                },
-                                            },
-                                            readOnly: true,
-                                        },
-                                        popper: {
-                                            sx: {
-                                                "& .MuiMultiSectionDigitalClockSection-root": {
-                                                    maxHeight: "200px",
-                                                    overflowY: "auto",
-                                                    width: "70px",
-                                                    scrollbarWidth: "thin",
-                                                    scrollbarColor: "#1976d2 transparent",
-                                                    "&::-webkit-scrollbar": {
-                                                        width: "4px",
-                                                    },
-                                                    "&::-webkit-scrollbar-thumb": {
-                                                        backgroundColor: "#1976d2",
-                                                        borderRadius: "4px",
-                                                    },
-                                                    "&::-webkit-scrollbar-track": {
-                                                        backgroundColor: "transparent",
-                                                    },
-                                                },
-                                                "& .MuiMultiSectionDigitalClockSection-item": {
-                                                    borderRadius: "6px",
-                                                    fontSize: "1rem",
-                                                    padding: "6px 0",
-                                                    textAlign: "center",
-                                                    transition: "background-color 0.2s",
-                                                    "&:hover": {
-                                                        backgroundColor: "#e3f2fd",
-                                                        color: "#1976d2",
-                                                    },
-                                                    "&.Mui-selected": {
-                                                        backgroundColor: "#1976d2",
-                                                        color: "white",
-                                                        "&:hover": {
-                                                            backgroundColor: "#1565c0",
-                                                        },
-                                                    },
-                                                },
-                                            },
-                                        },
-                                        actionBar: {
-                                            actions: ["accept"],
-                                        },
+                                        {/* Label, theo dõi */}
+                                        <Box
+                                            sx={{
+                                                flex: "1 1 auto",
+                                                paddingLeft: "40px",
+                                                display: "flex",
+                                                columnGap: 3,
+                                                rowGap: 2,
+                                                overflow: "auto",
+                                                flexWrap: "wrap",
+                                                alignItems: "flex-start",
+                                            }}
+                                        >
+                                            {/* Thành viên */}
+                                            {/* Danh sách thành viên và nút thêm */}
+                                            {cardMembersData.length > 0 ? (
+                                                <>
+                                                    <Box sx={{ marginBottom: 1 }}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "4px" }}
+                                                        >
+                                                            Thành viên
+                                                        </Typography>
+                                                        <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                                                            {cardMembersData.map((member) => (
+                                                                <InitialsAvatar
+                                                                    key={member.id}
+                                                                    sx={{
+                                                                        fontSize: "14px",
+                                                                        width: "32px",
+                                                                        height: "32px",
+                                                                    }}
+                                                                    size={"32px"}
+                                                                    initials={member.initials}
+                                                                    name={member.full_name}
+                                                                    avatarSrc={member.image}
+                                                                />
+                                                            ))}
+                                                            {/* Nút thêm thành viên được đặt cùng dòng với avatar */}
+                                                            <IconButton
+                                                                sx={{
+                                                                    backgroundColor: "#e0e0e0",
+                                                                    width: "32px",
+                                                                    height: "32px",
+                                                                    borderRadius: "50%",
+                                                                }}
+                                                                onClick={(e) => handleOpenMemberMenu(e)}
+                                                            >
+                                                                <PlusIcon sx={{ fontSize: "20px", color: "#555", position: "relative" }} />
+                                                            </IconButton>
+                                                        </Box>
+                                                    </Box>
+                                                </>
+                                            ) : (null)}
+
+                                            {/* Nhãn */}
+                                            {card?.labels.length > 0 ? (
+                                                <Box>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "4px" }}
+                                                    >
+                                                        Nhãn
+                                                    </Typography>
+
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            flexWrap: "wrap",
+                                                            gap: "6px",
+                                                        }}
+                                                    >
+                                                        {/* {selectedLabels.map((label) => ( */}
+                                                        <Chip
+                                                            // key={label.id}
+                                                            // label={label.name || ''}
+                                                            sx={{
+                                                                // backgroundColor: label.color,
+                                                                height: "32px",
+                                                                borderRadius: "4px",
+                                                                // color: ['#ffca28', '#ffcdd2'].includes(label.color) ? '#000' : '#fff',
+                                                                fontWeight: 500,
+                                                                margin: '0 4px 4px 0'
+                                                            }}
+                                                        />
+                                                        {/* ))} */}
+
+                                                        <IconButton
+                                                            sx={{
+                                                                backgroundColor: "#e0e0e0",
+                                                                width: "32px",
+                                                                height: "32px",
+                                                                borderRadius: "4px",
+                                                                "&:hover": {
+                                                                    backgroundColor: "#ccc",
+                                                                },
+                                                            }}
+                                                            onClick={handleOpenLabelsMenu}
+                                                        >
+                                                            <PlusIcon sx={{ fontSize: "16px", color: "#555" }} />
+                                                        </IconButton>
+                                                    </Box>
+                                                </Box>
+                                            ) : (null)}
+
+                                            {/* Ngày */}
+                                            <Box sx={{ minWidth: "200px" }}>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "3px" }}
+                                                >
+                                                    Ngày
+                                                </Typography>
+                                                <Box
+                                                    onClick={() => handleOpenDateDialog("card", "card-id")} // Thêm dòng này
+                                                    sx={{
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        px: 1.5,
+                                                        py: 1,
+                                                        borderRadius: 1,
+                                                        backgroundColor: "#e4e6ea",
+                                                        cursor: "pointer",
+                                                        '&:hover': {
+                                                            backgroundColor: '#d9dbdf' // Thêm hiệu ứng hover
+                                                        }
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="body1"
+                                                        sx={{ fontWeight: 500, color: "#172b4d", fontSize: "14px" }}
+                                                    >
+                                                        8 thg 4 – 21:35 9 thg 4
+                                                    </Typography>
+                                                    <KeyboardArrowDown sx={{ fontSize: 20, color: "#172b4d", ml: 0.5 }} />
+                                                </Box>
+                                            </Box>
+
+                                            {/* Mô tả */}
+                                            <Box sx={{ width: "100%" }}>
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "space-between",
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "3px" }}
+                                                    >
+                                                        Mô tả
+                                                    </Typography>
+
+                                                    {card && !isEditingDescription && !isEmptyHTML(card?.description) && (
+                                                        <Button onClick={handleEditDescription}>Chỉnh sửa</Button>
+                                                    )}
+                                                </Box>
+
+                                                {isEditingDescription ? (
+                                                    <CommentEditor
+                                                        value={descriptionText}
+                                                        onChange={setDescriptionText}
+                                                        onSave={handleSaveDescription}
+                                                        onCancel={handleCancelDescriptionEdit}
+                                                        isLoading={isUpdating}
+                                                        editorHeight="120px"
+                                                        minHeight="80px"
+                                                    />
+                                                ) : !isEmptyHTML(card?.description) ? (
+                                                    <Box
+                                                        sx={{
+                                                            borderRadius: "4px",
+                                                            backgroundColor: "#fff",
+                                                            cursor: "pointer",
+                                                        }}
+                                                        dangerouslySetInnerHTML={{ __html: card?.description }}
+                                                        onClick={handleEditDescription}
+                                                    />
+                                                ) : (
+                                                    <Box
+                                                        sx={{
+                                                            border: "1px solid #d1d1d1",
+                                                            borderRadius: "4px",
+                                                            minHeight: "60px",
+                                                            padding: "6px 12px",
+                                                            backgroundColor: "#e4e6ea",
+                                                            color: "#172b4d",
+                                                            cursor: "pointer",
+                                                            fontSize: "14px",
+                                                            whiteSpace: "pre-wrap",
+                                                        }}
+                                                        onClick={handleEditDescription}
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: `<span style="color:#5e6c84">Hãy thêm mô tả chi tiết hơn...</span>`,
+                                                        }}
+                                                    />
+                                                )}
+                                            </Box>
+
+                                            {/* Tệp đính kèm */}
+                                            <Box sx={{ width: "100%" }}>
+                                                {/* Attachments section */}
+                                                <AttachmentFolder cardId={cardId} />
+                                            </Box>
+
+
+                                            {/* Checklist */}
+                                            <Box sx={{ width: "100%" }}>
+                                                <ChecklistGroup cardId={card?.id}
+                                                    ref={checklistGroupRef}
+                                                    members={boardMembersData}
+                                                />
+                                            </Box>
+
+                                            {/* Activity */}
+                                            {/* <ActivityFeed /> */}
+                                            <Box sx={{ width: "100%" }}>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "6px" }}
+                                                >
+                                                    Bình luận
+                                                </Typography>
+
+                                                {/* Phần viết bình luận */}
+                                                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mb: 2 }}>
+                                                    <Avatar
+                                                        sx={{
+                                                            width: 32,
+                                                            height: 32,
+                                                            bgcolor: 'grey.300',
+                                                            fontSize: '0.8rem',
+                                                            color: 'grey.700',
+                                                            mt: '4px',
+                                                        }}
+                                                    >
+                                                        H
+                                                    </Avatar>
+
+                                                    <Box sx={{ flex: 1 }}>
+                                                        {!isEditingComment ? (
+                                                            <Box
+                                                                sx={{
+                                                                    border: '1px dashed #b0bec5',
+                                                                    padding: '8px 12px',
+                                                                    borderRadius: '8px',
+                                                                    cursor: 'pointer',
+                                                                    color: '#607d8b',
+                                                                    fontSize: '0.9rem',
+                                                                    transition: 'border-color 0.3s ease',
+                                                                    '&:hover': {
+                                                                        borderColor: 'teal',
+                                                                        backgroundColor: 'grey.50',
+                                                                    },
+                                                                    '&:focus-within': {
+                                                                        borderColor: 'primary.main',
+                                                                        outline: 'none',
+                                                                    },
+                                                                }}
+                                                                onClick={handleCommentClick}
+                                                            >
+                                                                <Typography variant="body1" sx={{ color: '#607d8b' }}>
+                                                                    Viết bình luận...
+                                                                </Typography>
+                                                            </Box>
+                                                        ) : (
+                                                            <CommentEditor
+                                                                value={comment}
+                                                                onChange={setComment}
+                                                                onSave={handleSaveComment}
+                                                                onCancel={() => {
+                                                                    setIsEditingComment(false);
+                                                                    setComment("");
+                                                                }}
+                                                                isSaveDisabled={isEmptyHTML(comment)}
+                                                                isLoading={isSubmittingComment}
+                                                                editorHeight="100px"
+                                                                minHeight="60px"
+                                                            />
+                                                        )}
+                                                    </Box>
+                                                </Box>
+
+                                                {/* Danh sách comment đã gửi */}
+                                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                                    {comments?.map((cmt) => (
+                                                        <Box
+                                                            key={cmt.id}
+                                                            sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
+                                                        >
+                                                            {/* Avatar bên trái */}
+                                                            <Avatar
+                                                                sx={{
+                                                                    width: 32,
+                                                                    height: 32,
+                                                                    bgcolor: 'grey.300',
+                                                                    fontSize: '0.8rem',
+                                                                    color: 'grey.700',
+                                                                }}
+                                                            >
+                                                                {cmt.author.name?.charAt(0)}
+                                                            </Avatar>
+
+                                                            {/* Nội dung comment */}
+                                                            <Box sx={{ flex: 1 }}>
+                                                                <Box>
+                                                                    {/* Header: Tên + thời gian */}
+                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                                            {cmt.author.name}
+                                                                        </Typography>
+                                                                        <Typography variant="caption" sx={{ color: 'gray' }}>
+                                                                            {/* Giả định bạn có trường created_at dạng ISO date */}
+                                                                            {dayjs(cmt.created_at).fromNow()} {/* ví dụ: 2 phút trước */}
+                                                                        </Typography>
+                                                                    </Box>
+
+                                                                    {/* Nội dung comment */}
+                                                                    <Box
+                                                                        sx={{
+                                                                            fontSize: "0.9rem", color: "#172b4d",
+                                                                            backgroundColor: '#f4f5f7',
+                                                                            padding: '10px 14px',
+                                                                            borderRadius: '12px',
+                                                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                                                        }}
+                                                                        dangerouslySetInnerHTML={{ __html: cmt.content }}
+                                                                    />
+                                                                    <Box>
+                                                                        <span>xóa</span>
+                                                                        <span>sửa</span>
+                                                                    </Box>
+                                                                </Box>
+                                                            </Box>
+                                                        </Box>
+                                                    ))}
+                                                </Box>
+                                            </Box>
+
+                                        </Box>
+
+                                        {/* Controller */}
+                                        <Box
+                                            id="controller"
+                                            sx={{
+                                                width: "150px",
+                                                flex: "0 0 auto",
+                                                paddingRight: 2, // dùng spacing scale thay cho "16px"
+                                            }}
+                                        >
+                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                                {actions.map(({ icon, label, onClick }, index) => (
+                                                    <Button
+                                                        key={index}
+                                                        startIcon={icon}
+                                                        onClick={onClick}
+                                                        variant="contained"
+                                                        disableElevation
+                                                        title={label}
+                                                        sx={{
+                                                            justifyContent: "flex-start",
+                                                            backgroundColor: "#e4e6ea",
+                                                            color: "#172b4d",
+                                                            textTransform: "none",
+                                                            fontWeight: 500,
+                                                            fontSize: 14,
+                                                            px: 2,
+                                                            py: 1,
+                                                            borderRadius: 1,
+                                                            width: "100%",
+                                                            textOverflow: "ellipsis",
+                                                            overflow: "hidden",
+                                                            whiteSpace: "nowrap",
+                                                            "&:hover": {
+                                                                backgroundColor: "#d6d8da",
+                                                            },
+                                                        }}
+                                                    >
+                                                        {label}
+                                                    </Button>
+                                                ))}
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            </DialogContent>
+
+                            {/* Dialog preview ảnh */}
+                            <Dialog
+                                open={preview}
+                                onClose={handleClosePreview} // đóng dialog khi click ra ngoài
+                                fullWidth
+                                maxWidth="sm"
+                                hideBackdrop={false} // đảm bảo backdrop hiển thị
+                                sx={{
+                                    "& .MuiDialog-paper": {
+                                        backgroundColor: "transparent",
+                                        boxShadow: "none",
+                                        overflow: "hidden",
+                                        borderRadius: 2,
+                                    },
+                                }}
+                            >
+                                {/* Nút đóng */}
+                                <CustomButton
+                                    type="close"
+                                    onClick={handleClosePreview}
+                                    sx={{
+                                        position: "absolute",
+                                        top: 8,
+                                        right: 8,
+                                        color: "#fff",
+                                        backgroundColor: "rgba(0,0,0,0.5)",
+                                        "&:hover": { backgroundColor: "rgba(0,0,0,0.7)" },
                                     }}
                                 />
-                            </LocalizationProvider>
-                        )}
-                    </Box>
 
-                    <Box sx={{ mb: 1, p: 2, bgcolor: "white", borderRadius: 2 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                            Thiết lập Nhắc nhở
-                        </Typography>
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={reminder}
-                                onChange={(e) => setReminder(e.target.value)}
-                                sx={{ height: 32, bgcolor: "#fff" }}
-                                disabled={!isEndDateChecked}
-                            >
-                                {REMINDER_OPTIONS.map((option) => (
-                                    <MenuItem key={option} value={option}>
-                                        {option}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Box>
-                </Box>
-            </DialogContent>
+                                {/* Ảnh preview */}
+                                <Box
+                                    component="img"
+                                    src={selectedImage}
+                                    alt="Preview"
+                                    loading="lazy"
+                                    sx={{
+                                        width: "100%",
+                                        maxHeight: "80vh",
+                                        objectFit: "contain",
+                                        borderRadius: 2,
+                                    }}
+                                />
+                            </Dialog>
 
-            <DialogActions sx={{ p: 2, borderTop: "1px solid #eee", bgcolor: "#f5f5f5" }}>
-                <Button variant="contained" onClick={handleSave} sx={{ minWidth: 80 }}>
-                    Lưu
-                </Button>
-                <Button variant="outlined" onClick={onClose} sx={{ minWidth: 80, ml: 1 }}>
-                    Hủy bỏ
-                </Button>
-            </DialogActions>
-        </Dialog>
+
+                            {/* MenuMember */}
+                            <MemberMenu
+                                open={openMemberMenu}
+                                onClose={handleCloseMemberMenu}
+                                cardMembers={cardMembersData}
+                                boardMembers={boardMembersData}
+                                onRemoveCardMember={handleRemoveMemberFromCard}
+                                anchorEl={memberMenuAnchorEl}
+                                setAnchorEl={setMemberMenuAnchorEl}
+                                onMemberSelect={handleUserSelected}
+                            />
+
+                            {/* Sử dụng DateItem */}
+                            <DateItem
+                                open={isDateDialogOpen}
+                                onClose={handleCloseDateDialog}
+                                type="card" // hoặc "checklist-item"
+                                targetId="123" // ID của card hoặc checklist item
+                            />
+
+                            {/* Checklist */}
+                            <CheckMenu
+                                anchorEl={anchorElCheckList}
+                                open={Boolean(anchorElCheckList)}
+                                onClose={handleCloseCheckList}
+                                onAdd={handleAddChecklist}
+                                listOptions={[
+                                    { label: "Việc hôm nay", value: "today" },
+                                    { label: "Dự án 2025", value: "2025" },
+                                ]}
+                            />
+
+                            <LabelsPopover
+                                anchorEl={labelsAnchorEl}
+                                open={Boolean(labelsAnchorEl)}
+                                onClose={handleCloseLabelsMenu}
+                                cardId={cardId} // Pass the current card ID if needed
+                            />
+
+                            <AttachmentMenu anchorEl={anchorElFile} open={Boolean(anchorElFile)} onClose={handleCloseFile} />
+                        </>
+
+                    )}
+                </Dialog >
+            </AttachmentsProvider>
+
+        </>
     );
 };
 
-export default DateItem;
+export default Card_detail;

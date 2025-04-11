@@ -17,19 +17,17 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
     const { createList, isSaving } = useCreateList(boardId);
     const localColumnsRef = useRef(localColumns);
 
-    // Liên quan đên lưu chữ 
     const [showAlert, setShowAlert] = useState(false);
-    const archivedColumnRef = useRef(null); // Reference to the archived column
+    const archivedColumnRef = useRef(null);
     const { mutate: closeList } = useUpdateListClosed();
-    ///----------------------------------------------------------------------
 
-    // Cập nhật localColumns khi columns thay đổi
     useEffect(() => {
         setLocalColumns(columns || []);
+        localColumnsRef.current = columns || []; // Đồng bộ localColumnsRef với columns
     }, [columns]);
 
+    console.log('lits', columns)
 
-    ///--------- hàm xử lý tạo list ----------------------------
     const handleAddNewList = useCallback(
         async (name) => {
             if (!name || isSaving || !boardId) return;
@@ -37,7 +35,7 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
             const optimisticId = `temp-${Date.now()}`;
             const currentColumns = localColumnsRef.current;
             const maxPosition = currentColumns.length
-                ? currentColumns[currentColumns.length - 1].position + SPACING
+                ? Math.max(...currentColumns.map(col => col.position)) + SPACING
                 : SPACING;
 
             const newColumn = {
@@ -49,28 +47,49 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
                 isOptimistic: true,
             };
 
-            // Cập nhật UI ngay lập tức
+            // Cập nhật UI ngay lập tức với dữ liệu tạm thời
             setLocalColumns((prev) => [...prev, newColumn]);
             setOpenColumn(false);
 
-            // Di chuyển handleCreateList ra ngoài useCallback để giảm re-render
             try {
                 const response = await createList({
                     boardId,
                     name,
                     pos: maxPosition,
                 });
+
+                // Giả sử response trả về dữ liệu của list vừa tạo (bao gồm id thực tế từ server)
+                const createdList = response?.data; // Điều chỉnh tùy theo cấu trúc response của bạn
+                if (createdList) {
+                    // Thay thế mục tạm thời bằng dữ liệu thật từ server
+                    setLocalColumns((prev) =>
+                        prev.map((col) =>
+                            col.id === optimisticId
+                                ? { ...col, ...createdList, isOptimistic: false }
+                                : col
+                        )
+                    );
+                    // Cập nhật lại ref để đồng bộ
+                    localColumnsRef.current = localColumnsRef.current.map((col) =>
+                        col.id === optimisticId
+                            ? { ...col, ...createdList, isOptimistic: false }
+                            : col
+                    );
+                }
             } catch (error) {
                 console.error("Error creating list:", error);
+                // Nếu lỗi, xóa mục tạm thời khỏi danh sách
                 setLocalColumns((prev) =>
                     prev.filter((col) => col.id !== optimisticId)
                 );
+                localColumnsRef.current = localColumnsRef.current.filter(
+                    (col) => col.id !== optimisticId
+                );
             }
         },
-        [boardId, createList, isSaving, localColumnsRef] // Thêm localColumnsRef vào dependencies
+        [boardId, createList, isSaving, localColumnsRef]
     );
 
-    // Hàm lưu trữ cột
     const handleArchive = (columnId) => {
         setLocalColumns((prevColumns) => {
             const updatedColumns = prevColumns.filter((column) => column.id !== columnId);
@@ -79,7 +98,7 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
                 const removedColumn = prevColumns.find((column) => column.id === columnId);
                 archivedColumnRef.current = removedColumn;
                 setShowAlert(true);
-                setTimeout(() => setShowAlert(false), 6000); // Tắt alert sau 5 giây
+                setTimeout(() => setShowAlert(false), 6000);
             }
             return updatedColumns;
         });
@@ -89,20 +108,16 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
         const archived = archivedColumnRef.current;
         if (!archived) return;
 
-        // Sử dụng position gốc của cột (được lưu trong archivedColumnRef.current)
-        const restoredColumn = { ...archived }; // Giữ nguyên position cũ
+        const restoredColumn = { ...archived };
 
-        // Cập nhật giao diện ngay lập tức
         setLocalColumns((prevColumns) => {
             const updatedColumns = [...prevColumns, restoredColumn];
-            return updatedColumns.sort((a, b) => a.position - b.position); // Sắp xếp lại theo position
+            return updatedColumns.sort((a, b) => a.position - b.position);
         });
 
-        // Reset alert và tham chiếu
         setShowAlert(false);
         archivedColumnRef.current = null;
 
-        // Gọi API để đồng bộ với server (không đợi API để cập nhật UI)
         closeList({
             listId: archived.id,
             closed: 0,
@@ -111,12 +126,10 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
             setLocalColumns((prevColumns) =>
                 prevColumns.filter((column) => column.id !== archived.id)
             );
-            setShowAlert(true); // Hiển thị lại alert nếu có lỗi
+            setShowAlert(true);
         });
     };
 
-
-    // Memo hóa danh sách ID cho SortableContext
     const sortableItems = useMemo(
         () => localColumns.map((c) => c.id).filter(Boolean),
         [localColumns]
@@ -126,7 +139,7 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
         <>
             <Snackbar
                 open={showAlert}
-                autoHideDuration={null}  // Không tự động ẩn
+                autoHideDuration={null}
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                 sx={{
                     bottom: { xs: 70, sm: 24 },
@@ -211,7 +224,6 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
                 </Box>
             </SortableContext>
         </>
-
     );
 });
 
