@@ -2,7 +2,8 @@
 <html lang="en">
 
 <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    {{-- <meta http-equiv="X-UA-Compatible" content="IE=edge" /> --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Kaiadmin - Bootstrap 5 Admin Dashboard</title>
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
     <link rel="icon" href="/asset/assets/img/kaiadmin/favicon.ico" type="image/x-icon" />
@@ -10,7 +11,7 @@
     <!-- Fonts and icons -->
     <script src="/asset/assets/js/plugin/webfont/webfont.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
- 
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/simple-line-icons/2.5.5/css/simple-line-icons.css">
     <script>
         WebFont.load({

@@ -30,6 +30,14 @@ import Board from "../pages/boards/detail/Board";
 import Calendar from "../pages/Boards/detail/SideBar/Calendar/Calendar";
 import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileInfo";
 import Activity from "../components/Navigation/Menus/Profile and display/Activity";
+// import GoogleAuth from "../pages/auth/GoogleAuth";
+// import GitHubAuth from "../pages/auth/GitHubAuth";
+import RequestJoinBoard from "../pages/boards/invite/RequestJoinBoard";
+import VerifyCodePage from "../pages/auth/VerifyCodePage";
+import UpdatePass from "../pages/auth/UpdatePass";
+import GanttChart from "../pages/boards/detail/SideBar/GanttChart/GanttChart";
+
+
 import TagCard from "../components/Navigation/Menus/Profile and display/TagCard";
 import ProfileNDisplay from "../components/Navigation/Menus/Profile and display/ProfileNDisplay";
 import ProfileInfo from "../components/Navigation/Menus/Profile and display/ProfileInfo";
@@ -57,7 +65,13 @@ const router = createBrowserRouter([
       { path: "register", element: <Register /> },
       { path: "login/google", element: <GoogleAuth /> },
       { path: "auth/callback", element: <GitHubAuth /> },
-      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/forgort-password", element: <ForgotPassword /> },
+      { path: "/verify-code", element: <VerifyCodePage /> },
+      { path: "/update-password", element: <UpdatePass /> },
+     
+
+
+
     ],
   },
   {
@@ -84,6 +98,11 @@ const router = createBrowserRouter([
           { path: "w/:workspaceName", element: <Board /> },
           { path: "w/:workspaceName/members", element: <Member /> },
           { path: "w/:workspaceName/account", element: <Account /> },
+          { path: "b/:boardId/gantt-chart", element: <GanttChart /> },
+          { path: "w/:workspaceName/calendar", element: <Calendar /> },
+
+
+
         ],
       },
       {
@@ -104,6 +123,10 @@ const router = createBrowserRouter([
     path: "/",
     element: <LayoutWrapper />,
     children: [
+      {
+        path: "request-join/:boardId",
+        element: <RequestJoinBoard />,
+      },
       {
         path: "invite-board/:token",
         element: <InvitePage />, // Tự động kiểm tra đăng nhập và chuyển hướng

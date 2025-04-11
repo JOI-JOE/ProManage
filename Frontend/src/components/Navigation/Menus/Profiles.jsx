@@ -38,6 +38,16 @@ export default function ProfileMenu({ email }) {
       navigate(`/u/${user?.user_name}`);
     }
   };
+  const goToActivity = () => {
+    if (user?.user_name) {
+      navigate(`/u/${user?.user_name}/activity`);
+    }
+  };
+  const goToCard = () => {
+    if (user?.user_name) {
+      navigate(`/u/${user?.user_name}/cards`);
+    }
+  };
 
   const open = Boolean(anchorEl);
   const themeOpen = Boolean(themeAnchorEl);
@@ -133,8 +143,8 @@ export default function ProfileMenu({ email }) {
         <MenuItem onClick={goToProfile}>
           Hồ sơ và Hiển thị
         </MenuItem>
-        <MenuItem>Hoạt động</MenuItem>
-        <MenuItem>Thẻ</MenuItem>
+        <MenuItem onClick={goToActivity}>Hoạt động</MenuItem>
+        <MenuItem onClick={goToCard}>Thẻ</MenuItem>
         <MenuItem>Cài đặt</MenuItem>
         <MenuItem onClick={handleThemeClick}>
           Chủ đề <ArrowRightIcon fontSize="small" sx={{ ml: "auto" }} />
