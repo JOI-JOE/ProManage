@@ -337,6 +337,8 @@ export const useUpdateCardDate = () => {
 
       // queryClient.invalidateQueries(["cardSchedule"],variables.cardId);
       queryClient.invalidateQueries({ queryKey: ["cardSchedule", variables.targetId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật ngày card:", error);

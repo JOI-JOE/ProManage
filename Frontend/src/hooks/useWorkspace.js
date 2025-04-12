@@ -125,7 +125,7 @@ export const useGetUserWorkspaces = () => {
 
 export const useUserWorkspaces = () => {
   return useQuery({
-    queryKey: ["userWorkspaces"],
+    queryKey: ["userWorkspaces2"],
     queryFn: getUserWorkspaces2,
   });
 };

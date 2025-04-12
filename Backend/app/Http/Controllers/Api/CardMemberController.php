@@ -76,10 +76,12 @@ class CardMemberController extends Controller
                         'card_title' => $card->title,
                         'user_id' => $user->id,
                         'full_name' => $user->full_name,
+                        'board_id' => $card->list->board->id, // thêm dòng này
+                        'board_name' => $card->list->board->name,
                     ])
                     ->log("{$authUser->full_name} đã gỡ {$user->full_name} khỏi thẻ này");
 
-                    $user->notify(new CardMemberUpdatedNotification($card, 'removed', $authUser, $activity, $user->id));
+                $user->notify(new CardMemberUpdatedNotification($card, 'removed', $authUser, $activity, $user->id));
 
             } else {
                 $activity = null;
@@ -103,6 +105,8 @@ class CardMemberController extends Controller
                         'card_title' => $card->title,
                         'user_id' => $user->id,
                         'user_name' => $user->user_name,
+                        'board_id' => $card->list->board->id, // thêm dòng này
+                        'board_name' => $card->list->board->name,
                     ])
                     ->log("{$authUser->full_name} đã tham gia thẻ này");
             } else {
@@ -115,11 +119,13 @@ class CardMemberController extends Controller
                         'card_title' => $card->title,
                         'user_id' => $user->id,
                         'full_name' => $user->full_name,
+                        'board_id' => $card->list->board->id, // thêm dòng này
+                        'board_name' => $card->list->board->name,
                         // 'authUser' => $authUser->full_name,
                     ])
                     ->log("{$authUser->full_name} đã thêm {$user->full_name} vào thẻ này");
 
-                    $user->notify(new CardMemberUpdatedNotification($card, 'added', $authUser, $activity, $user->id));
+                $user->notify(new CardMemberUpdatedNotification($card, 'added', $authUser, $activity, $user->id));
 
             }
 

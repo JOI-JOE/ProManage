@@ -15,26 +15,19 @@ function SlideTransition(props) {
 }
 
 const ProfileNDisplay = () => {
-
   const { data: user, isLoading: isUserLoading } = useUserById();
 
-  const {
-    mutate: updateProfile,
-    isLoading: isUpdating,
-    error,
-    data,
-  } = useUpdateProfile();
+  const { mutate: updateProfile, isLoading: isUpdating } = useUpdateProfile();
 
-  // Form fields
   const [userName, setUserName] = useState("");
   const [biography, setBiography] = useState("");
 
-  // Snackbar state
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState("");
-  const [severity, setSeverity] = useState("success");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
-  // Set initial form values once user data is loaded
   useEffect(() => {
     if (user) {
       setUserName(user.user_name || "");
@@ -42,26 +35,38 @@ const ProfileNDisplay = () => {
     }
   }, [user]);
 
-  // Show snackbar on update result
-  useEffect(() => {
-    if (data) {
-      setMessage("Cập nhật thành công!");
-      setSeverity("success");
-      setOpen(true);
-    } else if (error) {
-      setMessage("Có lỗi xảy ra khi cập nhật.");
-      setSeverity("error");
-      setOpen(true);
-    }
-  }, [data, error]);
-
-  const handleClose = () => setOpen(false);
+  const handleCloseSnackbar = () =>
+    setSnackbar((prev) => ({ ...prev, open: false }));
 
   const handleSave = () => {
-    updateProfile({
-      user_name: userName,
-      biography,
-    });
+    if (!userName.trim()) {
+      setSnackbar({
+        open: true,
+        message: "Tên người dùng không được để trống.",
+        severity: "error",
+      });
+      return;
+    }
+
+    updateProfile(
+      { user_name: userName.trim(), biography: biography.trim() },
+      {
+        onSuccess: () => {
+          setSnackbar({
+            open: true,
+            message: "Cập nhật thành công!",
+            severity: "success",
+          });
+        },
+        onError: () => {
+          setSnackbar({
+            open: true,
+            message: "Cập nhật thất bại.",
+            severity: "error",
+          });
+        },
+      }
+    );
   };
 
   if (isUserLoading) {
@@ -82,7 +87,7 @@ const ProfileNDisplay = () => {
         maxWidth: "650px",
         boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
         margin: "auto",
-        marginTop:"20px"
+        marginTop: "20px",
       }}
     >
       <Typography
@@ -98,14 +103,12 @@ const ProfileNDisplay = () => {
         Quản lý thông tin cá nhân
       </Typography>
 
-
       <Typography
         variant="body2"
         sx={{ mb: 1, color: "#555", fontWeight: 500 }}
       >
         Tên người dùng
       </Typography>
-
       <TextField
         fullWidth
         variant="outlined"
@@ -126,7 +129,6 @@ const ProfileNDisplay = () => {
       >
         Lý lịch
       </Typography>
-
       <TextField
         fullWidth
         multiline
@@ -161,15 +163,16 @@ const ProfileNDisplay = () => {
       </Button>
 
       <Snackbar
-        open={open}
-        autoHideDuration={2000}
-        onClose={handleClose}
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
         TransitionComponent={SlideTransition}
-        message={message}
+        message={snackbar.message}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         sx={{
           "& .MuiSnackbarContent-root": {
-            backgroundColor: severity === "success" ? "#43a047" : "#d32f2f",
+            backgroundColor:
+              snackbar.severity === "success" ? "#43a047" : "#d32f2f",
             color: "#fff",
             fontWeight: 500,
           },

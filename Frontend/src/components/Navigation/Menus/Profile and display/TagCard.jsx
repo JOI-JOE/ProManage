@@ -18,8 +18,9 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CloseIcon from '@mui/icons-material/Close';
 // import { useMe } from "../../../../contexts/MeContext";
-import { useUserBoardCards } from "../../../../hooks/useCard";
+import { useToggleCardCompletion, useUserBoardCards } from "../../../../hooks/useCard";
 import { useUserById } from "../../../../hooks/useUser";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TagCard = () => {
   // const { user } = useMe();
@@ -28,23 +29,43 @@ const TagCard = () => {
 
 
   const { data: card, isLoading, error } = useUserBoardCards(user?.id);
-  
-  // console.log(card.cards);
+
+
 
   const data = card?.cards;
-
+  console.log(data);
   const [checkedItems, setCheckedItems] = useState([]);
   const [hoverRow, setHoverRow] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const [listMenuAnchor, setListMenuAnchor] = useState(null);
   const open = Boolean(anchorEl);
   const listMenuOpen = Boolean(listMenuAnchor);
+  const queryClient = useQueryClient();
+
+
+  const [sortOption, setSortOption] = useState("due_date");
 
   const handleCheckboxChange = (index) => {
     const newCheckedItems = [...checkedItems];
     newCheckedItems[index] = !newCheckedItems[index];
     setCheckedItems(newCheckedItems);
   };
+
+  const handleSortOptionChange = (option) => {
+    setSortOption(option);
+    handleClose();
+  };
+
+  const sortedData = [...(data || [])].sort((a, b) => {
+    if (sortOption === "created_at") {
+      return new Date(a.created_at) - new Date(b.created_at);
+    } else if (sortOption === "due_date") {
+      return new Date(a.end_date) - new Date(b.end_date);
+    } else if (sortOption === "title") {
+      return a.title.localeCompare(b.title);
+    }
+    return 0;
+  });
 
   const handleSortClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -53,6 +74,10 @@ const TagCard = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const toggleCompletion = useToggleCardCompletion();
+
+
 
   const handleListClick = (event) => {
     setListMenuAnchor(event.currentTarget);
@@ -80,11 +105,11 @@ const TagCard = () => {
       <Box sx={{ width: "80%", maxWidth: "1200px" }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", padding: 2, borderBottom: "1px solid #e0e0e0" }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Box 
+            <Box
               onClick={handleSortClick}
               sx={{
-                display: "flex", 
-                alignItems: "center", 
+                display: "flex",
+                alignItems: "center",
                 padding: "6px 12px",
                 backgroundColor: "#f5f5f5",
                 borderRadius: 1,
@@ -97,9 +122,9 @@ const TagCard = () => {
               <KeyboardArrowDownIcon fontSize="small" />
             </Box>
             <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-              <MenuItem onClick={handleClose}>Ngày tạo</MenuItem>
-              <MenuItem onClick={handleClose}>Ngày đến hạn</MenuItem>
-              <MenuItem onClick={handleClose}>Tên</MenuItem>
+              <MenuItem onClick={() => handleSortOptionChange("created_at")}>Ngày tạo</MenuItem>
+              <MenuItem onClick={() => handleSortOptionChange("due_date")}>Ngày đến hạn</MenuItem>
+              <MenuItem onClick={() => handleSortOptionChange("title")}>Tên</MenuItem>
             </Menu>
           </Box>
 
@@ -131,16 +156,23 @@ const TagCard = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data?.map((item, index) => (
+              {sortedData?.map((item, index) => (
                 <TableRow
                   key={item.id}
                   onMouseEnter={() => setHoverRow(index)}
                   onMouseLeave={() => setHoverRow(null)}
                 >
-                  <TableCell sx={{ borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", padding:"30px"}}>
+                  <TableCell sx={{ borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", padding: "30px" }}>
                     <Checkbox
-                      checked={checkedItems[index] || false}
-                      onChange={() => handleCheckboxChange(index)}
+                      checked={item.is_completed || false}
+                      onChange={() => {
+                        toggleCompletion.mutate(item.id, {
+                          onSuccess: () => {
+                            queryClient.invalidateQueries({ queryKey: ["userBoardCards", user?.id], exact: true });
+
+                          },
+                        });
+                      }}
                       sx={{
                         color: "#999",
                         '&.Mui-checked': {
@@ -164,7 +196,7 @@ const TagCard = () => {
                           display: "inline-block",
                           width: 24,
                           height: 8,
-                          backgroundColor: label.color,
+                          backgroundColor: label.color.hex_code,
                           borderRadius: 1,
                           marginRight: 0.5
                         }}
@@ -199,6 +231,7 @@ const TagCard = () => {
                   </TableCell>
                 </TableRow>
               ))}
+
             </TableBody>
           </Table>
         </TableContainer>
