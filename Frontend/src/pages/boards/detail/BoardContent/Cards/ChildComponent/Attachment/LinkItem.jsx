@@ -59,9 +59,17 @@ const LinkItem = ({ file }) => {
         setEditDialogOpen(false);
     };
 
-    const handleSaveEdit = () => {
-        handleEditLink(file.id, editedLink.displayText || editedLink.url, editedLink.url);
-        handleEditDialogClose();
+    const handleSaveEdit = async () => {
+        try {
+            await handleEditLink(
+                file.id,
+                editedLink.displayText || editedLink.url, // newLinkName
+                editedLink.url // newLinkUrl
+            );
+            handleEditDialogClose();
+        } catch (error) {
+            console.error("Failed to save edited link:", error);
+        }
     };
 
     // Xử lý dialog xóa
@@ -101,6 +109,7 @@ const LinkItem = ({ file }) => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
+                    transition: "background-color 0.3s ease-in-out",
                     "&:hover": {
                         backgroundColor: "#EBECF0",
                     },

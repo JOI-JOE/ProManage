@@ -9,11 +9,13 @@ use App\Models\Attachment;
 use App\Models\Card;
 use App\Notifications\AttachmentUploadedNotification;
 use App\Notifications\CardNotification;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Activitylog\Models\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class AttachmentController extends Controller
@@ -23,21 +25,11 @@ class AttachmentController extends Controller
     {
         DB::beginTransaction();
         try {
-            $responseData = [];
-
-            // Verify card exists
-            $card = DB::table('cards')->where('id', $cardId)->first();
-            if (!$card) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Card not found',
-                ], 404);
-            }
-
             if ($request->hasFile('file')) {
                 // Validate file upload
                 $request->validate([
                     'file' => 'required|file|max:10240|mimes:jpeg,png,gif,pdf,doc,docx,xls,xlsx,ppt,pptx,txt', // Max 10MB, allowed mimes
+                    'is_cover' => 'nullable|boolean',
                 ]);
 
                 // Upload file
@@ -53,7 +45,7 @@ class AttachmentController extends Controller
                     'path_url' => $publicUrl,
                     'file_name_defaut' => $file->getClientOriginalName(),
                     'file_name' => $fileName,
-                    'type' => 'file', // ✅ Thêm trường type cho file
+                    'type' => 'file',
                     'is_cover' => $request->input('is_cover', 0),
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -69,6 +61,8 @@ class AttachmentController extends Controller
                     'type' => 'file',
                     'is_cover' => $request->input('is_cover', 0),
                 ];
+                $success = true;
+                $message = 'Attachment uploaded successfully';
             } elseif ($request->input('type') === 'link') {
                 // Validate link data
                 $validated = $request->validate([
@@ -77,6 +71,9 @@ class AttachmentController extends Controller
                     'is_cover' => 'nullable|boolean',
                 ]);
 
+                // Generate a unique file_name for the link
+                $fileNameForLink = Str::slug($validated['file_name_defaut']) . '_' . Str::random(10);
+
                 // Save link
                 $attachmentId = Str::uuid();
                 DB::table('attachments')->insert([
@@ -84,8 +81,8 @@ class AttachmentController extends Controller
                     'card_id' => $cardId,
                     'path_url' => $validated['path_url'],
                     'file_name_defaut' => $validated['file_name_defaut'],
-                    'file_name' => '', // Link không cần tên file lưu trữ
-                    'type' => 'link', // ✅ Thêm trường type cho link
+                    'file_name' => $fileNameForLink, // Generate a unique file_name for the link
+                    'type' => 'link',
                     'is_cover' => $request->input('is_cover', 0),
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -95,43 +92,35 @@ class AttachmentController extends Controller
                     'id' => $attachmentId,
                     'file_name_defaut' => $validated['file_name_defaut'],
                     'path_url' => $validated['path_url'],
-                    'file_name' => '',
+                    'file_name' => $fileNameForLink,
                     'type' => 'link',
                     'is_cover' => $request->input('is_cover', 0),
                 ];
+                $success = true;
+                $message = 'Link attached successfully';
             } else {
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'request' => $request->hasFile('file'),
                     'message' => 'No file uploaded or invalid link data provided',
                 ], 400);
             }
 
             DB::commit();
-
             return response()->json([
                 'success' => true,
-                'message' => 'Attachment added successfully',
+                'message' => $message,
                 'data' => $responseData,
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $e->validator->errors()->toArray(),
-            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to add attachment',
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage(), // Optionally include the error message for debugging
             ], 500);
         }
     }
-
     public function index($cardId)
     {
         try {
@@ -160,6 +149,229 @@ class AttachmentController extends Controller
             ], 500);
         }
     }
+    public function delete($attachmentId)
+    {
+        try {
+            // Tìm attachment theo ID
+            $attachment = DB::table('attachments')->where('id', $attachmentId)->first();
+
+            if (!$attachment) {
+                return response()->json([
+                    'message' => 'Attachment not found'
+                ], 404);
+            }
+
+            DB::beginTransaction();
+
+            // Nếu là file upload, xử lý xoá file vật lý
+            if ($attachment->type === 'file' && !empty($attachment->file_name)) {
+                $filePath = storage_path('app/public/attachments/' . $attachment->file_name);
+
+                if (file_exists($filePath)) {
+                    @unlink($filePath); // Xoá file vật lý
+                }
+            }
+
+            // Nếu attachment này đang là cover, xoá thumbnail của card
+            if ($attachment->is_cover) {
+                DB::table('cards')
+                    ->where('id', $attachment->card_id)
+                    ->update(['thumbnail' => null]);
+            }
+
+            // Xoá bản ghi attachment
+            DB::table('attachments')->where('id', $attachmentId)->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Attachment deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Error deleting attachment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, string $attachmentId)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Find attachment using raw query
+            $attachment = $this->findAttachmentOrFail($attachmentId);
+
+            // Validate request data
+            $validator = Validator::make($request->all(), [
+                'file' => 'nullable|file|max:10240', // Max 10MB, adjust as needed
+                'path_url' => 'nullable|url|required_if:type,link',
+                'file_name_defaut' => 'nullable|string|max:255',
+                'is_cover' => 'nullable|boolean',
+                'type' => 'nullable|in:link,file',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $updateData = $this->prepareUpdateData($request, $attachment);
+            if (empty($updateData)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No valid data provided for update',
+                ], 422);
+            }
+
+            // Update attachment using raw query
+            DB::table('attachments')
+                ->where('id', $attachmentId)
+                ->update($updateData);
+
+            DB::commit();
+
+            // Fetch updated attachment
+            $updatedAttachment = $this->findAttachment($attachmentId);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attachment updated successfully',
+                'data' => $updatedAttachment,
+            ]);
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Attachment not found',
+                'id' => $attachmentId,
+            ], 404);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update attachment',
+                'error' => app()->environment('production') ? null : $e->getMessage(),
+            ], 500);
+        }
+    }
+    private function findAttachment(string $id): ?object
+    {
+        return DB::table('attachments')
+            ->select('id', 'card_id', 'path_url', 'file_name_defaut', 'file_name', 'type', 'is_cover', 'created_at', 'updated_at')
+            ->where('id', $id)
+            ->first();
+    }
+
+    private function findAttachmentOrFail(string $id): object
+    {
+        $attachment = $this->findAttachment($id);
+
+        if (!$attachment) {
+            throw new ModelNotFoundException('Attachment not found');
+        }
+
+        return $attachment;
+    }
+    private function prepareUpdateData(Request $request, object $attachment): array
+    {
+        $updateData = [];
+
+        // Handle file upload
+        if ($request->hasFile('file')) {
+            $updateData = $this->handleFileUploadUpdate($request, $attachment);
+        }
+
+        // Handle link update
+        if ($request->filled('path_url') && $request->input('type') === 'link') {
+            $updateData['path_url'] = $request->input('path_url');
+            $updateData['type'] = 'link';
+        }
+
+        // Update file_name_defaut if provided
+        if ($request->filled('file_name_defaut')) {
+            $updateData['file_name_defaut'] = $request->input('file_name_defaut');
+        }
+
+        // Handle is_cover and update card thumbnail
+        if ($request->filled('is_cover')) {
+            $isCover = $request->boolean('is_cover');
+
+            // Allowed image extensions
+            $allowedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+
+            // Check if the attachment is an image
+            $isImage = false;
+            if ($request->hasFile('file')) {
+                // If a new file is uploaded, check its MIME type and extension
+                $file = $request->file('file');
+                $isImage = in_array(strtolower($file->getClientOriginalExtension()), $allowedImageExtensions) ||
+                    str_starts_with($file->getMimeType(), 'image/');
+            } else {
+                // If no new file, check the existing file_name extension
+                $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
+                $isImage = in_array($extension, $allowedImageExtensions);
+            }
+
+            // Only allow is_cover = true for image files
+            if ($isCover && !$isImage) {
+                throw new \Exception('Only image files can be set as cover.');
+            }
+
+            // Proceed with updating is_cover and thumbnail
+            DB::transaction(function () use ($isCover, $attachment, &$updateData) {
+                $updateData['is_cover'] = $isCover;
+
+                if ($isCover) {
+                    DB::table('attachments')
+                        ->where('card_id', $attachment->card_id)
+                        ->where('id', '!=', $attachment->id)
+                        ->update(['is_cover' => false]);
+                    DB::table('cards')
+                        ->where('id', $attachment->card_id)
+                        ->update(['thumbnail' => $attachment->path_url]);
+                } else {
+                    // If removing cover, check if this was the cover
+                    if ($attachment->is_cover) {
+                        // Clear the card's thumbnail since no attachment is cover
+                        DB::table('cards')
+                            ->where('id', $attachment->card_id)
+                            ->update(['thumbnail' => null]);
+                    }
+                }
+            });
+        }
+        // Set updated_at
+        $updateData['updated_at'] = now();
+
+        return array_filter($updateData, fn($value) => !is_null($value));
+    }
+    private function handleFileUploadUpdate(Request $request, object $attachment): array
+    {
+        $file = $request->file('file');
+        $fileName = $file->getClientOriginalName();
+        $uniqueFileName = uniqid() . '_' . $fileName;
+        $path = $file->storeAs('attachments', $uniqueFileName, 'public');
+
+        // Delete old file if it exists
+        if ($attachment->path_url && Storage::disk('public')->exists($attachment->path_url)) {
+            Storage::disk('public')->delete($attachment->path_url);
+        }
+
+        return [
+            'path_url' => $path,
+            'file_name_defaut' => $fileName,
+            'file_name' => $uniqueFileName,
+            'type' => 'file',
+        ];
+    }
+
 
     // ------------------------------------------------------------------------------------
     // Lấy danh sách file đính kèm của một thẻ

@@ -328,7 +328,7 @@ const C_ard = ({ card }) => {
 
             </CardContent>
           </CardActionArea>
-        </Box>
+      </Box>
       </Card>
       <Dialog
         open={open}

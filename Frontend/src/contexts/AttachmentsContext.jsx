@@ -1,95 +1,201 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { usePostAttachmentFile, usePostAttachmentLink, useFetchAttachments } from '../hooks/useCard';
+import {
+    usePostAttachmentFile,
+    usePostAttachmentLink,
+    useFetchAttachments,
+    usePutAttachment,
+    useRemoveAttachment,
+} from '../hooks/useCard';
+import { useBoard } from './BoardContext';
 
 const AttachmentsContext = createContext();
 
-export const AttachmentsProvider = ({ children, cardId }) => {
+export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading }) => {
+    const { refetchListData } = useBoard();
     const { data: fetchedAttachments, isLoading, error, refetch } = useFetchAttachments(cardId);
     const [attachments, setAttachments] = useState({ links: [], files: [] });
     const { mutateAsync: postAttachmentFileMutate } = usePostAttachmentFile();
     const { mutateAsync: postAttachmentLinkMutate } = usePostAttachmentLink();
+    const { mutateAsync: updateAttachmentMutate } = usePutAttachment();
+    const { mutateAsync: removeAttachmentMutate } = useRemoveAttachment();
 
-
+    // Update attachments state when fetchedAttachments changes
     useEffect(() => {
         if (fetchedAttachments?.data && Array.isArray(fetchedAttachments.data)) {
-            const fetchedLinks = fetchedAttachments.data.filter(item => item.type === 'link');
-            const fetchedFiles = fetchedAttachments.data.filter(item => item.type === 'file');
+            const fetchedLinks = fetchedAttachments.data
+                .filter(item => item.type === 'link')
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            const fetchedFiles = fetchedAttachments.data
+                .filter(item => item.type === 'file')
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
             setAttachments({ links: fetchedLinks, files: fetchedFiles });
         }
     }, [fetchedAttachments]);
 
-
-    const handleUpdateAttachments = async (updatedAttachments, callback) => {
-        setAttachments(updatedAttachments);
-
-        // Identify new files to upload
-        const newFilesToUpload = updatedAttachments.files.filter(
-            (file) => file.originalFile
-        );
-
-        // Identify new links to add
-        const newLinksToAdd = updatedAttachments.links.filter(
-            (link) => !attachments.links.some(existingLink => existingLink.path_url === link.path_url && existingLink.file_name_defaut === link.file_name_defaut)
-        );
-
+    // Function to handle upload of new files
+    const handleUploadNewFiles = async (cardId, filesToUpload) => {
         try {
-            // Upload new files
-            const uploadFilePromises = newFilesToUpload.map(async (file) => {
+            const uploadFilePromises = filesToUpload.map(async (file) => {
                 const formData = new FormData();
                 formData.append('file', file.originalFile);
                 return postAttachmentFileMutate({ cardId, file: formData });
             });
             await Promise.all(uploadFilePromises);
-            console.log('✅ Successfully posted new files');
-
-            // Add new links
-            const addLinkPromises = newLinksToAdd.map(async (link) => {
-                return postAttachmentLinkMutate({ cardId, linkData: { file_name_defaut: link.file_name_defaut, path_url: link.path_url, type: 'link' } });
-            });
-            await Promise.all(addLinkPromises);
-            console.log('✅ Successfully posted new links');
-
-            // Re-fetch attachments to update the context with the latest data
-            await refetch();
-            if (callback) callback(attachments); // Use the updated local state after refetch
+            await refetch(); // Refetch attachments
+            refetchListData(); // Update board data
         } catch (error) {
-            console.error('❌ Error updating attachments:', error);
-            // Optionally handle error feedback to the user
+            console.error('❌ Error uploading files:', error);
+            throw error;
         }
     };
 
-    const handleEditFile = (fileId, newFileName) => {
-        const updatedFiles = attachments.files.map((file) =>
-            file.id === fileId ? { ...file, file_name_defaut: newFileName } : file
-        );
-        handleUpdateAttachments({ ...attachments, files: updatedFiles });
-        // Consider calling an API to update the file name on the server
+    // Function to handle adding new links with optimistic update
+    const handleAddNewLinks = async (cardId, linksToAdd) => {
+        try {
+            // Optimistic update: Add links to state immediately
+            const tempLinks = linksToAdd.map(link => ({
+                id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID
+                type: 'link',
+                file_name_defaut: link.file_name_defaut,
+                path_url: link.path_url,
+                created_at: new Date().toISOString(),
+            }));
+
+            setAttachments(prev => ({
+                ...prev,
+                links: [...tempLinks, ...prev.links].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+            }));
+
+            const addLinkPromises = linksToAdd.map(async (link) => {
+                return postAttachmentLinkMutate({
+                    cardId,
+                    linkData: { file_name_defaut: link.file_name_defaut, path_url: link.path_url, type: 'link' },
+                });
+            });
+
+            await Promise.all(addLinkPromises); // Wait for all links to be added
+            await refetch(); // Refetch to get the actual data
+            refetchListData(); // Update board data
+        } catch (error) {
+            console.error('❌ Error adding new links:', error);
+            // Rollback optimistic update on error
+            setAttachments(prev => ({
+                ...prev,
+                links: prev.links.filter(link => !link.id.startsWith('temp-')),
+            }));
+            throw error;
+        }
     };
 
-    const handleDeleteFile = (fileId) => {
-        const updatedFiles = attachments.files.filter((file) => file.id !== fileId);
-        handleUpdateAttachments({ ...attachments, files: updatedFiles }, refetch);
-        // Consider calling an API to delete the file from the server
+    // Function to update file name
+    const handleEditFile = async (fileId, newFileName) => {
+        try {
+            await updateAttachmentMutate({
+                attachmentId: fileId,
+                data: { file_name_defaut: newFileName },
+            });
+            await refetch();
+            refetchListData();
+        } catch (error) {
+            console.error("Error editing file name:", error);
+            throw error;
+        }
     };
-
-    const handleEditLink = (linkId, newLinkName, newLinkUrl) => {
-        const updatedLinks = attachments.links.map((link) =>
-            link.id === linkId
-                ? {
-                    ...link,
+    // Function to update link
+    const handleEditLink = async (linkId, newLinkName, newLinkUrl) => {
+        try {
+            await updateAttachmentMutate({
+                attachmentId: linkId,
+                data: {
                     file_name_defaut: newLinkName || newLinkUrl,
-                    path_url: newLinkUrl.startsWith('http') ? newLinkUrl : `https://${newLinkUrl}`,
-                }
-                : link
-        );
-        handleUpdateAttachments({ ...attachments, links: updatedLinks });
-        // Consider calling an API to update the link on the server
+                    path_url: newLinkUrl,
+                    type: "link",
+                },
+            });
+            await refetch();
+            refetchListData();
+        } catch (error) {
+            console.error("Error editing link:", error);
+            throw error;
+        }
     };
 
-    const handleDeleteLink = (linkId) => {
-        const updatedLinks = attachments.links.filter((link) => link.id !== linkId);
-        handleUpdateAttachments({ ...attachments, links: updatedLinks }, refetch);
-        // Consider calling an API to delete the link from the server
+    // Function to update cover
+    const handleEditCover = async (attachmentId, isCover, file = null) => {
+        try {
+            setCoverLoading?.(true);
+            const updateData = { is_cover: isCover };
+
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('is_cover', isCover);
+                await updateAttachmentMutate({
+                    attachmentId,
+                    data: formData,
+                });
+            } else {
+                await updateAttachmentMutate({
+                    attachmentId,
+                    data: updateData,
+                });
+            }
+
+            const updatedAttachment = attachments.files.concat(attachments.links).find(a => a.id === attachmentId);
+            if (setCard && isCover && updatedAttachment) {
+                const newThumbnailUrl = updatedAttachment.path_url || updatedAttachment.file_url;
+                setCard(prev => ({
+                    ...prev,
+                    thumbnail: newThumbnailUrl,
+                }));
+            }
+            await refetch();
+            refetchListData();
+        } catch (error) {
+            console.error('❌ Error updating cover:', error);
+            throw error;
+        } finally {
+            setCoverLoading?.(false);
+        }
+    };
+    // Function to delete file (uncomment when needed)
+    const handleDeleteFile = async (attachmentId, file = null) => {
+        try {
+            setCoverLoading?.(true);
+            await removeAttachmentMutate(attachmentId);
+            const deletedAttachment = attachments.files.concat(attachments.links).find(a => a.id === attachmentId);
+            const isCover = deletedAttachment?.is_cover;
+            // Nếu attachment đang là cover → reset thumbnail
+            if (setCard && isCover) {
+                setCard(prev => ({
+                    ...prev,
+                    thumbnail: null,
+                }));
+            }
+            await refetch();
+            refetchListData();
+        } catch (error) {
+            console.error('❌ Error deleting file:', error);
+            throw error;
+        } finally {
+            setCoverLoading?.(false);
+        }
+    };
+
+
+
+    // Function to delete link (uncomment when needed)
+    const handleDeleteLink = async (linkId) => {
+        try {
+            await removeAttachmentMutate(linkId);
+            await refetch();
+            refetchListData();
+        } catch (error) {
+            console.error('❌ Error deleting link:', error);
+            throw error;
+        }
     };
 
     return (
@@ -99,13 +205,15 @@ export const AttachmentsProvider = ({ children, cardId }) => {
                 cardId,
                 isLoading,
                 error,
-                handleUpdateAttachments,
+                handleUploadNewFiles,
+                handleAddNewLinks,
                 handleEditFile,
                 handleDeleteFile,
                 handleEditLink,
+                handleEditCover,
                 handleDeleteLink,
                 refetch,
-                setAttachments, // Expose setAttachments if needed for direct manipulation (use with caution)
+                setAttachments,
             }}
         >
             {children}

@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Box, Button, CircularProgress } from "@mui/material";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
-// Custom styles for the toolbar and editor
 const CommentEditor = ({
   value,
   onChange,
@@ -13,28 +12,33 @@ const CommentEditor = ({
   isLoading = false,
   saveLabel = "Lưu",
   cancelLabel = "Hủy",
-  placeholder = "Edit your comment...",
+  placeholder = "Viết bình luận...",
   autoFocus = false,
-  editorHeight = "150px",
+  editorHeight = "150px", // Editable content height
   minHeight = "100px",
   maxWidth = "100%",
 }) => {
-  // Define styles with dynamic values
+  const [isFocused, setIsFocused] = useState(false);
+
   const editorStyles = `
     .ql-toolbar.ql-snow {
-      border: 1px solid #d1d1d1;
+      border: 1px solid ${isFocused ? "#2684FF" : "#d1d1d1"};
+      border-bottom: none;
       border-radius: 4px 4px 0 0;
+      border: 2px solid ${isFocused ? "#2684FF" : "#d1d1d1"};
       padding: 4px 8px;
-      background: #f5f5f5;
+      background: white;
+      transition: border 0.2s ease-in-out;
     }
     .ql-container.ql-snow {
-      border: 1px solid #d1d1d1;
+      border: 2px solid ${isFocused ? "#2684FF" : "#d1d1d1"};
       border-top: none;
       border-radius: 0 0 4px 4px;
       min-height: ${minHeight};
       height: ${editorHeight};
       font-size: 14px;
       color: #172b4d;
+      transition: border 0.2s ease-in-out;
     }
     .ql-editor {
       min-height: ${minHeight};
@@ -65,7 +69,6 @@ const CommentEditor = ({
 
   return (
     <Box sx={{ maxWidth: maxWidth, width: "100%" }}>
-      {/* Inject custom styles */}
       <style>{editorStyles}</style>
 
       <ReactQuill
@@ -75,19 +78,20 @@ const CommentEditor = ({
         theme="snow"
         modules={{
           toolbar: [
-            [{ font: [] }], // Font dropdown
-            ["bold", "italic"], // Bold, Italic
-            [{ list: "bullet" }], // Bullet list
-            [{ header: [1, 2, 3, false] }], // Heading dropdown
-            ["link", "image"], // Link and Image
-            ["clean"], // Clear formatting
+            [{ font: [] }],
+            ["bold", "italic"],
+            [{ list: "bullet" }],
+            [{ header: [1, 2, 3, false] }],
+            // ["link", "image"],
+            ["clean"],
           ],
         }}
         formats={["font", "bold", "italic", "list", "bullet", "header", "link", "image"]}
         autoFocus={autoFocus}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
       />
 
-      {/* Add Save, Cancel buttons, and Formatting Help link */}
       <Box
         sx={{
           display: "flex",
@@ -102,13 +106,13 @@ const CommentEditor = ({
             variant="contained"
             size="small"
             sx={{
-              backgroundColor: "#0052cc", // Blue color to match the screenshot
+              backgroundColor: "#0052cc",
               color: "#FFF",
               fontSize: "0.75rem",
               height: "28px",
               minWidth: "60px",
               "&:hover": {
-                backgroundColor: "#003087", // Darker blue on hover
+                backgroundColor: "#003087",
               },
             }}
             onClick={onSave}

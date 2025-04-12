@@ -18,19 +18,18 @@ import CloseIcon from '@mui/icons-material/Close';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import ComputerIcon from '@mui/icons-material/Computer';
 import { useAttachments } from '../../../../../../../contexts/AttachmentsContext';
-import { usePostAttachmentFile } from '../../../../../../../hooks/useCard';
 
-const AttachmentMenu = ({ open, onClose }) => {
+const AttachmentMenu = ({ open, onClose, onAlert }) => {
     const [linkText, setLinkText] = useState('');
     const [linkUrl, setLinkUrl] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [uploadError, setUploadError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
+    const [errorSnackbarOpen, setErrorSnackbarOpen] = useState(false);
+    const [uploadingSnackbarOpen, setUploadingSnackbarOpen] = useState(false);
     const fileInputRef = useRef(null);
-    const { attachments, isLoading, cardId, handleUpdateAttachments } = useAttachments();
-    const { mutateAsync: postAttachmentFileMutateAsync } = usePostAttachmentFile();
+    const { attachments, isLoading, cardId, handleUploadNewFiles, handleAddNewLinks } = useAttachments();
 
     useEffect(() => {
         if (searchTerm) {
@@ -43,6 +42,21 @@ const AttachmentMenu = ({ open, onClose }) => {
         }
     }, [searchTerm, attachments.files]);
 
+    useEffect(() => {
+        if (uploadError) {
+            setErrorSnackbarOpen(true);
+        }
+    }, [uploadError]);
+
+    useEffect(() => {
+        setUploadingSnackbarOpen(isUploading);
+    }, [isUploading]);
+
+    const handleCloseError = () => {
+        setUploadError('');
+        setErrorSnackbarOpen(false);
+    };
+
     const handleChooseFile = () => {
         if (!isLoading) {
             fileInputRef.current.click();
@@ -51,35 +65,34 @@ const AttachmentMenu = ({ open, onClose }) => {
 
     const handleFileChange = async (event) => {
         const selectedFiles = Array.from(event.target.files);
-        if (!selectedFiles || selectedFiles.length === 0) return;
-
+        if (!selectedFiles || selectedFiles.length === 0) {
+            setUploadError('Vui lòng chọn ít nhất một tệp.');
+            if (onAlert) onAlert('Vui lòng chọn ít nhất một tệp.', 'error');
+            return;
+        }
         const maxSizeInBytes = 10240 * 1024; // 10MB
         const allowedFileTypes = [
             'image/jpeg',
             'image/png',
             'application/pdf',
             'text/plain',
-            'application/msword', // .doc
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-            'application/vnd.ms-excel', // .xls
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-            'application/vnd.ms-powerpoint', // .ppt
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-            'application/x-rar-compressed', // .rar
-            'application/zip', // .zip
-            'text/csv', // .csv
-            'application/vnd.oasis.opendocument.text', // .odt
-            'application/vnd.oasis.opendocument.spreadsheet', // .ods
-            'application/vnd.oasis.opendocument.presentation', // .odp
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/x-rar-compressed',
+            'application/zip',
+            'text/csv',
+            'application/vnd.oasis.opendocument.text',
+            'application/vnd.oasis.opendocument.spreadsheet',
+            'application/vnd.oasis.opendocument.presentation',
         ];
 
         const invalidFiles = selectedFiles.filter((file) => {
-            if (file.size > maxSizeInBytes) {
-                return true; // File quá lớn
-            }
-            if (!allowedFileTypes.includes(file.type)) {
-                return true; // Loại file không hợp lệ
-            }
+            if (file.size > maxSizeInBytes) return true;
+            if (!allowedFileTypes.includes(file.type)) return true;
             return false;
         });
 
@@ -88,58 +101,75 @@ const AttachmentMenu = ({ open, onClose }) => {
                 if (file.size > maxSizeInBytes) {
                     return `Tệp "${file.name}" quá lớn. Kích thước tối đa cho phép là 10MB.`;
                 }
-                return `Tệp "${file.name}" không đúng định dạng. Chỉ chấp nhận JPG, PNG, PDF, hoặc TXT.`;
+                return `Tệp "${file.name}" có định dạng không được hỗ trợ.`;
             });
-            setUploadError(errorMessages.join(' ')); // Hiển thị tất cả lỗi trong dialog
-            return; // Dừng xử lý nếu có file không hợp lệ
+            const errorMessage = errorMessages.join(' ');
+            setUploadError(errorMessage);
+            return;
         }
 
-        setIsUploading(true); // Bật trạng thái đang tải - hiển thị trong dialog
-        setUploadError(''); // Xóa lỗi trước đó
+        setIsUploading(true);
 
         try {
-            const uploadPromises = selectedFiles.map(async (file) => {
-                const formData = new FormData();
-                formData.append('file', file);
-                return postAttachmentFileMutateAsync({ cardId, file: formData });
-            });
-
-            const results = await Promise.all(uploadPromises);
-            console.log('✅ Files uploaded successfully:', results);
-
-            // Khi có kết quả từ API, đóng dialog và hiển thị thông báo thành công
+            const filesToUpload = selectedFiles.map((file) => ({ originalFile: file }));
+            await handleUploadNewFiles(cardId, filesToUpload);
             handleClose();
-            setSuccessMessage('Thành công'); // Hiển thị thông báo thành công sau khi đóng dialog
         } catch (err) {
             console.error('❌ Failed to upload files:', err);
             const errorMessage = err?.response?.data?.message || 'Tải tệp thất bại. Vui lòng thử lại.';
-            setUploadError(errorMessage); // Hiển thị lỗi trong dialog
-            setIsUploading(false); // Tắt trạng thái đang tải khi có lỗi
+            setUploadError(errorMessage);
+        } finally {
+            setIsUploading(false);
         }
     };
 
+    const validateUrl = (url) => {
+        if (!url.trim()) {
+            return { isValid: false, message: 'Vui lòng nhập đường dẫn.' };
+        }
+
+        const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/i;
+        const normalizedUrl = url.startsWith('http') ? url : `https://${url}`;
+
+        if (!urlPattern.test(normalizedUrl)) {
+            return { isValid: false, message: 'Đường dẫn không hợp lệ. Vui lòng kiểm tra lại.' };
+        }
+
+        if (url.length > 2000) {
+            return { isValid: false, message: 'Đường dẫn quá dài. Tối đa 2000 ký tự.' };
+        }
+
+        return { isValid: true, normalizedUrl };
+    };
+
     const handleAddLink = async () => {
-        if (!linkUrl || isLoading) return;
+        if (isLoading || isUploading) return;
+
+        const validation = validateUrl(linkUrl);
+        if (!validation.isValid) {
+            setUploadError(validation.message);
+            return;
+        }
+
+        setIsUploading(true);
 
         const newLink = {
-            id: Date.now(),
-            file_name_defaut: linkText || linkUrl,
-            path_url: linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`,
+            file_name_defaut: linkText.trim() || linkUrl,
+            path_url: validation.normalizedUrl,
+            type: 'link',
         };
 
         try {
-            // Giả sử bạn có API để thêm link
-            // await handleUpdateAttachments({
-            //   ...attachments,
-            //   links: [...attachments.links, newLink],
-            // });
-
-            // Đóng dialog trước, sau đó hiển thị thông báo thành công
-            handleClose();
-            setSuccessMessage('Thành công');
+            await handleAddNewLinks(cardId, [newLink]);
+            setLinkText('');
+            setLinkUrl('');
+            setIsUploading(false); // Đặt lại trạng thái loading trước khi đóng
+            handleClose(); // Đóng dialog sau khi thêm thành công
         } catch (err) {
+            console.error('❌ Failed to add link:', err);
             const errorMessage = err.response?.data?.message || 'Thêm liên kết thất bại. Vui lòng thử lại.';
-            setUploadError(errorMessage); // Hiển thị lỗi trong dialog
+            setUploadError(errorMessage);
+            setIsUploading(false); // Đảm bảo trạng thái loading được đặt lại
         }
     };
 
@@ -149,16 +179,9 @@ const AttachmentMenu = ({ open, onClose }) => {
             setLinkUrl('');
             setSearchTerm('');
             setUploadError('');
+            setIsUploading(false); // Đảm bảo trạng thái loading được đặt lại
             onClose();
         }
-    };
-
-    const handleCloseError = () => {
-        setUploadError('');
-    };
-
-    const handleCloseSuccess = () => {
-        setSuccessMessage('');
     };
 
     return (
@@ -210,7 +233,7 @@ const AttachmentMenu = ({ open, onClose }) => {
                         position: 'relative',
                     }}
                 >
-                    {isLoading || isUploading ? (
+                    {isUploading ? (
                         <CircularProgress size={24} sx={{ position: 'absolute' }} />
                     ) : (
                         'Chọn tệp'
@@ -269,7 +292,14 @@ const AttachmentMenu = ({ open, onClose }) => {
                             <ListItemIcon sx={{ minWidth: 40 }}>
                                 <ComputerIcon fontSize="small" sx={{ color: '#6b778c' }} />
                             </ListItemIcon>
-                            <ListItemText primary={file.file_name_defaut} secondary={`• ${file.addedTime}`} />
+                            <ListItemText
+                                primary={
+                                    file.file_name_defaut.length > 20
+                                        ? file.file_name_defaut.substring(0, 20) + "..."
+                                        : file.file_name_defaut
+                                }
+                                secondary={`• ${file.created_at}`}
+                            />
                         </ListItem>
                     ))}
                     {searchResults.length < 4 && !searchTerm && attachments.files.length > 4 && (
@@ -305,7 +335,7 @@ const AttachmentMenu = ({ open, onClose }) => {
                             position: 'relative',
                         }}
                     >
-                        {isLoading || isUploading ? (
+                        {isUploading ? (
                             <CircularProgress size={24} sx={{ color: '#fff' }} />
                         ) : (
                             'Chèn'
@@ -313,38 +343,30 @@ const AttachmentMenu = ({ open, onClose }) => {
                     </Button>
                 </Box>
 
-                {/* Hiển thị thông báo lỗi trong dialog */}
-                {uploadError && (
-                    <Alert severity="error" onClose={handleCloseError} sx={{ mt: 2 }}>
+                <Snackbar
+                    open={errorSnackbarOpen}
+                    autoHideDuration={5000}
+                    onClose={handleCloseError}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                    <Alert onClose={handleCloseError} severity="error" sx={{ width: '100%' }}>
                         {uploadError}
                     </Alert>
-                )}
+                </Snackbar>
 
-                {/* Hiển thị trạng thái đang tải trong dialog */}
-                {isUploading && (
+                <Snackbar
+                    open={uploadingSnackbarOpen}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
                     <Alert
                         severity="info"
                         icon={<CircularProgress size={20} />}
-                        sx={{ mt: 2 }}
+                        sx={{ width: '100%' }}
                     >
-                        Đang tải tệp lên...
+                        Đang tải liên kết lên...
                     </Alert>
-                )}
+                </Snackbar>
             </Dialog>
-
-            {/* Snackbar cho trạng thái thành công - hiển thị bên ngoài dialog */}
-            <Snackbar open={!!successMessage} autoHideDuration={5000} onClose={handleCloseSuccess}>
-                <Alert
-                    severity="success"
-                    action={
-                        <IconButton size="small" onClick={handleCloseSuccess}>
-                            <CloseIcon fontSize="small" />
-                        </IconButton>
-                    }
-                >
-                    {successMessage}
-                </Alert>
-            </Snackbar>
         </>
     );
 };

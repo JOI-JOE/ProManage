@@ -12,6 +12,7 @@ use App\Notifications\CardCommentNotification;
 use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
@@ -20,19 +21,58 @@ class CommentCardController extends Controller
     //
     public function index($cardId)
     {
+        // Verify if the card exists
+        $cardExists = DB::table('cards')
+            ->where('id', $cardId)
+            ->exists();
 
-        $card = Card::find($cardId);
-        if (!$card) {
+        if (!$cardExists) {
             return response()->json(['message' => 'Card không tồn tại!'], 404);
         }
 
-        $comments = CommentCard::where('card_id', $cardId)
-            ->with('user:id,full_name')
-            ->orderBy('created_at', 'desc')
+        // Fetch comments with user data
+        $comments = DB::table('comment_cards')
+            ->select(
+                'comment_cards.id',
+                'comment_cards.content',
+                'comment_cards.card_id',
+                'comment_cards.user_id',
+                'comment_cards.created_at',
+                'comment_cards.updated_at',
+                'users.id as user_id',
+                'users.full_name',
+                'users.initials',
+                'users.user_name',
+                'users.image',
+
+            )
+            ->join('users', 'comment_cards.user_id', '=', 'users.id')
+            ->where('comment_cards.card_id', $cardId)
+            ->orderBy('comment_cards.created_at', 'desc')
             ->get();
 
-        return response()->json($comments);
+        // Transform the results to match the expected structure
+        $formattedComments = $comments->map(function ($comment) {
+            return [
+                'id' => $comment->id,
+                'content' => $comment->content,
+                'card_id' => $comment->card_id,
+                'member_id' => $comment->user_id,
+                'created_at' => $comment->created_at,
+                'updated_at' => $comment->updated_at,
+                'member' => [
+                    'id' => $comment->user_id,
+                    'full_name' => $comment->full_name,
+                    'user_name' => $comment->user_name,
+                    'avatar' => $comment->image,
+                    'initials' => $comment->initials,
+                ],
+            ];
+        });
+
+        return response()->json($formattedComments);
     }
+
     public function addCommentIntoCard(Request $request)
     {
         $rules = [
@@ -100,10 +140,10 @@ class CommentCardController extends Controller
         $commentId = $comment->id;
 
         // Xóa notification liên quan đến comment
-        \DB::table('notifications')
+        DB::table('notifications')
             ->whereJsonContains('data->comment_id', $commentId)
             ->delete();
-            
+
         $comment->delete();
 
         broadcast(new CommentDeleted($commentId, $cardId))->toOthers();

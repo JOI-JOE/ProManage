@@ -13,13 +13,12 @@ import {
 import { useCallback, useEffect, useRef } from "react";
 import echoInstance from "./realtime/useRealtime";
 
-
 // MAIN FUNCTION + REALTIME ------------------------------------------------------------------------------------
 export const useListByBoardId = (boardId) => {
   const queryClient = useQueryClient();
   const channelRef = useRef(null);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["lists", boardId],
     queryFn: () => fetchListByBoardId(boardId),
     enabled: !!boardId,
@@ -51,15 +50,11 @@ export const useListByBoardId = (boardId) => {
   const handleListCreate = useCallback(
     (event) => {
       if (!event?.id) return;
-
       queryClient.setQueryData(["lists", boardId], (oldData) => {
         const oldLists = Array.isArray(oldData?.lists) ? oldData.lists : [];
-        // Nếu list đã tồn tại, bỏ qua
         const exists = oldLists.some((list) => list.id === event.id);
         if (exists) return oldData;
-
         const updatedLists = [...oldLists, event];
-
         return {
           ...oldData,
           lists: updatedLists,
@@ -68,11 +63,14 @@ export const useListByBoardId = (boardId) => {
     },
     [boardId, queryClient]
   );
+  // TODO: Bạn chưa xử lý handleCardCreate & handleCardUpdate
+  const handleCardCreate = useCallback((event) => {
+    // Thêm logic xử lý nếu cần
+  }, []);
 
-  // ---- Xử lý tạo card mới
-  const handleCardCreate = useCallback(event);
-
-  const handleCardUpdate = useCallback(event);
+  const handleCardUpdate = useCallback((event) => {
+    // Thêm logic xử lý nếu cần
+  }, []);
 
   useEffect(() => {
     if (!boardId) return;
@@ -96,11 +94,9 @@ export const useListByBoardId = (boardId) => {
     data,
     isLoading,
     isError,
-    lists: data?.lists || [],
+    refetch,
   };
 };
-
-
 
 /// Function thông thường --------------------------------------------------------
 

@@ -26,6 +26,8 @@ import {
   postAttachmentFile,
   postAttachmentLink,
   fetchAttachments,
+  putAttachment,
+  removeAttachment,
 } from "../api/models/cardsApi";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
@@ -90,13 +92,12 @@ export const usePostAttachmentFile = () => {
 };
 // Hook for adding links
 export const usePostAttachmentLink = () => {
-  const queryClient = useQueryClient();
-
+  // const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ cardId, linkData }) =>
       postAttachmentLink({ cardId, linkData }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+      // queryClient.invalidateQueries({ queryKey: ["card", cardId] });
     },
     onError: (error) => {
       console.error("❌ Lỗi khi thêm link:", error);
@@ -210,6 +211,28 @@ export const useJoinOrPutMember = (cardId) => {
     isRemoving: removeMemberFromCardMutation.isLoading,
   };
 };
+// Attachment
+export const usePutAttachment = () => {
+  // const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: ({ attachmentId, data }) => putAttachment(attachmentId, data),
+    // onSuccess: () => {
+    // queryClient.invalidateQueries({ queryKey: ["lists", cardId] });
+    // },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật tệp đính kèm:", error);
+    },
+  });
+
+  return {
+    mutateAsync: ({ attachmentId, data }) =>
+      mutation.mutateAsync({ attachmentId, data }),
+    isLoading: mutation.isLoading,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
+  };
+};
 // DELETE FUNCTION -----------------------------------------------------
 export const useRemoveChecklistFromCard = () => {
   return useMutation({
@@ -231,6 +254,14 @@ export const useRemoveCheckListItem = () => {
     removeItem: mutation.mutate, // 👈 Đây mới là thứ bạn dùng trong component
     ...mutation,
   };
+};
+export const useRemoveAttachment = () => {
+  return useMutation({
+    mutationFn: (attachmentId) => removeAttachment(attachmentId),
+    onError: (error) => {
+      console.error("❌ Failed to remove checklist item:", error);
+    },
+  });
 };
 // ------------------------------------------------------
 

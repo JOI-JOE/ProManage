@@ -18,7 +18,8 @@ export const BoardProvider = ({ children }) => {
 
     const { data: boardData, isLoading: boardLoading, error: boardError } = useBoardById(boardId);
 
-    const { data: listData, isLoading: listLoading, error: listError } = useListByBoardId(boardId);
+    const { data: listData, isLoading: listLoading, error: listError, refetch: refetchListData } = useListByBoardId(boardId);
+
 
     // Gộp trạng thái loading và error
     const isLoading = boardLoading || listLoading;
@@ -40,6 +41,7 @@ export const BoardProvider = ({ children }) => {
             boardLoading,
             listLoading,
             error,
+            refetchListData // Truyền refetch vào context
         }),
         [boardData, listData, isLoading, error]
     );

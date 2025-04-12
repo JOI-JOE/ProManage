@@ -112,7 +112,7 @@ const AttachmentFolder = ({ cardId }) => {
 
                 {/* Links Section */}
                 {attachments.links.length > 0 && (
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{ mb: 2 }}>
                         <Typography
                             variant="subtitle2"
                             sx={{
@@ -124,7 +124,7 @@ const AttachmentFolder = ({ cardId }) => {
                         >
                             Liên kết
                         </Typography>
-                        <List sx={{ p: 0 }}>
+                        <List sx={{ p: 0, ml: 2 }}>
                             {(showAllLinks ? attachments.links : attachments.links.slice(0, 4)).map(
                                 (link) => (
                                     <LinkItem
@@ -172,7 +172,7 @@ const AttachmentFolder = ({ cardId }) => {
                         >
                             Tệp
                         </Typography>
-                        <List sx={{ p: 0 }}>
+                        <List sx={{ p: 0, ml: 2 }}>
                             {(showAllFiles ? attachments.files : attachments.files.slice(0, 3)).map(
                                 (file) => (
                                     <FileItem

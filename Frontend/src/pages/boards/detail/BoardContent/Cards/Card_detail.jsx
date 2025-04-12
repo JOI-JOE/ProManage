@@ -47,12 +47,12 @@ import LabelsPopover from "./ChildComponent/Label/LabelsPopover.jsx";
 import AttachmentMenu from "./ChildComponent/Attachment/AttachmentMenu.jsx";
 import AttachmentFolder from "./ChildComponent/Attachment/AttachmentFolder.jsx";
 import { AttachmentsProvider } from "../../../../../contexts/AttachmentsContext.jsx";
+import CommentSection from "./ChildComponent/Comment/CommentSection.jsx";
 
 dayjs.extend(relativeTime);
 
 const Card_detail = ({ cardId, closeCard, openCard }) => {
     // Lấy dữ liệu từ hook ---------------------------------------------
-    // const { listData } = useBoard()
     const { user } = useMe();
     const { listData, members } = useBoard()
     const { data: fetchedCard, isLoading: isLoadingCard, isError } = useCardById(cardId);
@@ -73,6 +73,7 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
     } = useJoinOrPutMember(cardId || card?.id);
     // State -----------
     const [card, setCard] = useState(null);
+    const [coverLoading, setCoverLoading] = useState(false);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     useEffect(() => {
         if (fetchedCard) {
@@ -304,42 +305,6 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
     };
 
     // ----------------------------------------------------------------------------
-    const [comment, setComment] = useState("");
-    const [comments, setComments] = useState([]);     // danh sách các comment đã lưu
-    const [isEditingComment, setIsEditingComment] = useState(false);
-
-    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-
-    const handleCommentClick = () => {
-        setIsEditingComment(true);
-    };
-
-    const handleSaveComment = async () => {
-        if (isEmptyHTML(comment)) return;
-
-        setIsSubmittingComment(true);
-        try {
-            // Có thể gọi API lưu comment ở đây
-            const newComment = {
-                id: Date.now(), // hoặc dùng uuid
-                content: comment,
-                created_at: new Date().toISOString(),
-                author: {
-                    name: "Hoàng", // Có thể lấy từ user đang đăng nhập
-                    avatar: "",    // URL nếu có
-                },
-            };
-
-            setComments((prev) => [newComment, ...prev]); // Thêm comment mới lên đầu
-            setComment("");
-            setIsEditingComment(false);
-        } catch (error) {
-            console.error("Lỗi khi lưu bình luận:", error);
-        } finally {
-            setIsSubmittingComment(false);
-        }
-    };
-    // ----------------------------------------------------------------------------
     //---------------------------------------------------------------
     const [selectedImage, setSelectedImage] = useState(null);
     const [preview, setPreview] = useState(false);
@@ -420,11 +385,11 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
 
     return (
         <>
-            <AttachmentsProvider cardId={cardId}>
+            <AttachmentsProvider cardId={cardId} setCard={setCard} setCoverLoading={setCoverLoading}
+            >
                 <Dialog
                     open={openCard}
                     onClose={closeCard}
-                    fullWidth
                     maxWidth="md"
                     disableEnforceFocus={false} // vẫn giữ focus bên trong dialog
                     disableEscapeKeyDown={false}
@@ -432,8 +397,8 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                     BackdropProps={{
                         sx: {
                             backgroundColor: "rgba(0,0,0,0.5)",
+                            // backgroundColor: "",
                             backdropFilter: "blur(3px)",
-                            mt: "10px",
                         },
                     }}
 
@@ -444,14 +409,14 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                         },
                         "& .MuiPaper-root": {
                             width: "100%",
-                            maxHeight: "calc(100vh)", // Giới hạn chiều cao để giống Trello
+                            maxHeight: "95vh", // Giới hạn chiều cao tối đa
+                            height: "auto", // Chiều cao tự động theo nội dung
                             margin: "20px",
                             display: "flex",
                             flexDirection: "column",
                             borderRadius: "18px",
                             overflow: "hidden",
                         },
-                        height: "100vh"
                     }}
                 >
 
@@ -465,7 +430,7 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                     padding: "0px",
                                     flexDirection: "column",
                                     overflowY: "auto",
-
+                                    background: "#091e420f",
                                     "&::-webkit-scrollbar": {
                                         width: "6px", // Độ rộng hợp lý cho UI
                                     },
@@ -482,6 +447,7 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                 }}
                             >
                                 {/* Ảnh bìa */}
+
                                 <Box
                                     sx={{
                                         position: "relative",
@@ -491,27 +457,32 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                         backgroundColor: "rgb(150 151 159)"
                                     }}
                                 >
-                                    <Box
-                                        sx={{ display: "flex", justifyContent: "center", cursor: "pointer" }}
-                                        onClick={() =>
-                                            handleOpenPreview(
-                                                "https://wallpapers.com/images/hd/the-wind-rises-1920-x-1080-wallpaper-fouebsfnbvnf3rz4.jpg"
-                                            )
-                                        }
-                                    >
-                                        <LazyLoadImage
-                                            src="https://wallpapers.com/images/hd/the-wind-rises-1920-x-1080-wallpaper-fouebsfnbvnf3rz4.jpg"
-                                            alt="Card Cover"
-                                            effect="blur"
-                                            style={{
-                                                minHeight: '116px',
-                                                width: "100%",
-                                                maxHeight: "160px",
-                                                objectFit: "contain",
-                                                background: 'white',
-                                            }}
-                                        />
-                                    </Box>
+                                    {coverLoading ? (
+                                        <Box sx={{ height: 160, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                            <LogoLoading scale={0.5} />
+                                        </Box>
+                                    ) : (
+                                        <Box
+                                            sx={{ display: "flex", justifyContent: "center", cursor: "pointer" }}
+                                            onClick={() => handleOpenPreview(card?.thumbnail)}
+                                        >
+                                            <LazyLoadImage
+                                                // src="https://wallpapers.com/images/hd/the-wind-rises-1920-x-1080-wallpaper-fouebsfnbvnf3rz4.jpg"
+                                                src={card?.thumbnail}
+                                                alt="Card Cover"
+                                                effect="blur"
+                                                style={{
+                                                    minHeight: '116px',
+                                                    width: "100%",
+                                                    maxHeight: "160px",
+                                                    objectFit: "contain",
+                                                    background: 'white',
+                                                }}
+                                            />
+                                        </Box>
+                                    )}
+
+
 
                                     <CustomButton
                                         sx={{
@@ -756,7 +727,7 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                                     <Box
                                                         sx={{
                                                             borderRadius: "4px",
-                                                            backgroundColor: "#fff",
+                                                            // backgroundColor: "#fff",
                                                             cursor: "pointer",
                                                         }}
                                                         dangerouslySetInnerHTML={{ __html: card?.description }}
@@ -786,7 +757,7 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                             {/* Tệp đính kèm */}
                                             <Box sx={{ width: "100%" }}>
                                                 {/* Attachments section */}
-                                                <AttachmentFolder cardId={cardId} />
+                                                <AttachmentFolder cardId={card?.id} />
                                             </Box>
 
 
@@ -801,126 +772,8 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                             {/* Activity */}
                                             {/* <ActivityFeed /> */}
                                             <Box sx={{ width: "100%" }}>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "6px" }}
-                                                >
-                                                    Bình luận
-                                                </Typography>
 
-                                                {/* Phần viết bình luận */}
-                                                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mb: 2 }}>
-                                                    <Avatar
-                                                        sx={{
-                                                            width: 32,
-                                                            height: 32,
-                                                            bgcolor: 'grey.300',
-                                                            fontSize: '0.8rem',
-                                                            color: 'grey.700',
-                                                            mt: '4px',
-                                                        }}
-                                                    >
-                                                        H
-                                                    </Avatar>
-
-                                                    <Box sx={{ flex: 1 }}>
-                                                        {!isEditingComment ? (
-                                                            <Box
-                                                                sx={{
-                                                                    border: '1px dashed #b0bec5',
-                                                                    padding: '8px 12px',
-                                                                    borderRadius: '8px',
-                                                                    cursor: 'pointer',
-                                                                    color: '#607d8b',
-                                                                    fontSize: '0.9rem',
-                                                                    transition: 'border-color 0.3s ease',
-                                                                    '&:hover': {
-                                                                        borderColor: 'teal',
-                                                                        backgroundColor: 'grey.50',
-                                                                    },
-                                                                    '&:focus-within': {
-                                                                        borderColor: 'primary.main',
-                                                                        outline: 'none',
-                                                                    },
-                                                                }}
-                                                                onClick={handleCommentClick}
-                                                            >
-                                                                <Typography variant="body1" sx={{ color: '#607d8b' }}>
-                                                                    Viết bình luận...
-                                                                </Typography>
-                                                            </Box>
-                                                        ) : (
-                                                            <CommentEditor
-                                                                value={comment}
-                                                                onChange={setComment}
-                                                                onSave={handleSaveComment}
-                                                                onCancel={() => {
-                                                                    setIsEditingComment(false);
-                                                                    setComment("");
-                                                                }}
-                                                                isSaveDisabled={isEmptyHTML(comment)}
-                                                                isLoading={isSubmittingComment}
-                                                                editorHeight="100px"
-                                                                minHeight="60px"
-                                                            />
-                                                        )}
-                                                    </Box>
-                                                </Box>
-
-                                                {/* Danh sách comment đã gửi */}
-                                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                                    {comments?.map((cmt) => (
-                                                        <Box
-                                                            key={cmt.id}
-                                                            sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
-                                                        >
-                                                            {/* Avatar bên trái */}
-                                                            <Avatar
-                                                                sx={{
-                                                                    width: 32,
-                                                                    height: 32,
-                                                                    bgcolor: 'grey.300',
-                                                                    fontSize: '0.8rem',
-                                                                    color: 'grey.700',
-                                                                }}
-                                                            >
-                                                                {cmt.author.name?.charAt(0)}
-                                                            </Avatar>
-
-                                                            {/* Nội dung comment */}
-                                                            <Box sx={{ flex: 1 }}>
-                                                                <Box>
-                                                                    {/* Header: Tên + thời gian */}
-                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                                                            {cmt.author.name}
-                                                                        </Typography>
-                                                                        <Typography variant="caption" sx={{ color: 'gray' }}>
-                                                                            {/* Giả định bạn có trường created_at dạng ISO date */}
-                                                                            {dayjs(cmt.created_at).fromNow()} {/* ví dụ: 2 phút trước */}
-                                                                        </Typography>
-                                                                    </Box>
-
-                                                                    {/* Nội dung comment */}
-                                                                    <Box
-                                                                        sx={{
-                                                                            fontSize: "0.9rem", color: "#172b4d",
-                                                                            backgroundColor: '#f4f5f7',
-                                                                            padding: '10px 14px',
-                                                                            borderRadius: '12px',
-                                                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                                                                        }}
-                                                                        dangerouslySetInnerHTML={{ __html: cmt.content }}
-                                                                    />
-                                                                    <Box>
-                                                                        <span>xóa</span>
-                                                                        <span>sửa</span>
-                                                                    </Box>
-                                                                </Box>
-                                                            </Box>
-                                                        </Box>
-                                                    ))}
-                                                </Box>
+                                                <CommentSection />
                                             </Box>
 
                                         </Box>
@@ -1061,7 +914,7 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
 
                     )}
                 </Dialog >
-            </AttachmentsProvider>
+            </AttachmentsProvider >
 
         </>
     );

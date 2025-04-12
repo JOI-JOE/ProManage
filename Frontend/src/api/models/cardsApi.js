@@ -99,6 +99,14 @@ export const putMemberToCard = async (cardId, memberId) => {
   );
   return data;
 };
+// Sửa thông tin của attachment
+export const putAttachment = async (attachmentId, data) => {
+  const response = await authClient.put(
+    `/card/attachment/${attachmentId}`,
+    data
+  );
+  return response.data; // Return only the data for consistency
+};
 //fucntion delete
 // Bỏ ra
 export const removeMemberFromCard = async (cardId, memberId) => {
@@ -107,9 +115,17 @@ export const removeMemberFromCard = async (cardId, memberId) => {
   );
   return data;
 };
+// Attachment
+export const removeAttachment = async (attachmentId) => {
+  const response = await authClient.delete(
+    `/card/attachment/${attachmentId}`,
+    data
+  );
+  return response.data;
+};
 // checklist
 export const removeCheckListFromCard = async (checklistId) => {
-  const { data } = await authClient.delete(`/checklist/${checklistId}`);
+  const { data } = await authClient.delete(`card/checklist/${checklistId}`);
   return data;
 };
 // checklistitem

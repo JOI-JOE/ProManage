@@ -15,14 +15,18 @@ import {
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import PanoramaIcon from '@mui/icons-material/Panorama';
 import { useAttachments } from '../../../../../../../contexts/AttachmentsContext'; // Adjust path
+import LogoLoading from "../../../../../../../components/LogoLoading";
 
 const FileItem = ({ file, handleOpen, onCreateCover }) => {
-    const { handleDeleteFile, handleEditFile } = useAttachments();
+    const { handleDeleteFile, handleEditFile, handleEditCover } = useAttachments();
+    const [loading, setLoading] = useState(false);
+    const [loadingCover, setLoadingCover] = useState(false); // Thêm trạng thái cho cover
 
     // Check file type
     const fileExt = file.path_url.match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase() || "default";
-    const imageTypes = ["jpg", "jpeg", "png", "webp", "gif"];
+    const imageTypes = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
     const isImage = imageTypes.includes(fileExt);
 
     // Define icons for different file types
@@ -102,15 +106,27 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
     };
 
     // Handle Edit action
-    const handleEditClick = () => {
+    const handleEditClick = async () => {
         setNewFileName(file.file_name_defaut || "");
         setOpenEditDialog(true);
         handleMenuClose();
     };
 
-    const handleEditConfirm = () => {
-        handleEditFile(file.id, newFileName); // Call the handleEditFile from context
-        setOpenEditDialog(false);
+    const handleEditConfirm = async () => {
+        if (loading || newFileName.trim() === file.file_name_defaut?.trim()) {
+            setOpenEditDialog(false);
+            return;
+        }
+        setLoading(true);
+
+        try {
+            await handleEditFile(file.id, newFileName.trim());
+            setOpenEditDialog(false);
+        } catch (error) {
+            console.error("Lỗi cập nhật:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleEditCancel = () => {
@@ -120,17 +136,32 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
     // Handle Download action
     const handleDownloadClick = () => {
         console.log('Download', file);
-        window.open(file.path_url, '_blank'); // Open file URL in a new tab for download
+        window.open(file.path_url, '_blank');
         handleMenuClose();
     };
 
-    // Handle Create Cover action
-    const handleCreateCoverClick = () => {
-        if (onCreateCover) {
-            onCreateCover(file); // Call the onCreateCover prop to handle cover creation logic
+    // Handle Create/Remove Cover action
+    const handleCoverActionClick = async () => {
+        if (loadingCover) return; // Ngăn spam khi đang loading
+
+        const newIsCover = !file.is_cover;
+        if (file.is_cover === newIsCover) {
+            console.log('No change in cover state, skipping API call');
+            handleMenuClose();
+            return;
         }
-        console.log('Create cover', file);
-        handleMenuClose();
+
+        setLoadingCover(true); // Bật loading
+        try {
+            await handleEditCover(file.id, newIsCover);
+            console.log(newIsCover ? '✅ Set as cover' : '✅ Removed cover', file);
+            handleMenuClose(); // Đóng menu sau khi thành công
+        } catch (error) {
+            console.error('❌ Error updating cover:', error);
+        } finally {
+            setLoadingCover(false); // Tắt loading
+            handleMenuClose(); // Đóng menu sau khi thành công
+        }
     };
 
     return (
@@ -138,14 +169,18 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
             <ListItem
                 sx={{
                     p: 0.5,
-                    bgcolor: 'white',
-                    borderRadius: 1,
+                    borderRadius: "8px",
                     mb: 0.5,
                     border: '1px solid #dfe1e6',
                     cursor: isImage ? "pointer" : "default",
                     alignItems: 'flex-start',
                     position: 'relative',
                     pr: 6,
+                    transition: "background-color 0.3s ease-in-out",
+                    backgroundColor: "#DFE1E6",
+                    "&:hover": {
+                        backgroundColor: "#EBECF0",
+                    },
                 }}
                 onClick={handleClick}
                 secondaryAction={
@@ -156,7 +191,7 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
                         transform: 'translateY(-50%)',
                         display: 'flex',
                         alignItems: 'center',
-                        bgcolor: 'background.paper',
+                        // bgcolor: 'background.paper',
                         pl: 1,
                     }}>
                         {isImage && (
@@ -223,13 +258,15 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
                 </Box>
 
                 {/* File content */}
-                <Box sx={{
-                    flex: 1,
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    py: 0.5,
-                    pr: 2,
-                }}>
+                <Box
+                    sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        py: 0.5,
+                        pr: 3,
+                    }}
+                >
                     <Typography
                         sx={{
                             fontWeight: "500",
@@ -246,18 +283,22 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
                     >
                         {file.file_name_defaut || "Không có tên"}
                     </Typography>
+
                     <Typography
                         variant="body2"
-                        color="textSecondary"
                         sx={{
-                            fontSize: "12px",
-                            color: "#5e6c84",
+                            fontSize: '12px',
+                            color: '#5e6c84',
                             mt: 0.5,
                         }}
                     >
-                        {file.addedTime || file.created_at
-                            ? `Đã thêm ${file.addedTime || formatDate(file.created_at)}`
-                            : 'Đã thêm vừa xong'}
+                        {`Đã thêm ${file.addedTime || formatDate(file.created_at)}`}
+                        {file.is_cover && (
+                            <>
+                                <PanoramaIcon sx={{ fontSize: '14px', ml: 1, verticalAlign: 'middle' }} />
+                                • Ảnh bìa
+                            </>
+                        )}
                     </Typography>
                 </Box>
             </ListItem>
@@ -275,18 +316,40 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
                     },
                 }}
             >
-                <MenuItem onClick={handleEditClick} sx={{ fontSize: '14px', py: 0.7 }}>
-                    Sửa
-                </MenuItem>
-                <MenuItem onClick={handleDownloadClick} sx={{ fontSize: '14px', py: 0.7 }}>
-                    Tải xuống
-                </MenuItem>
-                <MenuItem onClick={handleCreateCoverClick} sx={{ fontSize: '14px', py: 0.7 }}>
-                    Tạo ảnh bìa
-                </MenuItem>
-                <MenuItem onClick={handleDeleteClick} sx={{ fontSize: '14px', py: 0.7, color: '#FF5630' }}>
-                    Xoá
-                </MenuItem>
+                <Box
+                    sx={{
+                        pointerEvents: loadingCover ? 'none' : 'auto',
+                        opacity: loadingCover ? 0.6 : 1,
+                    }}
+                >
+                    <MenuItem onClick={handleEditClick} sx={{ fontSize: '14px', py: 0.7 }}>
+                        Sửa
+                    </MenuItem>
+
+                    <MenuItem onClick={handleDownloadClick} sx={{ fontSize: '14px', py: 0.7 }}>
+                        Tải xuống
+                    </MenuItem>
+
+                    {isImage && (
+                        <MenuItem
+                            onClick={handleCoverActionClick}
+                            sx={{ fontSize: '14px', py: 0.7 }}
+                        >
+                            {loadingCover ? (
+                                <LogoLoading scale={0.3} />
+                            ) : (
+                                file.is_cover ? "Loại bỏ ảnh bìa" : "Tạo ảnh bìa"
+                            )}
+                        </MenuItem>
+                    )}
+
+                    <MenuItem
+                        onClick={handleDeleteClick}
+                        sx={{ fontSize: '14px', py: 0.7, color: '#FF5630' }}
+                    >
+                        Xoá
+                    </MenuItem>
+                </Box>
             </Menu>
 
             {/* Delete Confirmation Dialog */}
@@ -362,25 +425,44 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
                                 fontSize: "14px",
                             },
                             "& .MuiInputLabel-root": {
-                                color: "#1f2937", // Màu label
+                                color: "#1f2937",
                                 fontSize: "14px",
                             },
                             "& .MuiInputLabel-root.Mui-focused": {
-                                color: "#1f2937", // Màu khi focus
+                                color: "#1f2937",
                             },
+                            width: "400px"
                         }}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleEditCancel} sx={{ color: "#5e6c84" }}>
-                        Hủy
-                    </Button>
-                    <Button
-                        onClick={handleEditConfirm}
-                        sx={{ bgcolor: "#1976d2", color: "white", "&:hover": { bgcolor: "#1565c0" } }}
-                    >
-                        Cập nhật
-                    </Button>
+                    {loading ? (
+                        <Box sx={{ ml: 1 }}>
+                            <LogoLoading scale={0.3} />
+                        </Box>
+                    ) : (
+                        <>
+                            <Button onClick={handleEditCancel} sx={{ color: "#5e6c84" }}>
+                                Hủy
+                            </Button>
+                            <Button
+                                onClick={handleEditConfirm}
+                                sx={{
+                                    bgcolor: "#1976d2",
+                                    color: "white",
+                                    minWidth: 100,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    "&:hover": {
+                                        bgcolor: "#1565c0",
+                                    },
+                                }}
+                            >
+                                Cập nhật
+                            </Button>
+                        </>
+                    )}
                 </DialogActions>
             </Dialog>
         </>

@@ -140,25 +140,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::controller(ChecklistController::class)->group(function () {
             Route::get('/{cardId}/checklists', 'index'); // Lấy danh sách checklist của 1 card
             Route::post('/{cardId}/checklists', 'store'); // Tạo checklist mới cho 1 card
+            Route::delete('/checklist/{checklistItemId}',   'delete');
         });
         Route::controller(AttachmentController::class)->group(function () {
             Route::get('/{cardId}/attachments', 'index');
             Route::post('/{cardId}/attachments', 'store');
+            Route::put('/attachment/{attachmentId}', 'update');
+            Route::delete('/attachment/{attachmentId}', 'delete');
+        });
+
+        Route::controller(CommentCardController::class)->group(function () {
+            Route::get('/{cardId}/comments', 'index');
         });
     });
-
-    Route::delete('checklist/{checklistItemId}',  [ChecklistController::class, 'delete']);
-
     Route::prefix('checklist')->controller(ChecklistItemController::class)->group(function () {
         Route::post('/{checklistId}/items',  'store');
         Route::put('/{checklistItemId}/items',  'update');
         Route::delete('/{checklistItemId}/items',  'delete');
     });
-
-    // Route::controller(ChecklistItemController::class)->group(function () {
-    //     Route::prefix('attac')
-    // });
-
 
     // Route::controller(CardController::class)->group(function () {
     //     Route::prefix('card')->group(function () {
