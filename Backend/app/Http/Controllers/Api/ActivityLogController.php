@@ -25,24 +25,30 @@ class ActivityLogController extends Controller
     public function getMyActivities()
     {
         $user = Auth::user();
-
+    
         if (!$user) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Người dùng chưa được xác thực.'
             ], 401);
         }
-
-        $activities = Activity::where('causer_id', $user->id)
+    
+        $activities = Activity::where(function ($query) use ($user) {
+                $query->where('causer_id', $user->id)
+                    ->orWhereJsonContains('properties->user_id', $user->id)
+                    ->orWhereJsonContains('properties->full_name', $user->id); // nếu bạn lưu mảng members
+            })
             ->orderBy('updated_at', 'desc')
+            ->with(['causer']) // load người thực hiện
             ->get();
-
+    
         return response()->json([
             'status' => 'success',
-            'message' => 'Danh sách activity logs của bạn',
+            'message' => 'Danh sách activity liên quan đến bạn',
             'activities' => $activities
         ], 200);
     }
+    
 
 
 }

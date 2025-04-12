@@ -15,11 +15,23 @@ export const useActivityByCardId = (cardId) => {
   });
 };
 
-export const useActivitiesByUser = () => {
+// export const useActivitiesByUser = () => {
 
+//   return useQuery({
+//     queryKey: ["activities", "me"],
+//     queryFn: getActivityByUser,
+//   });
+// };
+
+export const useActivitiesByUser = () => {
   return useQuery({
-    queryKey: ["activities", "me"],
-    queryFn: getActivityByUser,
+    queryKey: ["activities"],
+    queryFn: async () => {
+      const res = await getActivityByUser();
+      return res.activities || [];
+    },
+    staleTime: 1000 * 60 * 5,  // cache 5 phút
+    cacheTime: 1000 * 60 * 30, // giữ cache 30 phút
   });
 };
 

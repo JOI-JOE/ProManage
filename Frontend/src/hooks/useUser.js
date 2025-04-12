@@ -148,7 +148,7 @@ export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data) => updateUserProfile(null, data), // ID không còn cần nữa
+    mutationFn: (data) => updateUserProfile(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userProfile"], exact: true });
     },

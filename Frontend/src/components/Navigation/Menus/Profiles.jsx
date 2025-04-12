@@ -23,26 +23,20 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
 import { useMe } from "../../../contexts/MeContext";
+import { Link } from 'react-router-dom';
 
-export default function ProfileMenu({ email }) {
+
+export default function ProfileMenu({ email, user_name }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
   const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
   const [selectedTheme, setSelectedTheme] = React.useState("system");
   const [workspaceType, setWorkspaceType] = React.useState("");
 
-  const { user } = useMe();
+  // const {data: user } = useMe();
 
-  const goToProfile = () => {
-    if (user?.user_name) {
-      navigate(`/u/${user?.user_name}`);
-    }
-  };
-  const goToActivity = () => {
-    if (user?.user_name) {
-      navigate(`/u/${user?.user_name}/activity`);
-    }
-  };
+  // console.log(user);
+
   const goToCard = () => {
     if (user?.user_name) {
       navigate(`/u/${user?.user_name}/cards`);
@@ -140,11 +134,15 @@ export default function ProfileMenu({ email }) {
         >
           ProManage
         </Typography>
-        <MenuItem onClick={goToProfile}>
+        <MenuItem component={Link} to={`/u/${user_name}`}>
           Hồ sơ và Hiển thị
         </MenuItem>
-        <MenuItem onClick={goToActivity}>Hoạt động</MenuItem>
-        <MenuItem onClick={goToCard}>Thẻ</MenuItem>
+        <MenuItem component={Link} to={`/u/${user_name}/activity`}>
+          Hoạt động
+        </MenuItem>
+        <MenuItem component={Link} to={`/u/${user_name}/cards`}>
+          Thẻ
+        </MenuItem>
         <MenuItem>Cài đặt</MenuItem>
         <MenuItem onClick={handleThemeClick}>
           Chủ đề <ArrowRightIcon fontSize="small" sx={{ ml: "auto" }} />

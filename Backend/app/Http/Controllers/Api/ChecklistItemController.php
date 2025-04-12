@@ -138,7 +138,11 @@ class ChecklistItemController extends Controller
                     'checklist_id' => $item->checklist_id,
                     'item_title' => $item->name,
                     'status' => $statusText,
-                ])
+                    'card_id' => $card->id,
+                    'card_title' => $card->title, // thêm dòng này
+                    'board_id' => $card->list->board->id, // thêm dòng này
+                    'board_name' => $card->list->board->name,
+                    ])
                 ->log("{$user_name} đã đánh dấu {$item->name} là {$statusText} ở thẻ này");
 
             // Tính phần trăm hoàn thành của checklist chứa item này
