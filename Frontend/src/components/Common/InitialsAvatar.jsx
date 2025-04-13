@@ -10,25 +10,35 @@ const getInitials = (name) => {
 };
 
 // Dùng forwardRef để hỗ trợ ref từ Tooltip
-const InitialsAvatar = React.forwardRef(({ name, avatarSrc, size = 22, initial, ...props }, ref) => {
-  const initials = initial || getInitials(name);
+const InitialsAvatar = React.forwardRef(
+  ({ name, avatarSrc, size = 22, initial, ...props }, ref) => {
+    let displayContent = "Ω";
 
-  return (
-    <Tooltip title={name || "Không tên"}>
-      <Avatar
-        ref={ref}
-        sx={{
-          width: size,
-          height: size,
-          fontSize: "0.6rem",
-        }}
-        src={avatarSrc || ""}
-        {...props}
-      >
-        {initials}
-      </Avatar>
-    </Tooltip>
-  );
-});
+    if (avatarSrc) {
+      displayContent = null; // ảnh sẽ được hiển thị qua src
+    } else if (initial) {
+      displayContent = initial;
+    } else if (name) {
+      displayContent = getInitials(name);
+    }
+
+    return (
+      <Tooltip title={name || "Không tên"}>
+        <Avatar
+          ref={ref}
+          sx={{
+            width: size,
+            height: size,
+            fontSize: "0.6rem",
+          }}
+          src={avatarSrc || ""}
+          {...props}
+        >
+          {displayContent}
+        </Avatar>
+      </Tooltip>
+    );
+  }
+);
 
 export default InitialsAvatar;

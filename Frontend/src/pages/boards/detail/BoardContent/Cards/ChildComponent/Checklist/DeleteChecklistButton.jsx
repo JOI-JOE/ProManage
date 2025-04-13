@@ -34,7 +34,7 @@ const DeleteChecklistButton = ({ checklistId, handleDeleteChecklist }) => {
 
             <Dialog open={open} onClose={handleCloseDialog}>
                 <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="h6">Xóa Việc cần làm?</Typography>
+                    <Typography variant="body1">Xóa Việc cần làm?</Typography>
                     <IconButton onClick={handleCloseDialog}>
                         <CloseIcon />
                     </IconButton>

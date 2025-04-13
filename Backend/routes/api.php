@@ -128,6 +128,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/', 'store');
         Route::get('/{cardId}', 'show');
         Route::put('/{cardId}', 'update');
+        Route::delete('/{cardId}', 'destroy');
     });
     Route::prefix('card')->group(function () {
         // Card Member
@@ -136,10 +137,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('/{cardId}/idMember/{memberId}', 'store');
             Route::delete('/{cardId}/idMember/{memberId}', 'remove');
         });
-        // Checklist
+    // Checklist
         Route::controller(ChecklistController::class)->group(function () {
             Route::get('/{cardId}/checklists', 'index'); // Lấy danh sách checklist của 1 card
             Route::post('/{cardId}/checklists', 'store'); // Tạo checklist mới cho 1 card
+            Route::put('/checklist/{checklistItemId}',   'update');
             Route::delete('/checklist/{checklistItemId}',   'delete');
         });
         Route::controller(AttachmentController::class)->group(function () {
@@ -151,6 +153,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         Route::controller(CommentCardController::class)->group(function () {
             Route::get('/{cardId}/comments', 'index');
+            Route::post('/{cardId}/comments', 'store');
+            Route::put('/comment/{commentId}',  'update');
+            Route::delete('/comment/{commentId}',  'delete');
         });
     });
     Route::prefix('checklist')->controller(ChecklistItemController::class)->group(function () {

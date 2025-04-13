@@ -1,115 +1,112 @@
 import React, { useState } from 'react';
-import { Box, Typography, Avatar } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import CommentEditor from '../EditorForm';
+import { useCommentContext } from '../../../../../../../contexts/CommentContext';
+import { useMe } from '../../../../../../../contexts/MeContext';
+import InitialsAvatar from '../../../../../../../components/Common/InitialsAvatar';
+import LogoLoading from '../../../../../../../components/LogoLoading';
 
 dayjs.extend(relativeTime);
 
 const CommentSection = () => {
+    const { user } = useMe();
+    const { comments, handleAddComment, handleUpdateComment, handleDeleteComment, isSubmittingComment, isLoading } = useCommentContext();
     const [isEditingComment, setIsEditingComment] = useState(false);
     const [comment, setComment] = useState('');
-    const [comments, setComments] = useState([]); // State để lưu danh sách comments
-    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
     const [error, setError] = useState(null);
-    const [editingCommentId, setEditingCommentId] = useState(null); // State để theo dõi comment đang được chỉnh sửa
-    const [editContent, setEditContent] = useState(''); // State để lưu nội dung comment đang chỉnh sửa
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editContent, setEditContent] = useState('');
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [commentToDelete, setCommentToDelete] = useState(null);
 
-    // Mock currentUser cho demo (thay bằng dữ liệu thực tế trong ứng dụng)
-    const currentUser = {
-        id: 'user1',
-        name: 'Nguyen Van A',
-    };
+    const currentUser = user;
 
     const handleCommentClick = () => {
         setIsEditingComment(true);
         setError(null);
-        setEditingCommentId(null); // Reset khi thêm comment mới
-        setComment(''); // Reset nội dung comment khi mở editor để thêm mới
+        setEditingCommentId(null);
+        setComment('');
     };
 
     const handleSaveComment = async () => {
-        if (isEmptyHTML(comment)) {
-            setError('Bình luận không được để trống');
-            return;
-        }
-
-        setIsSubmittingComment(true);
         setError(null);
-
         try {
-            // Thêm comment mới
-            const newComment = {
-                id: Date.now().toString(), // ID tạm thời
-                author: {
-                    id: currentUser.id,
-                    name: currentUser.name || 'Anonymous',
-                },
-                content: comment,
-                created_at: new Date().toISOString(),
-                isEdited: false,
-                isImage: false,
-            };
-
-            setComments((prevComments) => [...prevComments, newComment]);
-
-            // Reset form
+            await handleAddComment(comment);
             setComment('');
             setIsEditingComment(false);
         } catch (err) {
             setError(err.message || 'Đã có lỗi xảy ra khi thêm bình luận');
-        } finally {
-            setIsSubmittingComment(false);
         }
     };
 
     const handleSaveEditComment = async (commentId) => {
-        if (isEmptyHTML(editContent)) {
-            setError('Bình luận không được để trống');
+        setError(null);
+        if (!commentId) {
+            setError('Không tìm thấy ID bình luận để chỉnh sửa');
             return;
         }
 
-        setIsSubmittingComment(true);
-        setError(null);
+        // Tìm bình luận hiện tại
+        const currentComment = comments.find((comment) => comment.id === commentId);
+        if (!currentComment) {
+            setError('Bình luận không tồn tại');
+            return;
+        }
+
+        // So sánh nội dung mới với nội dung cũ
+        if (currentComment.content === editContent) {
+        setEditingCommentId(null);
+            setEditContent('');
+            return; // Không gọi API nếu nội dung không thay đổi
+        }
 
         try {
-            setComments((prevComments) =>
-                prevComments.map((c) =>
-                    c.id === commentId
-                        ? {
-                            ...c,
-                            content: editContent,
-                            isEdited: true,
-                            created_at: new Date().toISOString(),
-                        }
-                        : c
-                )
-            );
-
-            // Reset sau khi chỉnh sửa
+            await handleUpdateComment(commentId, editContent);
             setEditingCommentId(null);
             setEditContent('');
         } catch (err) {
             setError(err.message || 'Đã có lỗi xảy ra khi chỉnh sửa bình luận');
-        } finally {
-            setIsSubmittingComment(false);
         }
     };
 
-    const handleDeleteComment = (commentId) => {
-        setComments((prevComments) => prevComments.filter((c) => c.id !== commentId));
-    };
-
     const handleEditComment = (comment) => {
-        setEditingCommentId(comment.id); // Đặt ID của comment đang chỉnh sửa
-        setEditContent(comment.content); // Tải nội dung comment cũ để chỉnh sửa
+        if (!comment?.id) {
+            setError('Không tìm thấy ID bình luận để chỉnh sửa');
+            return;
+        }
+        setEditingCommentId(comment.id);
+        setEditContent(comment.content);
+        setError(null);
     };
 
     const handleCancelEdit = () => {
         setEditingCommentId(null);
         setEditContent('');
         setError(null);
+    };
+
+    const handleOpenDeleteDialog = (comment) => {
+        setCommentToDelete(comment);
+        setOpenDeleteDialog(true);
+    };
+
+    const handleDeleteCancel = () => {
+        setOpenDeleteDialog(false);
+        setCommentToDelete(null);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (commentToDelete) {
+            try {
+                await handleDeleteComment(commentToDelete.id);
+                setOpenDeleteDialog(false);
+                setCommentToDelete(null);
+            } catch (err) {
+                setError(err.message || 'Đã có lỗi xảy ra khi xóa bình luận');
+            }
+        }
     };
 
     const isEmptyHTML = (html) => {
@@ -129,18 +126,17 @@ const CommentSection = () => {
 
             {/* Comment input area */}
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2 }}>
-                <Avatar
+                <InitialsAvatar
                     sx={{
-                        width: 32,
-                        height: 32,
-                        bgcolor: 'grey.300',
+                        width: '32px',
                         fontSize: '0.8rem',
-                        color: 'grey.700',
-                        mt: '4px',
+                        height: '32px',
                     }}
-                >
-                    {currentUser.name?.charAt(0) || 'A'}
-                </Avatar>
+                    size={'32px'}
+                    initials={currentUser?.initials}
+                    name={currentUser?.full_name}
+                    avatarSrc={currentUser?.image}
+                />
 
                 <Box sx={{ flex: 1 }}>
                     {error && (
@@ -189,32 +185,36 @@ const CommentSection = () => {
             </Box>
 
             {/* Comments list */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {comments.map((comment) => (
-                    <Box
-                        key={comment.id}
-                        sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
-                    >
-                        <Avatar
-                            sx={{
-                                width: 32,
-                                height: 32,
-                                bgcolor: 'grey.300',
-                                fontSize: '0.8rem',
-                                color: 'grey.700',
-                            }}
+            {isLoading ? (
+                <Typography variant="body2" sx={{ color: '#5e6c84' }}>
+                    Đang tải bình luận...
+                </Typography>
+            ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {comments.map((comment) => (
+                        <Box
+                            key={comment.id}
+                            sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
                         >
-                            {comment.author.name?.charAt(0) || 'A'}
-                        </Avatar>
+                            <InitialsAvatar
+                                sx={{
+                                    width: '32px',
+                                    fontSize: '0.8rem',
+                                    height: '32px',
+                                }}
+                                size={'32px'}
+                                initials={comment?.member?.initials}
+                                name={comment?.member?.full_name}
+                                avatarSrc={comment?.member?.avatar}
+                            />
 
-                        <Box sx={{ flex: 1 }}>
-                            <Box>
+                            <Box sx={{ flex: 1 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.2 }}>
                                     <Typography
                                         variant="subtitle2"
                                         sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#172b4d' }}
                                     >
-                                        {comment.author.name}
+                                        {comment?.member?.full_name}
                                     </Typography>
 
                                     <Typography
@@ -227,17 +227,14 @@ const CommentSection = () => {
                                     {comment.isEdited && (
                                         <Typography
                                             variant="caption"
-                                            sx={{ color: '#6b778c', fontSize: '0.75rem', display: 'flex', alignItems: 'center' }}
+                                            sx={{ color: '#6b778c', fontSize: '0.75rem' }}
                                         >
-                                            {/* icon chỉnh sửa nhỏ */}
                                             • (đã sửa)
                                         </Typography>
                                     )}
                                 </Box>
 
-
-                                {/* Ẩn nội dung comment khi đang chỉnh sửa */}
-                                {editingCommentId !== comment.id && (
+                                {editingCommentId !== comment.id ? (
                                     <>
                                         <Box
                                             sx={{
@@ -251,54 +248,55 @@ const CommentSection = () => {
                                                 wordBreak: 'break-word',
                                                 border: '1px solid #dfe1e6',
                                             }}
-                                            dangerouslySetInnerHTML={{ __html: comment.content }}
+                                            dangerouslySetInnerHTML={{ __html: comment?.content }}
                                         />
 
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 0.5 }}>
-                                            {currentUser.id === comment.author.id && (
-                                                <>
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{
-                                                            color: '#5e6c84',
-                                                            cursor: 'pointer',
-                                                            '&:hover': {
-                                                                textDecoration: 'underline',
-                                                            },
-                                                            fontSize: '12px',
-                                                        }}
-                                                        onClick={() => handleEditComment(comment)}
-                                                    >
-                                                        • Chỉnh sửa
-                                                    </Typography>
+                                        {currentUser?.id === comment?.member?.id && (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 0.5 }}>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: '#5e6c84',
+                                                        cursor: 'pointer',
+                                                        '&:hover': {
+                                                            textDecoration: 'underline',
+                                                        },
+                                                        fontSize: '12px',
+                                                    }}
+                                                    onClick={() => handleEditComment(comment)}
+                                                >
+                                                    Chỉnh sửa
+                                                </Typography>
 
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{
-                                                            color: '#5e6c84',
-                                                            cursor: 'pointer',
-                                                            '&:hover': {
-                                                                textDecoration: 'underline',
-                                                            },
-                                                            fontSize: '12px',
-                                                        }}
-                                                        onClick={() => handleDeleteComment(comment.id)}
-                                                    >
-                                                        • Xóa
-                                                    </Typography>
-                                                </>
-                                            )}
-                                        </Box>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: '#5e6c84',
+                                                        cursor: 'pointer',
+                                                        '&:hover': {
+                                                            textDecoration: 'underline',
+                                                        },
+                                                        fontSize: '12px',
+                                                    }}
+                                                    onClick={() => handleOpenDeleteDialog(comment)}
+                                                >
+                                                    Xóa
+                                                </Typography>
+                                            </Box>
+                                        )}
                                     </>
-                                )}
-
-                                {/* Hiển thị CommentEditor khi đang chỉnh sửa comment này */}
-                                {editingCommentId === comment.id && (
+                                ) : (
                                     <Box sx={{ mt: 2 }}>
                                         <CommentEditor
                                             value={editContent}
                                             onChange={setEditContent}
-                                            onSave={() => handleSaveEditComment(comment.id)}
+                                            onSave={() => {
+                                                if (!comment?.id) {
+                                                    setError("Không tìm thấy ID bình luận để chỉnh sửa");
+                                                    return;
+                                                }
+                                                handleSaveEditComment(comment.id);
+                                            }}
                                             onCancel={handleCancelEdit}
                                             isSaveDisabled={isEmptyHTML(editContent) || isSubmittingComment}
                                             isLoading={isSubmittingComment}
@@ -309,9 +307,67 @@ const CommentSection = () => {
                                 )}
                             </Box>
                         </Box>
-                    </Box>
-                ))}
-            </Box>
+                    ))}
+                </Box>
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={openDeleteDialog}
+                onClose={handleDeleteCancel}
+                maxWidth="xs"
+                fullWidth
+                sx={{
+                    "& .MuiPaper-root": {
+                        borderRadius: "8px",
+                        padding: "16px",
+                    }
+                }}
+            >
+                <DialogTitle sx={{ p: 0, fontSize: "16px", fontWeight: 500 }}>
+                    Xác nhận xóa
+                </DialogTitle>
+
+                <DialogContent sx={{ p: 0, mt: 2 }}>
+                    <Typography variant="body2">
+                        Bạn có chắc chắn muốn xóa bình luận này?
+                    </Typography>
+                </DialogContent>
+
+                <DialogActions sx={{ p: 0, mt: 3 }}>
+                    <Button
+                        onClick={handleDeleteCancel}
+                        sx={{
+                            color: "#42526E",
+                            textTransform: "none",
+                            fontWeight: 500,
+                        }}
+                    >
+                        Hủy
+                    </Button>
+                    {isSubmittingComment ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', px: 2 }}>
+                            <LogoLoading scale={0.4} />
+                        </Box>
+                    ) : (
+                        <Button
+                            onClick={handleDeleteConfirm}
+                            variant="contained"
+                            sx={{
+                                backgroundColor: "#FF5630",
+                                color: "white",
+                                textTransform: "none",
+                                fontWeight: 500,
+                                "&:hover": {
+                                    backgroundColor: "#DE350B",
+                                }
+                            }}
+                        >
+                            Xóa
+                        </Button>
+                    )}
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

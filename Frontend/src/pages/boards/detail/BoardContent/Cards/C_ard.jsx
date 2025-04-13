@@ -27,6 +27,7 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import { useBoard } from "../../../../../contexts/BoardContext";
 import InitialsAvatar from "../../../../../components/Common/InitialsAvatar";
 import Card_detail from "./Card_detail";
+import { CardProvider } from "../../../../../contexts/CardContext";
 
 const CardMetaItem = ({ icon, text, tooltip }) => {
   const content = (
@@ -74,8 +75,6 @@ const C_ard = ({ card }) => {
     );
   }, [members, card?.membersId]);
 
-  console.log(membersInCard)
-
   useEffect(() => {
     if (card?.badges) {
       setBadges({
@@ -96,6 +95,10 @@ const C_ard = ({ card }) => {
 
   // Mở modal
   const handleOpenCard = () => {
+    if (card?.id.startsWith("Optimistic_card_")) {
+      console.log("Không thể mở thẻ giả");
+      return; // Không mở card nếu là ID giả
+    }
     setOpen(true);
   };
 
@@ -113,8 +116,10 @@ const C_ard = ({ card }) => {
     isDragging,
   } = useSortable({
     id: card.id, data: card,
-    disabled: open,
+    disabled: open || card?.id.startsWith("Optimistic_card_"), // Vô hiệu hóa khi là ID giả
   });
+
+
 
   const cardStyle = {
     transform: transform ? CSS.Translate.toString(transform) : "none",
@@ -328,7 +333,7 @@ const C_ard = ({ card }) => {
 
             </CardContent>
           </CardActionArea>
-      </Box>
+        </Box>
       </Card>
       <Dialog
         open={open}
@@ -341,11 +346,14 @@ const C_ard = ({ card }) => {
         disableEscapeKeyDown={false} // cho phép ESC để đóng
         hideBackdrop={false} // đảm bảo có backdrop
       >
-        <Card_detail
-          cardId={card?.id}
-          closeCard={handleCloseCard}
-          openCard={open}
-        />
+
+        <CardProvider cardId={card?.id}>
+          <Card_detail
+            cardId={card?.id}
+            closeCard={handleCloseCard}
+            openCard={open}
+          />
+        </CardProvider>
         {/* <CardModal
           cardId={card?.id}
         /> */}

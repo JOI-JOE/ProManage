@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// LabelsPopover.jsx - Fixed logic
+import React, { useState, useCallback } from 'react';
 import {
     Popover,
     Typography,
@@ -20,44 +21,91 @@ const predefinedLabels = [
     { id: 4, color: '#ffcdd2', name: '', selected: false }, // Light red/pink
     { id: 5, color: '#f44336', name: '', selected: false }, // Red
     { id: 6, color: '#9c7df5', name: '', selected: false }, // Purple
-    { id: 7, color: '#42a5f5', name: 'alskfllaskfl;a;lfkkkkkkkkkk...', selected: true }, // Blue
+    { id: 7, color: '#42a5f5', name: 'alskfllaskfl;a;lfkkkkkkkkkk...', selected: false }, // Blue
 ];
 
-const LabelsPopover = ({ anchorEl, open, onClose, cardId }) => {
-    const [labels, setLabels] = useState(predefinedLabels);
+const LabelsPopover = ({ anchorEl, open, onClose, cardId, onLabelsChange, initialLabels = [] }) => {
+    // Initialize labels state with memoized function
+    const [labels, setLabels] = useState(() => {
+        const initialLabelIds = new Set(initialLabels.map(label => label.id));
+
+        return predefinedLabels.map(label => ({
+            ...label,
+            selected: initialLabelIds.has(label.id)
+        })).concat(
+            initialLabels.filter(label => !predefinedLabels.some(pre => pre.id === label.id))
+        );
+    });
+
     const [searchTerm, setSearchTerm] = useState('');
     const [editingLabel, setEditingLabel] = useState(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-    const handleLabelSelection = (labelId) => {
-        setLabels(labels.map(label =>
-            label.id === labelId ? { ...label, selected: !label.selected } : label
-        ));
-    };
+    // Memoized function to notify parent about label changes
+    const notifyLabelChange = useCallback((updatedLabels) => {
+        if (onLabelsChange) {
+            // Only send the selected labels to parent
+            const selectedLabels = updatedLabels.filter(label => label.selected);
+            onLabelsChange(selectedLabels);
+        }
+    }, [onLabelsChange]);
 
-    const handleLabelEdit = (labelId) => {
+    // Handle label selection with proper state updates
+    const handleLabelSelection = useCallback((labelId) => {
+        setLabels(prevLabels => {
+            const updatedLabels = prevLabels.map(label =>
+                label.id === labelId ? { ...label, selected: !label.selected } : label
+            );
+            notifyLabelChange(updatedLabels);
+            return updatedLabels;
+        });
+    }, [notifyLabelChange]);
+
+    // Handle label edit
+    const handleLabelEdit = useCallback((labelId) => {
         const labelToEdit = labels.find(label => label.id === labelId);
         if (labelToEdit) {
             setEditingLabel(labelToEdit);
             setEditDialogOpen(true);
         }
-    };
+    }, [labels]);
 
-    const handleSaveLabel = (updatedLabel) => {
-        setLabels(labels.map(label =>
-            label.id === updatedLabel.id ? updatedLabel : label
-        ));
+    // Handle saving edited label
+    const handleSaveLabel = useCallback((updatedLabel) => {
+        setLabels(prevLabels => {
+            const isNewLabel = !prevLabels.some(label => label.id === updatedLabel.id);
+            let updatedLabels;
+
+            if (isNewLabel) {
+                updatedLabels = [...prevLabels, updatedLabel];
+            } else {
+                updatedLabels = prevLabels.map(label =>
+                    label.id === updatedLabel.id ? updatedLabel : label
+                );
+            }
+
+            notifyLabelChange(updatedLabels);
+            return updatedLabels;
+        });
+
         setEditDialogOpen(false);
         setEditingLabel(null);
-    };
+    }, [notifyLabelChange]);
 
-    const handleDeleteLabel = (labelId) => {
-        setLabels(labels.filter(label => label.id !== labelId));
+    // Handle label deletion
+    const handleDeleteLabel = useCallback((labelId) => {
+        setLabels(prevLabels => {
+            const updatedLabels = prevLabels.filter(label => label.id !== labelId);
+            notifyLabelChange(updatedLabels);
+            return updatedLabels;
+        });
+
         setEditDialogOpen(false);
         setEditingLabel(null);
-    };
+    }, [notifyLabelChange]);
 
-    const handleCreateNewLabel = () => {
+    // Handle creating new label
+    const handleCreateNewLabel = useCallback(() => {
         const newLabel = {
             id: Date.now(), // Simple unique ID for demo
             color: '#44cc88', // Default color
@@ -66,18 +114,14 @@ const LabelsPopover = ({ anchorEl, open, onClose, cardId }) => {
         };
         setEditingLabel(newLabel);
         setEditDialogOpen(true);
-    };
-
-    const handleAccessibilityMode = () => {
-        // Implement accessibility mode toggle
-        console.log("Toggle accessibility mode");
-    };
+    }, []);
 
     // Filter labels based on search term
     const filteredLabels = labels.filter(label =>
         (label.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // The rest of the component (JSX) remains unchanged
     return (
         <>
             <Popover
@@ -102,6 +146,7 @@ const LabelsPopover = ({ anchorEl, open, onClose, cardId }) => {
                     }
                 }}
             >
+                {/* Content remains unchanged */}
                 <Box sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -230,8 +275,6 @@ const LabelsPopover = ({ anchorEl, open, onClose, cardId }) => {
                     >
                         Tạo nhãn mới
                     </Button>
-
-                   
                 </Box>
             </Popover>
 

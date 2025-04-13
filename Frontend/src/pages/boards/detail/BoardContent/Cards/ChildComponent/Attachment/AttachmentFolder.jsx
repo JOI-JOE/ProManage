@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Box, Typography, Button, List, Dialog } from '@mui/material';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import LinkItem from './LinkItem';
@@ -7,7 +7,7 @@ import AttachmentMenu from './AttachmentMenu';
 import { useAttachments } from '../../../../../../../contexts/AttachmentsContext';
 import LogoLoading from '../../../../../../../components/LogoLoading';
 
-const AttachmentFolder = ({ cardId }) => {
+const AttachmentFolder = forwardRef(({ cardId }, ref) => {
     const {
         attachments,
         isLoading,
@@ -22,6 +22,14 @@ const AttachmentFolder = ({ cardId }) => {
     const [previewUrl, setPreviewUrl] = useState(null);
     const [showAllLinks, setShowAllLinks] = useState(false);
     const [showAllFiles, setShowAllFiles] = useState(false);
+
+    // Expose functions to parent via ref
+    useImperativeHandle(ref, () => ({
+        openAttachmentDialog: () => {
+            console.log("Open dialog called");
+            setIsUploadDialogOpen(true);
+        },
+    }));
 
     const handleOpenPreview = (url) => setPreviewUrl(url);
     const handleClosePreview = () => setPreviewUrl(null);
@@ -66,8 +74,19 @@ const AttachmentFolder = ({ cardId }) => {
     };
 
     if (!attachments.links.length && !attachments.files.length) {
-        return null;
+        return (
+            <>
+                {/* Render phần upload dialog ngay cả khi không có dữ liệu */}
+                <AttachmentMenu
+                    open={isUploadDialogOpen}
+                    onClose={handleCloseUploadDialog}
+                    onFileUpload={handleFileUpload}
+                    onLinkAdd={handleLinkAdd}
+                />
+            </>
+        );
     }
+
     return (
         <>
             <Box>
@@ -226,17 +245,17 @@ const AttachmentFolder = ({ cardId }) => {
                 </Dialog>
 
                 {/* Upload Dialog */}
-                {isUploadDialogOpen && (
-                    <AttachmentMenu
-                        open={isUploadDialogOpen}
-                        onClose={handleCloseUploadDialog}
-                        onFileUpload={handleFileUpload}
-                        onLinkAdd={handleLinkAdd}
-                    />
-                )}
+                <AttachmentMenu
+                    open={isUploadDialogOpen}
+                    onClose={handleCloseUploadDialog}
+                    onFileUpload={handleFileUpload}
+                    onLinkAdd={handleLinkAdd}
+                />
             </Box>
         </>
     );
-};
+});
+
+AttachmentFolder.displayName = 'AttachmentFolder';
 
 export default AttachmentFolder;

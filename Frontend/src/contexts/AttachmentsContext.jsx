@@ -7,6 +7,8 @@ import {
     useRemoveAttachment,
 } from '../hooks/useCard';
 import { useBoard } from './BoardContext';
+// import { optimisticIdManager } from './optimisticIdManager'; // đường dẫn tuỳ vào vị trí file
+
 
 const AttachmentsContext = createContext();
 
@@ -18,6 +20,7 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
     const { mutateAsync: postAttachmentLinkMutate } = usePostAttachmentLink();
     const { mutateAsync: updateAttachmentMutate } = usePutAttachment();
     const { mutateAsync: removeAttachmentMutate } = useRemoveAttachment();
+
 
     // Update attachments state when fetchedAttachments changes
     useEffect(() => {
@@ -63,19 +66,7 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 created_at: new Date().toISOString(),
             }));
 
-            setAttachments(prev => ({
-                ...prev,
-                links: [...tempLinks, ...prev.links].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
-            }));
-
-            const addLinkPromises = linksToAdd.map(async (link) => {
-                return postAttachmentLinkMutate({
-                    cardId,
-                    linkData: { file_name_defaut: link.file_name_defaut, path_url: link.path_url, type: 'link' },
-                });
-            });
-
-            await Promise.all(addLinkPromises); // Wait for all links to be added
+            await Promise.all(tempLinks); // Wait for all links to be added
             await refetch(); // Refetch to get the actual data
             refetchListData(); // Update board data
         } catch (error) {

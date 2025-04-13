@@ -12,17 +12,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const colorPalette = [
-  // Light shades (first row)
   ['#c0f0d0', '#f7e999', '#ffdab5', '#ffd5d5', '#e0d7ff'],
-  // Medium shades (second row)
   ['#44cc88', '#ffd028', '#ffaa66', '#ff6b6b', '#aa99ff'],
-  // Dark shades (third row)
   ['#1a804d', '#996600', '#b34700', '#cc0000', '#6633cc'],
-  // Blues/Cyans (fourth row)
   ['#cceeff', '#99e6ff', '#d8ff99', '#ffccee', '#dddddd'],
-  // More colors (fifth row)
   ['#5599ff', '#55ccdd', '#99cc33', '#ff77cc', '#8899aa'],
-  // Deep colors (sixth row)
   ['#0066ff', '#008899', '#668800', '#cc3399', '#556677']
 ];
 
@@ -62,10 +56,10 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
   return (
     <Dialog
       open={open}
-      aria-hidden="true"
       onClose={onClose}
       fullWidth
       maxWidth="xs"
+      aria-labelledby="label-edit-dialog-title"
       PaperProps={{
         sx: {
           borderRadius: '8px',
@@ -76,22 +70,28 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
         }
       }}
     >
-      <Box sx={{
-        display: 'flex',
-        alignItems: 'center',
-        p: 1.5,
-        borderBottom: '1px solid rgba(0,0,0,0.08)'
-      }}>
+      <Box
+        component="header"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          p: 1.5,
+          borderBottom: '1px solid rgba(0,0,0,0.08)'
+        }}
+      >
         <IconButton
           edge="start"
           onClick={onClose}
-          aria-label="back"
+          aria-label="Quay lại"
           sx={{ color: '#42526E' }}
         >
           <ArrowBackIcon fontSize="small" />
         </IconButton>
 
         <Typography
+          id="label-edit-dialog-title"
+          variant="h6"
+          component="h2"
           sx={{
             flex: 1,
             textAlign: 'center',
@@ -106,7 +106,7 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
         <IconButton
           edge="end"
           onClick={onClose}
-          aria-label="close"
+          aria-label="Đóng"
           sx={{ color: '#42526E' }}
         >
           <CloseIcon fontSize="small" />
@@ -115,6 +115,7 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
 
       {/* Color preview bar */}
       <Box
+        aria-hidden="true"
         sx={{
           height: '48px',
           backgroundColor: selectedColor || '#EEEEEE',
@@ -124,14 +125,15 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
 
       <DialogContent sx={{ p: 0 }}>
         <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-          <Typography sx={{ mb: 1, fontSize: '14px', fontWeight: 500, color: '#172b4d' }}>
+          <Typography component="label" htmlFor="label-name-input" sx={{ mb: 1, fontSize: '14px', fontWeight: 500, color: '#172b4d' }}>
             Tiêu đề
           </Typography>
           <InputBase
+            id="label-name-input"
             fullWidth
             value={labelName}
             onChange={(e) => setLabelName(e.target.value)}
-            placeholder=""
+            placeholder="Nhập tên nhãn"
             sx={{
               border: '2px solid #DFE1E6',
               borderRadius: 1,
@@ -146,12 +148,15 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
             }}
           />
 
-          <Typography sx={{ mb: 1, fontSize: '14px', fontWeight: 500, color: '#172b4d' }}>
+          <Typography component="legend" sx={{ mb: 1, fontSize: '14px', fontWeight: 500, color: '#172b4d' }}>
             Chọn một màu
           </Typography>
         </Box>
 
-        <Box sx={{ px: 2, pb: 2 }}>
+        <Box
+          component="fieldset"
+          sx={{ px: 2, pb: 2, border: 'none', m: 0, p: 0 }}
+        >
           {colorPalette.map((row, rowIndex) => (
             <Box
               key={`row-${rowIndex}`}
@@ -163,18 +168,20 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
               }}
             >
               {row.map((color, colIndex) => (
-                <Box
+                <Button
                   key={`color-${rowIndex}-${colIndex}`}
+                  aria-label={`Màu ${color}`}
                   sx={{
-                    width: '42px',
+                    minWidth: '42px',
                     height: '32px',
                     backgroundColor: color,
                     borderRadius: '3px',
-                    cursor: 'pointer',
                     border: selectedColor === color ? '2px solid #0052CC' : '1px solid rgba(0,0,0,0.1)',
                     flexGrow: 1,
+                    p: 0,
                     '&:hover': {
-                      opacity: 0.85
+                      opacity: 0.85,
+                      backgroundColor: color
                     }
                   }}
                   onClick={() => setSelectedColor(color)}
@@ -183,7 +190,6 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
             </Box>
           ))}
 
-          {/* Clear color button */}
           <Button
             fullWidth
             variant="outlined"
@@ -208,15 +214,18 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
           </Button>
         </Box>
 
-        {/* Action buttons */}
-        <Box sx={{
-          display: 'flex',
-          px: 2,
-          pb: 2,
-          justifyContent: 'space-between'
-        }}>
+        <Box
+          component="footer"
+          sx={{
+            display: 'flex',
+            px: 2,
+            pb: 2,
+            justifyContent: 'space-between'
+          }}
+        >
           <Button
             variant="contained"
+            aria-label="Lưu nhãn"
             sx={{
               bgcolor: '#0052CC',
               color: 'white',
@@ -239,6 +248,7 @@ const LabelEditDialog = ({ open, onClose, label, onSave, onDelete }) => {
 
           <Button
             variant="contained"
+            aria-label="Xóa nhãn"
             sx={{
               bgcolor: '#EA2525',
               color: 'white',

@@ -12,16 +12,11 @@ import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { mapOrder } from "../../../../../../utils/sort";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "react-toastify";
-import CopyColumn from "./Col_option/CoppyColumn";
 import ConfirmDeleteDialog from "./Col_option/DeleteColumn";
 import ArchiveColumnDialog from "./Col_option/Archive";
 import Card_list from "../Cards/Card_list";
@@ -29,6 +24,7 @@ import Card_new from "../Cards/Card_new";
 import { v4 as uuidv4 } from "uuid";
 import { useCreateCard } from "../../../../../hooks/useCard";
 import { useUpdateListClosed, useUpdateListName } from "../../../../../hooks/useList";
+import { optimisticIdManager } from "../../../../../../utils/optimisticIdManager";
 
 const StyledMenu = styled((props) => (
     <Menu
@@ -103,8 +99,9 @@ const Col = ({ column, onArchive }) => {
     //======================================== Thêm card mới========================================
     const handleAddCard = async (cardName) => {
         if (!cardName.trim()) return;
-
-        const tempId = `temp-${uuidv4()}`;
+        const typename = "card"
+        const optimisticId = optimisticIdManager.generateOptimisticId(typename);
+        const tempId = optimisticId;
         const newCard = {
             id: tempId, // ID tạm thời
             title: cardName,
@@ -114,8 +111,10 @@ const Col = ({ column, onArchive }) => {
                 : 1000,
         };
 
-        setLocalCards((prev = []) => [...prev, newCard]); // 🔥 Đảm bảo prev luôn là mảng
+        setLocalCards((prev = []) => [...prev, newCard]);
         setCardName("");
+
+        console.log(newCard)
 
         try {
             await createCardMutation.mutateAsync(newCard);
@@ -406,9 +405,6 @@ const Col = ({ column, onArchive }) => {
                                     py: 1,
                                 }}
                             >
-                                {/* <ListItemIcon sx={{ color: "inherit" }}>
-                                    <ArchiveIcon fontSize="small" />
-                                </ListItemIcon> */}
                                 Lưu trữ danh sách này
                             </MenuItem>
 

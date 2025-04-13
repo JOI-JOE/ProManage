@@ -17,13 +17,19 @@ export const fetchCardById = async (cardId) => {
     throw error;
   }
 };
+// - checklists
 export const fetchCheckLists = async (cardId) => {
   const { data } = await authClient.get(`/card/${cardId}/checklists`);
   return data;
 };
-// - attachment
+// - attachments
 export const fetchAttachments = async (cardId) => {
   const response = await authClient.get(`/card/${cardId}/attachments`);
+  return response.data;
+};
+// - comments
+export const fetchComments = async (cardId) => {
+  const response = await authClient.get(`/card/${cardId}/comments`);
   return response.data;
 };
 // function create ----------------------------------------------------------
@@ -41,7 +47,7 @@ export const postChecklistItem = async ({ checklistId, data }) => {
   );
   return response.data;
 };
-// - attachment
+// - attachment - file
 export const postAttachmentFile = async ({ cardId, file }) => {
   try {
     const response = await authClient.post(
@@ -59,8 +65,7 @@ export const postAttachmentFile = async ({ cardId, file }) => {
     throw error;
   }
 };
-
-// Function for adding links
+// - attachment - link
 export const postAttachmentLink = async ({ cardId, linkData }) => {
   try {
     const response = await authClient.post(
@@ -73,6 +78,19 @@ export const postAttachmentLink = async ({ cardId, linkData }) => {
     throw error;
   }
 };
+// comment
+export const postComment = async ({ cardId, content }) => {
+  try {
+    const response = await authClient.post(`/card/${cardId}/comments`, {
+      content,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi thêm bình luận:", error);
+    throw error;
+  }
+};
+
 /// function update --------------------------------------------------------
 // ChecklistItem
 export const updateCheckListItem = async (checklistItemId, data) => {
@@ -80,6 +98,11 @@ export const updateCheckListItem = async (checklistItemId, data) => {
     `/checklist/${checklistItemId}/items`,
     data
   );
+  return response.data;
+};
+// Checklist
+export const updateCheckList = async (checklistId, data) => {
+  const response = await authClient.put(`card/checklist/${checklistId}`, data);
   return response.data;
 };
 // Card
@@ -92,14 +115,14 @@ export const joinCard = async (cardId) => {
   const { data } = await authClient.post(`/card/${cardId}/idMember`);
   return data;
 };
-// Thêm thành viên cụ thể vào card
+// Member card
 export const putMemberToCard = async (cardId, memberId) => {
   const { data } = await authClient.post(
     `/card/${cardId}/idMember/${memberId}`
   );
   return data;
 };
-// Sửa thông tin của attachment
+// Attachment
 export const putAttachment = async (attachmentId, data) => {
   const response = await authClient.put(
     `/card/attachment/${attachmentId}`,
@@ -107,7 +130,15 @@ export const putAttachment = async (attachmentId, data) => {
   );
   return response.data; // Return only the data for consistency
 };
-//fucntion delete
+// Comment
+export const putComment = async (commentId, content) => {
+  const response = await authClient.put(`card/comment/${commentId}`, {
+    content: content,
+  });
+  return response.data;
+};
+
+//fucntion delete ---------------------------------------------------------------
 // Bỏ ra
 export const removeMemberFromCard = async (cardId, memberId) => {
   const { data } = await authClient.delete(
@@ -136,7 +167,16 @@ export const removeCheckListItem = async (checklistItemId) => {
   );
   return response.data;
 };
-
+// Comment
+export const removeComment = async (commentId) => {
+  const response = await authClient.delete(`card/comment/${commentId}`);
+  return response.data;
+};
+// card
+export const removeCard = async (cardId) => {
+  const response = await authClient.delete(`card/${cardId}`);
+  return response.data;
+};
 /// ---------------------------------------------------------------
 
 // Tạo card mới

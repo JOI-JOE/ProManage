@@ -198,7 +198,6 @@ const BoardBar = () => {
                 backgroundColor: "#ffffff",
               },
               "& .MuiInputBase-input": { textAlign: "center" },
-              "& .MuiOutlinedInput-root": { borderRadius: "8px" },
             }}
           />
         ) : (

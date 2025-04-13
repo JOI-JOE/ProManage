@@ -42,7 +42,7 @@ const roundToNearest5Minutes = (time) => {
     return time.set("minute", roundedMinutes).set("second", 0);
 };
 
-const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave vào props
+const DateItem = ({ open, onClose, type, item, onSave }) => {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [endTime, setEndTime] = useState(null);
@@ -180,7 +180,6 @@ const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave v�
             payload.startDate = isStartDateChecked && startDate ? startDate.format("YYYY-MM-DD") : null;
         }
 
-        // Gọi onSave với dữ liệu payload trước khi đóng dialog
         onSave(payload);
         onClose();
     };
@@ -238,9 +237,23 @@ const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave v�
             open={open}
             onClose={onClose}
             maxWidth="md"
-            sx={{ "& .MuiDialog-paper": { width: "600px", borderRadius: 2, boxShadow: "0 8px 16px rgba(0,0,0,0.1)" } }}
+            aria-labelledby="date-dialog-title"
+            aria-describedby="date-dialog-description"
+            sx={{
+                "& .MuiDialog-paper": {
+                    width: "600px",
+                    borderRadius: 2,
+                    boxShadow: "0 8px 16px rgba(0,0,0,0.1)"
+                },
+                "& .MuiBackdrop-root": {
+                    // Đảm bảo backdrop không có aria-hidden
+                    backdropFilter: "blur(2px)",
+                    backgroundColor: "rgba(0, 0, 0, 0.5)"
+                }
+            }}
         >
             <DialogTitle
+                id="date-dialog-title"
                 sx={{
                     fontWeight: "bold",
                     borderBottom: "1px solid #eee",
@@ -253,18 +266,34 @@ const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave v�
                 }}
             >
                 Ngày
-                <IconButton size="small" onClick={onClose}>
+                <IconButton
+                    size="small"
+                    onClick={onClose}
+                    aria-label="Đóng hộp thoại ngày"
+                >
                     <CloseIcon fontSize="small" />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 2, display: "flex", alignItems: "center", bgcolor: "#fafafa" }}>
+            <DialogContent
+                id="date-dialog-description"
+                sx={{ p: 2, display: "flex", alignItems: "center", bgcolor: "#fafafa" }}
+            >
                 <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                     <StaticDatePicker
                         value={type === "checklist-item" || selectionMode === "end" ? endDate : startDate}
                         onChange={handleDateChange}
                         dayOfWeekFormatter={(day) => ["CN", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7"][dayjs(day).day()]}
                         renderDay={renderDay}
+                        slotProps={{
+                            toolbar: {
+                                toolbarFormat: 'DD/MM/YYYY',
+                                hidden: false,
+                            },
+                            actionBar: {
+                                actions: ['today'],
+                            },
+                        }}
                         sx={{
                             mr: 2,
                             bgcolor: "white",
@@ -288,7 +317,6 @@ const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave v�
                                 color: "#1976d2",
                             },
                         }}
-                        slotProps={{ actionBar: { actions: ["today"] } }}
                     />
                 </LocalizationProvider>
 
@@ -309,6 +337,7 @@ const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave v�
                                                 setSelectionMode("end");
                                             }
                                         }}
+                                        inputProps={{ 'aria-label': 'Chọn ngày bắt đầu' }}
                                     />
                                 }
                                 label={
@@ -347,6 +376,7 @@ const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave v�
                                             if (type === "card" && isStartDateChecked) setSelectionMode("start");
                                         }
                                     }}
+                                    inputProps={{ 'aria-label': 'Chọn ngày kết thúc' }}
                                 />
                             }
                             label={
@@ -380,6 +410,9 @@ const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave v�
                                                 },
                                             },
                                             readOnly: true,
+                                            inputProps: {
+                                                'aria-label': 'Chọn thời gian kết thúc',
+                                            },
                                         },
                                         popper: {
                                             sx: {
@@ -421,9 +454,18 @@ const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave v�
                                 onChange={(e) => setReminder(e.target.value)}
                                 sx={{ height: 32, bgcolor: "#fff" }}
                                 disabled={!isEndDateChecked}
+                                inputProps={{
+                                    'aria-label': 'Chọn thời gian nhắc nhở',
+                                }}
                             >
                                 {REMINDER_OPTIONS.map((option) => (
-                                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                                    <MenuItem
+                                        key={option}
+                                        value={option}
+                                        aria-label={`Nhắc nhở ${option}`}
+                                    >
+                                        {option}
+                                    </MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
@@ -432,10 +474,20 @@ const DateItem = ({ open, onClose, type, item, onSave }) => { // Thêm onSave v�
             </DialogContent>
 
             <DialogActions sx={{ p: 2, borderTop: "1px solid #eee", bgcolor: "#f5f5f5" }}>
-                <Button variant="contained" onClick={handleSave} sx={{ minWidth: 80 }}>
+                <Button
+                    variant="contained"
+                    onClick={handleSave}
+                    sx={{ minWidth: 80 }}
+                    aria-label="Lưu thay đổi ngày"
+                >
                     Lưu
                 </Button>
-                <Button variant="outlined" onClick={onClose} sx={{ minWidth: 80, ml: 1 }}>
+                <Button
+                    variant="outlined"
+                    onClick={onClose}
+                    sx={{ minWidth: 80, ml: 1 }}
+                    aria-label="Hủy bỏ thay đổi"
+                >
                     Hủy bỏ
                 </Button>
             </DialogActions>

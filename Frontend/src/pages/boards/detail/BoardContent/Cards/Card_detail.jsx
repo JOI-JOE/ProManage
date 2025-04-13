@@ -13,6 +13,8 @@ import {
     TextField,
     Paper,
     Divider,
+    Popover,
+    Stack,
 } from "@mui/material";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import CustomButton from "../../../../../components/Common/CustomButton.jsx";
@@ -21,47 +23,54 @@ import { LazyLoadImage } from "react-lazy-load-image-component";
 import GroupIcon from "@mui/icons-material/Group";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import InventoryIcon from '@mui/icons-material/Inventory';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { PlusIcon } from "@heroicons/react/24/solid";
-import { KeyboardArrowDown } from "@mui/icons-material";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PersonRemoveAlt1Icon from '@mui/icons-material/PersonRemoveAlt1';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import RemoveIcon from '@mui/icons-material/Remove';
 // PAGE --------------------------------------------------------------------
 import dayjs from 'dayjs';
 import ChecklistGroup from "./ChildComponent/Checklist/ChecklistGroup.jsx";
 import CommentEditor from "./ChildComponent/EditorForm.jsx";
-import FileItem from "./ChildComponent/Attachment/FileItem.jsx";
-import LinkItem from "./ChildComponent/Attachment/LinkItem.jsx";
 import relativeTime from 'dayjs/plugin/relativeTime';
 import MemberMenu from "./ChildComponent/Members/MemberMenu.jsx";
-import DateItem from "./ChildComponent/Date/DateItem.jsx";
 // HOOK --------------------------------------------------------------------
-import { useCardById, useJoinOrPutMember, useUpdateCardById } from "../../../../../hooks/useCard.js";
+import { useCardById, useJoinOrPutMember, useRemoveCard, useUpdateCardById } from "../../../../../hooks/useCard.js";
 import { useBoard } from "../../../../../contexts/BoardContext.jsx";
 import LogoLoading from "../../../../../components/LogoLoading.jsx";
 import InitialsAvatar from "../../../../../components/Common/InitialsAvatar.jsx";
 import { useMe } from "../../../../../contexts/MeContext.jsx";
 import CheckMenu from "./ChildComponent/Checklist/CheckMenu.jsx";
-import LabelsPopover from "./ChildComponent/Label/LabelsPopover.jsx";
 import AttachmentMenu from "./ChildComponent/Attachment/AttachmentMenu.jsx";
 import AttachmentFolder from "./ChildComponent/Attachment/AttachmentFolder.jsx";
 import { AttachmentsProvider } from "../../../../../contexts/AttachmentsContext.jsx";
 import CommentSection from "./ChildComponent/Comment/CommentSection.jsx";
+import { CommentProvider } from "../../../../../contexts/CommentContext.jsx";
+import LabelList from "./ChildComponent/Label/LabelList.jsx";
+import CardDateSection from "./ChildComponent/Date/CardDateSection.jsx";
+import { Delete } from "@mui/icons-material";
 
 dayjs.extend(relativeTime);
 
 const Card_detail = ({ cardId, closeCard, openCard }) => {
     // Lấy dữ liệu từ hook ---------------------------------------------
     const { user } = useMe();
-    const { listData, members } = useBoard()
-    const { data: fetchedCard, isLoading: isLoadingCard, isError } = useCardById(cardId);
+    const { listData, members, refetchListData, listLoading } = useBoard()
+    const { data: fetchedCard, isLoading: isLoadingCard, isError, refetch: refetchCard } = useCardById(cardId);
     // Function ------------------------------------------
     const {
         updateTitle,
         updateDescription,
+        updateIsCompleted,
+        updateIsArchived,
         isUpdating
     } = useUpdateCardById(cardId || card?.id);
+    const { mutateAsync: useRemoveCardMutate } = useRemoveCard();
 
     const {
         joinCard,
@@ -85,9 +94,6 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
         (item) => item.id === card?.list_board_id
     );
     // End ============================================================================
-
-    // Test
-
     // FUNCTION TITLE - 1 ------------------------------------------------------------
     const handleTitleChange = (e) => {
         const newTitle = e.target.value;
@@ -303,7 +309,6 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
         }
         handleCloseCheckList();
     };
-
     // ----------------------------------------------------------------------------
     //---------------------------------------------------------------
     const [selectedImage, setSelectedImage] = useState(null);
@@ -324,62 +329,149 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
         setPreview(false);
         setSelectedImage(null);
     };
-    //-------------------------------------------------------------
-    const [labelsAnchorEl, setLabelsAnchorEl] = useState(null);
-    // Handler to open the labels popover
-    const handleOpenLabelsMenu = (event) => {
-        setLabelsAnchorEl(event.currentTarget);
-    };
-    // Handler to close the labels popover
-    const handleCloseLabelsMenu = () => {
-        setLabelsAnchorEl(null);
-    };
-    //-----------------
-    const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
-    // Hàm mở dialog
-    const handleOpenDateDialog = () => {
-        setIsDateDialogOpen(true);
-    };
-    // Hàm đóng dialog
-    const handleCloseDateDialog = () => {
-        setIsDateDialogOpen(false);
+    // ------------------------------
+    const [deleteAnchorEl, setDeleteAnchorEl] = useState(null);
+    const [isRemoveLoading, setRemoveLoading] = useState(false);
+    const deleteButtonRef = useRef(null);
+
+    const handleOpenDeletePopover = (event) => {
+        setDeleteAnchorEl(deleteButtonRef.current);
+        console.log(event)
+
     };
 
-    // ---------------------------------------------------------------------
-    const [anchorElFile, setAnchorElFile] = useState(null);
-
-    const handleOpenFile = (event) => {
-        setAnchorElFile(event.currentTarget);
+    const handleCloseDeletePopover = () => {
+        setDeleteAnchorEl(null);
     };
 
-    const handleCloseFile = () => {
-        setAnchorElFile(null);
+    const handleConfirmDelete = async () => {
+        setRemoveLoading(true); // Bật loading
+        try {
+            await useRemoveCardMutate(cardId); // hoặc gọi API xoá thực tế
+            await refetchListData();
+            handleCloseDeletePopover();
+        } catch (error) {
+            console.error('Lỗi xoá card:', error);
+        } finally {
+            setRemoveLoading(false); // Tắt loading
+        }
     };
+
+    const handleArchiveCard = async () => {
+        try {
+            if (!card?.id) return;
+
+            await updateIsArchived(true); // Chờ API hoàn tất
+
+            setCard(prev => ({
+                ...prev,
+                is_archived: true,
+            }));
+            console.log("✅ Card đã được lưu trữ.");
+        } catch (error) {
+            console.error("❌ Lỗi khi lưu trữ card:", error);
+        }
+    };
+
+    const handleRestoreCard = async () => {
+        try {
+            if (!card?.id) return;
+
+            await updateIsArchived(false); // Chờ API khôi phục thành công
+
+            setCard(prev => ({
+                ...prev,
+                is_archived: false,
+            }));
+
+        } catch (error) {
+            console.error("❌ Lỗi khi khôi phục thẻ:", error);
+        } finally {
+            handleCloseDeletePopover(); // Đóng popover dù có lỗi hay không
+        }
+    };
+
 
     const isCurrentUserInCard = card?.membersId?.includes(user.id);
-    const actions = [
+    const labelListRef = useRef(null);
+    const dateSectionRef = useRef(null);
+    const attachmentFolderRef = useRef(null);
+    console.log("attachmentFolderRef", attachmentFolderRef.current);
+
+
+    const mainActions = [
         {
             label: isCurrentUserInCard ? "Rời khỏi" : "Tham gia",
             icon: isCurrentUserInCard ? <PersonRemoveAlt1Icon fontSize="small" /> : <PersonAddIcon fontSize="small" />,
-            onClick: hanleAttendMember
+            onClick: hanleAttendMember,
         },
         {
             label: "Thành viên",
             icon: <GroupIcon fontSize="small" />,
-            onClick: (e) => handleOpenMemberMenu(e)
+            onClick: (e) => handleOpenMemberMenu(e),
         },
-        { label: "Nhãn", icon: <LocalOfferIcon fontSize="small" /> },
+        {
+            label: "Nhãn",
+            icon: <LocalOfferIcon fontSize="small" />,
+            onClick: (e) => labelListRef.current?.openLabelsPopover(e),
+        },
         {
             label: "Việc cần làm",
             icon: <CheckBoxIcon fontSize="small" />,
-            onClick: handleOpenCheckList
+            onClick: handleOpenCheckList,
         },
-        { label: "Ngày", icon: <ScheduleIcon fontSize="small" /> },
+        {
+            label: "Ngày",
+            icon: <ScheduleIcon fontSize="small" />,
+            onClick: (e) => dateSectionRef.current?.openDateDialog(e),
+        },
         {
             label: "Đính kèm",
             icon: <AttachFileIcon fontSize="small" />,
-            onClick: handleOpenFile
+            onClick: () => attachmentFolderRef.current?.openAttachmentDialog(),
         },
+    ];
+
+    // Nhóm Thao tác
+    const operationActions = [
+        {
+            label: "Di chuyển",
+            icon: <ArrowForwardIcon fontSize="small" />,
+            onClick: () => handleMoveCard(),
+        },
+        {
+            label: "Sao chép",
+            icon: <ContentCopyIcon fontSize="small" />,
+            onClick: () => handleCopyCard(),
+        },
+        ...(card?.is_archived
+            ? [
+                {
+                    label: "Gửi tới bảng",
+                    icon: <RestartAltIcon fontSize="small" />,
+                    onClick: () => handleRestoreCard(),
+                },
+                {
+                    label: "Xoá",
+                    icon: <RemoveIcon fontSize="small" />,
+                    onClick: handleOpenDeletePopover,
+                    sx: {
+                        backgroundColor: "error.main",
+                        color: "white",
+                        "&:hover": {
+                            backgroundColor: "error.dark",
+                        },
+                    },
+                    ref: deleteButtonRef,
+                },
+            ]
+            : [
+                {
+                    label: "Lưu trữ",
+                    icon: <InventoryIcon fontSize="small" />,
+                    onClick: () => handleArchiveCard(),
+                },
+            ]),
     ];
 
 
@@ -387,6 +479,7 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
         <>
             <AttachmentsProvider cardId={cardId} setCard={setCard} setCoverLoading={setCoverLoading}
             >
+
                 <Dialog
                     open={openCard}
                     onClose={closeCard}
@@ -447,55 +540,54 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                 }}
                             >
                                 {/* Ảnh bìa */}
-
-                                <Box
-                                    sx={{
-                                        position: "relative",
-                                        overflow: "hidden",
-                                        flexShrink: 0,
-                                        borderRadius: "12px 12px 0 0",
-                                        backgroundColor: "rgb(150 151 159)"
-                                    }}
-                                >
-                                    {coverLoading ? (
-                                        <Box sx={{ height: 160, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                            <LogoLoading scale={0.5} />
-                                        </Box>
-                                    ) : (
-                                        <Box
-                                            sx={{ display: "flex", justifyContent: "center", cursor: "pointer" }}
-                                            onClick={() => handleOpenPreview(card?.thumbnail)}
-                                        >
-                                            <LazyLoadImage
-                                                // src="https://wallpapers.com/images/hd/the-wind-rises-1920-x-1080-wallpaper-fouebsfnbvnf3rz4.jpg"
-                                                src={card?.thumbnail}
-                                                alt="Card Cover"
-                                                effect="blur"
-                                                style={{
-                                                    minHeight: '116px',
-                                                    width: "100%",
-                                                    maxHeight: "160px",
-                                                    objectFit: "contain",
-                                                    background: 'white',
-                                                }}
-                                            />
-                                        </Box>
-                                    )}
-
-
-
-                                    <CustomButton
+                                {card?.thumbnail && (
+                                    <Box
                                         sx={{
-                                            position: "absolute",
-                                            right: 8,
-                                            top: 8,
-                                            zIndex: 10000,
-                                            color: "#fff",
+                                            position: "relative",
+                                            overflow: "hidden",
+                                            flexShrink: 0,
+                                            borderRadius: "12px 12px 0 0",
+                                            backgroundColor: "rgb(150 151 159)"
                                         }}
-                                        type="close"
-                                        onClick={closeCard}
-                                    />
-                                </Box>
+                                    >
+                                        {coverLoading ? (
+                                            <Box sx={{ height: 160, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                <LogoLoading scale={0.5} />
+                                            </Box>
+                                        ) : (
+                                            <Box
+                                                sx={{ display: "flex", justifyContent: "center", cursor: "pointer" }}
+                                                onClick={() => handleOpenPreview(card?.thumbnail)}
+                                            >
+                                                <LazyLoadImage
+                                                    src={card?.thumbnail}
+                                                    alt="Card Cover"
+                                                    effect="blur"
+                                                    style={{
+                                                        minHeight: '116px',
+                                                        width: "100%",
+                                                        maxHeight: "160px",
+                                                        objectFit: "contain",
+                                                        background: 'white',
+                                                    }}
+                                                />
+                                            </Box>
+                                        )}
+
+                                        <CustomButton
+                                            sx={{
+                                                position: "absolute",
+                                                right: 8,
+                                                top: 8,
+                                                zIndex: 10000,
+                                                color: "#fff",
+                                            }}
+                                            type="close"
+                                            onClick={closeCard}
+                                        />
+                                    </Box>
+
+                                )}
 
                                 <Box sx={{ padding: "16px" }}>
                                     {/* Header */}
@@ -571,8 +663,13 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                                 <>
                                                     <Box sx={{ marginBottom: 1 }}>
                                                         <Typography
-                                                            variant="body2"
-                                                            sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "4px" }}
+                                                            variant="subtitle2"
+                                                            sx={(theme) => {
+                                                                return {
+                                                                    color: theme.palette.text.secondary,
+                                                                    fontWeight: 600,
+                                                                }
+                                                            }}
                                                         >
                                                             Thành viên
                                                         </Typography>
@@ -593,11 +690,25 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                                             ))}
                                                             {/* Nút thêm thành viên được đặt cùng dòng với avatar */}
                                                             <IconButton
-                                                                sx={{
-                                                                    backgroundColor: "#e0e0e0",
-                                                                    width: "32px",
-                                                                    height: "32px",
-                                                                    borderRadius: "50%",
+                                                                sx={(theme) => {
+                                                                    return {
+                                                                        backgroundColor: "#e0e0e0",
+                                                                        width: "32px",
+                                                                        height: "32px",
+                                                                        borderRadius: 2,
+                                                                        backgroundColor: theme.palette.background.paper,
+                                                                        boxShadow: theme.shadows[1],
+                                                                        borderRadius: "50%",
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s ease-in-out',
+                                                                        '&:hover': {
+                                                                            boxShadow: theme.shadows[3],
+                                                                            backgroundColor: theme.palette.action.hover,
+                                                                        },
+                                                                        "&:hover": {
+                                                                            backgroundColor: "#ccc",
+                                                                        },
+                                                                    }
                                                                 }}
                                                                 onClick={(e) => handleOpenMemberMenu(e)}
                                                             >
@@ -609,87 +720,13 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                             ) : (null)}
 
                                             {/* Nhãn */}
-                                            {card?.labels.length > 0 ? (
-                                                <Box>
-                                                    <Typography
-                                                        variant="body2"
-                                                        sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "4px" }}
-                                                    >
-                                                        Nhãn
-                                                    </Typography>
-
-                                                    <Box
-                                                        sx={{
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            flexWrap: "wrap",
-                                                            gap: "6px",
-                                                        }}
-                                                    >
-                                                        {/* {selectedLabels.map((label) => ( */}
-                                                        <Chip
-                                                            // key={label.id}
-                                                            // label={label.name || ''}
-                                                            sx={{
-                                                                // backgroundColor: label.color,
-                                                                height: "32px",
-                                                                borderRadius: "4px",
-                                                                // color: ['#ffca28', '#ffcdd2'].includes(label.color) ? '#000' : '#fff',
-                                                                fontWeight: 500,
-                                                                margin: '0 4px 4px 0'
-                                                            }}
-                                                        />
-                                                        {/* ))} */}
-
-                                                        <IconButton
-                                                            sx={{
-                                                                backgroundColor: "#e0e0e0",
-                                                                width: "32px",
-                                                                height: "32px",
-                                                                borderRadius: "4px",
-                                                                "&:hover": {
-                                                                    backgroundColor: "#ccc",
-                                                                },
-                                                            }}
-                                                            onClick={handleOpenLabelsMenu}
-                                                        >
-                                                            <PlusIcon sx={{ fontSize: "16px", color: "#555" }} />
-                                                        </IconButton>
-                                                    </Box>
-                                                </Box>
-                                            ) : (null)}
+                                            <Box>
+                                                <LabelList ref={labelListRef} cardId={cardId} />
+                                            </Box>
 
                                             {/* Ngày */}
                                             <Box sx={{ minWidth: "200px" }}>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "3px" }}
-                                                >
-                                                    Ngày
-                                                </Typography>
-                                                <Box
-                                                    onClick={() => handleOpenDateDialog("card", "card-id")} // Thêm dòng này
-                                                    sx={{
-                                                        display: "inline-flex",
-                                                        alignItems: "center",
-                                                        px: 1.5,
-                                                        py: 1,
-                                                        borderRadius: 1,
-                                                        backgroundColor: "#e4e6ea",
-                                                        cursor: "pointer",
-                                                        '&:hover': {
-                                                            backgroundColor: '#d9dbdf' // Thêm hiệu ứng hover
-                                                        }
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        variant="body1"
-                                                        sx={{ fontWeight: 500, color: "#172b4d", fontSize: "14px" }}
-                                                    >
-                                                        8 thg 4 – 21:35 9 thg 4
-                                                    </Typography>
-                                                    <KeyboardArrowDown sx={{ fontSize: 20, color: "#172b4d", ml: 0.5 }} />
-                                                </Box>
+                                                <CardDateSection ref={dateSectionRef} cardData={card?.badges} cardId={cardId} />
                                             </Box>
 
                                             {/* Mô tả */}
@@ -756,10 +793,8 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
 
                                             {/* Tệp đính kèm */}
                                             <Box sx={{ width: "100%" }}>
-                                                {/* Attachments section */}
-                                                <AttachmentFolder cardId={card?.id} />
+                                                <AttachmentFolder ref={attachmentFolderRef} cardId={cardId} />
                                             </Box>
-
 
                                             {/* Checklist */}
                                             <Box sx={{ width: "100%" }}>
@@ -770,10 +805,10 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                             </Box>
 
                                             {/* Activity */}
-                                            {/* <ActivityFeed /> */}
-                                            <Box sx={{ width: "100%" }}>
-
-                                                <CommentSection />
+                                            <Box sx={{ width: "100%", mb: "30px" }}>
+                                                <CommentProvider cardId={cardId}>
+                                                    <CommentSection />
+                                                </CommentProvider>
                                             </Box>
 
                                         </Box>
@@ -782,42 +817,95 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                         <Box
                                             id="controller"
                                             sx={{
-                                                width: "150px",
                                                 flex: "0 0 auto",
-                                                paddingRight: 2, // dùng spacing scale thay cho "16px"
+                                                paddingRight: 2,
+                                                minWidth: 168,
+                                                maxWidth: 200,
+                                                width: "100%",
                                             }}
                                         >
                                             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                                {actions.map(({ icon, label, onClick }, index) => (
-                                                    <Button
-                                                        key={index}
-                                                        startIcon={icon}
-                                                        onClick={onClick}
-                                                        variant="contained"
-                                                        disableElevation
-                                                        title={label}
+                                                {/* Render mainActions */}
+                                                {mainActions.map((action, index) => (
+                                                    <Box key={index}>
+                                                        <Button
+                                                            startIcon={action.icon}
+                                                            onClick={action.onClick}
+                                                            variant="contained"
+                                                            disableElevation
+                                                            title={action.label}
+                                                            sx={{
+                                                                justifyContent: "flex-start",
+                                                                backgroundColor: "#e4e6ea",
+                                                                color: "#172b4d",
+                                                                textTransform: "none",
+                                                                fontWeight: 600,
+                                                                fontSize: 14,
+                                                                px: 2,
+                                                                py: 1,
+                                                                borderRadius: 1,
+                                                                width: "100%",
+                                                                textOverflow: "ellipsis",
+                                                                overflow: "hidden",
+                                                                whiteSpace: "nowrap",
+                                                                "&:hover": {
+                                                                    backgroundColor: "#d6d8da",
+                                                                },
+                                                            }}
+                                                        >
+                                                            {action.label}
+                                                        </Button>
+                                                    </Box>
+                                                ))}
+
+                                                {/* Render nhóm Thao tác */}
+                                                <Box>
+                                                    <Box
                                                         sx={{
-                                                            justifyContent: "flex-start",
-                                                            backgroundColor: "#e4e6ea",
-                                                            color: "#172b4d",
-                                                            textTransform: "none",
+                                                            py: 0.5,
                                                             fontWeight: 500,
-                                                            fontSize: 14,
-                                                            px: 2,
-                                                            py: 1,
-                                                            borderRadius: 1,
-                                                            width: "100%",
-                                                            textOverflow: "ellipsis",
-                                                            overflow: "hidden",
-                                                            whiteSpace: "nowrap",
-                                                            "&:hover": {
-                                                                backgroundColor: "#d6d8da",
-                                                            },
+                                                            color: "#5e6c84",
+                                                            fontSize: "14px",
                                                         }}
                                                     >
-                                                        {label}
-                                                    </Button>
-                                                ))}
+                                                        Thao tác
+                                                    </Box>
+                                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 0.5 }}>
+                                                        {operationActions.map((action, index) => (
+                                                            <Box key={index}>
+                                                                <Button
+                                                                    startIcon={action.icon}
+                                                                    onClick={action.onClick}
+                                                                    ref={action.label === "Xoá" ? deleteButtonRef : null}
+                                                                    variant="contained"
+                                                                    disableElevation
+                                                                    title={action.label}
+                                                                    sx={{
+                                                                        justifyContent: "flex-start",
+                                                                        backgroundColor: "#e4e6ea",
+                                                                        color: "#172b4d",
+                                                                        textTransform: "none",
+                                                                        fontWeight: 600,
+                                                                        fontSize: 14,
+                                                                        px: 2,
+                                                                        py: 1,
+                                                                        borderRadius: 1,
+                                                                        width: "100%",
+                                                                        textOverflow: "ellipsis",
+                                                                        overflow: "hidden",
+                                                                        whiteSpace: "nowrap",
+                                                                        "&:hover": {
+                                                                            backgroundColor: "#d6d8da",
+                                                                        },
+                                                                        ...action.sx,
+                                                                    }}
+                                                                >
+                                                                    {action.label}
+                                                                </Button>
+                                                            </Box>
+                                                        ))}
+                                                    </Box>
+                                                </Box>
                                             </Box>
                                         </Box>
                                     </Box>
@@ -869,6 +957,74 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                 />
                             </Dialog>
 
+                            {/* Delete Confirmation Popover */}
+                            <Popover
+                                open={Boolean(deleteAnchorEl)}
+                                anchorEl={deleteAnchorEl}
+                                onClose={handleCloseDeletePopover}
+                                anchorOrigin={{
+                                    vertical: 'bottom',
+                                    horizontal: 'right',
+                                }}
+                                transformOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                PaperProps={{
+                                    sx: {
+                                        p: 2,
+                                        borderRadius: 2,
+                                        boxShadow: 3,
+                                        width: 304,
+                                        mt: 2
+                                    }
+                                }}
+                            >
+                                {isRemoveLoading ? (
+                                    <LogoLoading />
+                                ) : (
+                                    <>
+                                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                            Bạn muốn xoá thẻ?
+                                        </Typography>
+                                        <Typography variant="body2" paragraph>
+                                            Tất cả hoạt động trên thẻ sẽ bị xoá khỏi bảng tin hoạt động và bạn sẽ không thể mở lại thẻ nữa. Sẽ không có cách nào để hoàn tác. Bạn có chắc không?
+                                        </Typography>
+
+                                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                            <Button
+                                                onClick={handleCloseDeletePopover}
+                                                variant="outlined"
+                                                size="small"
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    fontWeight: 600
+                                                }}
+                                            >
+                                                Huỷ
+                                            </Button>
+                                            <Button
+                                                onClick={handleConfirmDelete}
+                                                variant="contained"
+                                                color="error"
+                                                size="small"
+                                                startIcon={<Delete fontSize="small" />}
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    fontWeight: 600,
+                                                    '&:hover': {
+                                                        backgroundColor: 'error.dark'
+                                                    }
+                                                }}
+                                            >
+                                                Xoá
+                                            </Button>
+                                        </Stack>
+                                    </>
+                                )}
+                            </Popover>
+
+
 
                             {/* MenuMember */}
                             <MemberMenu
@@ -882,15 +1038,6 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                 onMemberSelect={handleUserSelected}
                             />
 
-                            {/* Sử dụng DateItem */}
-                            <DateItem
-                                open={isDateDialogOpen}
-                                onClose={handleCloseDateDialog}
-                                type="card" // hoặc "checklist-item"
-                                targetId="123" // ID của card hoặc checklist item
-                            />
-
-                            {/* Checklist */}
                             <CheckMenu
                                 anchorEl={anchorElCheckList}
                                 open={Boolean(anchorElCheckList)}
@@ -901,15 +1048,6 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                     { label: "Dự án 2025", value: "2025" },
                                 ]}
                             />
-
-                            <LabelsPopover
-                                anchorEl={labelsAnchorEl}
-                                open={Boolean(labelsAnchorEl)}
-                                onClose={handleCloseLabelsMenu}
-                                cardId={cardId} // Pass the current card ID if needed
-                            />
-
-                            <AttachmentMenu anchorEl={anchorElFile} open={Boolean(anchorElFile)} onClose={handleCloseFile} />
                         </>
 
                     )}

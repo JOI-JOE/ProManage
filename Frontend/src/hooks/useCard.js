@@ -28,6 +28,12 @@ import {
   fetchAttachments,
   putAttachment,
   removeAttachment,
+  fetchComments,
+  postComment,
+  putComment,
+  removeComment,
+  removeCard,
+  updateCheckList,
 } from "../api/models/cardsApi";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
@@ -61,6 +67,15 @@ export const useFetchAttachments = (cardId) => {
     staleTime: 1000 * 60 * 5, // 5 phút, tránh gọi lại nếu chưa cần thiết
   });
 };
+// CommentCard
+export const useFetchComments = (cardId) => {
+  return useQuery({
+    queryKey: ["comments", cardId],
+    queryFn: () => fetchComments(cardId),
+    enabled: Boolean(cardId),
+    staleTime: 1000 * 60 * 5, // 5 phút, tránh gọi lại nếu chưa cần thiết
+  });
+};
 // POST FUNCTION ------------------------------------------------------
 // thêm mới list
 export const usePostCheckList = () => {
@@ -81,7 +96,7 @@ export const usePostChecklistItem = () => {
     },
   });
 };
-// Thêm mới attachment
+// Thêm mới file
 export const usePostAttachmentFile = () => {
   return useMutation({
     mutationFn: ({ cardId, file }) => postAttachmentFile({ cardId, file }),
@@ -90,7 +105,7 @@ export const usePostAttachmentFile = () => {
     },
   });
 };
-// Hook for adding links
+// thêm mới link
 export const usePostAttachmentLink = () => {
   // const queryClient = useQueryClient();
   return useMutation({
@@ -104,7 +119,25 @@ export const usePostAttachmentLink = () => {
     },
   });
 };
+// thêm mới comment
+export const usePostComment = () => {
+  return useMutation({
+    mutationFn: ({ cardId, content }) => postComment({ cardId, content }),
+    onError: (error) => {
+      console.error("❌ Lỗi khi thêm bình luận:", error);
+    },
+  });
+};
 // PUT FUNCTION ------------------------------------------------------
+// Checklist
+export const useUpdateCheckList = () => {
+  return useMutation({
+    mutationFn: ({ checklistId, data }) => updateCheckList(checklistId, data),
+    onError: (error) => {
+      console.error("Error updating checklist:", error);
+    },
+  });
+};
 // Item
 export const useUpdateCheckListItem = (checklistItemId) => {
   const mutation = useMutation({
@@ -125,42 +158,44 @@ export const useUpdateCheckListItem = (checklistItemId) => {
     updateEndTime: (end_time) => mutation.mutate({ end_time }),
     updateReminder: (reminder) => mutation.mutate({ reminder }),
     updateAssignee: (assignee) => mutation.mutate({ assignee }),
-
     isUpdating: mutation.isLoading,
   };
 };
 // Card
 export const useUpdateCardById = (cardId) => {
   const queryClient = useQueryClient();
-  // Mutation riêng cho title
-  const titleMutation = useMutation({
+
+  const mutation = useMutation({
     mutationFn: (data) => updateCardById(cardId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["card", cardId] });
-    },
+    // onSuccess: () => {
+    //   queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+    // },
     onError: (error) => {
-      console.error("Lỗi khi cập nhật tiêu đề:", error);
+      console.error("Error updating card:", error.message || error);
     },
   });
 
-  // Mutation riêng cho description
-  const descriptionMutation = useMutation({
-    mutationFn: (data) => updateCardById(cardId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["card", cardId] });
-    },
-    onError: (error) => {
-      console.error("Lỗi khi cập nhật mô tả:", error);
-    },
-  });
+  const updateCard = (data) => {
+    mutation.mutate(data);
+  };
 
   return {
-    updateTitle: (title) => titleMutation.mutate({ title }),
-    updateDescription: (description) =>
-      descriptionMutation.mutate({ description }),
-
-    isUpdatingTitle: titleMutation.isLoading,
-    isUpdatingDescription: descriptionMutation.isLoading,
+    updateTitle: (title) => updateCard({ title }),
+    updateDescription: (description) => updateCard({ description }),
+    updateThumbnail: (thumbnail) => updateCard({ thumbnail }),
+    updatePosition: (position) => updateCard({ position }),
+    updateDates: ({ startDate, endDate, endTime, reminder }) =>
+      updateCard({
+        start_date: startDate,
+        end_date: endDate,
+        end_time: endTime,
+        reminder,
+      }),
+    updateIsCompleted: (isCompleted) =>
+      updateCard({ is_completed: isCompleted }),
+    updateIsArchived: (isArchived) => updateCard({ is_archived: isArchived }),
+    isUpdating: mutation.isLoading,
+    error: mutation.error,
   };
 };
 // Member card
@@ -233,7 +268,17 @@ export const usePutAttachment = () => {
     reset: mutation.reset,
   };
 };
+
+export const useUpdateComment = () => {
+  return useMutation({
+    mutationFn: ({ commentId, content }) => putComment(commentId, content),
+    onError: (error) => {
+      console.error("Error updating comment:", error);
+    },
+  });
+};
 // DELETE FUNCTION -----------------------------------------------------
+// - checklist
 export const useRemoveChecklistFromCard = () => {
   return useMutation({
     mutationFn: (checklistId) => removeCheckListFromCard(checklistId),
@@ -242,6 +287,7 @@ export const useRemoveChecklistFromCard = () => {
     },
   });
 };
+// - checklistitem
 export const useRemoveCheckListItem = () => {
   const mutation = useMutation({
     mutationFn: (checklistItemId) => removeCheckListItem(checklistItemId),
@@ -251,15 +297,34 @@ export const useRemoveCheckListItem = () => {
   });
 
   return {
-    removeItem: mutation.mutate, // 👈 Đây mới là thứ bạn dùng trong component
+    removeItem: mutation.mutate,
     ...mutation,
   };
 };
+// -attachment
 export const useRemoveAttachment = () => {
   return useMutation({
     mutationFn: (attachmentId) => removeAttachment(attachmentId),
     onError: (error) => {
       console.error("❌ Failed to remove checklist item:", error);
+    },
+  });
+};
+// - comment
+export const useRemoveComment = () => {
+  return useMutation({
+    mutationFn: (commentId) => removeComment(commentId),
+    onError: (error) => {
+      console.error("❌ Failed to remove commemt:", error);
+    },
+  });
+};
+// - card
+export const useRemoveCard = () => {
+  return useMutation({
+    mutationFn: (cardId) => removeCard(cardId),
+    onError: (error) => {
+      console.error("❌ Failed to remove commemt:", error);
     },
   });
 };

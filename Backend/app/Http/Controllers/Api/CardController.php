@@ -149,12 +149,19 @@ class CardController extends Controller
             ],
         ];
     }
-
     public function update(Request $request, $cardId)
     {
         $validatedData = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|nullable|string',
+            'thumbnail' => 'sometimes|nullable|string|max:255',
+            'position' => 'sometimes|numeric|min:0',
+            'start_date' => 'sometimes|nullable|date',
+            'end_date' => 'sometimes|nullable|date',
+            'end_time' => 'sometimes|nullable|date_format:H:i',
+            'reminder' => 'sometimes|nullable|date',
+            'is_completed' => 'sometimes|boolean',
+            'is_archived' => 'sometimes|boolean',
         ]);
 
         if (isset($validatedData['title'])) {
@@ -165,6 +172,25 @@ class CardController extends Controller
             $this->updateCardDescription($cardId, $validatedData['description']);
         }
 
+        if (array_key_exists('thumbnail', $validatedData)) {
+            $this->updateCardThumbnail($cardId, $validatedData['thumbnail']);
+        }
+
+        if (isset($validatedData['position'])) {
+            $this->updateCardPosition($cardId, $validatedData['position']);
+        }
+
+        // Gộp xử lý ngày giờ
+        $this->updateCardDates($cardId, $validatedData);
+
+        if (isset($validatedData['is_completed'])) {
+            $this->updateCardIsCompleted($cardId, $validatedData['is_completed']);
+        }
+
+        if (isset($validatedData['is_archived'])) {
+            $this->updateCardIsArchived($cardId, $validatedData['is_archived']);
+        }
+
         $card = DB::table('cards')->where('id', $cardId)->first();
 
         return response()->json([
@@ -172,18 +198,80 @@ class CardController extends Controller
             'card' => $card
         ]);
     }
+    private function updateCardDates($cardId, $validatedData)
+    {
+        $updates = [];
+
+        if (array_key_exists('start_date', $validatedData)) {
+            $updates['start_date'] = $validatedData['start_date'];
+        }
+
+        if (array_key_exists('end_date', $validatedData)) {
+            $updates['end_date'] = $validatedData['end_date'];
+        }
+
+        if (array_key_exists('end_time', $validatedData)) {
+            $updates['end_time'] = $validatedData['end_time'];
+        }
+
+        if (array_key_exists('reminder', $validatedData)) {
+            $updates['reminder'] = $validatedData['reminder'];
+        }
+
+        if (!empty($updates)) {
+            DB::table('cards')->where('id', $cardId)->update($updates);
+        }
+    }
+    // Các hàm còn lại giữ nguyên
     private function updateCardTitle($cardId, $title)
     {
-        DB::table('cards')
-            ->where('id', $cardId)
-            ->update(['title' => $title]);
+        DB::table('cards')->where('id', $cardId)->update(['title' => $title]);
     }
 
     private function updateCardDescription($cardId, $description)
     {
-        DB::table('cards')
-            ->where('id', $cardId)
-            ->update(['description' => $description]);
+        DB::table('cards')->where('id', $cardId)->update(['description' => $description]);
+    }
+
+    private function updateCardThumbnail($cardId, $thumbnail)
+    {
+        DB::table('cards')->where('id', $cardId)->update(['thumbnail' => $thumbnail]);
+    }
+
+    private function updateCardPosition($cardId, $position)
+    {
+        DB::table('cards')->where('id', $cardId)->update(['position' => $position]);
+    }
+
+    private function updateCardIsCompleted($cardId, $isCompleted)
+    {
+        DB::table('cards')->where('id', $cardId)->update(['is_completed' => $isCompleted]);
+    }
+
+    private function updateCardIsArchived($cardId, $isArchived)
+    {
+        DB::table('cards')->where('id', $cardId)->update(['is_archived' => $isArchived]);
+    }
+
+    public function destroy($cardId)
+    {
+        // 📌 Kiểm tra sự tồn tại
+        $card = DB::table('cards')->where('id', $cardId)->first();
+
+        if (!$card) {
+            return response()->json(['message' => 'Card not found'], 404);
+        }
+
+        try {
+            DB::table('cards')->where('id', $cardId)->delete();
+
+            return response()->json(['message' => 'Card deleted successfully.'], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete card.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
 
