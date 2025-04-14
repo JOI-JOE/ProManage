@@ -100,6 +100,8 @@ const router = createBrowserRouter([
           { path: "w/:workspaceName/account", element: <Account /> },
           { path: "b/:boardId/gantt-chart", element: <GanttChart /> },
           { path: "w/:workspaceName/calendar", element: <Calendar /> },
+          { path: "w/:workspaceName/calendar/c/:cardId", element: <CardModal /> },
+         
 
 
 

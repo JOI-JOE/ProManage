@@ -260,8 +260,8 @@ export const useUpdateBoardVisibility = () => {
   return useMutation({
     mutationFn: ({ boardId, visibility }) => updateBoardVisibility(boardId, visibility),
     onSuccess: (data, { boardId }) => {
+      queryClient.invalidateQueries({ queryKey: ["lists", boardId], exact: true });
       // Optionally invalidate queries to ensure data is fresh
-      queryClient.invalidateQueries(["boards", boardId]); // Refresh board data
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật visibility của bảng:", error);
