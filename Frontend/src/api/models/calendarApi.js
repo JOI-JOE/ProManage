@@ -24,12 +24,13 @@ export const getCalendar = async (boardIds = [], month) => {
   }
 };
 
-export const UpdateCardCalendar = async (cardId,board_id, end_date,month) => {
+export const UpdateCardCalendar = async (cardId,board_id,start_date, end_date,month) => {
   console.log("dữ liệu trả về ",end_date)
   try {
     const response = await authClient.put(
       `board/${board_id}/calendar/${cardId}`,
       {
+        start_date:start_date,
         end_date:end_date,
         month:month
 

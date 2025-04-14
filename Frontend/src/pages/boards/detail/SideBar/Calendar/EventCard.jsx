@@ -1,18 +1,93 @@
 // components/EventCard.jsx
-import React from 'react';
-
-const EventCard = ({ title, labels = [], members = [] }) => {
+import { Check, Square } from '@mui/icons-material';
+import React, { useState } from 'react';
+import { useToggleCardCompletion } from '../../../../../hooks/useCard';
+const isSameDay = (date1, date2) => {
+  if (!date1 || !date2) return false;
   return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: '8px',
-      padding: '8px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      borderLeft: `4px solid ${labels[0]?.color_code || "#2196F3"}`
-    }}>
-      <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '4px', color: '#333' }}>
+    new Date(date1).getFullYear() === new Date(date2).getFullYear() &&
+    new Date(date1).getMonth() === new Date(date2).getMonth() &&
+    new Date(date1).getDate() === new Date(date2).getDate()
+  );
+};
+const EventCard = ({ title, labels = [], members = [], isCompleted = false,onToggleComplete,eventStart, currentDate }) => {
+  // const { mutate: toggleCompletion } = useToggleCardCompletion();
+  const [completed, setCompleted] = useState(isCompleted);
+  const [hovered, setHovered] = useState(false);
+  const isFirstDay = isSameDay(eventStart, currentDate);
+  const handleToggle = (e) => {
+    e.stopPropagation(); 
+    const newStatus = !completed;
+    setCompleted(newStatus);
+    // TODO: Gọi mutation API ở đây nếu cần
+    // updateCardStatus(...);
+    if (onToggleComplete) {
+      onToggleComplete(newStatus); // Gọi callback nếu có
+    }
+  };
+  const handleMouseEnter = () => {
+    if (isFirstDay) {
+      setHovered(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+  };
+  const shouldShowCheck = (hovered || completed) && isFirstDay;
+
+  // const [completed, setCompleted] = useState(isCompleted);
+  return (
+    <div
+    onMouseEnter={handleMouseEnter}
+    onMouseLeave={handleMouseLeave}
+      style={{
+        background: '#ffffff',
+        borderRadius: '8px',
+        padding: '8px',
+        width: '100%',
+        position: 'relative',
+        paddingLeft: shouldShowCheck ? '24px' : '0px', // Chừa chỗ cho nút check
+        transition: 'padding 0.2s ease',
+      }}>
+      {shouldShowCheck && (
+        <div
+        onClick={(e) => handleToggle(e)}
+          title="Đánh dấu hoàn tất"
+          style={{
+            position: 'absolute',
+            left: '8px',
+            top: '10px',
+            width: '16px',
+            height: '16px',
+            borderRadius: '50%',
+            border: `2px solid ${completed ? '#4caf50' : '#ccc'}`,
+            backgroundColor: completed ? '#4caf50' : 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {completed && <Check size={10} color="white" />}
+        </div>
+      )}
+
+      {/* Title */}
+      <div
+        style={{
+          fontWeight: 600,
+          fontSize: '13px',
+          marginBottom: '4px',
+          color: completed ? '#999' : '#333',
+          // textDecoration: completed ? 'line-through' : 'none',
+          transition: 'all 0.2s ease',
+        }}
+      >
         {title}
       </div>
+
 
       <div style={{ marginBottom: '4px' }}>
         {labels.map((label, idx) => (
