@@ -172,6 +172,11 @@ export const copyBoard = async (data) => {
 };
 
 
+export const forceDestroyBoard = async (boardId) => {
+  const response = await authClient.delete(`/boards/${boardId}/fDestroy`);
+  return response.data;
+};
+
 
 
 

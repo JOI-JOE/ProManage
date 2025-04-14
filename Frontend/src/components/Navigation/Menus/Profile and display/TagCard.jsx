@@ -21,6 +21,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useToggleCardCompletion, useUserBoardCards } from "../../../../hooks/useCard";
 import { useUserById } from "../../../../hooks/useUser";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 const TagCard = () => {
   // const { user } = useMe();
@@ -30,10 +31,12 @@ const TagCard = () => {
 
   const { data: card, isLoading, error } = useUserBoardCards(user?.id);
 
+  const navigate = useNavigate();
 
 
   const data = card?.cards;
-  console.log(data);
+  console.log(data?.list_name);
+
   const [checkedItems, setCheckedItems] = useState([]);
   const [hoverRow, setHoverRow] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -78,10 +81,20 @@ const TagCard = () => {
   const toggleCompletion = useToggleCardCompletion();
 
 
+  const [selectedBoardName, setSelectedBoardName] = useState("");
+  const [currentListName, setCurrentListName] = useState("");
 
-  const handleListClick = (event) => {
+  const handleListClick = (event, boardName, listName) => {
+    setSelectedBoardName(boardName);
+    setCurrentListName(listName);
     setListMenuAnchor(event.currentTarget);
   };
+
+const filteredListNames = [...new Set(
+  (data || [])
+    .filter((card) => card.board_name === selectedBoardName)
+    .map((card) => card.list_name)
+)];
 
   const handleListMenuClose = () => {
     setListMenuAnchor(null);
@@ -184,7 +197,9 @@ const TagCard = () => {
                     <Typography>{item.title}</Typography>
                   </TableCell>
 
-                  <TableCell sx={{ borderBottom: "1px solid #e0e0e0" }}>
+                  <TableCell onClick={(e) => handleListClick(e, item.board_name ,item.list_name)} sx={{ borderBottom: "1px solid #e0e0e0", cursor:"pointer","&:hover": {
+                          backgroundColor: "#e0ebeb",
+                        }, }}>
                     <Typography>{item.list_name}</Typography>
                   </TableCell>
 
@@ -194,8 +209,8 @@ const TagCard = () => {
                         key={tagIndex}
                         sx={{
                           display: "inline-block",
-                          width: 24,
-                          height: 8,
+                          width: 30,
+                          height: 9,
                           backgroundColor: label.color.hex_code,
                           borderRadius: 1,
                           marginRight: 0.5
@@ -208,7 +223,11 @@ const TagCard = () => {
                     {item.end_date ? new Date(item.end_date).toLocaleDateString() : "-"}
                   </TableCell>
 
-                  <TableCell sx={{ borderBottom: "1px solid #e0e0e0" }}>
+                  <TableCell 
+                    onClick={() => navigate(`/b/${item.board_id}/${item.board_name}`)}
+                    sx={{ borderBottom: "1px solid #e0e0e0", cursor:"pointer","&:hover": {
+                          backgroundColor: "#e0ebeb",
+                        },}}>
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <Box
                         component="img"
@@ -231,16 +250,23 @@ const TagCard = () => {
                   </TableCell>
                 </TableRow>
               ))}
-
+              <Menu anchorEl={listMenuAnchor} open={listMenuOpen} onClose={handleListMenuClose}>
+                <Typography sx={{ padding:2,textAlign:"center",borderBottom:"1px solid black"}}>Thay đổi danh sách</Typography>
+                {filteredListNames.map((listName, index) => (
+                  <MenuItem key={index} onClick={handleListMenuClose}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", width: 210, padding:1}}>
+                      <Typography>{listName}</Typography>
+                      {listName === currentListName && (
+                        <Typography sx={{ color: "green", fontWeight: "bold" }}>✓</Typography>
+                      )}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Menu>
             </TableBody>
           </Table>
         </TableContainer>
 
-        <Menu anchorEl={listMenuAnchor} open={listMenuOpen} onClose={handleListMenuClose}>
-          <MenuItem onClick={handleListMenuClose}>To Do</MenuItem>
-          <MenuItem onClick={handleListMenuClose}>Doing</MenuItem>
-          <MenuItem onClick={handleListMenuClose}>Done</MenuItem>
-        </Menu>
       </Box>
     </Box>
   );
