@@ -9,3 +9,13 @@ export const getActivityByCardId = async (cardId) => {
         throw error;
     }
 };
+
+export const getActivityByUser = async () => {
+    try {
+        const response = await authClient.get(`user/activities`);
+        return response.data; // Trả về dữ liệu từ API
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy danh sách activity:", error);
+        throw error;
+    }
+};

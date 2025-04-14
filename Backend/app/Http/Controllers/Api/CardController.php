@@ -12,7 +12,6 @@ use App\Models\Attachment;
 use App\Models\CardLabel;
 use App\Models\CheckList;
 use App\Models\CommentCard;
-use Illuminate\Support\Facades\Auth;
 use App\Events\CardCreated;
 use App\Events\CardDeleted;
 use App\Events\CardDescriptionUpdated;
@@ -34,9 +33,10 @@ use App\Jobs\SendReminderNotificationCard;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
-use Str;
+use Illuminate\Support\Str;
 
 class CardController extends Controller
 { // app/Http/Controllers/CardController.php
@@ -171,8 +171,11 @@ class CardController extends Controller
                 ->event('addmember')
                 ->withProperties([
                     'card_id' => $cards->id,
+                    'card_title' => $cards->title,
                     'added_user' => $user->id,
                     'added_user_email' => $user->email,
+                    'board_id' => $card->list->board->id, // thêm dòng này
+                    'board_name' => $card->list->board->name,
                 ])
                 ->log("{$userName} đã thêm  {$user->user_name} vào thẻ.");
             // broadcast(new ActivityEvent($activity, $cardId, $userByCard));
@@ -206,8 +209,11 @@ class CardController extends Controller
             ->event('remove_member')
             ->withProperties([
                 'card_id' => $card->id,
+                'card_title' => $card->title,
                 'removed_user_id' => $user->id,
                 'removed_user_email' => $user->email,
+                'board_id' => $card->list->board->id, // thêm dòng này
+                'board_name' => $card->list->board->name,
 
             ])
             ->log(
@@ -279,7 +285,12 @@ class CardController extends Controller
                 ->causedBy(auth()->user())
                 ->performedOn($card)
                 ->event('updated_datetime')
-                ->withProperties(array_merge(['card_title' => $card->title], $changes))
+                ->withProperties(array_merge([
+                    'card_title' => $card->title,
+                    'board_id' => $card->list->board->id, // thêm dòng này
+                    'board_name' => $card->list->board->name,
+                    'card_id' => $card->id
+                ], $changes))
                 ->log($logMessage);
 
             // Gửi thông báo đến tất cả người dùng liên quan
@@ -313,7 +324,7 @@ class CardController extends Controller
         $card->start_date = null;
         $card->end_date = null;
         $card->end_time = null;
-        $card->reminder=null;
+        $card->reminder = null;
         $card->save();
 
         return response()->json([
@@ -615,7 +626,7 @@ class CardController extends Controller
 
             DB::commit();
             $createdCard = Card::with(['list.board', 'checklists.items', 'labels', 'members', 'attachments', 'comments'])
-            ->findOrFail($newCard->id);
+                ->findOrFail($newCard->id);
 
             broadcast(new CardCopied($createdCard))->toOthers();
 
@@ -639,9 +650,9 @@ class CardController extends Controller
             'board_id' => 'required|exists:boards,id',
             'list_board_id' => 'required|exists:list_boards,id',
             'position' => 'required|numeric|min:0',
-               // Thêm validation cho members
-               'members' => 'array',
-               'members.*' => 'exists:users,id', // Thêm validation cho trường members
+            // Thêm validation cho members
+            'members' => 'array',
+            'members.*' => 'exists:users,id', // Thêm validation cho trường members
         ]);
 
         if ($validator->fails()) {
@@ -764,6 +775,48 @@ class CardController extends Controller
             \Log::error($e->getTraceAsString());
             return response()->json(['message' => 'Failed to move card', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    public function getCardsByUserBoards($id)
+    {
+        $user = User::findOrFail($id);
+
+        $boards = $user->boards()->with([
+            'workspace',
+            'lists' => function ($q) {
+                $q->with([
+                    'cards' => function ($q) {
+                        $q->where('is_archived', false)->with('labels');
+                    }
+                ]);
+            }
+        ])->get();
+
+        // Format lại dữ liệu để trả về danh sách thẻ với đầy đủ thông tin
+        $cards = [];
+
+        foreach ($boards as $board) {
+            foreach ($board->lists as $list) {
+                foreach ($list->cards as $card) {
+                    $cards[] = [
+                        'id' => $card->id,
+                        'title' => $card->title,
+                        'end_date' => $card->end_date,
+                        'list_name' => $list->name,
+                        'is_completed' => $card->is_completed,
+                        'labels' => $card->labels->map(fn($label) => ['name' => $label->name, 'color' => $label->color]),
+                        'board_name' => $board->name,
+                        'board_thumbnail' => $board->thumbnail,
+                        'workspace_name' => $board->workspace->name ?? '',
+                        'created_at' => $card->created_at,
+                    ];
+                }
+            }
+        }
+
+        return response()->json([
+            'cards' => $cards,
+        ]);
     }
 
 

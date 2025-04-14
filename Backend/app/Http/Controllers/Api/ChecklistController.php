@@ -73,8 +73,11 @@ class ChecklistController extends Controller
             ->event('added_checklist')
             ->withProperties([
                 'card_title' => $card->title,
+                'card_id' => $card->id,
                 'checklist_id' => $checklist->id,
                 'name' => $request->name,
+                'board_id' => $card->list->board->id, // thêm dòng này
+                'board_name' => $card->list->board->name,
             ])
             ->log("{$user_name} đã thêm danh sách công việc {$request->name} vào thẻ này");
 

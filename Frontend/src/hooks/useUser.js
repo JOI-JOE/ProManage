@@ -8,6 +8,8 @@ import {
   forgotPassword,
   getUser,
   updatePass,
+  getUserById,
+  updateUserProfile,
   userRegister,
 } from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
@@ -130,5 +132,25 @@ export const useUpdatePass = () => {
       mutationFn: ({ email,password }) => updatePass(email,password),
       
 
+  });
+};
+
+export const useUserById = () => {
+  return useQuery({
+    queryKey: ["userProfile"],
+    queryFn: () => getUserById(),
+  });
+};
+
+
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => updateUserProfile(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProfile"], exact: true });
+    },
   });
 };

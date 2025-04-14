@@ -11,6 +11,8 @@ import {
 import FilterListIcon from "@mui/icons-material/FilterList";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import BoltIcon from "@mui/icons-material/Bolt";
+import TimelineIcon from '@mui/icons-material/Timeline';
+import { Link as RouterLink } from 'react-router-dom';
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import AutomationDialog from "./childComponent/Auto/Auto";
@@ -25,6 +27,10 @@ import { useGetBoardMembers, useMemberJoinedListener, useRequestJoinBoard } from
 import { useParams } from "react-router-dom";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
 import { useUser } from "../../../../../hooks/useUser";
+
+import LockIcon from "@mui/icons-material/Lock"; // Icon cho Riêng tư
+import GroupIcon from "@mui/icons-material/Group"; // Icon cho Không gian làm việc
+import PublicIcon from "@mui/icons-material/Public";
 
 const style = {
   border: "none",
@@ -41,14 +47,14 @@ const style = {
 
 const BoardBar = () => {
 
-  const { boardId } = useParams();
+  const { boardId, boardName } = useParams();
   const { board, isLoading, error } = useContext(BoardContext);
-  const { data: boardMembers  = [] } = useGetBoardMembers(boardId);
+  const { data: boardMembers = [] } = useGetBoardMembers(boardId);
   // console.log(board);
   const { data: user } = useUser();
   useMemberJoinedListener(user?.id)
 
-  const currentUserId = user?.id; 
+  const currentUserId = user?.id;
   const joinBoardMutation = useRequestJoinBoard(); // Sử dụng custom hook
   const [openFilterDialog, setOpenFilterDialog] = useState(false);
   const handleFilterDialogOpen = () => setOpenFilterDialog(true);
@@ -70,50 +76,50 @@ const BoardBar = () => {
   // const [teamName, setTeamName] = useState(board?.title || "Team WD-51");
 
   const [editTitle, setEditTitle] = useState(false);
-  const [teamName, setTeamName] = useState(board?.title);
+  const [teamName, setTeamName] = useState(boardName);
   const updateBoardName = useUpdateBoardName();
 
   const [isMember, setIsMember] = useState(true); // Trạng thái thành viên
 
-  const admins = Array.isArray(boardMembers?.data) 
-  ? boardMembers.data.filter(member => member.pivot.role === "admin") 
-  : [];
+  const admins = Array.isArray(boardMembers?.data)
+    ? boardMembers.data.filter(member => member.pivot.role === "admin")
+    : [];
 
-  const isAdmin = Array.isArray(boardMembers?.data) 
-  ? boardMembers.data.some(member => 
+  const isAdmin = Array.isArray(boardMembers?.data)
+    ? boardMembers.data.some(member =>
       member.id === currentUserId && member.pivot.role === "admin"
-    ) 
-  : false;
+    )
+    : false;
 
   const isCreator = board?.created_by === currentUserId;
   // console.log("Is creator:", isCreator);
-  
-
-// Kiểm tra trạng thái thành viên
-useEffect(() => {
-  const isCurrentUserMember = Array.isArray(boardMembers?.data)
-    ? boardMembers.data.some((member) => member.id === currentUserId)
-    : false;
-  setIsMember(isCurrentUserMember);
-}, [boardMembers?.data, currentUserId]);
 
 
-const handleJoinRequest = () => {
-  joinBoardMutation.mutate(
-    { boardId, userId: currentUserId }, // Truyền dữ liệu trực tiếp
-    {
-      onSuccess: (data) => {
-        if (data.is_member) {
-          setIsMember(true);
-          toast.success(data.message);
-        }
-      },
-      onError: (error) => {
-        toast.error("Có lỗi khi tham gia bảng!");
-      },
-    }
-  );
-};
+  // Kiểm tra trạng thái thành viên
+  useEffect(() => {
+    const isCurrentUserMember = Array.isArray(boardMembers?.data)
+      ? boardMembers.data.some((member) => member.id === currentUserId)
+      : false;
+    setIsMember(isCurrentUserMember);
+  }, [boardMembers?.data, currentUserId]);
+
+
+  const handleJoinRequest = () => {
+    joinBoardMutation.mutate(
+      { boardId, userId: currentUserId }, // Truyền dữ liệu trực tiếp
+      {
+        onSuccess: (data) => {
+          if (data.is_member) {
+            setIsMember(true);
+            toast.success(data.message);
+          }
+        },
+        onError: (error) => {
+          toast.error("Có lỗi khi tham gia bảng!");
+        },
+      }
+    );
+  };
 
 
   // Quản lý trạng thái sao (isStarred)
@@ -129,13 +135,13 @@ const handleJoinRequest = () => {
   const handleTitleChange = (e) => setTeamName(e.target.value);
 
   const handleTitleBlur = () => {
-    if (teamName.trim() === "" || teamName === board?.name) {
+    if (teamName.trim() === "" || teamName === boardName) {
       setEditTitle(false);
       return;
     }
 
     updateBoardName.mutate(
-      { boardId: board.id, name: teamName, workspaceId: board.workspaceId  },
+      { boardId: boardId, name: boardName, workspaceId: board.workspaceId },
       {
         onSuccess: () => {
           setEditTitle(false);
@@ -155,6 +161,30 @@ const handleJoinRequest = () => {
 
   const boardVisibility = board?.visibility || "test"; // Default to "Private"
 
+  const getVisibilityProps = (boardVisibility) => {
+    switch (boardVisibility) {
+      case "private":
+        return {
+          icon: <LockIcon sx={{ color: "red" }} />,
+          label: "Riêng tư",
+        };
+      case "workspace":
+        return {
+          icon: <GroupIcon sx={{ color: "blue" }} />,
+          label: "Không gian làm việc",
+        };
+      case "public":
+        return {
+          icon: <PublicIcon sx={{ color: "green" }} />,
+          label: "Công khai",
+        };
+      default:
+        return {
+          icon: <LockIcon sx={{ color: "red" }} />,
+          label: "Riêng tư", // Giá trị mặc định nếu boardVisibility không hợp lệ
+        };
+    }
+  };
   return (
     <Box
       sx={{
@@ -172,7 +202,7 @@ const handleJoinRequest = () => {
         {/*Chỉnh sửa tiêu đề  */}
         {editTitle ? (
           <TextField
-            value={teamName ?? board?.title}
+            value={teamName ?? boardName}
             onChange={handleTitleChange}
             onBlur={handleTitleBlur}
             onKeyPress={handleTitleKeyPress}
@@ -196,21 +226,23 @@ const handleJoinRequest = () => {
 
         {/* <StarButton isStarred={isStarred} onStarClick={handleStarClick} /> */}
         <Chip
-          icon={<LockOpenIcon />}
-          label={`Khả năng xem: ${boardVisibility}`} // Display the visibility status
+          icon={getVisibilityProps(boardVisibility).icon}
+          label={getVisibilityProps(boardVisibility).label}
           variant="outlined"
           clickable
           sx={style}
           onClick={handleViewPermissionsDialogOpen}
         />
 
+
         <Chip
-          icon={<BoltIcon />}
-          label="Tự động hóa"
+          icon={<TimelineIcon />}
+          label="Biểu đồ Gantt"
           variant="outlined"
           clickable
           sx={style}
-          onClick={handleAutomationDialogOpen}
+          component={RouterLink}
+          to={`/b/${boardId}/gantt-chart`} // hoặc route nào bạn đang dùng cho Gantt chart
         />
         <Chip
           icon={<FilterListIcon />}

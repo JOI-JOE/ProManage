@@ -90,4 +90,9 @@ class Board extends Model
     {
         return $this->hasMany(Card::class);
     }
+
+    public function labels()
+{
+    return $this->hasMany(Label::class);
+}
 }
