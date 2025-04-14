@@ -18,7 +18,7 @@ import {
 import { Restore, Delete, Archive } from "@mui/icons-material";
 import MyWorkspace from "../../../components/MyWorkspace";
 import { useGetWorkspaces } from "../../../hooks/useWorkspace";
-import { useClosedBoards, useToggleBoardClosed } from "../../../hooks/useBoard";
+import { useClosedBoards, useForceDestroyBoard, useToggleBoardClosed } from "../../../hooks/useBoard";
 
 const HomeBoard = () => {
   const { data: workspaces, isLoading, isError } = useGetWorkspaces();
@@ -28,6 +28,8 @@ const HomeBoard = () => {
   const [openClosedBoards, setOpenClosedBoards] = useState(false);
 
   const { mutate: toggleBoardClosed } = useToggleBoardClosed();
+
+  const { mutate: destroyBoard, isPending: isDeleting } = useForceDestroyBoard();
 
   if (isLoading) return <p>Đang tải workspaces...</p>;
   if (isError) return <p>Lỗi khi tải workspaces!</p>;
@@ -41,8 +43,22 @@ const HomeBoard = () => {
   };
 
   // Hàm xóa hoàn toàn board
-  const handleDeleteBoard = async (boardId) => {
+  const handleDeleteBoard = (boardId) => {
+    const confirm = window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn bảng này không?");
+    if (!confirm) return;
+  
+    destroyBoard(boardId, {
+      onSuccess: () => {
+        alert("✅ Đã xóa bảng thành công!");
+        // Gợi ý: bạn có thể gọi refetch hoặc invalidate query ở đây nếu cần cập nhật lại danh sách
+      },
+      onError: (error) => {
+        console.error("❌ Lỗi khi xóa bảng:", error);
+        alert("Xảy ra lỗi khi xóa bảng!");
+      },
+    });
   };
+
   return (
     <Box
       sx={{
@@ -123,8 +139,12 @@ const HomeBoard = () => {
                   <IconButton onClick={() => handleReopenBoard(board.id)} color="primary">
                     <Restore />
                   </IconButton>
-                  <IconButton onClick={() => handleDeleteBoard(board.id)} color="error">
-                    <Delete />
+                  <IconButton
+                    onClick={() => handleDeleteBoard(board.id)}
+                    color="error"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? <CircularProgress size={20} /> : <Delete />}
                   </IconButton>
                 </ListItem>
               ))}
