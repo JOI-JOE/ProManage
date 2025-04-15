@@ -142,6 +142,7 @@ class ListController extends Controller
                 'position' => (float)$card->position,
                 'is_archived' => (bool)$card->is_archived,
                 'list_board_id' => $listId,
+                'is_completed' => (bool)$card->is_completed,
                 'labelId' => $labelIds,
                 'labels' => $formattedLabels,
                 'membersId' => $memberIds,
@@ -203,7 +204,7 @@ class ListController extends Controller
         return false;
     }
 
-    
+
     // ----------------------------------------------------
 
     public function index($boardId)

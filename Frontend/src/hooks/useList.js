@@ -23,30 +23,123 @@ export const useListByBoardId = (boardId) => {
     queryFn: () => fetchListByBoardId(boardId),
     enabled: !!boardId,
     retry: 0,
-    staleTime: 5 * 60 * 1000, // 5 phút
+    staleTime: 5 * 60 * 1000,
     cacheTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   });
 
-  // --- Xử lý cập nhật list ---
-  const handleListUpdate = useCallback(
+  // Hàm cập nhật dữ liệu danh sách
+  const updateListData = useCallback(
+    (updateEvent, key, conditionFn) => {
+      queryClient.setQueryData(["lists", boardId], (oldData) => {
+        if (!oldData || !Array.isArray(oldData[key])) return oldData;
+
+        const updatedData = oldData[key].map((item) =>
+          conditionFn(item, updateEvent) ? { ...item, ...updateEvent } : item
+        );
+
+        return { ...oldData, [key]: updatedData };
+      });
+    },
+    [boardId, queryClient]
+  );
+
+  // Xử lý cập nhật thẻ
+  const handleCardUpdate = useCallback(
     (updateEvent) => {
       if (!updateEvent?.id) return;
+      console.log(updateEvent);
+      updateListData(
+        updateEvent,
+        "cards",
+        (card, event) => card.id === event.id
+      );
+    },
+    [updateListData]
+  );
+
+  // Xử lý di chuyển thẻ
+  const handleCardMove = useCallback(
+    (event) => {
+      if (!event?.id || !event?.list_board_id) return;
+
       queryClient.setQueryData(["lists", boardId], (oldData) => {
-        if (!oldData?.lists) return oldData;
+        if (!oldData || !Array.isArray(oldData.cards)) return oldData;
+
+        const updatedCards = oldData.cards.map((card) => {
+          if (card.id === event.id) {
+            return {
+              ...card,
+              list_board_id: event.list_board_id,
+              position: event.position,
+              is_archived: event.is_archived ?? card.is_archived,
+              title: event.title ?? card.title,
+              description: event.description ?? card.description,
+              thumbnail: event.thumbnail ?? card.thumbnail,
+              start_date: event.start_date ?? card.start_date,
+              end_date: event.end_date ?? card.end_date,
+              end_time: event.end_time ?? card.end_time,
+              reminder: event.reminder ?? card.reminder,
+              is_completed: event.is_completed ?? card.is_completed,
+            };
+          }
+          return card;
+        });
+
+        return { ...oldData, cards: updatedCards };
+      });
+    },
+    [boardId, queryClient]
+  );
+
+  // Xử lý tạo thẻ mới
+  const handleCardCreate = useCallback(
+    (event) => {
+      if (!event?.id) return;
+      queryClient.setQueryData(["lists", boardId], (oldData) => {
+        const oldCards = Array.isArray(oldData?.cards) ? oldData.cards : [];
+        const exists = oldCards.some((card) => card.id === event.id);
+        if (exists) return oldData;
+
+        const newCard = {
+          id: event.id,
+          title: event.title,
+          list_board_id: event.list_board_id,
+          position: event.position,
+          description: event.description ?? null,
+          thumbnail: event.thumbnail ?? null,
+          start_date: event.start_date ?? null,
+          end_date: event.end_date ?? null,
+          end_time: event.end_time ?? null,
+          reminder: event.reminder ?? null,
+          is_completed: event.is_completed ?? false,
+          is_archived: event.is_archived ?? false,
+        };
+
         return {
           ...oldData,
-          lists: oldData.lists.map((list) =>
-            list.id === updateEvent.id ? { ...list, ...updateEvent } : list
-          ),
+          cards: [...oldCards, newCard],
         };
       });
     },
     [boardId, queryClient]
   );
 
-  // --- Xử lý tạo list mới ---
+  // Xử lý cập nhật danh sách
+  const handleListUpdate = useCallback(
+    (updateEvent) => {
+      if (!updateEvent?.id) return;
+      updateListData(
+        updateEvent,
+        "lists",
+        (list, event) => list.id === event.id
+      );
+    },
+    [updateListData]
+  );
+
+  // Xử lý tạo danh sách mới
   const handleListCreate = useCallback(
     (event) => {
       if (!event?.id) return;
@@ -54,41 +147,55 @@ export const useListByBoardId = (boardId) => {
         const oldLists = Array.isArray(oldData?.lists) ? oldData.lists : [];
         const exists = oldLists.some((list) => list.id === event.id);
         if (exists) return oldData;
-        const updatedLists = [...oldLists, event];
+
+        const newList = {
+          id: event.id,
+          name: event.name,
+          position: event.position,
+          closed: event.closed ?? false,
+          board_id: event.board_id ?? boardId,
+        };
+
         return {
           ...oldData,
-          lists: updatedLists,
+          lists: [...oldLists, newList],
         };
       });
     },
     [boardId, queryClient]
   );
-  // TODO: Bạn chưa xử lý handleCardCreate & handleCardUpdate
-  const handleCardCreate = useCallback((event) => {
-    // Thêm logic xử lý nếu cần
-  }, []);
 
-  const handleCardUpdate = useCallback((event) => {
-    // Thêm logic xử lý nếu cần
-  }, []);
-
+  // Subscribe các channel
   useEffect(() => {
     if (!boardId) return;
 
     const channel = echoInstance.channel(`board.${boardId}`);
     channelRef.current = channel;
 
-    channel.listen(".list.updated", handleListUpdate);
     channel.listen(".list.created", handleListCreate);
+    channel.listen(".list.updated", handleListUpdate);
+    channel.listen(".card.created", handleCardCreate);
+    channel.listen(".card.updated", handleCardUpdate);
+    channel.listen(".card.moved", handleCardMove);
 
     return () => {
       if (channelRef.current) {
-        channelRef.current.stopListening(".list.updated");
         channelRef.current.stopListening(".list.created");
+        channelRef.current.stopListening(".list.updated");
+        channelRef.current.stopListening(".card.created");
+        channelRef.current.stopListening(".card.updated");
+        channelRef.current.stopListening(".card.moved");
         echoInstance.leaveChannel(`board.${boardId}`);
       }
     };
-  }, [boardId, handleListUpdate, handleListCreate]);
+  }, [
+    boardId,
+    handleListCreate,
+    handleListUpdate,
+    handleCardCreate,
+    handleCardUpdate,
+    handleCardMove,
+  ]);
 
   return {
     data,

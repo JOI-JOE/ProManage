@@ -12,11 +12,9 @@ use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\api\CardMemberController;
 use App\Http\Controllers\Api\ChecklistController;
 use App\Http\Controllers\Api\ChecklistItemController;
-use App\Http\Controllers\Api\ColorController;
 use App\Http\Controllers\Api\CommentCardController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\RecentBoardController;
-use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Auth\AuthController;
@@ -25,7 +23,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\BoardStarController;
+use App\Http\Controllers\Api\EmailController;
+use App\Mail\TestMail;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Mail;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,8 +46,11 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 
 Route::post('/forgot-password', [AuthController::class, 'sendResetPassword']);
 
+// Route::get('/send-test-mail', [EmailController::class, 'sendTestMail']);
+
 // Route::get('/auth/redirect', [AuthController::class, 'loginGitHub']);
 // Route::get('/auth/callback', [AuthController::class, 'handleLoginGitHub']);
+
 
 Route::middleware(['web'])->group(function () {
     Route::controller(GoogleAuthController::class)->group(function () {
@@ -55,7 +59,6 @@ Route::middleware(['web'])->group(function () {
     });
 });
 
-// Đường dẫn này để kiểm tra xem lời mời có hợp lệ
 Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
 Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
 
@@ -82,13 +85,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
     });
 
-    // Funtion kéo thả column
-    Route::controller(DragDropController::class)->group(function () {
-        // Route::put('/lists/{listId}', action: 'updatePositionList');
-        Route::put('/cards/{cardId}', action: 'updatePositionCard');
-    });
-
-
     // Function lấy dữ liệu của star
     Route::controller(BoardStarController::class)->group(function () {
         Route::prefix('boardstars')->group(function () {
@@ -97,7 +93,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('member/{userId}/boardStars', 'starBoard');
         Route::delete('member/{userId}/boardStars/{boardId}', 'unstarBoard');
     });
-
 
     // Function lấy dữ liệu của workspace 
     Route::controller(WorkspaceController::class)->group(function () {
@@ -129,7 +124,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{cardId}', 'show');
         Route::put('/{cardId}', 'update');
         Route::delete('/{cardId}', 'destroy');
+        Route::post('/{cardId}/copy',  'copy');
+        Route::post('/{cardId}/move',  'move');
+        Route::put('/{cardId}/drag', action: 'updatePositionCard');
     });
+
     Route::prefix('card')->group(function () {
         // Card Member
         Route::controller(CardMemberController::class)->group(function () {
@@ -137,20 +136,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('/{cardId}/idMember/{memberId}', 'store');
             Route::delete('/{cardId}/idMember/{memberId}', 'remove');
         });
-    // Checklist
+        // Checklist
         Route::controller(ChecklistController::class)->group(function () {
             Route::get('/{cardId}/checklists', 'index'); // Lấy danh sách checklist của 1 card
             Route::post('/{cardId}/checklists', 'store'); // Tạo checklist mới cho 1 card
             Route::put('/checklist/{checklistItemId}',   'update');
             Route::delete('/checklist/{checklistItemId}',   'delete');
         });
+        // Attachment
         Route::controller(AttachmentController::class)->group(function () {
             Route::get('/{cardId}/attachments', 'index');
             Route::post('/{cardId}/attachments', 'store');
             Route::put('/attachment/{attachmentId}', 'update');
             Route::delete('/attachment/{attachmentId}', 'delete');
         });
-
+        // Comment
         Route::controller(CommentCardController::class)->group(function () {
             Route::get('/{cardId}/comments', 'index');
             Route::post('/{cardId}/comments', 'store');
@@ -158,11 +158,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::delete('/comment/{commentId}',  'delete');
         });
     });
+    // ChecklistItem
     Route::prefix('checklist')->controller(ChecklistItemController::class)->group(function () {
         Route::post('/{checklistId}/items',  'store');
         Route::put('/{checklistItemId}/items',  'update');
         Route::delete('/{checklistItemId}/items',  'delete');
     });
+    // Activity for card by id
+    Route::controller(ActivityLogController::class)->group(function () {
+        Route::get('/activity/cards/{cardId}', 'getActivityLogForCard');
+        // Route::get('/activity/boards/{board}', 'showBoardActivity')->name('activity.boards.show');
+        // Route::get('/activity/lists/{list}', 'showListActivity')->name('activity.lists.show');
+        // Route::get('/activity/members/{member}', 'showMemberActivity')->name('activity.members.show');
+        // Route::get('/activity/all', 'showAllActivity')->name('activity.all');
+    });
+
+    // Notification 
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
 
     // Route::controller(CardController::class)->group(function () {
     //     Route::prefix('card')->group(function () {
@@ -283,8 +297,6 @@ Route::middleware('auth:sanctum')->prefix('cards')->group(function () {
     Route::get('/{cardId}/history', [CardController::class, 'getCardHistory']);
 });
 
-
-
 // 📂 File đính kèm (Attachments)
 Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [AttachmentController::class, 'getAttachments']);
@@ -320,7 +332,6 @@ Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNoti
 
 // });
 
-Route::get('/activities/{cardId}', [ActivityLogController::class, 'getActivitiesByCard']);
 
 
 // Route::get('/boards/{boardId}/labels', [LabelController::class, 'getLabelsByBoard']); // hiển thị nhãn theo bảng

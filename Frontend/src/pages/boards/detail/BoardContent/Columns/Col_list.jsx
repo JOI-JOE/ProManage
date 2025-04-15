@@ -26,8 +26,6 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
         localColumnsRef.current = columns || []; // Đồng bộ localColumnsRef với columns
     }, [columns]);
 
-    console.log('lits', columns)
-
     const handleAddNewList = useCallback(
         async (name) => {
             if (!name || isSaving || !boardId) return;

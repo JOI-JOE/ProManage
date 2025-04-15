@@ -21,7 +21,6 @@ import ConfirmDeleteDialog from "./Col_option/DeleteColumn";
 import ArchiveColumnDialog from "./Col_option/Archive";
 import Card_list from "../Cards/Card_list";
 import Card_new from "../Cards/Card_new";
-import { v4 as uuidv4 } from "uuid";
 import { useCreateCard } from "../../../../../hooks/useCard";
 import { useUpdateListClosed, useUpdateListName } from "../../../../../hooks/useList";
 import { optimisticIdManager } from "../../../../../../utils/optimisticIdManager";
@@ -74,8 +73,8 @@ const Col = ({ column, onArchive }) => {
     const [showAlert, setShowAlert] = useState(false);
 
     // Lưu trữ thông tin cột đã lưu trữ
-    const archivedColumnRef = useRef(null);
-    const [archivedColumn, setArchivedColumn] = useState(null);
+    // const archivedColumnRef = useRef(null);
+    // const [archivedColumn, setArchivedColumn] = useState(null);
 
     // Api của list
     const [tempName, setTempName] = useState(column?.name);
@@ -113,8 +112,6 @@ const Col = ({ column, onArchive }) => {
 
         setLocalCards((prev = []) => [...prev, newCard]);
         setCardName("");
-
-        console.log(newCard)
 
         try {
             await createCardMutation.mutateAsync(newCard);
@@ -426,6 +423,7 @@ const Col = ({ column, onArchive }) => {
                 </Box>
 
                 {/* Column List Card */}
+
                 <Card_list cards={orderedCards} />
 
                 {/* Column Footer */}
@@ -438,8 +436,6 @@ const Col = ({ column, onArchive }) => {
                 onClose={() => setOpenArchiveDialog(false)}
                 onConfirm={handleArchiveConfirm}
             />
-
-
 
             {/* <CopyColumn
                 open={openCopyDialog}

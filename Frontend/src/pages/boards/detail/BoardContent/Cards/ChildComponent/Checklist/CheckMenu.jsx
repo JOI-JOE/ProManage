@@ -79,7 +79,7 @@ const CheckMenu = ({ anchorEl, open, onClose, onAdd, listOptions = [] }) => {
                     }}
                 />
 
-                <TextField
+                {/* <TextField
                     select
                     fullWidth
                     label="Sao chép mục từ ..."
@@ -103,7 +103,7 @@ const CheckMenu = ({ anchorEl, open, onClose, onAdd, listOptions = [] }) => {
                             {option.label}
                         </MenuItem>
                     ))}
-                </TextField>
+                </TextField> */}
 
                 <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2 }}>
                     <Button

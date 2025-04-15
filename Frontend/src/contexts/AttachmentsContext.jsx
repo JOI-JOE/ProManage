@@ -7,12 +7,12 @@ import {
     useRemoveAttachment,
 } from '../hooks/useCard';
 import { useBoard } from './BoardContext';
-// import { optimisticIdManager } from './optimisticIdManager'; // đường dẫn tuỳ vào vị trí file
-
+import { useQueryClient } from '@tanstack/react-query';
 
 const AttachmentsContext = createContext();
 
 export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading }) => {
+    const queryClient = useQueryClient();
     const { refetchListData } = useBoard();
     const { data: fetchedAttachments, isLoading, error, refetch } = useFetchAttachments(cardId);
     const [attachments, setAttachments] = useState({ links: [], files: [] });
@@ -20,7 +20,6 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
     const { mutateAsync: postAttachmentLinkMutate } = usePostAttachmentLink();
     const { mutateAsync: updateAttachmentMutate } = usePutAttachment();
     const { mutateAsync: removeAttachmentMutate } = useRemoveAttachment();
-
 
     // Update attachments state when fetchedAttachments changes
     useEffect(() => {
@@ -46,8 +45,8 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 return postAttachmentFileMutate({ cardId, file: formData });
             });
             await Promise.all(uploadFilePromises);
-            await refetch(); // Refetch attachments
-            refetchListData(); // Update board data
+            await queryClient.invalidateQueries(['attachments', cardId]);
+            refetchListData();
         } catch (error) {
             console.error('❌ Error uploading files:', error);
             throw error;
@@ -56,27 +55,56 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
 
     // Function to handle adding new links with optimistic update
     const handleAddNewLinks = async (cardId, linksToAdd) => {
+        if (!cardId || !linksToAdd || linksToAdd.length === 0) {
+            throw new Error('Thiếu cardId hoặc dữ liệu link.');
+        }
+
         try {
             // Optimistic update: Add links to state immediately
             const tempLinks = linksToAdd.map(link => ({
-                id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID
+                id: `attachment-temp-${Date.now()}-${Math.random()}`,
                 type: 'link',
                 file_name_defaut: link.file_name_defaut,
                 path_url: link.path_url,
                 created_at: new Date().toISOString(),
             }));
 
-            await Promise.all(tempLinks); // Wait for all links to be added
-            await refetch(); // Refetch to get the actual data
-            refetchListData(); // Update board data
+
+            const linkPromises = linksToAdd.map(async (link) => {
+                try {
+                    const response = await postAttachmentLinkMutate({
+                        cardId,
+                        link: {
+                            file_name_defaut: link.file_name_defaut,
+                            path_url: link.path_url,
+                            type: 'link',
+                        },
+                    });
+                    setAttachments(prev => ({
+                        ...prev,
+                        links: [...prev.links, ...tempLinks],
+                    }));
+                    return response;
+                } catch (error) {
+                    console.error(`❌ Failed to add link ${link.path_url}:`, error);
+                    throw error;
+                }
+            });
+
+            await Promise.all(linkPromises);
+
         } catch (error) {
             console.error('❌ Error adding new links:', error);
-            // Rollback optimistic update on error
+            // Rollback optimistic update
             setAttachments(prev => ({
                 ...prev,
-                links: prev.links.filter(link => !link.id.startsWith('temp-')),
+                links: prev.links.filter(link => !link.id.startsWith('attachment-temp-')),
             }));
-            throw error;
+            throw new Error(
+                error.response?.data?.message ||
+                error.message ||
+                'Không thể thêm liên kết. Vui lòng thử lại.'
+            );
         }
     };
 
@@ -87,13 +115,14 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 attachmentId: fileId,
                 data: { file_name_defaut: newFileName },
             });
-            await refetch();
+            await queryClient.invalidateQueries(['attachments', cardId]);
             refetchListData();
         } catch (error) {
-            console.error("Error editing file name:", error);
+            console.error('Error editing file name:', error);
             throw error;
         }
     };
+
     // Function to update link
     const handleEditLink = async (linkId, newLinkName, newLinkUrl) => {
         try {
@@ -102,13 +131,13 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 data: {
                     file_name_defaut: newLinkName || newLinkUrl,
                     path_url: newLinkUrl,
-                    type: "link",
+                    type: 'link',
                 },
             });
-            await refetch();
+            await queryClient.invalidateQueries(['attachments', cardId]);
             refetchListData();
         } catch (error) {
-            console.error("Error editing link:", error);
+            console.error('Error editing link:', error);
             throw error;
         }
     };
@@ -142,7 +171,6 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                     thumbnail: newThumbnailUrl,
                 }));
             }
-            await refetch();
             refetchListData();
         } catch (error) {
             console.error('❌ Error updating cover:', error);
@@ -151,7 +179,8 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
             setCoverLoading?.(false);
         }
     };
-    // Function to delete file (uncomment when needed)
+
+    // Function to delete file
     const handleDeleteFile = async (attachmentId, file = null) => {
         try {
             setCoverLoading?.(true);
@@ -165,7 +194,6 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                     thumbnail: null,
                 }));
             }
-            await refetch();
             refetchListData();
         } catch (error) {
             console.error('❌ Error deleting file:', error);
@@ -175,13 +203,10 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
         }
     };
 
-
-
-    // Function to delete link (uncomment when needed)
+    // Function to delete link
     const handleDeleteLink = async (linkId) => {
         try {
             await removeAttachmentMutate(linkId);
-            await refetch();
             refetchListData();
         } catch (error) {
             console.error('❌ Error deleting link:', error);

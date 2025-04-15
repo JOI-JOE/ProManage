@@ -2,23 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\ChecklistItemCreated;
-use App\Events\ChecklistItemDeleted;
-use App\Events\ChecklistItemToggle;
-use App\Events\ChecklistItemUpdated;
 use App\Http\Controllers\Controller;
-use App\Jobs\SendReminderNotificationChecklistItem;
-use App\Models\CheckList;
-use App\Models\ChecklistItem;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class ChecklistItemController extends Controller
 {
-
-    /// ------------------------------------------------
     public function store(Request $request, $checklistId)
     {
         // 1. Validate dữ liệu đầu vào
@@ -26,7 +15,17 @@ class ChecklistItemController extends Controller
             'name' => 'required|string|max:255',
         ]);
 
-        // 2. Tạo checklist item mới
+        // 2. Kiểm tra checklist tồn tại và lấy card ID
+        $checklist = DB::table('checklists')->where('id', $checklistId)->first();
+        if (!$checklist) {
+            return response()->json(['message' => 'Checklist not found'], 404);
+        }
+        $card = \App\Models\Card::find($checklist->card_id);
+        if (!$card) {
+            return response()->json(['message' => 'Card not found'], 404);
+        }
+
+        // 3. Tạo checklist item mới
         $itemId = DB::table('checklist_items')->insertGetId([
             'checklist_id' => $checklistId,
             'name' => $validated['name'],
@@ -35,10 +34,25 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
 
-        // 3. Lấy lại checklist item vừa tạo
+        // 4. Lấy lại checklist item vừa tạo
         $item = DB::table('checklist_items')->where('id', $itemId)->first();
 
-        // 4. Trả về response
+        // 5. Ghi log khi tạo checklist item
+        $user = auth()->user();
+        $userName = $user ? $user->full_name : 'ai đó';
+        activity()
+            ->causedBy($user)
+            ->performedOn($card)
+            ->event('created_checklist_item')
+            ->withProperties([
+                'checklist_item_id' => $item->id,
+                'checklist_item_name' => $item->name,
+                'checklist_id' => $checklistId,
+                'card_id' => $card->id,
+            ])
+            ->log("{$userName} đã thêm mục '{$item->name}' vào checklist trong card '{$card->title}'.");
+
+        // 6. Trả về response
         return response()->json([
             'id' => $item->id,
             'checklist_id' => $item->checklist_id,
@@ -51,39 +65,146 @@ class ChecklistItemController extends Controller
 
     public function update(Request $request, $checklistItemId)
     {
+        // 1. Kiểm tra checklist item tồn tại và lấy card
+        $item = DB::table('checklist_items')->where('id', $checklistItemId)->first();
+        if (!$item) {
+            return response()->json(['message' => 'Checklist item not found'], 404);
+        }
+        $checklist = DB::table('checklists')->where('id', $item->checklist_id)->first();
+        if (!$checklist) {
+            return response()->json(['message' => 'Checklist not found'], 404);
+        }
+        $card = \App\Models\Card::find($checklist->card_id);
+        if (!$card) {
+            return response()->json(['message' => 'Card not found'], 404);
+        }
+
+        // 2. Validate dữ liệu
         $validated = $this->validateChecklistItemUpdate($request);
 
-        // Cập nhật từng trường nếu có trong request
+        $user = auth()->user();
+        $userName = $user ? $user->full_name : 'ai đó';
+
+        // 3. Cập nhật từng trường nếu có trong request
         if (isset($validated['name'])) {
+            $oldName = $item->name;
             $this->updateChecklistItemName($checklistItemId, $validated['name']);
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('updated_checklist_item_name')
+                ->withProperties([
+                    'checklist_item_id' => $checklistItemId,
+                    'old_name' => $oldName,
+                    'new_name' => $validated['name'],
+                    'card_id' => $card->id,
+                ])
+                ->log("{$userName} đã cập nhật tên mục từ '{$oldName}' thành '{$validated['name']}' trong card '{$card->title}'.");
         }
 
         if (isset($validated['is_completed'])) {
+            $oldStatus = $item->is_completed;
             $this->updateChecklistItemStatus($checklistItemId, $validated['is_completed']);
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('updated_checklist_item_status')
+                ->withProperties([
+                    'checklist_item_id' => $checklistItemId,
+                    'old_status' => $oldStatus,
+                    'new_status' => $validated['is_completed'],
+                    'card_id' => $card->id,
+                ])
+                ->log("{$userName} đã cập nhật trạng thái mục '{$item->name}' thành '" . ($validated['is_completed'] ? 'hoàn thành' : 'chưa hoàn thành') . "' trong card '{$card->title}'.");
         }
 
         if (array_key_exists('start_date', $validated)) {
+            $oldStartDate = $item->start_date;
             $this->updateChecklistItemStartDate($checklistItemId, $validated['start_date']);
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('updated_checklist_item_start_date')
+                ->withProperties([
+                    'checklist_item_id' => $checklistItemId,
+                    'old_start_date' => $oldStartDate,
+                    'new_start_date' => $validated['start_date'],
+                    'card_id' => $card->id,
+                ])
+                ->log("{$userName} đã cập nhật ngày bắt đầu mục '{$item->name}' từ '" . ($oldStartDate ?? 'không có') . "' thành '" . ($validated['start_date'] ?? 'không có') . "' trong card '{$card->title}'.");
         }
 
         if (array_key_exists('end_date', $validated)) {
+            $oldEndDate = $item->end_date;
             $this->updateChecklistItemEndDate($checklistItemId, $validated['end_date']);
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('updated_checklist_item_end_date')
+                ->withProperties([
+                    'checklist_item_id' => $checklistItemId,
+                    'old_end_date' => $oldEndDate,
+                    'new_end_date' => $validated['end_date'],
+                    'card_id' => $card->id,
+                ])
+                ->log("{$userName} đã cập nhật ngày kết thúc mục '{$item->name}' từ '" . ($oldEndDate ?? 'không có') . "' thành '" . ($validated['end_date'] ?? 'không có') . "' trong card '{$card->title}'.");
         }
 
         if (array_key_exists('end_time', $validated)) {
+            $oldEndTime = $item->end_time;
             $this->updateChecklistItemEndTime($checklistItemId, $validated['end_time']);
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('updated_checklist_item_end_time')
+                ->withProperties([
+                    'checklist_item_id' => $checklistItemId,
+                    'old_end_time' => $oldEndTime,
+                    'new_end_time' => $validated['end_time'],
+                    'card_id' => $card->id,
+                ])
+                ->log("{$userName} đã cập nhật thời gian kết thúc mục '{$item->name}' từ '" . ($oldEndTime ?? 'không có') . "' thành '" . ($validated['end_time'] ?? 'không có') . "' trong card '{$card->title}'.");
         }
 
         if (array_key_exists('reminder', $validated)) {
+            $oldReminder = $item->reminder;
             $this->updateChecklistItemReminder($checklistItemId, $validated['reminder']);
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('updated_checklist_item_reminder')
+                ->withProperties([
+                    'checklist_item_id' => $checklistItemId,
+                    'old_reminder' => $oldReminder,
+                    'new_reminder' => $validated['reminder'],
+                    'card_id' => $card->id,
+                ])
+                ->log("{$userName} đã cập nhật nhắc nhở mục '{$item->name}' từ '" . ($oldReminder ?? 'không có') . "' thành '" . ($validated['reminder'] ?? 'không có') . "' trong card '{$card->title}'.");
         }
 
-        if (array_key_exists('assignee', $validated)) { // Đổi từ 'assignees' thành 'assignee'
+        if (array_key_exists('assignee', $validated)) {
+            $oldAssignee = DB::table('checklist_item_user')
+                ->where('checklist_item_id', $checklistItemId)
+                ->value('user_id');
             $this->updateChecklistItemAssignee($checklistItemId, $validated['assignee']);
+            $newAssigneeName = $validated['assignee'] ? \App\Models\User::find($validated['assignee'])->full_name : 'không có';
+            $oldAssigneeName = $oldAssignee ? \App\Models\User::find($oldAssignee)->full_name : 'không có';
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('updated_checklist_item_assignee')
+                ->withProperties([
+                    'checklist_item_id' => $checklistItemId,
+                    'old_assignee_id' => $oldAssignee,
+                    'new_assignee_id' => $validated['assignee'],
+                    'card_id' => $card->id,
+                ])
+                ->log("{$userName} đã cập nhật người được giao mục '{$item->name}' từ '{$oldAssigneeName}' thành '{$newAssigneeName}' trong card '{$card->title}'.");
         }
 
         return $this->buildChecklistItemResponse($checklistItemId);
     }
+
     private function validateChecklistItemUpdate(Request $request)
     {
         return $request->validate([
@@ -93,9 +214,10 @@ class ChecklistItemController extends Controller
             'end_date' => 'sometimes|nullable|date',
             'end_time' => 'sometimes|nullable|date_format:H:i:s',
             'reminder' => 'sometimes|nullable|date',
-            'assignee' => 'sometimes|nullable|exists:users,id', // Chỉ một user_id, có thể null
+            'assignee' => 'sometimes|nullable|exists:users,id',
         ]);
     }
+
     private function updateChecklistItemName($id, $name)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -103,6 +225,7 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
+
     private function updateChecklistItemStatus($id, $status)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -110,6 +233,7 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
+
     private function updateChecklistItemStartDate($id, $startDate)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -117,6 +241,7 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
+
     private function updateChecklistItemEndDate($id, $endDate)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -124,6 +249,7 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
+
     private function updateChecklistItemEndTime($id, $endTime)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -131,6 +257,7 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
+
     private function updateChecklistItemReminder($id, $reminder)
     {
         DB::table('checklist_items')->where('id', $id)->update([
@@ -138,6 +265,7 @@ class ChecklistItemController extends Controller
             'updated_at' => now(),
         ]);
     }
+
     private function updateChecklistItemAssignee($id, $userId)
     {
         // Xóa assignee hiện tại (nếu có)
@@ -153,6 +281,7 @@ class ChecklistItemController extends Controller
             ]);
         }
     }
+
     private function buildChecklistItemResponse($id)
     {
         $item = DB::table('checklist_items')->where('id', $id)->first();
@@ -164,7 +293,7 @@ class ChecklistItemController extends Controller
         // Lấy assignee duy nhất (nếu có)
         $assignee = DB::table('checklist_item_user')
             ->where('checklist_item_id', $id)
-            ->value('user_id'); // Lấy giá trị user_id duy nhất hoặc null
+            ->value('user_id');
 
         return response()->json([
             'id' => $item->id,
@@ -175,7 +304,7 @@ class ChecklistItemController extends Controller
             'end_date' => $item->end_date,
             'end_time' => $item->end_time,
             'reminder' => $item->reminder,
-            'assignee' => $assignee, // Trả về một user_id hoặc null
+            'assignee' => $assignee,
             'created_at' => $item->created_at,
             'updated_at' => $item->updated_at,
         ]);
@@ -183,7 +312,36 @@ class ChecklistItemController extends Controller
 
     public function delete($checklistItemId)
     {
-        // Xóa checklist item
+        // 1. Kiểm tra checklist item tồn tại và lấy card
+        $item = DB::table('checklist_items')->where('id', $checklistItemId)->first();
+        if (!$item) {
+            return response()->json(['message' => 'Checklist item not found'], 404);
+        }
+        $checklist = DB::table('checklists')->where('id', $item->checklist_id)->first();
+        if (!$checklist) {
+            return response()->json(['message' => 'Checklist not found'], 404);
+        }
+        $card = \App\Models\Card::find($checklist->card_id);
+        if (!$card) {
+            return response()->json(['message' => 'Card not found'], 404);
+        }
+
+        // 2. Ghi log trước khi xóa
+        $user = auth()->user();
+        $userName = $user ? $user->full_name : 'ai đó';
+        activity()
+            ->causedBy($user)
+            ->performedOn($card)
+            ->event('deleted_checklist_item')
+            ->withProperties([
+                'checklist_item_id' => $checklistItemId,
+                'checklist_item_name' => $item->name,
+                'checklist_id' => $item->checklist_id,
+                'card_id' => $card->id,
+            ])
+            ->log("{$userName} đã xóa mục '{$item->name}' (ID: {$checklistItemId}) khỏi checklist trong card '{$card->title}'.");
+
+        // 3. Xóa checklist item
         $deleted = DB::table('checklist_items')->where('id', $checklistItemId)->delete();
 
         if ($deleted) {
@@ -192,234 +350,4 @@ class ChecklistItemController extends Controller
 
         return response()->json(['message' => 'Checklist item not found'], 404);
     }
-
-    ///-----------------------------------------------------------
-    /**
-     * Display a listing of the resource.
-     */
-    // Lấy checklist_item theo checklist
-    // public function getChecklistItems($checklistId)
-    // {
-    //     $checklist = CheckList::find($checklistId);
-
-    //     return response()->json([
-    //         'message'=>"lấy dữ liệu thành công",
-    //         'status' => 'success',
-    //         'data' => $checklist->items // Sử dụng quan hệ items từ model Checklist
-    //     ], 200);
-    // }
-
-    // /**
-    //  * Store a newly created resource in storage.
-    //  */
-    // public function store(Request $request)
-    // {
-    //     $validatedData = $request->validate([
-    //         'checklist_id' => 'required|exists:checklists,id',
-    //         'name' => 'required|string',
-    //     ]);
-
-    //     // Tạo mới CheckListItem
-    //     $checklistItem = ChecklistItem::create($validatedData);
-
-    //     // Log::info("🚀 Gọi broadcast ChecklistItemCreated");
-    //     broadcast(new ChecklistItemCreated($checklistItem))->toOthers();
-
-    //     return response()->json([
-    //         'status' => true,
-    //         'message' => 'Thêm mục checklist thành công!',
-    //         'data' => $checklistItem
-    //     ], 201);
-    // }
-    // public function show($itemId)
-    // {
-    //     $checklistItem = ChecklistItem::find($itemId);
-
-
-
-    //     return response()->json($checklistItem);
-    // }
-
-    // /**
-    //  * Display the specified resource.
-    //  */
-
-
-    // /**
-    //  * Update the specified resource in storage.
-    //  */
-    // public function updateName(Request $request, $id)
-    // {
-    //     // Validate dữ liệu đầu vào
-    //     $validated = $request->validate([
-    //         'name' => 'required|string|max:255',
-    //     ]);
-
-    //     // Tìm ChecklistItem và cập nhật tên
-    //     $item = ChecklistItem::findOrFail($id);
-    //     $item->update(['name' => $validated['name']]);
-
-    //     broadcast(new ChecklistItemUpdated($item))->toOthers();
-
-    //     // Trả về phản hồi JSON
-    //     return response()->json([
-    //         'status' => true,
-    //         'message' => 'Cập nhật thành công',
-    //         'data' => $item
-    //     ], 200); // HTTP status code 200 (OK)
-    // }
-    // // hàm tính toán phần trăm
-    // public function calculateCompletionRate($checklistId)
-    // {
-    //     $totalItems = ChecklistItem::where('checklist_id', $checklistId)->count();
-    //     // lấy tổng số checklist_item theo checklist_id
-    //     $completedItems = ChecklistItem::where('checklist_id', $checklistId)->where('is_completed', true)->count();
-    //     // lấy tổng số checklist_item theo checklist_id có trạng thái hoàn thành bằng true
-
-    //     return $totalItems > 0 ? round(($completedItems / $totalItems) * 100, 2) : 0;
-    //     // nếu $totalItem>0 thì tính toán  và làm tròn 2 số thập phân còn ngược lại thì trả về o%
-    // }
-    // // cập nhật trạng thái hoàn thành
-    // public function toggleCompletionStatus($id)
-    // {
-    //     try {
-    //         // Tìm item hoặc trả về lỗi nếu không tồn tại
-    //         $item = ChecklistItem::findOrFail($id);
-
-    //         $checklist = $item->checklist;
-    //         if (!$checklist) {
-    //             return response()->json([
-    //                 'status' => false,
-    //                 'message' => 'Checklist không tồn tại',
-    //             ], 404);
-    //         }
-
-    //         // Lấy card từ checklist
-    //         $card = $checklist->card;
-
-    //         // Đảo ngược trạng thái hiện tại (false -> true, true -> false)
-    //         $newStatus = !$item->is_completed;
-    //         $item->update([
-    //             'is_completed' => $newStatus,
-    //         ]);
-
-    //         // Lấy thông tin user
-    //         $user_name = auth()->user()?->full_name ?? 'ai đó';
-    //         $statusText = $newStatus ? 'hoàn tất' : 'chưa hoàn tất';
-
-    //         // Ghi log nếu trạng thái thay đổi
-    //         $activity = activity()
-    //             ->causedBy(auth()->user())
-    //             ->performedOn($card)
-    //             ->event('updated_checklist_status')
-    //             ->withProperties([
-    //                 'checklist_id' => $item->checklist_id,
-    //                 'item_title' => $item->name,
-    //                 'status' => $statusText,
-    //             ])
-    //             ->log("{$user_name} đã đánh dấu {$item->name} là {$statusText} ở thẻ này");
-
-    //         // Tính phần trăm hoàn thành của checklist chứa item này
-    //         // $completionRate = $this->calculateCompletionRate($item->checklist_id) . '%';
-
-    //         broadcast(new ChecklistItemToggle($item, $card->id, $activity));
-
-    //         return response()->json([
-    //             'status' => true,
-    //             'message' => 'Cập nhật trạng thái thành công',
-    //             'data' => $item,
-    //             // 'completion_rate' => $completionRate,
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Lỗi khi cập nhật trạng thái',
-    //             'error' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
-
-
-    // /**
-    //  * Remove the specified resource from storage.
-    //  */
-    // public function destroy($id)
-    // {
-    //     // Tìm ChecklistItem theo id, nếu không tìm thấy sẽ tự động trả về lỗi 404
-    //     $item = ChecklistItem::findOrFail($id);
-    //     $cardId = $item->checklist->card_id;
-
-    //     // Xóa ChecklistItemp
-    //     $item->delete();
-
-    //     broadcast(new ChecklistItemDeleted($id, $cardId))->toOthers();
-
-    //     // Trả về phản hồi thành công
-    //     return response()->json([
-    //         'status' => true,
-    //         'message' => 'Xóa ChecklistItem thành công!',
-    //     ], 200);
-    // }
-    // public function updateDate(Request $request, $id)
-    // {
-    //     $request->validate([
-    //         'endDate' => 'nullable|date',
-    //         'endTime' => 'nullable|date_format:H:i',
-    //         'reminder' => 'nullable|string|max:255',
-    //     ]);
-    //     // Log::info($request->all());
-
-    //     // Tìm checklist item theo ID
-    //     $item = ChecklistItem::find($id);
-
-    //     // if (!$item) {
-    //     //     return response()->json(['message' => 'Checklist item không tồn tại'], 404);
-    //     // }
-
-    //     // Cập nhật ngày, giờ kết thúc và nhắc nhở
-    //     // $item->end_date = $request->endDate ;
-    //     // $item->end_time = $request->endTime ;
-    //     // $item->reminder = $request->reminder;
-    //     // Log::info('Before save:', [
-    //     //     'end_date' => $item->end_date,
-    //     //     'end_time' => $item->end_time,
-    //     //     'reminder' => $item->reminder,
-    //     // ]);
-
-
-    //     $item->update($request->all());
-    //     if (!empty($item->reminder) && strtotime($item->reminder)) {
-    //         // dispatch(new SendReminderNotification($card))->delay(now()->addMinutes(1));
-    //         // Log::info("📌 Job được lên lịch chạy vào: " . Carbon::parse($item->reminder));
-
-    //         dispatch(new SendReminderNotificationChecklistItem($item))->delay(Carbon::parse($item->reminder));
-    //     }
-
-
-    //     return response()->json([
-    //         'message' => 'Cập nhật checklist item thành công',
-    //         'item' => $item
-    //     ], 200);
-
-    // }
-    // public function getChecklistItemDate($id)
-    // {
-    //     $checklistItem = ChecklistItem::select([
-    //             'end_date',
-    //             'end_time',
-    //             'reminder'
-    //         ])
-    //         ->where('id', $id)
-    //         ->first();
-
-    //     // if (!$checklistItem) {
-    //     //     return response()->json(['message' => 'Checklist item không tồn tại'], 404);
-    //     // }
-
-    //     return response()->json([
-    //         'message'=>"lấy ngày giờ checklist_item thành công",
-    //         'data'=>$checklistItem,
-
-    //     ]);
-    // }
 }

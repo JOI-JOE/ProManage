@@ -102,6 +102,7 @@ export const CommentProvider = ({ children, cardId }) => {
         <CommentContext.Provider
             value={{
                 comments,
+                cardId,
                 handleAddComment,
                 handleUpdateComment,
                 handleDeleteComment,

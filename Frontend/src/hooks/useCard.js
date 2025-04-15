@@ -34,6 +34,9 @@ import {
   removeComment,
   removeCard,
   updateCheckList,
+  fetchActivities,
+  moveCard,
+  copyCard,
 } from "../api/models/cardsApi";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
@@ -76,7 +79,35 @@ export const useFetchComments = (cardId) => {
     staleTime: 1000 * 60 * 5, // 5 phút, tránh gọi lại nếu chưa cần thiết
   });
 };
+// Activity
+export const useFetchActivities = (cardId) => {
+  return useQuery({
+    queryKey: ["activities", cardId],
+    queryFn: () => fetchActivities(cardId),
+    enabled: Boolean(cardId),
+    staleTime: 1000 * 60 * 5, // 5 phút, tránh gọi lại nếu chưa cần thiết
+  });
+};
 // POST FUNCTION ------------------------------------------------------
+export const useCopyCard = () => {
+  return useMutation({
+    mutationFn: ({ cardId, data }) => copyCard({ cardId, data }),
+    onError: (error) => {
+      console.error("❌ Error copying card:", error);
+    },
+  });
+};
+
+export const useMoveCard = () => {
+  return useMutation({
+    mutationFn: ({ cardId, ...copyData }) => moveCard({ cardId, ...copyData }), // Sửa: truyền đúng cấu trúc object
+    onError: (error) => {
+      console.error("❌ Error moving card:", error);
+      toast.error(error.response?.data?.message || "Failed to move card");
+    },
+  });
+};
+
 // thêm mới list
 export const usePostCheckList = () => {
   return useMutation({
@@ -109,8 +140,7 @@ export const usePostAttachmentFile = () => {
 export const usePostAttachmentLink = () => {
   // const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ cardId, linkData }) =>
-      postAttachmentLink({ cardId, linkData }),
+    mutationFn: ({ cardId, link }) => postAttachmentLink({ cardId, link }),
     onSuccess: () => {
       // queryClient.invalidateQueries({ queryKey: ["card", cardId] });
     },
@@ -167,9 +197,10 @@ export const useUpdateCardById = (cardId) => {
 
   const mutation = useMutation({
     mutationFn: (data) => updateCardById(cardId, data),
-    // onSuccess: () => {
-    //   queryClient.invalidateQueries({ queryKey: ["card", cardId] });
-    // },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["card", cardId] });
+      queryClient.invalidateQueries({ queryKey: ["cards"] });
+    },
     onError: (error) => {
       console.error("Error updating card:", error.message || error);
     },
@@ -183,7 +214,12 @@ export const useUpdateCardById = (cardId) => {
     updateTitle: (title) => updateCard({ title }),
     updateDescription: (description) => updateCard({ description }),
     updateThumbnail: (thumbnail) => updateCard({ thumbnail }),
-    updatePosition: (position) => updateCard({ position }),
+    updatePosition: (position, listBoardId) =>
+      updateCard({
+        position,
+        list_board_id: listBoardId,
+        is_archived: false, // Đảm bảo card không bị ẩn khi di chuyển
+      }),
     updateDates: ({ startDate, endDate, endTime, reminder }) =>
       updateCard({
         start_date: startDate,
@@ -197,6 +233,16 @@ export const useUpdateCardById = (cardId) => {
     isUpdating: mutation.isLoading,
     error: mutation.error,
   };
+};
+// position card
+export const useUpdateCardPosition = () => {
+  return useMutation({
+    mutationFn: async ({ cardId, listId, position }) => {
+      return await updatePositionCard({ cardId, listId, position });
+    },
+    retry: 3,
+    retryDelay: 1000, // Thử lại sau 1 giây nếu lỗi
+  });
 };
 // Member card
 export const useJoinOrPutMember = (cardId) => {
@@ -251,9 +297,6 @@ export const usePutAttachment = () => {
   // const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: ({ attachmentId, data }) => putAttachment(attachmentId, data),
-    // onSuccess: () => {
-    // queryClient.invalidateQueries({ queryKey: ["lists", cardId] });
-    // },
     onError: (error) => {
       console.error("Lỗi khi cập nhật tệp đính kèm:", error);
     },
@@ -413,16 +456,6 @@ export const useCreateCard = () => {
     onError: (error) => {
       console.error("❌ Lỗi khi tạo thẻ:", error);
     },
-  });
-};
-
-export const useUpdateCardPosition = () => {
-  return useMutation({
-    mutationFn: async ({ cardId, listId, position }) => {
-      return await updatePositionCard({ cardId, listId, position });
-    },
-    retry: 3,
-    retryDelay: 1000, // Thử lại sau 1 giây nếu lỗi
   });
 };
 

@@ -154,7 +154,6 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
         setLoadingCover(true); // Bật loading
         try {
             await handleEditCover(file.id, newIsCover);
-            console.log(newIsCover ? '✅ Set as cover' : '✅ Removed cover', file);
             handleMenuClose(); // Đóng menu sau khi thành công
         } catch (error) {
             console.error('❌ Error updating cover:', error);

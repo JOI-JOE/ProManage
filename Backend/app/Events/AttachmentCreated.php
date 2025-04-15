@@ -2,7 +2,6 @@
 
 namespace App\Events;
 
-use App\Models\Card;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -11,24 +10,34 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CardDescriptionUpdated implements ShouldBroadcast
+class AttachmentCreated implements ShouldBroadcast
 {
-    use InteractsWithSockets, SerializesModels;
+    use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $attachment;
     public $card;
 
-    public function __construct(Card $card)
+    public function __construct($attachment, $card)
     {
+        $this->attachment = $attachment;
         $this->card = $card;
     }
 
     public function broadcastOn()
     {
-        return ['card.' . $this->card->id]; // Kênh Pusher
+        return new PrivateChannel('card.' . $this->card->id);
     }
 
     public function broadcastAs()
     {
-        return 'card.description.updated'; // Tên sự kiện
+        return 'attachment.created';
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'attachment' => $this->attachment,
+            'card_id' => $this->card->id,
+        ];
     }
 }

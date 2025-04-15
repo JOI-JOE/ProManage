@@ -5,104 +5,88 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Http\Request;
 
 class GoogleAuthController extends Controller
 {
-
     public function redirectToAuthProvider()
     {
-        // Redirect với prompt select_account, consent chỉ hiển thị lần đầu nếu Google cần
-        return Socialite::driver('google')
-            ->scopes([
-                'openid',
-                'profile',
-                'email',
-                'https://www.googleapis.com/auth/userinfo.email',
-                'https://www.googleapis.com/auth/userinfo.profile',
-                'https://www.googleapis.com/auth/gmail.send' // Quyền gửi email
-            ])
-            ->with(['access_type' => 'offline', 'prompt' => 'select_account']) // Chỉ yêu cầu chọn tài khoản
-            ->redirect();
+        // Sử dụng Socialite ở chế độ stateless (không dùng session)
+
+        $socialite = Socialite::driver('google')
+            ->stateless() // Bỏ qua session
+            ->scopes(['openid', 'profile', 'email'])
+            ->with(['access_type' => 'offline', 'prompt' => 'select_account']);
+
+        // Tạo URL OAuth thủ công
+        $url = $socialite->redirect()->getTargetUrl();
+
+        return response()->json(['url' => $url]);
     }
 
-    public function handleProviderCallback()
+    public function handleProviderCallback(Request $request)
     {
         try {
-            // Lấy thông tin người dùng từ Google (stateless vì là API)
+            // Lấy mã code từ query parameter
+            $code = $request->query('code');
+            if (!$code) {
+                throw new \Exception('Mã xác thực không hợp lệ.');
+            }
+
+            // Sử dụng Socialite ở chế độ stateless để lấy thông tin người dùng
             $socialUser = Socialite::driver('google')->stateless()->user();
-
-            // Tìm hoặc tạo user trực tiếp, không redirect lại
             $user = $this->findOrCreateUser($socialUser);
-
-            // Đăng nhập người dùng
             Auth::login($user);
 
-            // Tạo token xác thực
+            // Tạo token cho người dùng
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Redirect về frontend với token và idMember
-            return redirect("http://localhost:5173/login/google?token={$token}&idMember={$user->id}");
+            // Redirect về frontend với token và idMember trong query parameter
+            $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
+            return redirect("{$frontendUrl}/login/google?token={$token}&idMember={$user->id}");
         } catch (\Exception $e) {
-            \Log::error('Google OAuth Error: ' . $e->getMessage());
-            return redirect('http://localhost:5173?error=login_failed&message=' . urlencode($e->getMessage()));
+            Log::error('Google OAuth Error: ' . $e->getMessage());
+            $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
+            return redirect("{$frontendUrl}/login/google?error=login_failed&message=" . urlencode($e->getMessage()));
         }
     }
 
     protected function findOrCreateUser($socialUser)
     {
-        // Tìm người dùng trong database
-        $user = User::where('email', $socialUser->getEmail())->first();
-
-        // Tạo user_name từ initials của full_name
+        $email = $socialUser->getEmail();
+        $user = User::where('email', $email)->first();
         $fullName = $socialUser->getName();
-        
-        // Làm sạch full_name: loại bỏ ký tự đặc biệt, chỉ giữ chữ cái và khoảng trắng
-        $cleanedFullName = preg_replace('/[^a-zA-Z\s]/', '', $fullName);
-        
-        // Tạo initials từ full_name đã làm sạch
-        $initials = strtolower(implode('', array_map(function($word) {
-            return substr($word, 0, 1);
-        }, explode(' ', trim($cleanedFullName)))));
 
-        // Tạo username unique với 3 số ngẫu nhiên
-        $maxAttempts = 10; // Giới hạn số lần thử để tránh vòng lặp vô hạn
+        $usernameBase = $fullName ? strtolower(preg_replace('/[^a-zA-Z]/', '', $fullName)) : explode('@', $email)[0];
+        $username = $usernameBase;
         $attempt = 0;
-        do {
-            $randomNumber = rand(100, 999);
-            $username = $initials . $randomNumber;
-            $attempt++;
-            
-            // Nếu đã thử quá nhiều lần mà vẫn trùng, thêm số ngẫu nhiên dài hơn
-            if ($attempt >= $maxAttempts) {
-                $username = $initials . rand(1000, 9999); // Dùng 4 chữ số
-                break;
-            }
-        } while (User::where('user_name', $username)->exists());
+        $maxAttempts = 10;
 
-        // Nếu người dùng đã tồn tại, cập nhật token
+        while (User::where('user_name', $username)->exists() && $attempt < $maxAttempts) {
+            $username = $usernameBase . rand(100, 9999);
+            $attempt++;
+        }
+
+        if ($attempt >= $maxAttempts) {
+            throw new \Exception('Unable to generate unique username');
+        }
+
         if ($user) {
-            $user->google_access_token = $socialUser->token;
-            if ($socialUser->refreshToken) {
-                $user->google_refresh_token = $socialUser->refreshToken;
-            }
-            // Cập nhật user_name nếu chưa có
             if (!$user->user_name) {
                 $user->user_name = $username;
+                $user->save();
             }
-            $user->save();
-        } else {
-            // Tạo người dùng mới
-            $user = User::create([
-                'full_name'             => $fullName,
-                'email'                 => $socialUser->getEmail(),
-                'google_id'             => $socialUser->getId(),
-                'google_access_token'   => $socialUser->token,
-                'google_refresh_token'  => $socialUser->refreshToken,
-                'password'              => bcrypt(str()->random(16)),
-                'user_name'             => $username
-            ]);
+            return $user;
         }
-        return $user;
+
+        return User::create([
+            'full_name' => $fullName,
+            'email' => $email,
+            'google_id' => $socialUser->getId(),
+            'password' => bcrypt(str()->random(16)),
+            'user_name' => $username,
+        ]);
     }
 }

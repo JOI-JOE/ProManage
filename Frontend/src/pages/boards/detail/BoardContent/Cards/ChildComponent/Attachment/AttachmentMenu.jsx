@@ -164,6 +164,7 @@ const AttachmentMenu = ({ open, onClose, onAlert }) => {
             setLinkText('');
             setLinkUrl('');
             setIsUploading(false); // Đặt lại trạng thái loading trước khi đóng
+            console.log(newLink)
             handleClose(); // Đóng dialog sau khi thêm thành công
         } catch (err) {
             console.error('❌ Failed to add link:', err);

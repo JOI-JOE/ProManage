@@ -25,7 +25,6 @@ const getDomain = (url) => {
         return "";
     }
 };
-
 const LinkItem = ({ file }) => {
     const { handleDeleteLink, handleEditLink } = useAttachments();
     const domain = getDomain(file.path_url);

@@ -4,6 +4,7 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import C_ard from "./C_ard";
+import { CardProvider } from "../../../../../contexts/CardContext";
 
 const Card_list = ({ cards }) => {
     return (
@@ -43,8 +44,11 @@ const Card_list = ({ cards }) => {
                 {cards
                     ?.filter((card) => !card.is_archived) // Chỉ hiển thị card không archived
                     .map((card) => (
+
                         <div key={`card-id-${card.id}`}>
-                            <C_ard key={card.id} card={card} />
+                            <CardProvider card={card}>
+                                <C_ard key={card.id} card={card} />
+                            </CardProvider>
                         </div>
                     ))}
             </Box>

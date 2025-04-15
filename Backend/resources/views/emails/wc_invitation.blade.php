@@ -47,7 +47,7 @@
                   padding-bottom: 10px;
                 "
               >
-                {{-- {{ $inviter_name }} đã mời bạn tham gia Không gian làm việc "{{ $workspace_name }}" --}}
+                {{ $inviter_name }} đã mời bạn tham gia Không gian làm việc "{{ $workspace_name }}"
               </td>
             </tr>
             <tr>
@@ -65,7 +65,7 @@
             </tr>
             <tr>
               <td align="left" style="padding-bottom: 20px">
-                {{-- <a
+                <a
                   href="{{ $invite_link }}"
                   style="
                     background-color: #0052cc;
@@ -77,7 +77,7 @@
                   "
                 >
                   Đi đến Không gian làm việc
-                </a> --}}
+                </a>
               </td>
             </tr>
             <tr>

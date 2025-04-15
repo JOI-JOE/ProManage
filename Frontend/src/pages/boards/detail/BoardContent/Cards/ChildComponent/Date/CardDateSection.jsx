@@ -11,7 +11,6 @@ dayjs.locale('vi');
 
 const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
     const theme = useTheme();
-
     const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
     const [date, setDate] = useState({
         start: null,
@@ -23,7 +22,7 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
 
     const { updateDates, updateIsCompleted, isUpdating, error } = useUpdateCardById(cardId);
 
-    // Cập nhật state khi cardData thay đổi
+    // Update state when cardData changes
     useEffect(() => {
         if (cardData) {
             setDate({
@@ -100,7 +99,7 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
             const startDate = dayjs(date.start);
             displayText += `${startDate.format('DD/MM')}`;
         } else if (date.start) {
-            return 'Invalid Date'; // Có thể thay đổi thông báo tùy ý
+            return 'Invalid Date';
         }
 
         if (date.due && dayjs(date.due).isValid()) {
@@ -112,7 +111,7 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
                 ? `${dueTime.format('HH:mm')} - ${dueDate.format('DD/MM')}`
                 : `${dueDate.format('DD/MM')}`;
         } else if (date.due) {
-            return 'Invalid Date'; // Có thể thay đổi thông báo tùy ý
+            return 'Invalid Date';
         }
 
         return displayText.trim() || 'Invalid Date';
@@ -149,66 +148,73 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
 
     const dueStatus = getDueStatus();
 
-    return (
-        <Box sx={{ minWidth: '200px', mb: 2 }}>
-            <Typography
-                variant="subtitle2"
-                sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}
-            >
-                Ngày
-            </Typography>
+    // Only render the date section if start or due is set
+    const hasDates = date.start || date.due;
 
-            <Box
-                onClick={handleOpenDateDialog}
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    px: 0.6,
-                    py: 0.3,
-                    borderRadius: 2,
-                    backgroundColor: theme.palette.background.paper,
-                    boxShadow: theme.shadows[1],
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                        boxShadow: theme.shadows[3],
-                        backgroundColor: theme.palette.action.hover,
-                    },
-                }}
-            >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <CalendarTodayIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
+    return (
+        <>
+            {hasDates && (
+                <Box sx={{ minWidth: '200px', mb: 2 }}>
                     <Typography
-                        variant="body2"
-                        sx={{ fontWeight: 500, color: theme.palette.text.primary }}
+                        variant="subtitle2"
+                        sx={{ color: theme.palette.text.secondary, fontWeight: 600 }}
                     >
-                        {formatDateDisplay()}
+                        Ngày
                     </Typography>
-                    {dueStatus && (
-                        <Chip
-                            label={dueStatus.text}
-                            size="small"
-                            sx={{
-                                height: 22,
-                                fontSize: '0.75rem',
-                                fontWeight: 500,
-                                backgroundColor: dueStatus.color,
-                                color: theme.palette.getContrastText(dueStatus.color),
-                                borderRadius: 1,
-                            }}
-                        />
+
+                    <Box
+                        onClick={handleOpenDateDialog}
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: 0.6,
+                            py: 0.3,
+                            borderRadius: 2,
+                            backgroundColor: theme.palette.background.paper,
+                            boxShadow: theme.shadows[1],
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease-in-out',
+                            '&:hover': {
+                                boxShadow: theme.shadows[3],
+                                backgroundColor: theme.palette.action.hover,
+                            },
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <CalendarTodayIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
+                            <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 500, color: theme.palette.text.primary }}
+                            >
+                                {formatDateDisplay()}
+                            </Typography>
+                            {dueStatus && (
+                                <Chip
+                                    label={dueStatus.text}
+                                    size="small"
+                                    sx={{
+                                        height: 22,
+                                        fontSize: '0.75rem',
+                                        fontWeight: 500,
+                                        backgroundColor: dueStatus.color,
+                                        color: theme.palette.getContrastText(dueStatus.color),
+                                        borderRadius: 1,
+                                    }}
+                                />
+                            )}
+                        </Box>
+                        <IconButton size="small" disabled={isUpdating}>
+                            <AccessTimeIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
+                        </IconButton>
+                    </Box>
+
+                    {error && (
+                        <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                            Lỗi: {error.message || 'Không thể cập nhật ngày'}
+                        </Typography>
                     )}
                 </Box>
-                <IconButton size="small" disabled={isUpdating}>
-                    <AccessTimeIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
-                </IconButton>
-            </Box>
-
-            {error && (
-                <Typography color="error" variant="body2" sx={{ mt: 1 }}>
-                    Lỗi: {error.message || 'Không thể cập nhật ngày'}
-                </Typography>
             )}
 
             <DateItem
@@ -224,7 +230,7 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
                     dueComplete: date?.dueComplete ?? false,
                 }}
             />
-        </Box>
+        </>
     );
 });
 

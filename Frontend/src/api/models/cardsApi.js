@@ -32,7 +32,22 @@ export const fetchComments = async (cardId) => {
   const response = await authClient.get(`/card/${cardId}/comments`);
   return response.data;
 };
+// - activity
+export const fetchActivities = async (cardId) => {
+  const response = await authClient.get(`/activity/cards/${cardId}`);
+  return response.data;
+};
 // function create ----------------------------------------------------------
+// Copy card
+export const copyCard = async ({ cardId, data }) => {
+  const response = await authClient.post(`/card/${cardId}/copy`, data);
+  return response.data;
+};
+// Move a card
+export const moveCard = async ({ cardId, data }) => {
+  const response = await authClient.post(`/card/${cardId}/move`, data);
+  return response.data;
+};
 // - checklist
 export const postCheckLists = async ({ cardId, data }) => {
   const response = await authClient.post(`/card/${cardId}/checklists`, data);
@@ -66,11 +81,11 @@ export const postAttachmentFile = async ({ cardId, file }) => {
   }
 };
 // - attachment - link
-export const postAttachmentLink = async ({ cardId, linkData }) => {
+export const postAttachmentLink = async ({ cardId, link }) => {
   try {
     const response = await authClient.post(
       `/card/${cardId}/attachments`,
-      linkData
+      link
     );
     return response.data;
   } catch (error) {
@@ -187,7 +202,7 @@ export const createCard = async (data) => {
 
 export const updatePositionCard = async ({ cardId, listId, position }) => {
   try {
-    const response = await authClient.put(`cards/${cardId}`, {
+    const response = await authClient.put(`card/${cardId}/drag`, {
       listId: listId, // ID của list cần cập nhật
       position: position, // Vị trí bạn muốn cập nhật
     });

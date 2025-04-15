@@ -10,30 +10,34 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class AttachmentDeletedWithActivity implements ShouldBroadcast
+class AttachmentDeleted implements ShouldBroadcast
 {
-    use InteractsWithSockets, SerializesModels;
+    use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $cardId;
     public $attachmentId;
-    public $fileName;
-    public $activity;
+    public $card;
 
-    public function __construct($cardId, $attachmentId, $fileName, $activity)
+    public function __construct($attachmentId, $card)
     {
-        $this->cardId = $cardId;
         $this->attachmentId = $attachmentId;
-        $this->fileName = $fileName;
-        $this->activity = $activity;
+        $this->card = $card;
     }
 
     public function broadcastOn()
     {
-        return new Channel('card.' . $this->cardId);
+        return new PrivateChannel('card.' . $this->card->id);
     }
 
     public function broadcastAs()
     {
-        return 'attachment.deleted_with_activity';
+        return 'attachment.deleted';
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'attachment_id' => $this->attachmentId,
+            'card_id' => $this->card->id,
+        ];
     }
 }

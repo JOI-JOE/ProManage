@@ -1,14 +1,16 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext } from 'react';
 
 // Tạo Context
 const CardContext = createContext();
 
 // Provider
-export const CardProvider = ({ cardId, children }) => {
+export const CardProvider = ({ card, children }) => {
     return (
+
         <CardContext.Provider
             value={{
-                cardId,
+                cardId: card?.id,
+                badges: card?.badges || []
             }}
         >
             {children}

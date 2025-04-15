@@ -171,7 +171,6 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Mật khẩu mới đã được gửi qua email!']);
     }
-
     ////// Logout
     public function logout(Request $request)
     {

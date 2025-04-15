@@ -8,16 +8,12 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log; // Import Log Facade
-
+use Illuminate\Support\Facades\Log;
 
 class CardCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * Create a new event instance.
-     */
     public $card;
 
     public function __construct(Card $card)
@@ -25,17 +21,25 @@ class CardCreated implements ShouldBroadcastNow
         $this->card = $card;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-
     public function broadcastOn(): array
     {
-        return [
-            new Channel('board.' . $this->card->listBoard->board_id),
-        ];
+        try {
+            // Ensure list_board is loaded
+            if (!$this->card->relationLoaded('list_board')) {
+                $this->card->load('list_board');
+            }
+
+            $boardId = $this->card->list_board->board_id ?? null;
+            if (!$boardId) {
+                Log::warning('Could not determine board_id for card', ['card_id' => $this->card->id]);
+                return [];
+            }
+
+            return [new Channel('board.' . $boardId)];
+        } catch (\Exception $e) {
+            Log::error('Failed to determine broadcast channel for CardCreated: ' . $e->getMessage());
+            return [];
+        }
     }
 
     public function broadcastAs()
@@ -45,15 +49,20 @@ class CardCreated implements ShouldBroadcastNow
 
     public function broadcastWith()
     {
-        Log::info('CardCreated event broadcasted', [
-            'card' => $this->card,
-        ]);
-
-        return [
-            'id'  => $this->card->id,
-            'columnId' => $this->card->list_board_id,
+        $data = [
+            'id' => $this->card->id,
+            'list_board_id' => $this->card->list_board_id,
             'title' => $this->card->title,
             'position' => $this->card->position,
         ];
+
+        Log::info('CardCreated event broadcasting', $data);
+
+        return $data;
+    }
+
+    public function broadcastWhen(): bool
+    {
+        return !empty($this->broadcastOn());
     }
 }
