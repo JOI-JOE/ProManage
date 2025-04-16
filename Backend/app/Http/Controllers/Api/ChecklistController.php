@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ChecklistCreated; // Ensure this is included for reference
+use App\Events\ChecklistUpdated; // Add this import
+use App\Events\ChecklistDeleted; // Add this import
 use App\Http\Controllers\Controller;
+use App\Models\Card;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ChecklistController extends Controller
 {
@@ -13,7 +18,6 @@ class ChecklistController extends Controller
      */
     private function getChecklistWithItems($checklistId)
     {
-        // Lấy thông tin checklist
         $checklist = DB::table('checklists')
             ->select([
                 'checklists.id',
@@ -40,7 +44,6 @@ class ChecklistController extends Controller
             return null;
         }
 
-        // Lấy danh sách checklist items
         $checklistItems = DB::table('checklist_items')
             ->select([
                 'checklist_items.id',
@@ -91,13 +94,12 @@ class ChecklistController extends Controller
      */
     public function index($cardId)
     {
-        // Kiểm tra card tồn tại
+        // ... (unchanged)
         $cardExists = DB::table('cards')->where('id', $cardId)->exists();
         if (!$cardExists) {
             return response()->json(['message' => 'Card not found'], 404);
         }
 
-        // Lấy tất cả checklists thuộc card_id
         $checklists = DB::table('checklists')
             ->select('id')
             ->where('card_id', $cardId)
@@ -107,39 +109,40 @@ class ChecklistController extends Controller
             return response()->json([]);
         }
 
-        // Lấy chi tiết từng checklist
         $result = $checklists->map(function ($checklist) {
             return $this->getChecklistWithItems($checklist->id);
-        })->filter(); // Loại bỏ các giá trị null (nếu checklist không tồn tại)
+        })->filter();
 
         return response()->json($result);
     }
 
-/**
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request, $cardId)
     {
-        // Kiểm tra card tồn tại
-        $cardModel = \App\Models\Card::find($cardId);
+        // ... (unchanged)
+        $cardModel = Card::find($cardId);
         if (!$cardModel) {
             return response()->json(['message' => 'Card not found'], 404);
         }
 
-        // Validate dữ liệu
         $validated = $request->validate([
             'name' => 'required|string|max:255',
         ]);
 
-        // Tạo checklist mới
-        $checklistId = DB::table('checklists')->insertGetId([
-            'card_id' => $cardId,
-            'name' => $validated['name'],
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        try {
+            $checklistId = DB::table('checklists')->insertGetId([
+                'card_id' => $cardId,
+                'name' => $validated['name'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create checklist: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to create checklist'], 500);
+        }
 
-        // Ghi log
         $user = auth()->user();
         $userName = $user ? $user->full_name : 'ai đó';
         activity()
@@ -149,7 +152,6 @@ class ChecklistController extends Controller
             ->withProperties(['checklist_name' => $validated['name'], 'checklist_id' => $checklistId])
             ->log("{$userName} đã tạo checklist '{$validated['name']}' cho card '{$cardModel->title}'");
 
-        // Lấy thông tin checklist để trả về
         $checklistData = [
             'id' => $checklistId,
             'card_id' => $cardId,
@@ -157,9 +159,11 @@ class ChecklistController extends Controller
             'total_items' => 0,
             'completed_items' => 0,
             'items' => [],
-            'created_at' => now(),
-            'updated_at' => now(),
+            'created_at' => now()->toDateTimeString(),
+            'updated_at' => now()->toDateTimeString(),
         ];
+
+        broadcast(new ChecklistCreated($checklistData, $cardModel, $user))->toOthers();
 
         return response()->json($checklistData, 201);
     }
@@ -179,7 +183,7 @@ class ChecklistController extends Controller
         }
 
         // Kiểm tra card tồn tại
-        $cardModel = \App\Models\Card::find($checklist->card_id);
+        $cardModel = Card::find($checklist->card_id);
         if (!$cardModel) {
             return response()->json(['message' => 'Card not found'], 404);
         }
@@ -226,6 +230,9 @@ class ChecklistController extends Controller
             return response()->json(['message' => 'Failed to retrieve updated checklist'], 500);
         }
 
+        // Phát event để broadcast
+        broadcast(new ChecklistUpdated($updatedChecklist, $cardModel, $user))->toOthers();
+
         return response()->json($updatedChecklist);
     }
 
@@ -244,7 +251,7 @@ class ChecklistController extends Controller
         }
 
         // Kiểm tra card tồn tại
-        $cardModel = \App\Models\Card::find($checklist->card_id);
+        $cardModel = Card::find($checklist->card_id);
         if (!$cardModel) {
             return response()->json(['message' => 'Card not found'], 404);
         }
@@ -259,6 +266,9 @@ class ChecklistController extends Controller
             ->withProperties(['checklist_name' => $checklist->name, 'checklist_id' => $checklistId])
             ->log("{$userName} đã xóa checklist '{$checklist->name}' trong card '{$cardModel->title}'.");
 
+        // Phát event để broadcast trước khi xóa
+        broadcast(new ChecklistDeleted($checklistId, $cardModel, $user))->toOthers();
+
         // Xóa checklist
         $deleted = DB::table('checklists')
             ->where('id', $checklistId)
@@ -270,6 +280,4 @@ class ChecklistController extends Controller
 
         return response()->json(['message' => 'Failed to delete checklist'], 500);
     }
-
-
 }

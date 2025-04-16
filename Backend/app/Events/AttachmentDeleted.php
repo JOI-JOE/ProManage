@@ -5,12 +5,13 @@ namespace App\Events;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
-class AttachmentDeleted implements ShouldBroadcast
+class AttachmentDeleted implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -25,7 +26,7 @@ class AttachmentDeleted implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new PrivateChannel('card.' . $this->card->id);
+        return new Channel('card.' . $this->card->id);
     }
 
     public function broadcastAs()
@@ -35,9 +36,12 @@ class AttachmentDeleted implements ShouldBroadcast
 
     public function broadcastWith()
     {
-        return [
+
+        $data = [
             'attachment_id' => $this->attachmentId,
             'card_id' => $this->card->id,
         ];
+        Log::info('Hậu đẹp trai xóa', $data);
+        return $data;
     }
 }

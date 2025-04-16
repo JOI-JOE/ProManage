@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CommentCreated;
+use App\Events\CommentUpdated;
+use App\Events\CommentDeleted;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +36,7 @@ class CommentCardController extends Controller
                 'users.full_name',
                 'users.initials',
                 'users.user_name',
-                'users.image',
+                'users.image'
             )
             ->join('users', 'comment_cards.user_id', '=', 'users.id')
             ->where('comment_cards.card_id', $cardId)
@@ -115,20 +118,6 @@ class CommentCardController extends Controller
                 throw new \Exception('Không thể lấy thông tin comment vừa tạo!');
             }
 
-            // Ghi log khi tạo comment
-            $user = auth()->user();
-            $userName = $user ? $user->full_name : 'ai đó';
-            activity()
-                ->causedBy($user)
-                ->performedOn($card)
-                ->event('created_comment')
-                ->withProperties([
-                    'comment_id' => $newComment->id,
-                    'content' => $newComment->content,
-                    'card_id' => $cardId,
-                ])
-                ->log("{$userName} đã thêm bình luận vào card '{$card->title}'.");
-
             // Format the response
             $formattedComment = [
                 'id' => $newComment->id,
@@ -146,21 +135,35 @@ class CommentCardController extends Controller
                 ],
             ];
 
+            // Ghi log khi tạo comment
+            $user = auth()->user();
+            $userName = $user ? $user->full_name : 'ai đó';
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('created_comment')
+                ->withProperties([
+                    'comment_id' => $newComment->id,
+                    'content' => $newComment->content,
+                    'card_id' => $cardId,
+                ])
+                ->log("{$userName} đã thêm bình luận vào card '{$card->title}'.");
+
+            // Broadcast to others
+            broadcast(new CommentCreated($formattedComment, $card, $user))->toOthers();
+
             return response()->json($formattedComment, 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // Handle validation errors
             return response()->json([
                 'message' => 'Dữ liệu không hợp lệ!',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Illuminate\Database\QueryException $e) {
-            // Handle database errors (e.g., foreign key violation, connection issues)
             return response()->json([
                 'message' => 'Lỗi cơ sở dữ liệu khi tạo comment!',
                 'error' => env('APP_DEBUG', false) ? $e->getMessage() : null,
             ], 500);
         } catch (\Exception $e) {
-            // Handle any other unexpected errors
             return response()->json([
                 'message' => 'Đã xảy ra lỗi khi tạo comment!',
                 'error' => env('APP_DEBUG', false) ? $e->getMessage() : null,
@@ -259,6 +262,9 @@ class CommentCardController extends Controller
                 ],
             ];
 
+            // Broadcast to others
+            broadcast(new CommentUpdated($formattedComment, $card, $user))->toOthers();
+
             return response()->json($formattedComment);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -313,6 +319,9 @@ class CommentCardController extends Controller
                     'card_id' => $card->id,
                 ])
                 ->log("{$userName} đã xóa bình luận khỏi card '{$card->title}'.");
+
+            // Broadcast to others
+            broadcast(new CommentDeleted($commentId, $card->id, $user ? $user->id : null))->toOthers();
 
             // Delete the comment
             DB::table('comment_cards')

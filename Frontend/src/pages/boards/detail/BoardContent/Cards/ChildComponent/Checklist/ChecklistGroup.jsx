@@ -6,20 +6,24 @@ import {
     LinearProgress,
     TextField,
     Menu,
-    MenuItem,
     List,
     ListItemButton,
     ListItemAvatar,
     ListItemText,
 } from '@mui/material';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import DateItem from '../Date/DateItem';
 import ChecklistItem from './CheckListItem';
-import { useChecklist, usePostCheckList, usePostChecklistItem, useRemoveChecklistFromCard, useUpdateCheckList } from '../../../../../../../hooks/useCard';
+import {
+    usePostCheckList,
+    usePostChecklistItem,
+    useRemoveChecklistFromCard,
+    useUpdateCheckList,
+} from '../../../../../../../hooks/useCard';
 import InitialsAvatar from '../../../../../../../components/Common/InitialsAvatar';
 import DeleteChecklistButton from './DeleteChecklistButton';
 import LogoLoading from '../../../../../../../components/LogoLoading';
 import { useBoard } from '../../../../../../../contexts/BoardContext';
+import { useChecklist } from '../../../../../../../hooks/useCheckList';
 
 const ChecklistGroup = forwardRef(({ cardId }, ref) => {
     const { data, isLoading, error } = useChecklist(cardId);
@@ -32,30 +36,27 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
     const [checklists, setChecklists] = useState([]);
     const [newItemText, setNewItemText] = useState('');
     const [isAddingItemId, setIsAddingItemId] = useState(null);
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [selectedItem, setSelectedItem] = useState(null);
     const [memberAnchorEl, setMemberAnchorEl] = useState(null);
     const [selectedChecklistItem, setSelectedChecklistItem] = useState(null);
     const [memberSearch, setMemberSearch] = useState('');
-    // Thêm state để quản lý việc chỉnh sửa title
     const [editingChecklistId, setEditingChecklistId] = useState(null);
     const [editingTitle, setEditingTitle] = useState('');
 
     useEffect(() => {
         if (data && Array.isArray(data)) {
-            const mapped = data.map(cl => ({
+            const mapped = data.map((cl) => ({
                 id: cl.id,
                 title: cl.name,
-                items: cl.items.map(item => ({
+                items: cl.items.map((item) => ({
                     id: item.id,
                     name: item.name,
                     is_completed: item.is_completed,
                     start_date: item.start_date,
                     end_date: item.end_date,
                     end_time: item.end_time,
-                    assignees: item.assignees,
+                    assignee: item.assignee ?? (Array.isArray(item.assignees) ? item.assignees[0] ?? null : null),
                     reminder: item.reminder,
-                }))
+                })),
             }));
             setChecklists(mapped);
         }
@@ -90,7 +91,7 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                     },
                     onError: (err) => {
                         setChecklists((prev) => prev.filter((cl) => cl.id !== tempId));
-                        console.error("❌ Lỗi khi thêm checklist từ outside:", err);
+                        console.error('❌ Lỗi khi thêm checklist từ outside:', err);
                     },
                 }
             );
@@ -117,7 +118,8 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
             is_completed: false,
             start_date: null,
             end_date: null,
-            assignees: [],
+            end_time: null,
+            assignee: null,
             reminder: null,
             isPending: true,
         };
@@ -154,17 +156,20 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
     };
 
     const handleToggleItem = (checklistId, itemId) => {
-        const updatedChecklists = checklists.map((cl) =>
-            cl.id === checklistId
-                ? {
-                    ...cl,
-                    items: cl.items.map((item) =>
-                        item.id === itemId ? { ...item, is_completed: !item.is_completed } : item
-                    ),
-                }
-                : cl
+        setChecklists((prev) =>
+            prev.map((cl) =>
+                cl.id === checklistId
+                    ? {
+                        ...cl,
+                        items: cl.items.map((item) =>
+                            item.id === itemId
+                                ? { ...item, is_completed: !item.is_completed }
+                                : item
+                        ),
+                    }
+                    : cl
+            )
         );
-        setChecklists(updatedChecklists);
     };
 
     const handleDeleteItem = (checklistId, itemId) => {
@@ -175,28 +180,23 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                     : cl
             )
         );
-        handleMenuClose();
     };
 
-    const updateAssigneesInState = (itemId, assignees) => {
-        const updated = checklists.map((cl) => ({
-            ...cl,
-            items: cl.items.map((item) =>
-                item.id === itemId ? { ...item, assignees } : item
-            ),
-        }));
-        setChecklists(updated);
+    const updateAssigneeInState = (itemId, assigneeId) => {
+        setChecklists((prev) =>
+            prev.map((cl) => ({
+                ...cl,
+                items: cl.items.map((item) =>
+                    item.id === itemId ? { ...item, assignee: assigneeId } : item
+                ),
+            }))
+        );
     };
 
     const handleUserSelected = (memberId) => {
         if (!selectedChecklistItem) return;
 
-        const currentAssignees = selectedChecklistItem.assignees || [];
-        const newAssignees = currentAssignees.includes(memberId)
-            ? currentAssignees
-            : [...currentAssignees, memberId];
-
-        updateAssigneesInState(selectedChecklistItem.id, newAssignees);
+        updateAssigneeInState(selectedChecklistItem.id, memberId);
         if (assignCallback) assignCallback(memberId);
         handleCloseMemberMenu();
     };
@@ -204,7 +204,7 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
     const handleRemoveAssignee = () => {
         if (!selectedChecklistItem) return;
 
-        updateAssigneesInState(selectedChecklistItem.id, []);
+        updateAssigneeInState(selectedChecklistItem.id, null);
         if (assignCallback) assignCallback(null);
         handleCloseMemberMenu();
     };
@@ -239,13 +239,11 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
         );
     };
 
-    // Hàm xử lý khi bấm vào title để chỉnh sửa
     const handleTitleClick = (checklistId, currentTitle) => {
         setEditingChecklistId(checklistId);
         setEditingTitle(currentTitle);
     };
 
-    // Hàm xử lý khi cập nhật title
     const handleTitleUpdate = (checklistId) => {
         const trimmedTitle = editingTitle.trim();
         if (!trimmedTitle) return;
@@ -258,25 +256,25 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
         setEditingChecklistId(null);
         setEditingTitle('');
 
-        // Gọi API để cập nhật title trên server
         updateChecklistTitle(
             { checklistId, data: { name: trimmedTitle } },
             {
                 onSuccess: (data) => {
-                    console.log("Checklist title updated successfully:", data);
+                    console.log('Checklist title updated successfully:', data);
                 },
                 onError: (err) => {
-                    // Rollback nếu cần
                     setChecklists((prev) =>
                         prev.map((cl) =>
-                            cl.id === checklistId ? { ...cl, title: checklists.title } : cl
+                            cl.id === checklistId
+                                ? { ...cl, title: data.find((c) => c.id === checklistId)?.name || cl.title }
+                                : cl
                         )
                     );
+                    console.error('Failed to update checklist title:', err);
                 },
             }
         );
     };
-
 
     const filteredMembers = members.filter((m) =>
         m?.full_name?.toLowerCase().includes(memberSearch.toLowerCase())
@@ -296,11 +294,6 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
         setSelectedChecklistItem(null);
         setMemberSearch('');
         setAssignCallback(null);
-    };
-
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-        setSelectedItem(null);
     };
 
     return (
@@ -338,18 +331,12 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                                                 fontSize: '16px',
                                                 fontWeight: 'bold',
                                                 color: '#42526E',
-                                                minWidth: "400px"
+                                                minWidth: '400px',
                                             },
                                             '& .MuiOutlinedInput-root': {
-                                                '& fieldset': {
-                                                    borderColor: '#42526E',
-                                                },
-                                                '&:hover fieldset': {
-                                                    borderColor: '#42526E',
-                                                },
-                                                '&.Mui-focused fieldset': {
-                                                    borderColor: '#42526E',
-                                                },
+                                                '& fieldset': { borderColor: '#42526E' },
+                                                '&:hover fieldset': { borderColor: '#42526E' },
+                                                '&.Mui-focused fieldset': { borderColor: '#42526E' },
                                             },
                                         }}
                                     />
@@ -398,11 +385,14 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                                 item={{ ...item, checklistId: checklist.id }}
                                 members={members}
                                 onToggle={() => handleToggleItem(checklist.id, item.id)}
-                                onOpenDateDialog={() => handleOpenDateDialog(item.id)}
-                                onOpenMemberMenu={(e, item, assignFn) => handleOpenMemberMenu(e, item, assignFn)}
                                 onDeleteItem={handleDeleteItem}
                                 onNameChange={handleUpdateItemName}
-                                onDateChange={(newDateData) => handleUpdateItemDate(checklist.id, item.id, newDateData)}
+                                onDateChange={(newDateData) =>
+                                    handleUpdateItemDate(checklist.id, item.id, newDateData)
+                                }
+                                onOpenMemberMenu={(e, item, assignFn) =>
+                                    handleOpenMemberMenu(e, item, assignFn)
+                                }
                             />
                         ))}
 
@@ -418,10 +408,19 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                                     autoFocus
                                 />
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                                    <Button onClick={() => handleAddItem(checklist.id)} size="small" variant="contained">
+                                    <Button
+                                        onClick={() => handleAddItem(checklist.id)}
+                                        size="small"
+                                        variant="contained"
+                                    >
                                         Thêm
                                     </Button>
-                                    <Button onClick={() => setIsAddingItemId(null)} size="small">Huỷ</Button>
+                                    <Button
+                                        onClick={() => setIsAddingItemId(null)}
+                                        size="small"
+                                    >
+                                        Huỷ
+                                    </Button>
                                 </Box>
                             </Box>
                         ) : (
@@ -478,15 +477,16 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                             <ListItemButton
                                 key={member.id}
                                 onClick={() => handleUserSelected(member.id)}
+                                selected={selectedChecklistItem?.assignee === member.id}
                             >
                                 <ListItemAvatar>
                                     <InitialsAvatar
                                         sx={{
-                                            fontSize: "14px",
-                                            width: "32px",
-                                            height: "32px",
+                                            fontSize: '14px',
+                                            width: '32px',
+                                            height: '32px',
                                         }}
-                                        size={"32px"}
+                                        size={'32px'}
                                         initials={member.initials}
                                         name={member.full_name}
                                         avatarSrc={member.image}
@@ -497,14 +497,16 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                         ))}
                     </List>
 
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={handleRemoveAssignee}
-                        sx={{ mt: 1 }}
-                    >
-                        Loại bỏ thành viên
-                    </Button>
+                    {selectedChecklistItem?.assignee && (
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            onClick={handleRemoveAssignee}
+                            sx={{ mt: 1 }}
+                        >
+                            Loại bỏ thành viên
+                        </Button>
+                    )}
                 </Box>
             </Menu>
         </Box>

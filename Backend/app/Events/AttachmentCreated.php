@@ -6,26 +6,25 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
-class AttachmentCreated implements ShouldBroadcast
+class AttachmentCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $attachment;
-    public $card;
 
-    public function __construct($attachment, $card)
+    public function __construct($attachment)
     {
         $this->attachment = $attachment;
-        $this->card = $card;
     }
 
     public function broadcastOn()
     {
-        return new PrivateChannel('card.' . $this->card->id);
+        return new Channel('card.' . $this->attachment['card_id']);
     }
 
     public function broadcastAs()
@@ -35,9 +34,21 @@ class AttachmentCreated implements ShouldBroadcast
 
     public function broadcastWith()
     {
-        return [
-            'attachment' => $this->attachment,
-            'card_id' => $this->card->id,
+        // Ensure required fields are present, provide defaults for optional ones
+        $data = [
+            'attachment' => [
+                'id' => $this->attachment['id'] ?? null,
+                'file_name' => $this->attachment['file_name'] ?? '',
+                'path_url' => $this->attachment['path_url'] ?? '',
+                'file_name_defaut' => $this->attachment['file_name_defaut'] ?? '',
+                'is_cover' => $this->attachment['is_cover'] ?? false,
+                'type' => $this->attachment['type'],
+                'card_id' => $this->attachment['card_id'] ?? null,
+                'updated_at' => $this->attachment['updated_at'] ?? now(),
+                'created_at' => $this->attachment['created_at'] ?? now(),
+            ],
         ];
+
+        return $data;
     }
 }

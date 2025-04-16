@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -13,7 +13,16 @@ dayjs.extend(relativeTime);
 
 const CommentSection = () => {
     const { user } = useMe();
-    const { comments, cardId, handleAddComment, handleUpdateComment, handleDeleteComment, isSubmittingComment, isLoading } = useCommentContext();
+    const {
+        comments,
+        cardId,
+        handleAddComment,
+        handleUpdateComment,
+        handleDeleteComment,
+        isSubmittingComment,
+        isLoading
+    } = useCommentContext();
+
     const [isEditingComment, setIsEditingComment] = useState(false);
     const [comment, setComment] = useState('');
     const [error, setError] = useState(null);
@@ -22,18 +31,45 @@ const CommentSection = () => {
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [commentToDelete, setCommentToDelete] = useState(null);
 
+    // Added uniqueComments to deal with duplicates
+    const [uniqueComments, setUniqueComments] = useState([]);
+
     const currentUser = user;
+
+    // Effect to handle deduplication whenever comments change
+    useEffect(() => {
+        // Using a Map to keep only the latest version of each comment by ID
+        const commentMap = new Map();
+
+        if (Array.isArray(comments)) {
+            comments.forEach(comment => {
+                if (comment && comment.id) {
+                    commentMap.set(comment.id, comment);
+                }
+            });
+
+            // Convert map values back to array
+            const dedupedComments = Array.from(commentMap.values());
+
+            // Sort by created_at date, newest first
+            dedupedComments.sort((a, b) =>
+                new Date(b.created_at) - new Date(a.created_at)
+            );
+
+            setUniqueComments(dedupedComments);
+        } else {
+            setUniqueComments([]);
+        }
+    }, [comments]);
 
     // Utility to clean HTML content by removing extra spaces, empty paragraphs, and line breaks
     const cleanHTMLContent = (html) => {
         if (!html) return '';
-        // Parse the HTML
         const doc = new DOMParser().parseFromString(html, 'text/html');
-        // Remove empty paragraphs and trim text content
         const cleanText = doc.body.innerHTML
-            .replace(/<p>\s*<\/p>/g, '') // Remove empty <p> tags
-            .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '') // Remove <p> tags with just <br>
-            .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
+            .replace(/<p>\s*<\/p>/g, '')
+            .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '')
+            .replace(/\s+/g, ' ')
             .trim();
         return cleanText === '<br>' || cleanText === '' ? '' : cleanText;
     };
@@ -88,7 +124,7 @@ const CommentSection = () => {
             return;
         }
         try {
-            await handleAddComment(cleanedComment);
+            await handleAddComment(cleanedComment, currentUser);
             setComment('');
             setIsEditingComment(false);
         } catch (err) {
@@ -102,7 +138,7 @@ const CommentSection = () => {
             setError('Không tìm thấy ID bình luận để chỉnh sửa');
             return;
         }
-        const currentComment = comments.find((comment) => comment.id === commentId);
+        const currentComment = uniqueComments.find((comment) => comment.id === commentId);
         if (!currentComment) {
             setError('Bình luận không tồn tại');
             return;
@@ -196,12 +232,12 @@ const CommentSection = () => {
                 </Box>
             </Box>
 
-            {/* Comments list */}
+            {/* Comments list - using uniqueComments instead of comments */}
             {isLoading ? (
                 <LogoLoading scale={0.3} />
             ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {comments.map((comment) => (
+                    {uniqueComments.map((comment) => (
                         <Box key={comment.id} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                             <InitialsAvatar
                                 sx={{ width: '32px', fontSize: '0.8rem', height: '32px' }}

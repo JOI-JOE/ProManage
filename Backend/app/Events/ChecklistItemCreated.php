@@ -2,35 +2,63 @@
 
 namespace App\Events;
 
+use App\Models\Card;
 use App\Models\ChecklistItem;
+use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
-class ChecklistItemCreated implements ShouldBroadcast
+class ChecklistItemCreated implements ShouldBroadcastNow
 {
-    use InteractsWithSockets, SerializesModels;
+    use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $checklistItem;
+    public $card;
+    public $user;
 
-    public function __construct(ChecklistItem $checklistItem)
+    public function __construct(ChecklistItem $checklistItem, Card $card, $user)
     {
-        \Log::info("🔥 ChecklistItemCreated Event Triggered: ", ['item' => $checklistItem]);
         $this->checklistItem = $checklistItem;
+        $this->card = $card;
+        $this->user = $user;
     }
 
-
-    public function broadcastOn()
+    public function broadcastOn(): array
     {
-        return new Channel('checklist.' . $this->checklistItem->checklist->card_id); // Kênh theo checklist_id
+        return [
+            new Channel('card.' . $this->card->id),
+        ];
     }
 
     public function broadcastAs()
     {
         return 'checklistItem.created';
+    }
+
+    public function broadcastWith(): array
+    {
+        $data = [
+            'checklist_item' => [
+                'id' => $this->checklistItem->id,
+                'checklist_id' => $this->checklistItem->checklist_id,
+                'name' => $this->checklistItem->name,
+                'is_completed' => $this->checklistItem->is_completed,
+                'start_date' => $this->checklistItem->start_date,
+                'end_date' => $this->checklistItem->end_date,
+                'end_time' => $this->checklistItem->end_time,
+                'reminder' => $this->checklistItem->reminder,
+                'assignee' => $this->checklistItem->assignee,
+                'created_at' => $this->checklistItem->created_at,
+                'updated_at' => $this->checklistItem->updated_at,
+            ],
+            'card_id' => $this->card->id,
+            'user_id' => $this->user ? $this->user->id : null,
+        ];
+        Log::info('Broadcasting checklistItem.created:', $data);
+        return $data;
     }
 }

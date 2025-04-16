@@ -7,10 +7,12 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
-class AttachmentUpdated implements ShouldBroadcast
+class AttachmentUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -25,7 +27,7 @@ class AttachmentUpdated implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new PrivateChannel('card.' . $this->card->id);
+        return new Channel('card.' . $this->card->id);
     }
 
     public function broadcastAs()
@@ -35,9 +37,11 @@ class AttachmentUpdated implements ShouldBroadcast
 
     public function broadcastWith()
     {
-        return [
+        $data = [
             'attachment' => $this->attachment,
             'card_id' => $this->card->id,
         ];
+        Log::info('Hậu đẹp trai update', $data);
+        return $data;
     }
 }

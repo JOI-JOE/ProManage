@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\AttachmentCreated;
+use App\Events\AttachmentUpdated;
+use App\Events\AttachmentDeleted;
 use App\Events\CardUpdated;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -61,8 +64,8 @@ class AttachmentController extends Controller
                     'file_name' => $fileName,
                     'type' => 'file',
                     'is_cover' => $isCover,
-                    'created_at' => now(),
                     'updated_at' => now(),
+                    'created_at' => now(),
                 ]);
 
                 if ($isCover) {
@@ -93,10 +96,13 @@ class AttachmentController extends Controller
                     'file_name_defaut' => $file->getClientOriginalName(),
                     'path_url' => $publicUrl,
                     'file_name' => $fileName,
+                    'card_id' => $cardId,
                     'size' => $file->getSize(),
                     'mime_type' => $file->getMimeType(),
                     'type' => 'file',
                     'is_cover' => $isCover,
+                    'updated_at' => now(),
+                    'created_at' => now(),
                 ];
                 $message = 'Attachment uploaded successfully';
             } elseif ($request->input('type') === 'link') {
@@ -139,16 +145,6 @@ class AttachmentController extends Controller
                         'card_id' => $cardId,
                     ])
                     ->log("{$userName} đã thêm liên kết '{$request->input('file_name_defaut')}' vào card '{$card->title}'.");
-
-                $responseData = [
-                    'id' => $attachmentId,
-                    'file_name_defaut' => $request->input('file_name_defaut'),
-                    'path_url' => $request->input('path_url'),
-                    'file_name' => $fileNameForLink,
-                    'type' => 'link',
-                    'is_cover' => $isCover,
-                ];
-                $message = 'Link attached successfully';
             } else {
                 throw new \Exception('No file uploaded or invalid link data provided');
             }
@@ -159,9 +155,10 @@ class AttachmentController extends Controller
             $card->save();
 
             try {
+                broadcast(new AttachmentCreated($responseData))->toOthers();
                 event(new CardUpdated($card));
             } catch (\Exception $e) {
-                Log::error("Failed to broadcast CardUpdated event: {$e->getMessage()}", [
+                Log::error("Failed to broadcast events: {$e->getMessage()}", [
                     'card_id' => $cardId,
                     'attachment_id' => $attachmentId ?? null,
                 ]);
@@ -169,7 +166,6 @@ class AttachmentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $message,
                 'data' => $responseData,
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -282,17 +278,17 @@ class AttachmentController extends Controller
             }
 
             DB::table('attachments')->where('id', $attachmentId)->delete();
-            $card->attachment_count = DB::table('attachments')->where('card_id', $card->id)->count();
             $card->updated_at = now();
             $card->save();
 
             DB::commit();
 
-            // Trigger real-time event
+            // Trigger real-time events
             try {
+                broadcast(new AttachmentDeleted($attachmentId, $card))->toOthers();
                 event(new CardUpdated($card));
             } catch (\Exception $e) {
-                Log::error("Failed to broadcast CardUpdated event: {$e->getMessage()}", [
+                Log::error("Failed to broadcast events: {$e->getMessage()}", [
                     'card_id' => $card->id,
                     'attachment_id' => $attachmentId,
                 ]);
@@ -342,13 +338,16 @@ class AttachmentController extends Controller
 
             $updateData = [];
             $logProperties = ['attachment_id' => $attachmentId, 'card_id' => $attachment->card_id];
+            $wasCover = $attachment->is_cover;
 
+            // Handle file upload
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
                 $fileName = Str::random(20) . '_' . time() . '.' . $file->getClientOriginalExtension();
                 $path = $file->storeAs('attachments', $fileName, 'public');
                 $publicUrl = Storage::url($path);
 
+                // Delete old file if it exists
                 if ($attachment->type === 'file' && $attachment->file_name) {
                     $oldFilePath = 'attachments/' . $attachment->file_name;
                     if (Storage::disk('public')->exists($oldFilePath)) {
@@ -368,8 +367,14 @@ class AttachmentController extends Controller
                 $logProperties['new_file_name_defaut'] = $file->getClientOriginalName();
                 $logProperties['old_path_url'] = $attachment->path_url;
                 $logProperties['new_path_url'] = $publicUrl;
+
+                // Update card thumbnail if this was the cover
+                if ($wasCover || $request->boolean('is_cover')) {
+                    $card->thumbnail = $publicUrl;
+                }
             }
 
+            // Handle link update
             if ($request->filled('path_url') && $request->input('type') === 'link') {
                 $updateData['path_url'] = $request->input('path_url');
                 $updateData['type'] = 'link';
@@ -380,14 +385,22 @@ class AttachmentController extends Controller
                 $logProperties['new_path_url'] = $request->input('path_url');
                 $logProperties['old_type'] = $attachment->type;
                 $logProperties['new_type'] = 'link';
+
+                // If this was a cover, it can no longer be as links can't be covers
+                if ($wasCover) {
+                    $updateData['is_cover'] = false;
+                    $card->thumbnail = null;
+                }
             }
 
+            // Handle file name update
             if ($request->filled('file_name_defaut')) {
                 $updateData['file_name_defaut'] = $request->input('file_name_defaut');
                 $logProperties['old_file_name_defaut'] = $attachment->file_name_defaut;
                 $logProperties['new_file_name_defaut'] = $request->input('file_name_defaut');
             }
 
+            // Handle cover flag update
             if ($request->has('is_cover')) {
                 $isCover = $request->boolean('is_cover');
                 $allowedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
@@ -410,12 +423,16 @@ class AttachmentController extends Controller
                 $logProperties['new_is_cover'] = $isCover;
 
                 if ($isCover) {
+                    // Remove is_cover flag from all other attachments
                     DB::table('attachments')
                         ->where('card_id', $attachment->card_id)
                         ->where('id', '!=', $attachmentId)
                         ->update(['is_cover' => false]);
+
+                    // Set thumbnail to the current attachment path
                     $card->thumbnail = $updateData['path_url'] ?? $attachment->path_url;
-                } elseif ($attachment->is_cover) {
+                } elseif ($wasCover) {
+                    // If this was a cover but no longer is, remove thumbnail
                     $card->thumbnail = null;
                 }
             }
@@ -424,8 +441,10 @@ class AttachmentController extends Controller
                 throw new \Exception('No valid data provided for update');
             }
 
+            // Update the attachment
             DB::table('attachments')->where('id', $attachmentId)->update($updateData);
 
+            // Create activity log
             if (!empty($logProperties)) {
                 $logMessage = "{$userName} đã cập nhật đính kèm '{$attachment->file_name_defaut}' trong card '{$card->title}'.";
                 if (isset($updateData['is_cover'])) {
@@ -439,24 +458,22 @@ class AttachmentController extends Controller
                     ->log($logMessage);
             }
 
+            // Always update card's timestamp and save any thumbnail changes
             $card->updated_at = now();
-            if (isset($card->thumbnail)) {
-                $card->save();
-            }
+            $card->save();
 
             DB::commit();
 
-            // Trigger real-time event
+            $updatedAttachment = $this->findAttachment($attachmentId);
             try {
+                broadcast(new AttachmentUpdated($updatedAttachment, $card))->toOthers();
                 event(new CardUpdated($card));
             } catch (\Exception $e) {
-                Log::error("Failed to broadcast CardUpdated event: {$e->getMessage()}", [
+                Log::error("Failed to broadcast events: {$e->getMessage()}", [
                     'card_id' => $card->id,
                     'attachment_id' => $attachmentId,
                 ]);
             }
-
-            $updatedAttachment = $this->findAttachment($attachmentId);
 
             return response()->json([
                 'success' => true,

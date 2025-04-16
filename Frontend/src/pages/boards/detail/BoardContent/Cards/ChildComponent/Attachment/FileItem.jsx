@@ -22,7 +22,8 @@ import LogoLoading from "../../../../../../../components/LogoLoading";
 const FileItem = ({ file, handleOpen, onCreateCover }) => {
     const { handleDeleteFile, handleEditFile, handleEditCover } = useAttachments();
     const [loading, setLoading] = useState(false);
-    const [loadingCover, setLoadingCover] = useState(false); // Thêm trạng thái cho cover
+    const [loadingCover, setLoadingCover] = useState(false);
+    const [loadingDelete, setLoadingDelete] = useState(false); // Thêm trạng thái cho delete
 
     // Check file type
     const fileExt = file.path_url.match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase() || "default";
@@ -96,9 +97,17 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
         handleMenuClose();
     };
 
-    const handleDeleteConfirm = () => {
-        handleDeleteFile(file.id); // Call the handleDeleteFile from context
-        setOpenDeleteDialog(false);
+    const handleDeleteConfirm = async () => {
+        if (loadingDelete) return;
+        setLoadingDelete(true);
+        try {
+            await handleDeleteFile(file.id);
+            setOpenDeleteDialog(false);
+        } catch (error) {
+            console.error("Lỗi xóa:", error);
+        } finally {
+            setLoadingDelete(false);
+        }
     };
 
     const handleDeleteCancel = () => {
@@ -142,7 +151,7 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
 
     // Handle Create/Remove Cover action
     const handleCoverActionClick = async () => {
-        if (loadingCover) return; // Ngăn spam khi đang loading
+        if (loadingCover) return;
 
         const newIsCover = !file.is_cover;
         if (file.is_cover === newIsCover) {
@@ -151,15 +160,15 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
             return;
         }
 
-        setLoadingCover(true); // Bật loading
+        setLoadingCover(true);
         try {
             await handleEditCover(file.id, newIsCover);
-            handleMenuClose(); // Đóng menu sau khi thành công
+            handleMenuClose();
         } catch (error) {
             console.error('❌ Error updating cover:', error);
         } finally {
-            setLoadingCover(false); // Tắt loading
-            handleMenuClose(); // Đóng menu sau khi thành công
+            setLoadingCover(false);
+            handleMenuClose();
         }
     };
 
@@ -190,7 +199,6 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
                         transform: 'translateY(-50%)',
                         display: 'flex',
                         alignItems: 'center',
-                        // bgcolor: 'background.paper',
                         pl: 1,
                     }}>
                         {isImage && (
@@ -382,6 +390,7 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
                             textTransform: "none",
                             fontWeight: 500,
                         }}
+                        disabled={loadingDelete}
                     >
                         Hủy
                     </Button>
@@ -395,10 +404,19 @@ const FileItem = ({ file, handleOpen, onCreateCover }) => {
                             fontWeight: 500,
                             "&:hover": {
                                 backgroundColor: "#DE350B",
-                            }
+                            },
+                            minWidth: 100,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
                         }}
+                        disabled={loadingDelete}
                     >
-                        Xóa
+                        {loadingDelete ? (
+                            <LogoLoading scale={0.3} />
+                        ) : (
+                            "Xóa"
+                        )}
                     </Button>
                 </DialogActions>
             </Dialog>

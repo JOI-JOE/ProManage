@@ -24,16 +24,10 @@ class CardCreated implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         try {
-            // Ensure list_board is loaded
             if (!$this->card->relationLoaded('list_board')) {
                 $this->card->load('list_board');
             }
-
             $boardId = $this->card->list_board->board_id ?? null;
-            if (!$boardId) {
-                Log::warning('Could not determine board_id for card', ['card_id' => $this->card->id]);
-                return [];
-            }
 
             return [new Channel('board.' . $boardId)];
         } catch (\Exception $e) {
@@ -56,7 +50,7 @@ class CardCreated implements ShouldBroadcastNow
             'position' => $this->card->position,
         ];
 
-        Log::info('CardCreated event broadcasting', $data);
+        Log::info('CardCreated event hau', $data);
 
         return $data;
     }

@@ -474,502 +474,503 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
 
     return (
         <AttachmentsProvider cardId={cardId} setCard={setCard} setCoverLoading={setCoverLoading}>
-            <Dialog
-                open={openCard}
-                onClose={closeCard}
-                maxWidth="md"
-                disableEnforceFocus={false}
-                disableEscapeKeyDown={false}
-                hideBackdrop={false}
-                disablePortal={true}
-                BackdropProps={{
-                    sx: {
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        backdropFilter: "blur(3px)",
-                        pointerEvents: "auto",
-                    },
-                    onMouseDown: (e) => e.stopPropagation(),
-                    onMouseMove: (e) => e.stopPropagation(),
-                    onMouseUp: (e) => e.stopPropagation(),
-                }}
-                sx={{
-                    "& .MuiDialog-container": {
-                        alignItems: "flex-start",
-                        justifyContent: "center",
-                    },
-                    "& .MuiPaper-root": {
-                        width: "100%",
-                        maxHeight: "95vh",
-                        height: "auto",
-                        margin: "20px",
-                        display: "flex",
-                        flexDirection: "column",
-                        borderRadius: "18px",
-                        overflow: "hidden",
-                        pointerEvents: "auto",
-                    },
-                    pointerEvents: openCard ? "auto" : "none",
-                }}
-            >
-                {isLoadingCard ? (
-                    <LogoLoading />
-                ) : (
-                    <>
-                        <DialogContent
-                            sx={{
-                                flex: 1,
-                                padding: "0px",
-                                flexDirection: "column",
-                                overflowY: "auto",
-                                background: "#091e420f",
-                                "&::-webkit-scrollbar": {
-                                    width: "6px",
-                                },
-                                "&::-webkit-scrollbar-thumb": {
-                                    backgroundColor: "#bbb",
-                                    borderRadius: "10px",
-                                },
-                                "&::-webkit-scrollbar-thumb:hover": {
-                                    backgroundColor: "#999",
-                                },
-                                "&::-webkit-scrollbar-track": {
-                                    backgroundColor: "#f1f1f1",
-                                },
-                            }}
-                        >
-                            {card?.thumbnail && (
-                                <Box
-                                    sx={{
-                                        position: "relative",
-                                        overflow: "hidden",
-                                        flexShrink: 0,
-                                        borderRadius: "12px 12px 0 0",
-                                        backgroundColor: "rgb(150 151 159)",
-                                    }}
-                                >
-                                    {coverLoading ? (
-                                        <Box sx={{ height: 160, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                            <LogoLoading scale={0.5} />
-                                        </Box>
-                                    ) : (
-                                        <Box
-                                            sx={{ display: "flex", justifyContent: "center", cursor: "pointer" }}
-                                            onClick={() => handleOpenPreview(card?.thumbnail)}
-                                        >
-                                            <LazyLoadImage
-                                                src={card?.thumbnail}
-                                                alt="Card Cover"
-                                                effect="blur"
-                                                style={{
-                                                    minHeight: '116px',
-                                                    width: "100%",
-                                                    maxHeight: "160px",
-                                                    objectFit: "contain",
-                                                    background: 'white',
-                                                }}
-                                            />
-                                        </Box>
-                                    )}
-
-                                    <CustomButton
-                                        sx={{
-                                            position: "absolute",
-                                            right: 8,
-                                            top: 8,
-                                            zIndex: 10000,
-                                            color: "#fff",
-                                        }}
-                                        type="close"
-                                        onClick={closeCard}
-                                    />
-                                </Box>
-                            )}
-
-                            <Box sx={{ padding: "16px" }}>
-                                <DialogTitle sx={{ paddingLeft: "40px", width: '100%' }}>
-                                    <Box sx={{ display: "flex", marginBottom: "20px", position: 'relative' }}>
-                                        <Checkbox
-                                            {...label}
-                                            checked={card?.badges?.dueComplete || false}
-                                            onChange={handleCheckboxChange}
-                                            color="success"
-                                            sx={{ position: "absolute", left: -50, top: -10 }}
-                                            disabled={isUpdating}
-                                        />
-
-                                        <Box>
-                                            {isEditingTitle ? (
-                                                <TextField
-                                                    fullWidth
-                                                    value={card?.title || ""}
-                                                    onChange={handleTitleChange}
-                                                    onBlur={handleSaveTitle}
-                                                    onKeyDown={handleKeyDown}
-                                                    autoFocus
-                                                    variant="standard"
-                                                    sx={{ fontSize: "20px", pb: "10px", width: "100%" }}
-                                                />
-                                            ) : (
-                                                <Box sx={{ display: "flex" }}>
-                                                    <Typography
-                                                        variant="h1"
-                                                        sx={{ fontSize: "20px", pb: "10px", cursor: "pointer" }}
-                                                        onClick={handleTitleClick}
-                                                    >
-                                                        {card?.title}
-                                                    </Typography>
-                                                </Box>
-                                            )}
-
-                                            <Typography variant="body1" sx={{ color: "#757575" }}>
-                                                trong danh sách{" "}
-                                                <Box
-                                                    onClick={handleOpenMovePopover}
-                                                    component="span"
-                                                    sx={{
-                                                        p: 0.5,
-                                                        color: "black",
-                                                        fontWeight: "bold",
-                                                        borderRadius: "3px",
-                                                        background: "#e0e0e0",
-                                                        fontSize: "0.875rem",
-                                                        cursor: 'pointer',
-                                                    }}
-                                                    ref={moveCardPopUpRef}
-                                                >
-                                                    {list?.name}
-                                                </Box>
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </DialogTitle>
-
-                                <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+            <CommentProvider cardId={cardId}>
+                <Dialog
+                    open={openCard}
+                    onClose={closeCard}
+                    maxWidth="md"
+                    disableEnforceFocus={false}
+                    disableEscapeKeyDown={false}
+                    hideBackdrop={false}
+                    disablePortal={true}
+                    BackdropProps={{
+                        sx: {
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            backdropFilter: "blur(3px)",
+                            pointerEvents: "auto",
+                        },
+                        onMouseDown: (e) => e.stopPropagation(),
+                        onMouseMove: (e) => e.stopPropagation(),
+                        onMouseUp: (e) => e.stopPropagation(),
+                    }}
+                    sx={{
+                        "& .MuiDialog-container": {
+                            alignItems: "flex-start",
+                            justifyContent: "center",
+                        },
+                        "& .MuiPaper-root": {
+                            width: "100%",
+                            maxHeight: "95vh",
+                            height: "auto",
+                            margin: "20px",
+                            display: "flex",
+                            flexDirection: "column",
+                            borderRadius: "18px",
+                            overflow: "hidden",
+                            pointerEvents: "auto",
+                        },
+                        pointerEvents: openCard ? "auto" : "none",
+                    }}
+                >
+                    {isLoadingCard ? (
+                        <LogoLoading />
+                    ) : (
+                        <>
+                            <DialogContent
+                                sx={{
+                                    flex: 1,
+                                    padding: "0px",
+                                    flexDirection: "column",
+                                    overflowY: "auto",
+                                    background: "#091e420f",
+                                    "&::-webkit-scrollbar": {
+                                        width: "6px",
+                                    },
+                                    "&::-webkit-scrollbar-thumb": {
+                                        backgroundColor: "#bbb",
+                                        borderRadius: "10px",
+                                    },
+                                    "&::-webkit-scrollbar-thumb:hover": {
+                                        backgroundColor: "#999",
+                                    },
+                                    "&::-webkit-scrollbar-track": {
+                                        backgroundColor: "#f1f1f1",
+                                    },
+                                }}
+                            >
+                                {card?.thumbnail && (
                                     <Box
                                         sx={{
-                                            flex: "1 1 auto",
-                                            paddingLeft: "40px",
-                                            display: "flex",
-                                            columnGap: 3,
-                                            rowGap: 2,
-                                            overflow: "auto",
-                                            flexWrap: "wrap",
-                                            alignItems: "flex-start",
+                                            position: "relative",
+                                            overflow: "hidden",
+                                            flexShrink: 0,
+                                            borderRadius: "12px 12px 0 0",
+                                            backgroundColor: "rgb(150 151 159)",
                                         }}
                                     >
-                                        {cardMembersData.length > 0 ? (
-                                            <Box sx={{ marginBottom: 1 }}>
-                                                <Typography
-                                                    variant="subtitle2"
-                                                    sx={(theme) => ({
-                                                        color: theme.palette.text.secondary,
-                                                        fontWeight: 600,
-                                                    })}
-                                                >
-                                                    Thành viên
+                                        {coverLoading ? (
+                                            <Box sx={{ height: 160, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                <LogoLoading scale={0.5} />
+                                            </Box>
+                                        ) : (
+                                            <Box
+                                                sx={{ display: "flex", justifyContent: "center", cursor: "pointer" }}
+                                                onClick={() => handleOpenPreview(card?.thumbnail)}
+                                            >
+                                                <LazyLoadImage
+                                                    src={card?.thumbnail}
+                                                    alt="Card Cover"
+                                                    effect="blur"
+                                                    style={{
+                                                        minHeight: '116px',
+                                                        width: "100%",
+                                                        maxHeight: "160px",
+                                                        objectFit: "contain",
+                                                        background: 'white',
+                                                    }}
+                                                />
+                                            </Box>
+                                        )}
+
+                                        <CustomButton
+                                            sx={{
+                                                position: "absolute",
+                                                right: 8,
+                                                top: 8,
+                                                zIndex: 10000,
+                                                color: "#fff",
+                                            }}
+                                            type="close"
+                                            onClick={closeCard}
+                                        />
+                                    </Box>
+                                )}
+
+                                <Box sx={{ padding: "16px" }}>
+                                    <DialogTitle sx={{ paddingLeft: "40px", width: '100%' }}>
+                                        <Box sx={{ display: "flex", marginBottom: "20px", position: 'relative' }}>
+                                            <Checkbox
+                                                {...label}
+                                                checked={card?.badges?.dueComplete || false}
+                                                onChange={handleCheckboxChange}
+                                                color="success"
+                                                sx={{ position: "absolute", left: -50, top: -10 }}
+                                                disabled={isUpdating}
+                                            />
+
+                                            <Box>
+                                                {isEditingTitle ? (
+                                                    <TextField
+                                                        fullWidth
+                                                        value={card?.title || ""}
+                                                        onChange={handleTitleChange}
+                                                        onBlur={handleSaveTitle}
+                                                        onKeyDown={handleKeyDown}
+                                                        autoFocus
+                                                        variant="standard"
+                                                        sx={{ fontSize: "20px", pb: "10px", width: "100%" }}
+                                                    />
+                                                ) : (
+                                                    <Box sx={{ display: "flex" }}>
+                                                        <Typography
+                                                            variant="h1"
+                                                            sx={{ fontSize: "20px", pb: "10px", cursor: "pointer" }}
+                                                            onClick={handleTitleClick}
+                                                        >
+                                                            {card?.title}
+                                                        </Typography>
+                                                    </Box>
+                                                )}
+
+                                                <Typography variant="body1" sx={{ color: "#757575" }}>
+                                                    trong danh sách{" "}
+                                                    <Box
+                                                        onClick={handleOpenMovePopover}
+                                                        component="span"
+                                                        sx={{
+                                                            p: 0.5,
+                                                            color: "black",
+                                                            fontWeight: "bold",
+                                                            borderRadius: "3px",
+                                                            background: "#e0e0e0",
+                                                            fontSize: "0.875rem",
+                                                            cursor: 'pointer',
+                                                        }}
+                                                        ref={moveCardPopUpRef}
+                                                    >
+                                                        {list?.name}
+                                                    </Box>
                                                 </Typography>
-                                                <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
-                                                    {cardMembersData.map((member) => (
-                                                        <InitialsAvatar
-                                                            key={member.id}
-                                                            sx={{
-                                                                fontSize: "14px",
+                                            </Box>
+                                        </Box>
+                                    </DialogTitle>
+
+                                    <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+                                        <Box
+                                            sx={{
+                                                flex: "1 1 auto",
+                                                paddingLeft: "40px",
+                                                display: "flex",
+                                                columnGap: 3,
+                                                rowGap: 2,
+                                                overflow: "auto",
+                                                flexWrap: "wrap",
+                                                alignItems: "flex-start",
+                                            }}
+                                        >
+                                            {cardMembersData.length > 0 ? (
+                                                <Box sx={{ marginBottom: 1 }}>
+                                                    <Typography
+                                                        variant="subtitle2"
+                                                        sx={(theme) => ({
+                                                            color: theme.palette.text.secondary,
+                                                            fontWeight: 600,
+                                                        })}
+                                                    >
+                                                        Thành viên
+                                                    </Typography>
+                                                    <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                                                        {cardMembersData.map((member) => (
+                                                            <InitialsAvatar
+                                                                key={member.id}
+                                                                sx={{
+                                                                    fontSize: "14px",
+                                                                    width: "32px",
+                                                                    height: "32px",
+                                                                }}
+                                                                size={"32px"}
+                                                                initials={member.initials}
+                                                                name={member.full_name}
+                                                                avatarSrc={member.image}
+                                                            />
+                                                        ))}
+                                                        <IconButton
+                                                            sx={(theme) => ({
+                                                                backgroundColor: "#e0e0e0",
                                                                 width: "32px",
                                                                 height: "32px",
-                                                            }}
-                                                            size={"32px"}
-                                                            initials={member.initials}
-                                                            name={member.full_name}
-                                                            avatarSrc={member.image}
-                                                        />
-                                                    ))}
-                                                    <IconButton
-                                                        sx={(theme) => ({
-                                                            backgroundColor: "#e0e0e0",
-                                                            width: "32px",
-                                                            height: "32px",
-                                                            borderRadius: 2,
-                                                            backgroundColor: theme.palette.background.paper,
-                                                            boxShadow: theme.shadows[1],
-                                                            borderRadius: "50%",
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s ease-in-out',
-                                                            '&:hover': {
-                                                                boxShadow: theme.shadows[3],
-                                                                backgroundColor: theme.palette.action.hover,
-                                                            },
-                                                            "&:hover": {
-                                                                backgroundColor: "#ccc",
-                                                            },
-                                                        })}
-                                                        onClick={(e) => handleOpenMemberMenu(e)}
-                                                    >
-                                                        <PlusIcon sx={{ fontSize: "20px", color: "#555", position: "relative" }} />
-                                                    </IconButton>
+                                                                borderRadius: 2,
+                                                                backgroundColor: theme.palette.background.paper,
+                                                                boxShadow: theme.shadows[1],
+                                                                borderRadius: "50%",
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s ease-in-out',
+                                                                '&:hover': {
+                                                                    boxShadow: theme.shadows[3],
+                                                                    backgroundColor: theme.palette.action.hover,
+                                                                },
+                                                                "&:hover": {
+                                                                    backgroundColor: "#ccc",
+                                                                },
+                                                            })}
+                                                            onClick={(e) => handleOpenMemberMenu(e)}
+                                                        >
+                                                            <PlusIcon sx={{ fontSize: "20px", color: "#555", position: "relative" }} />
+                                                        </IconButton>
+                                                    </Box>
                                                 </Box>
-                                            </Box>
-                                        ) : null}
+                                            ) : null}
 
-                                        {/* <Box>
+                                            {/* <Box>
                                             <LabelList ref={labelListRef} cardId={cardId} />
                                         </Box> */}
 
 
-                                        <Box sx={{ minWidth: "200px" }}>
-                                            <CardDateSection ref={dateSectionRef} cardData={card?.badges} cardId={cardId} />
-                                        </Box>
+                                            <Box sx={{ minWidth: "200px" }}>
+                                                <CardDateSection ref={dateSectionRef} cardData={card?.badges} cardId={cardId} />
+                                            </Box>
 
-                                        <Box sx={{ width: "100%" }}>
-                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                                <Typography variant="body2" sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "3px" }}>
-                                                    Mô tả
-                                                </Typography>
-                                                {card && !isEditingDescription && !isEmptyHTML(card?.description) && (
-                                                    <Button onClick={handleEditDescription}>Chỉnh sửa</Button>
+                                            <Box sx={{ width: "100%" }}>
+                                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                                    <Typography variant="body2" sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "3px" }}>
+                                                        Mô tả
+                                                    </Typography>
+                                                    {card && !isEditingDescription && !isEmptyHTML(card?.description) && (
+                                                        <Button onClick={handleEditDescription}>Chỉnh sửa</Button>
+                                                    )}
+                                                </Box>
+
+                                                {isEditingDescription ? (
+                                                    <CommentEditor
+                                                        value={descriptionText}
+                                                        onChange={setDescriptionText}
+                                                        onSave={handleSaveDescription}
+                                                        onCancel={handleCancelDescriptionEdit}
+                                                        isLoading={isUpdating}
+                                                        editorHeight="120px"
+                                                        minHeight="80px"
+                                                    />
+                                                ) : !isEmptyHTML(card?.description) ? (
+                                                    <Box
+                                                        sx={{ borderRadius: "4px", cursor: "pointer" }}
+                                                        dangerouslySetInnerHTML={{ __html: card?.description }}
+                                                        onClick={handleEditDescription}
+                                                    />
+                                                ) : (
+                                                    <Box
+                                                        sx={{
+                                                            border: "1px solid #d1d1d1",
+                                                            borderRadius: "4px",
+                                                            minHeight: "60px",
+                                                            padding: "6px 12px",
+                                                            backgroundColor: "#e4e6ea",
+                                                            color: "#172b4d",
+                                                            cursor: "pointer",
+                                                            fontSize: "14px",
+                                                            whiteSpace: "pre-wrap",
+                                                        }}
+                                                        onClick={handleEditDescription}
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: `<span style="color:#5e6c84">Hãy thêm mô tả chi tiết hơn...</span>`,
+                                                        }}
+                                                    />
                                                 )}
                                             </Box>
 
-                                            {isEditingDescription ? (
-                                                <CommentEditor
-                                                    value={descriptionText}
-                                                    onChange={setDescriptionText}
-                                                    onSave={handleSaveDescription}
-                                                    onCancel={handleCancelDescriptionEdit}
-                                                    isLoading={isUpdating}
-                                                    editorHeight="120px"
-                                                    minHeight="80px"
-                                                />
-                                            ) : !isEmptyHTML(card?.description) ? (
-                                                <Box
-                                                    sx={{ borderRadius: "4px", cursor: "pointer" }}
-                                                    dangerouslySetInnerHTML={{ __html: card?.description }}
-                                                    onClick={handleEditDescription}
-                                                />
-                                            ) : (
-                                                <Box
-                                                    sx={{
-                                                        border: "1px solid #d1d1d1",
-                                                        borderRadius: "4px",
-                                                        minHeight: "60px",
-                                                        padding: "6px 12px",
-                                                        backgroundColor: "#e4e6ea",
-                                                        color: "#172b4d",
-                                                        cursor: "pointer",
-                                                        fontSize: "14px",
-                                                        whiteSpace: "pre-wrap",
-                                                    }}
-                                                    onClick={handleEditDescription}
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: `<span style="color:#5e6c84">Hãy thêm mô tả chi tiết hơn...</span>`,
-                                                    }}
-                                                />
-                                            )}
-                                        </Box>
+                                            <Box sx={{ width: "100%" }}>
+                                                <AttachmentFolder ref={attachmentFolderRef} cardId={cardId} />
+                                            </Box>
 
-                                        <Box sx={{ width: "100%" }}>
-                                            <AttachmentFolder ref={attachmentFolderRef} cardId={cardId} />
-                                        </Box>
+                                            <Box sx={{ width: "100%" }}>
+                                                <ChecklistGroup cardId={card?.id} ref={checklistGroupRef} members={boardMembersData} />
+                                            </Box>
 
-                                        <Box sx={{ width: "100%" }}>
-                                            <ChecklistGroup cardId={card?.id} ref={checklistGroupRef} members={boardMembersData} />
-                                        </Box>
-
-                                        <Box sx={{ width: "100%" }}>
-                                            <CommentProvider cardId={cardId}>
+                                            <Box sx={{ width: "100%" }}>
                                                 <CommentSection />
-                                            </CommentProvider>
+                                            </Box>
                                         </Box>
-                                    </Box>
 
-                                    <Box
-                                        id="controller"
-                                        sx={{
-                                            flex: "0 0 auto",
-                                            paddingRight: 2,
-                                            minWidth: 168,
-                                            maxWidth: 200,
-                                            width: "100%",
-                                        }}
-                                    >
-                                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                            {mainActions.map((action, index) => (
-                                                <Box key={index}>
-                                                    <Button
-                                                        startIcon={action.icon}
-                                                        onClick={action.onClick}
-                                                        variant="contained"
-                                                        disableElevation
-                                                        title={action.label}
-                                                        sx={{
-                                                            justifyContent: "flex-start",
-                                                            backgroundColor: "#e4e6ea",
-                                                            color: "#172b4d",
-                                                            textTransform: "none",
-                                                            fontWeight: 600,
-                                                            fontSize: 14,
-                                                            px: 2,
-                                                            py: 1,
-                                                            borderRadius: 1,
-                                                            width: "100%",
-                                                            textOverflow: "ellipsis",
-                                                            overflow: "hidden",
-                                                            whiteSpace: "nowrap",
-                                                            "&:hover": {
-                                                                backgroundColor: "#d6d8da",
-                                                            },
-                                                        }}
-                                                    >
-                                                        {action.label}
-                                                    </Button>
-                                                </Box>
-                                            ))}
+                                        <Box
+                                            id="controller"
+                                            sx={{
+                                                flex: "0 0 auto",
+                                                paddingRight: 2,
+                                                minWidth: 168,
+                                                maxWidth: 200,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                                {mainActions.map((action, index) => (
+                                                    <Box key={index}>
+                                                        <Button
+                                                            startIcon={action.icon}
+                                                            onClick={action.onClick}
+                                                            variant="contained"
+                                                            disableElevation
+                                                            title={action.label}
+                                                            sx={{
+                                                                justifyContent: "flex-start",
+                                                                backgroundColor: "#e4e6ea",
+                                                                color: "#172b4d",
+                                                                textTransform: "none",
+                                                                fontWeight: 600,
+                                                                fontSize: 14,
+                                                                px: 2,
+                                                                py: 1,
+                                                                borderRadius: 1,
+                                                                width: "100%",
+                                                                textOverflow: "ellipsis",
+                                                                overflow: "hidden",
+                                                                whiteSpace: "nowrap",
+                                                                "&:hover": {
+                                                                    backgroundColor: "#d6d8da",
+                                                                },
+                                                            }}
+                                                        >
+                                                            {action.label}
+                                                        </Button>
+                                                    </Box>
+                                                ))}
 
-                                            <Box>
-                                                <Box sx={{ py: 0.5, fontWeight: 500, color: "#5e6c84", fontSize: "14px" }}>
-                                                    Thao tác
-                                                </Box>
-                                                <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 0.5 }}>
-                                                    {operationActions.map((action, index) => (
-                                                        <Box key={index}>
-                                                            <Button
-                                                                startIcon={action.icon}
-                                                                onClick={action.onClick}
-                                                                ref={action.label === "Xoá" ? deleteButtonRef : null}
-                                                                variant="contained"
-                                                                disableElevation
-                                                                title={action.label}
-                                                                sx={{
-                                                                    justifyContent: "flex-start",
-                                                                    backgroundColor: "#e4e6ea",
-                                                                    color: "#172b4d",
-                                                                    textTransform: "none",
-                                                                    fontWeight: 600,
-                                                                    fontSize: 14,
-                                                                    px: 2,
-                                                                    py: 1,
-                                                                    borderRadius: 1,
-                                                                    width: "100%",
-                                                                    textOverflow: "ellipsis",
-                                                                    overflow: "hidden",
-                                                                    whiteSpace: "nowrap",
-                                                                    "&:hover": {
-                                                                        backgroundColor: "#d6d8da",
-                                                                    },
-                                                                    ...action.sx,
-                                                                }}
-                                                            >
-                                                                {action.label}
-                                                            </Button>
-                                                        </Box>
-                                                    ))}
+                                                <Box>
+                                                    <Box sx={{ py: 0.5, fontWeight: 500, color: "#5e6c84", fontSize: "14px" }}>
+                                                        Thao tác
+                                                    </Box>
+                                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 0.5 }}>
+                                                        {operationActions.map((action, index) => (
+                                                            <Box key={index}>
+                                                                <Button
+                                                                    startIcon={action.icon}
+                                                                    onClick={action.onClick}
+                                                                    ref={action.label === "Xoá" ? deleteButtonRef : null}
+                                                                    variant="contained"
+                                                                    disableElevation
+                                                                    title={action.label}
+                                                                    sx={{
+                                                                        justifyContent: "flex-start",
+                                                                        backgroundColor: "#e4e6ea",
+                                                                        color: "#172b4d",
+                                                                        textTransform: "none",
+                                                                        fontWeight: 600,
+                                                                        fontSize: 14,
+                                                                        px: 2,
+                                                                        py: 1,
+                                                                        borderRadius: 1,
+                                                                        width: "100%",
+                                                                        textOverflow: "ellipsis",
+                                                                        overflow: "hidden",
+                                                                        whiteSpace: "nowrap",
+                                                                        "&:hover": {
+                                                                            backgroundColor: "#d6d8da",
+                                                                        },
+                                                                        ...action.sx,
+                                                                    }}
+                                                                >
+                                                                    {action.label}
+                                                                </Button>
+                                                            </Box>
+                                                        ))}
+                                                    </Box>
                                                 </Box>
                                             </Box>
                                         </Box>
                                     </Box>
                                 </Box>
-                            </Box>
-                        </DialogContent>
+                            </DialogContent>
 
-                        <ImagePreview
-                            open={Boolean(preview)}
-                            onClose={handleClosePreview}
-                            imageSrc={selectedImage}
-                        />
+                            <ImagePreview
+                                open={Boolean(preview)}
+                                onClose={handleClosePreview}
+                                imageSrc={selectedImage}
+                            />
 
-                        <Popover
-                            open={Boolean(deleteAnchorEl)}
-                            anchorEl={deleteAnchorEl}
-                            onClose={handleCloseDeletePopover}
-                            anchorOrigin={{
-                                vertical: 'bottom',
-                                horizontal: 'right',
-                            }}
-                            transformOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
-                            }}
-                            PaperProps={{
-                                sx: {
-                                    p: 2,
-                                    borderRadius: 2,
-                                    boxShadow: 3,
-                                    width: 304,
-                                    mt: 2,
-                                },
-                            }}
-                        >
-                            {isRemoveLoading ? (
-                                <LogoLoading />
-                            ) : (
-                                <>
-                                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                                        Bạn muốn xoá thẻ?
-                                    </Typography>
-                                    <Typography variant="body2" paragraph>
-                                        Tất cả hoạt động trên thẻ sẽ bị xoá khỏi bảng tin hoạt động và bạn sẽ không thể mở lại thẻ nữa. Sẽ không có cách nào để hoàn tác. Bạn có chắc không?
-                                    </Typography>
-                                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                        <Button
-                                            onClick={handleCloseDeletePopover}
-                                            variant="outlined"
-                                            size="small"
-                                            sx={{ textTransform: 'none', fontWeight: 600 }}
-                                        >
-                                            Hủy
-                                        </Button>
-                                        <Button
-                                            onClick={handleConfirmDelete}
-                                            variant="contained"
-                                            color="error"
-                                            size="small"
-                                            startIcon={<Delete fontSize="small" />}
-                                            sx={{
-                                                textTransform: 'none',
-                                                fontWeight: 600,
-                                                '&:hover': { backgroundColor: 'error.dark' },
-                                            }}
-                                        >
-                                            Xoá
-                                        </Button>
-                                    </Stack>
-                                </>
-                            )}
-                        </Popover>
+                            <Popover
+                                open={Boolean(deleteAnchorEl)}
+                                anchorEl={deleteAnchorEl}
+                                onClose={handleCloseDeletePopover}
+                                anchorOrigin={{
+                                    vertical: 'bottom',
+                                    horizontal: 'right',
+                                }}
+                                transformOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                PaperProps={{
+                                    sx: {
+                                        p: 2,
+                                        borderRadius: 2,
+                                        boxShadow: 3,
+                                        width: 304,
+                                        mt: 2,
+                                    },
+                                }}
+                            >
+                                {isRemoveLoading ? (
+                                    <LogoLoading />
+                                ) : (
+                                    <>
+                                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                            Bạn muốn xoá thẻ?
+                                        </Typography>
+                                        <Typography variant="body2" paragraph>
+                                            Tất cả hoạt động trên thẻ sẽ bị xoá khỏi bảng tin hoạt động và bạn sẽ không thể mở lại thẻ nữa. Sẽ không có cách nào để hoàn tác. Bạn có chắc không?
+                                        </Typography>
+                                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                            <Button
+                                                onClick={handleCloseDeletePopover}
+                                                variant="outlined"
+                                                size="small"
+                                                sx={{ textTransform: 'none', fontWeight: 600 }}
+                                            >
+                                                Hủy
+                                            </Button>
+                                            <Button
+                                                onClick={handleConfirmDelete}
+                                                variant="contained"
+                                                color="error"
+                                                size="small"
+                                                startIcon={<Delete fontSize="small" />}
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    fontWeight: 600,
+                                                    '&:hover': { backgroundColor: 'error.dark' },
+                                                }}
+                                            >
+                                                Xoá
+                                            </Button>
+                                        </Stack>
+                                    </>
+                                )}
+                            </Popover>
 
-                        <MemberMenu
-                            open={openMemberMenu}
-                            onClose={handleCloseMemberMenu}
-                            cardMembers={cardMembersData}
-                            boardMembers={boardMembersData}
-                            onRemoveCardMember={handleRemoveMemberFromCard}
-                            anchorEl={memberMenuAnchorEl}
-                            setAnchorEl={setMemberMenuAnchorEl}
-                            onMemberSelect={handleUserSelected}
-                        />
+                            <MemberMenu
+                                open={openMemberMenu}
+                                onClose={handleCloseMemberMenu}
+                                cardMembers={cardMembersData}
+                                boardMembers={boardMembersData}
+                                onRemoveCardMember={handleRemoveMemberFromCard}
+                                anchorEl={memberMenuAnchorEl}
+                                setAnchorEl={setMemberMenuAnchorEl}
+                                onMemberSelect={handleUserSelected}
+                            />
 
-                        <CheckMenu
-                            anchorEl={anchorElCheckList}
-                            open={Boolean(anchorElCheckList)}
-                            onClose={handleCloseCheckList}
-                            onAdd={handleAddChecklist}
-                            listOptions={[
-                                { label: "Việc hôm nay", value: "today" },
-                                { label: "Dự án 2025", value: "2025" },
-                            ]}
-                        />
-                        <CopyCardPopUp
-                            ref={copyCardPopUpRef}
-                            card={card}
-                        />
+                            <CheckMenu
+                                anchorEl={anchorElCheckList}
+                                open={Boolean(anchorElCheckList)}
+                                onClose={handleCloseCheckList}
+                                onAdd={handleAddChecklist}
+                                listOptions={[
+                                    { label: "Việc hôm nay", value: "today" },
+                                    { label: "Dự án 2025", value: "2025" },
+                                ]}
+                            />
+                            <CopyCardPopUp
+                                ref={copyCardPopUpRef}
+                                card={card}
+                            />
 
-                        <MoveCardPopUp
-                            ref={moveCardPopUpRef}
-                            card={card}
-                        />
-                    </>
-                )}
-            </Dialog>
+                            <MoveCardPopUp
+                                ref={moveCardPopUpRef}
+                                card={card}
+                            />
+                        </>
+                    )}
+                </Dialog>
+            </CommentProvider >
         </AttachmentsProvider>
+
     );
 };
 

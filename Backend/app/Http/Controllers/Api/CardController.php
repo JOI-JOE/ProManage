@@ -134,17 +134,6 @@ class CardController extends Controller
             $user = auth()->user();
             $userName = $user ? $user->full_name : 'ai đó';
 
-            // activity()
-            //     ->causedBy($user)
-            //     ->performedOn($card)
-            //     ->event('created_card')
-            //     ->withProperties([
-            //         'card_id' => $card->id,
-            //         'card_title' => $card->title,
-            //         'list_board_id' => $card->list_board_id,
-            //     ])
-            //     ->log("{$userName} đã tạo card '{$card->title}' trong list board.");
-
             $card->load('list_board');
 
             DB::commit();
@@ -342,11 +331,6 @@ class CardController extends Controller
             ]);
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Failed to update card: ' . $e->getMessage(), [
-                'card_id' => $cardId,
-                'exception' => get_class($e),
-                'trace' => $e->getTraceAsString()
-            ]);
             return response()->json(['message' => 'Failed to update card.', 'error' => $e->getMessage()], 500);
         }
     }

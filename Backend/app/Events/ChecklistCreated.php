@@ -2,37 +2,67 @@
 
 namespace App\Events;
 
-use App\Models\CheckList;
+use App\Models\Card;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Spatie\Activitylog\Models\Activity;
+use Illuminate\Support\Facades\Log;
 
-class ChecklistCreated implements ShouldBroadcast
+class ChecklistCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $checklistData;
+    public $card;
+    public $user;
 
-    public $checklist;
-    public $activity;
-
-    public function __construct(CheckList $checklist, Activity $activity)
+    /**
+     * Create a new event instance.
+     */
+    public function __construct(array $checklistData, Card $card, $user)
     {
-        $this->checklist = $checklist;
-        $this->activity = $activity;
+        $this->checklistData = $checklistData;
+        $this->card = $card;
+        $this->user = $user;
     }
 
-    public function broadcastOn()
+    /**
+     * Get the channels the event should broadcast on.
+     */
+    public function broadcastOn(): array
     {
-        return new Channel('checklist.' . $this->checklist->card_id);
+        return [
+            new Channel('card.' . $this->card->id),
+        ];
     }
 
-    public function broadcastAs()
+    /**
+     * The event's broadcast name.
+     */
+    public function broadcastAs(): string
     {
         return 'checklist.created';
+    }
+
+    /**
+     * Data to broadcast.
+     */
+    public function broadcastWith(): array
+    {
+        $data = [
+            'checklist' => $this->checklistData,
+            'user' => $this->user ? [
+                'id' => (string) $this->user->id, // Ensure ID is a string
+                'full_name' => $this->user->full_name,
+            ] : null,
+        ];
+
+        // Debug: Log the data being broadcast
+        Log::info('ChecklistCreated hậu data: ', $data);
+
+        return $data;
     }
 }

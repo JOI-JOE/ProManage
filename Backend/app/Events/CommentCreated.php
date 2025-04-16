@@ -11,7 +11,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class CommentUpdated implements ShouldBroadcastNow
+class CommentCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -35,7 +35,7 @@ class CommentUpdated implements ShouldBroadcastNow
 
     public function broadcastAs()
     {
-        return 'comment.updated';
+        return 'comment.created';
     }
 
     public function broadcastWith(): array
@@ -59,7 +59,7 @@ class CommentUpdated implements ShouldBroadcastNow
             'card_id' => $this->card->id,
             'user_id' => $this->user ? $this->user->id : null,
         ];
-        Log::info('Broadcasting comment.updated:', $data);
+        Log::info('Broadcasting comment.created:', $data);
         return $data;
     }
 }

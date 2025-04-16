@@ -90,7 +90,6 @@ const Col = ({ column, onArchive }) => {
     const [localCards, setLocalCards] = useState(column?.cards || []);
 
 
-
     useEffect(() => {
         setLocalCards(column?.cards || []); // Chỉ theo dõi sự thay đổi của cards
     }, [column?.cards]);
@@ -98,11 +97,13 @@ const Col = ({ column, onArchive }) => {
     //======================================== Thêm card mới========================================
     const handleAddCard = async (cardName) => {
         if (!cardName.trim()) return;
-        const typename = "card"
+
+        const typename = "card";
         const optimisticId = optimisticIdManager.generateOptimisticId(typename);
         const tempId = optimisticId;
+
         const newCard = {
-            id: tempId, // ID tạm thời
+            id: tempId, // ID tạm
             title: cardName,
             columnId: column.id,
             position: localCards.length
@@ -110,14 +111,21 @@ const Col = ({ column, onArchive }) => {
                 : 1000,
         };
 
+        // Thêm card tạm vào UI
         setLocalCards((prev = []) => [...prev, newCard]);
         setCardName("");
 
         try {
-            await createCardMutation.mutateAsync(newCard);
+            const savedCard = await createCardMutation.mutateAsync(newCard);
+
+            // Cập nhật lại thẻ với ID thật từ server
+            setLocalCards((prev = []) =>
+                prev.map((card) => (card.id === tempId ? savedCard : card))
+            );
         } catch (error) {
             console.error("Lỗi khi thêm thẻ:", error);
-            setLocalCards((prev = []) => prev.filter((card) => card.id !== tempId)); // Rollback nếu lỗi
+            // Rollback nếu lỗi
+            setLocalCards((prev = []) => prev.filter((card) => card.id !== tempId));
         }
     };
     // ---------------------------------------------------------------------------------------------

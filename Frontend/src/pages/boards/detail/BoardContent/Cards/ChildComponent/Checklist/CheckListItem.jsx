@@ -15,10 +15,9 @@ const ChecklistItem = ({
     members,
     onOpenMemberMenu,
     onToggle,
-    onAssign,
     onDeleteItem,
     onNameChange,
-    onDateChange, // Nhận callback từ parent
+    onDateChange,
 }) => {
     const {
         updateStatus,
@@ -32,19 +31,35 @@ const ChecklistItem = ({
 
     const { removeItem } = useRemoveCheckListItem();
 
-    const assignedMember =
-        Array.isArray(item.assignees) && item.assignees.length > 0
-            ? members.find((m) => m.id === item.assignees[0])
-            : null;
+    // State để quản lý assignedMember cục bộ
+    const [assignedMember, setAssignedMember] = useState(
+        item.assignee ? members.find((m) => m.id === item.assignee) || null : null
+    );
+
+    // Sync assignedMember chỉ khi item.assignee thay đổi từ real-time updates
+    useEffect(() => {
+        const currentAssignee = item.assignee ?? null;
+        const newMember = currentAssignee ? members.find((m) => m.id === currentAssignee) || null : null;
+        if (newMember?.id !== assignedMember?.id || (!newMember && assignedMember)) {
+            setAssignedMember(newMember);
+        }
+    }, [item.assignee, members]);
 
     const handleToggle = () => {
         onToggle?.();
         updateStatus(!item.is_completed);
     };
 
-    const handleAssign = (memberId) => {
-        onAssign?.(item.id, memberId);
-        updateAssignee(memberId);
+    const handleAssign = async (memberId) => {
+        const prevMember = assignedMember;
+        const newMember = memberId ? members.find((m) => m.id === memberId) || null : null;
+        setAssignedMember(newMember); // Update UI instantly
+        try {
+            await updateAssignee(memberId);
+        } catch (error) {
+            console.error('❌ Failed to assign member:', error);
+            setAssignedMember(prevMember); // Rollback on error
+        }
     };
 
     const handleDeleteItem = () => {
@@ -100,7 +115,7 @@ const ChecklistItem = ({
     const handleOpenDateDialog = () => {
         setSelectedChecklistItem({
             ...item,
-            end_date: item.end_date ? new Date(item.end_date) : null, // Chuyển sang Date object nếu có
+            end_date: item.end_date ? new Date(item.end_date) : null,
             end_time: item.end_time || null,
         });
         setIsDateDialogOpen(true);
@@ -110,7 +125,6 @@ const ChecklistItem = ({
         setSelectedChecklistItem(null);
     };
 
-    // Handle date update from DateItem
     const handleDateUpdate = async (newDateData) => {
         try {
             const { endDate, endTime, reminder } = newDateData;
@@ -140,7 +154,6 @@ const ChecklistItem = ({
 
             if (promises.length > 0) {
                 await Promise.all(promises);
-
                 onDateChange?.({
                     end_date: endDate,
                     end_time: formattedEndTime,
@@ -153,7 +166,6 @@ const ChecklistItem = ({
             console.error('❌ Failed to update checklist item date:', error);
         }
     };
-
 
     const hasDueDate = item.end_date !== null && item.end_time !== null;
     const dueDate = hasDueDate ? new Date(`${item.end_date}T${item.end_time}`) : null;
@@ -259,7 +271,11 @@ const ChecklistItem = ({
                                     bgColor = theme.alert?.success || '#28a745';
                                 } else if (hasDueDate && dueDate < now) {
                                     bgColor = theme.alert?.danger || '#dc3545';
-                                } else if (hasDueDate && timeLeftInMilliseconds > 0 && timeLeftInMilliseconds <= twentyFourHoursInMs) {
+                                } else if (
+                                    hasDueDate &&
+                                    timeLeftInMilliseconds > 0 &&
+                                    timeLeftInMilliseconds <= twentyFourHoursInMs
+                                ) {
                                     bgColor = theme.alert?.warning || '#ffc107';
                                 } else {
                                     bgColor = '#091e420f';
@@ -324,7 +340,6 @@ const ChecklistItem = ({
                 </Box>
             </Box>
 
-            {/* Dialog chọn ngày */}
             <DateItem
                 open={isDateDialogOpen}
                 onClose={handleCloseDateDialog}

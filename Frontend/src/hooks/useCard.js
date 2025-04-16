@@ -17,7 +17,6 @@ import {
   putMemberToCard,
   joinCard,
   removeMemberFromCard,
-  fetchCheckLists,
   postCheckLists,
   postChecklistItem,
   updateCheckListItem,
@@ -38,47 +37,574 @@ import {
   moveCard,
   copyCard,
 } from "../api/models/cardsApi";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import echoInstance from "./realtime/useRealtime";
 
 // GET FUNCTION ------------------------------------------------------
 export const useCardById = (cardId) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const channelRef = useRef(null);
+
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["card", cardId],
     queryFn: () => fetchCardById(cardId),
-    staleTime: 1000 * 60 * 5, // 5 phút
-    cacheTime: 1000 * 60 * 30, // 30 phút
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    cacheTime: 1000 * 60 * 30, // 30 minutes
     enabled: !!cardId,
   });
+
+  // Handle card updates from WebSocket events
+  const handleCardUpdate = useCallback(
+    (updateEvent) => {
+      console.log("Received card update event:", updateEvent);
+      if (!updateEvent?.id || updateEvent.id !== parseInt(cardId)) return;
+
+      // Update the query cache with the new data
+      queryClient.setQueryData(["card", cardId], (oldData) => {
+        if (!oldData) return updateEvent;
+
+        // Merge new data with existing data, focusing on updated fields
+        return {
+          ...oldData,
+          ...updateEvent,
+          // Ensure nested objects are properly updated
+          badges: {
+            ...(oldData.badges || {}),
+            ...(updateEvent.badges || {}),
+          },
+          // Make sure arrays are completely replaced rather than merged
+          members: updateEvent.members || oldData.members,
+          membersId: updateEvent.membersId || oldData.membersId,
+          labels: updateEvent.labels || oldData.labels,
+          labelId: updateEvent.labelId || oldData.labelId,
+        };
+      });
+    },
+    [cardId, queryClient]
+  );
+
+  // Subscribe to the board channel for card updates
+  useEffect(() => {
+    if (!cardId || !data?.list_board?.board_id) return;
+
+    const boardId = data.list_board.board_id;
+    const channel = echoInstance.channel(`board.${boardId}`);
+    channelRef.current = channel;
+
+    // Listen for the card.updated event
+    channel.listen(".card.updated", handleCardUpdate);
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.stopListening(".card.updated");
+      }
+    };
+  }, [cardId, data?.list_board?.board_id, handleCardUpdate]);
+
+  return {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  };
 };
 // Checklist card
-export const useChecklist = (cardId) => {
-  return useQuery({
-    queryKey: ["checklist", cardId],
-    queryFn: () => fetchCheckLists(cardId),
-    enabled: Boolean(cardId),
-    staleTime: 1000 * 60 * 5, // 5 phút, tránh gọi lại nếu chưa cần thiết
-  });
-};
+
 // Attachment card
+// export const useFetchAttachments = (cardId) => {
+//   const queryClient = useQueryClient();
+//   const channelRef = useRef(null);
+//   const pendingOpsRef = useRef(new Set()); // Track pending operations
+
+//   // Main data fetch query
+//   const { data, isLoading, isError, refetch } = useQuery({
+//     queryKey: ["attachments", cardId],
+//     queryFn: () => fetchAttachments(cardId),
+//     enabled: !!cardId,
+//     staleTime: 1000 * 60 * 5, // 5 minutes
+//   });
+
+//   const safelyUpdateQueryData = useCallback(
+//     (updater) => {
+//       try {
+//         queryClient.setQueryData(["attachments", cardId], updater);
+//       } catch (error) {
+//         queryClient.invalidateQueries({
+//           queryKey: ["attachments", cardId],
+//           exact: true,
+//         });
+//       }
+//     },
+//     [cardId, queryClient]
+//   );
+
+//   // Selective refetch - only refetch if the event affects our current view
+//   const handleRefetchIfNeeded = useCallback(
+//     (eventType, id) => {
+//       // Add operation to pending set
+//       const opKey = `${eventType}-${id}`;
+//       pendingOpsRef.current.add(opKey);
+
+//       // Schedule a refetch after a short delay (debounce multiple events)
+//       setTimeout(() => {
+//         if (pendingOpsRef.current.size > 0) {
+//           refetch().then(() => {
+//             pendingOpsRef.current.clear();
+//           });
+//         }
+//       }, 2000);
+//     },
+//     [refetch]
+//   );
+
+//   // Thêm mới attachment (Optimistic + Verification)
+//   const handleAttachmentCreated = useCallback(
+//     (event) => {
+//       const newAttachment = event?.attachment;
+//       const eventCardId = event?.card_id;
+//       if (!newAttachment) {
+//         return;
+//       }
+//       // Ensure event is for current card
+//       if (eventCardId && eventCardId.toString() !== cardId.toString()) {
+//         return;
+//       }
+//       safelyUpdateQueryData((oldData) => {
+//         if (!Array.isArray(oldData)) return [newAttachment];
+
+//         const exists = oldData.some((item) => item.id === newAttachment.id);
+//         return exists ? oldData : [...oldData, newAttachment];
+//       });
+
+//       handleRefetchIfNeeded("created", newAttachment.id);
+//     },
+//     [cardId, safelyUpdateQueryData, handleRefetchIfNeeded]
+//   );
+
+//   // Cập nhật attachment
+//   const handleAttachmentUpdated = useCallback(
+//     (event) => {
+//       const updatedAttachment = event?.attachment;
+//       const eventCardId = event?.card_id;
+//       if (!updatedAttachment) {
+//         return;
+//       }
+//       if (eventCardId && eventCardId.toString() !== cardId.toString()) {
+//         return;
+//       }
+//       safelyUpdateQueryData((oldData) => {
+//         if (!oldData) return oldData;
+//         return oldData.map((item) =>
+//           item.id === updatedAttachment.id ? updatedAttachment : item
+//         );
+//       });
+//       handleRefetchIfNeeded("updated", updatedAttachment.id);
+//     },
+//     [cardId, safelyUpdateQueryData, handleRefetchIfNeeded]
+//   );
+
+//   // Xoá attachment
+//   const handleAttachmentDeleted = useCallback(
+//     (event) => {
+//       const attachmentId = event?.attachment_id;
+//       const eventCardId = event?.card_id;
+
+//       if (!attachmentId) {
+//         return;
+//       }
+//       // Ensure event is for current card
+//       if (eventCardId && eventCardId.toString() !== cardId.toString()) {
+//         return;
+//       }
+
+//       // Apply optimistic update
+//       safelyUpdateQueryData((oldData) => {
+//         if (!oldData) return oldData;
+//         return oldData.filter((item) => item.id !== attachmentId);
+//       });
+
+//       // Schedule verification refetch
+//       handleRefetchIfNeeded("deleted", attachmentId);
+//     },
+//     [cardId, safelyUpdateQueryData, handleRefetchIfNeeded]
+//   );
+
+//   // Subscribe to realtime channel
+//   useEffect(() => {
+//     if (!cardId) {
+//       console.log("cardId is not provided, skipping subscription");
+//       return;
+//     }
+
+//     console.log("Subscribing to channel:", `card.${cardId}`);
+//     const channel = echoInstance.channel(`card.${cardId}`);
+//     channelRef.current = channel;
+
+//     channel.subscribed(() => {
+//       console.log("Successfully subscribed to channel:", `card.${cardId}`);
+//     });
+
+//     channel.error((err) => {
+//       console.error("Error subscribing to channel:", `card.${cardId}`, err);
+//     });
+
+//     channel.listen(".attachment.created", handleAttachmentCreated);
+//     channel.listen(".attachment.updated", handleAttachmentUpdated);
+//     channel.listen(".attachment.deleted", handleAttachmentDeleted);
+
+//     return () => {
+//       if (channelRef.current) {
+//         channelRef.current.stopListening(".attachment.created");
+//         channelRef.current.stopListening(".attachment.updated");
+//         channelRef.current.stopListening(".attachment.deleted");
+//         echoInstance.leaveChannel(`card.${cardId}`);
+//       }
+//     };
+//   }, [
+//     cardId,
+//     handleAttachmentCreated,
+//     handleAttachmentUpdated,
+//     handleAttachmentDeleted,
+//   ]);
+
+//   // Return enhanced methods for component use
+//   return {
+//     data,
+//     isLoading,
+//     isError,
+//     refetch,
+//     forceRefresh: () =>
+//       queryClient.invalidateQueries({
+//         queryKey: ["attachments", cardId],
+//         exact: true,
+//       }),
+//   };
+// };
 export const useFetchAttachments = (cardId) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const channelRef = useRef(null);
+
+  // Fetch attachments using React Query
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["attachments", cardId],
     queryFn: () => fetchAttachments(cardId),
-    enabled: Boolean(cardId),
-    staleTime: 1000 * 60 * 5, // 5 phút, tránh gọi lại nếu chưa cần thiết
+    enabled: !!cardId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
+
+  // Helper function to update attachments in the query cache
+  const updateAttachmentData = useCallback(
+    (updateEvent, conditionFn) => {
+      queryClient.setQueryData(["attachments", cardId], (oldData = []) => {
+        if (!Array.isArray(oldData)) return oldData;
+
+        return oldData.map((item) =>
+          conditionFn(item, updateEvent) ? { ...item, ...updateEvent } : item
+        );
+      });
+    },
+    [cardId, queryClient]
+  );
+
+  // Handle adding new attachment
+  const handleAddAttachment = useCallback(
+    (event) => {
+      const newAttachment = event?.attachment;
+      if (!newAttachment) return;
+
+      queryClient.setQueryData(["attachments", cardId], (oldData = []) => {
+        if (!Array.isArray(oldData)) return [newAttachment];
+
+        const exists = oldData.some((item) => item.id === newAttachment.id);
+        if (exists) {
+          console.log("Attachment already exists:", newAttachment);
+          return oldData;
+        }
+
+        console.log("New attachment added:", newAttachment);
+        return [...oldData, newAttachment];
+      });
+
+      // Invalidate the query to refetch data if necessary
+      queryClient.invalidateQueries(["attachments", cardId]);
+    },
+    [cardId, queryClient]
+  );
+
+  // Handle attachment update
+  const handleUpdateAttachment = useCallback(
+    (event) => {
+      const updatedAttachment = event?.attachment;
+      if (!updatedAttachment) return;
+
+      updateAttachmentData(
+        updatedAttachment,
+        (item, updateEvent) => item.id === updateEvent.id
+      );
+    },
+    [updateAttachmentData]
+  );
+
+  // Handle attachment deletion
+  const handleAttachmentDeleted = useCallback(
+    (event) => {
+      const attachmentId = event?.attachment_id;
+      const eventCardId = event?.card_id;
+
+      if (
+        !attachmentId ||
+        (eventCardId && eventCardId.toString() !== cardId.toString())
+      )
+        return;
+
+      queryClient.setQueryData(["attachments", cardId], (oldData = []) => {
+        return oldData.filter((item) => item.id !== attachmentId);
+      });
+
+      // Invalidate the query to refetch data if necessary
+      queryClient.invalidateQueries(["attachments", cardId]);
+    },
+    [cardId, queryClient]
+  );
+
+  // Handle movement or status change of attachment
+  const handleMoveOrUpdateAttachment = useCallback(
+    (event) => {
+      const updatedAttachment = event?.attachment;
+      if (!updatedAttachment) return;
+
+      updateAttachmentData(
+        updatedAttachment,
+        (item, updateEvent) => item.id === updateEvent.id
+      );
+    },
+    [updateAttachmentData]
+  );
+
+  // Subscribe to relevant channels for real-time updates
+  useEffect(() => {
+    if (!cardId) return;
+
+    const channel = echoInstance.channel(`card.${cardId}`);
+    channelRef.current = channel;
+
+    channel.listen(".attachment.created", handleAddAttachment);
+    channel.listen(".attachment.updated", handleUpdateAttachment);
+    channel.listen(".attachment.moved", handleAttachmentDeleted);
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.stopListening(".attachment.created");
+        channelRef.current.stopListening(".attachment.updated");
+        channelRef.current.stopListening(".attachment.deleted");
+        echoInstance.leaveChannel(`card.${cardId}`);
+      }
+    };
+  }, [
+    cardId,
+    handleAddAttachment,
+    handleUpdateAttachment,
+    handleMoveOrUpdateAttachment,
+  ]);
+
+  return {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  };
 };
+
 // CommentCard
-export const useFetchComments = (cardId) => {
-  return useQuery({
+export const useFetchComments = (cardId, userId) => {
+  const queryClient = useQueryClient();
+  const channelRef = useRef(null);
+  const pendingOpsRef = useRef(new Set());
+
+  // Main data fetch query
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["comments", cardId],
     queryFn: () => fetchComments(cardId),
     enabled: Boolean(cardId),
-    staleTime: 1000 * 60 * 5, // 5 phút, tránh gọi lại nếu chưa cần thiết
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  // Safely update query data with error handling
+  const safelyUpdateQueryData = useCallback(
+    (updater) => {
+      try {
+        queryClient.setQueryData(["comments", cardId], updater);
+      } catch (error) {
+        console.error("Failed to update comments query data:", error);
+        queryClient.invalidateQueries({
+          queryKey: ["comments", cardId],
+          exact: true,
+        });
+      }
+    },
+    [cardId, queryClient]
+  );
+
+  // Selective refetch to verify data consistency
+  const handleRefetchIfNeeded = useCallback(
+    (eventType, id) => {
+      const opKey = `${eventType}-${id}`;
+      pendingOpsRef.current.add(opKey);
+
+      // Debounce refetch to handle multiple events
+      setTimeout(() => {
+        if (pendingOpsRef.current.size > 0) {
+          refetch()
+            .then(() => {
+              pendingOpsRef.current.clear();
+            })
+            .catch((error) => {
+              console.error("Refetch failed:", error);
+            });
+        }
+      }, 2000);
+    },
+    [refetch]
+  );
+
+  // Handle comment created event
+  const handleCommentCreated = useCallback(
+    (event) => {
+      const newComment = event?.comment;
+      const eventCardId = event?.card_id;
+      const eventUserId = event?.user_id;
+      if (!newComment) {
+        console.warn("No comment data in event:", event);
+        return;
+      }
+      if (eventCardId && eventCardId.toString() !== cardId.toString()) {
+        return;
+      }
+      if (eventUserId && eventUserId.toString() === userId?.toString()) {
+        console.log("Skipping comment.created event from self:", eventUserId);
+        return;
+      }
+
+      console.log("New comment created:", newComment);
+
+      safelyUpdateQueryData((oldData) => {
+        if (!Array.isArray(oldData)) return [newComment];
+        const exists = oldData.some((item) => item.id === newComment.id);
+        return exists ? oldData : [newComment, ...oldData]; // Prepend for newest first
+      });
+
+      handleRefetchIfNeeded("created", newComment.id);
+    },
+    [cardId, userId, safelyUpdateQueryData, handleRefetchIfNeeded]
+  );
+
+  // Handle comment updated event
+  const handleCommentUpdated = useCallback(
+    (event) => {
+      const updatedComment = event?.comment;
+      const eventCardId = event?.card_id;
+      const eventUserId = event?.user_id;
+      if (!updatedComment) {
+        console.warn("No comment data in event:", event);
+        return;
+      }
+      if (eventCardId && eventCardId.toString() !== cardId.toString()) {
+        return;
+      }
+      if (eventUserId && eventUserId.toString() === userId?.toString()) {
+        console.log("Skipping comment.updated event from self:", eventUserId);
+        return;
+      }
+
+      console.log("Comment updated:", updatedComment);
+
+      safelyUpdateQueryData((oldData) => {
+        if (!Array.isArray(oldData)) return [updatedComment];
+        return oldData.map((comment) =>
+          comment.id === updatedComment.id ? updatedComment : comment
+        );
+      });
+
+      handleRefetchIfNeeded("updated", updatedComment.id);
+    },
+    [cardId, userId, safelyUpdateQueryData, handleRefetchIfNeeded]
+  );
+
+  // Handle comment deleted event
+  const handleCommentDeleted = useCallback(
+    (event) => {
+      const commentId = event?.comment_id;
+      const eventCardId = event?.card_id;
+      const eventUserId = event?.user_id;
+      if (!commentId) {
+        console.warn("No comment ID in event:", event);
+        return;
+      }
+      if (eventCardId && eventCardId.toString() !== cardId.toString()) {
+        return;
+      }
+      if (eventUserId && eventUserId.toString() === userId?.toString()) {
+        console.log("Skipping comment.deleted event from self:", eventUserId);
+        return;
+      }
+
+      console.log("Comment deleted:", { commentId });
+
+      safelyUpdateQueryData((oldData) => {
+        if (!Array.isArray(oldData)) return oldData;
+        return oldData.filter((comment) => comment.id !== commentId);
+      });
+
+      handleRefetchIfNeeded("deleted", commentId);
+    },
+    [cardId, userId, safelyUpdateQueryData, handleRefetchIfNeeded]
+  );
+
+  // Set up real-time listeners
+  useEffect(() => {
+    if (!cardId) {
+      return;
+    }
+
+    const channel = echoInstance.channel(`card.${cardId}`);
+    channelRef.current = channel;
+
+    channel.listen(".comment.created", handleCommentCreated);
+    channel.listen(".comment.updated", handleCommentUpdated);
+    channel.listen(".comment.deleted", handleCommentDeleted);
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.stopListening(".comment.created");
+        channelRef.current.stopListening(".comment.updated");
+        channelRef.current.stopListening(".comment.deleted");
+        echoInstance.leaveChannel(`card.${cardId}`);
+      }
+    };
+  }, [
+    cardId,
+    handleCommentCreated,
+    handleCommentUpdated,
+    handleCommentDeleted,
+  ]);
+
+  return {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    forceRefresh: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["comments", cardId],
+        exact: true,
+      }),
+  };
 };
+
 // Activity
 export const useFetchActivities = (cardId) => {
   return useQuery({
@@ -110,8 +636,12 @@ export const useMoveCard = () => {
 
 // thêm mới list
 export const usePostCheckList = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ cardId, data }) => postCheckLists({ cardId, data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["checklist", cardId] });
+    },
     onError: (error) => {
       console.error("❌ Lỗi khi tạo checklist:", error);
     },
@@ -119,9 +649,14 @@ export const usePostCheckList = () => {
 };
 // thêm mới item
 export const usePostChecklistItem = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ checklistId, data }) =>
       postChecklistItem({ checklistId, data }),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["checklist"] });
+    },
     onError: (error) => {
       console.error("❌ Lỗi khi tạo checklist item:", error);
     },
@@ -170,10 +705,13 @@ export const useUpdateCheckList = () => {
 };
 // Item
 export const useUpdateCheckListItem = (checklistItemId) => {
+  const queryClient = useQueryClient();
+
   const mutation = useMutation({
     mutationFn: (data) => updateCheckListItem(checklistItemId, data),
     onSuccess: () => {
       // Optionally invalidate checklist data
+      queryClient.invalidateQueries({ queryKey: ["checklist"] });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật mục checklist:", error);
@@ -373,104 +911,11 @@ export const useRemoveCard = () => {
 };
 // ------------------------------------------------------
 
-// export const useCardById = (cardId) => {
-//   const queryClient = useQueryClient();
-
-//   const cardDetail = useQuery({
-//     queryKey: ["card", cardId],
-//     queryFn: () => fetchCardById(cardId),
-
-//     staleTime: 1000 * 60 * 5, // 5 phút.
-//     cacheTime: 1000 * 60 * 30, // 30 phút.
-//     enabled: !!cardId,
-//     onSuccess: () => {
-//       queryClient.invalidateQueries(["card"]);
-//     },
-//   });
-
-//   useEffect(() => {
-//     if (!cardId || !echoInstance) return;
-
-//     const channel = echoInstance.channel(`card.${cardId}`);
-//     // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
-
-//     channel.listen(".card.updated", (event) => {
-//       if (event?.card?.id === cardId) {
-//         queryClient.setQueryData(["cards", cardId], (oldData) => {
-//           if (!oldData) return oldData;
-
-//           // console.log("🔄 Cập nhật dữ liệu card:", { ...oldData, title: event.card.title });
-
-//           return { ...oldData, title: event.card.title };
-//         });
-//       }
-//     });
-
-//     channel.listen(".card.description.updated", (event) => {
-//       if (event?.card?.id === cardId) {
-//         queryClient.setQueryData(["cards", cardId], (oldData) => {
-//           if (!oldData) return oldData;
-//           console.log("🔄 Cập nhật mô tả card:", event.card.description);
-//           return { ...oldData, description: event.card.description };
-//         });
-//       }
-//     });
-
-//     return () => {
-//       channel.stopListening(".card.updated");
-//       channel.stopListening(".card.description.updated");
-//       echoInstance.leave(`card.${cardId}`);
-//     };
-//   }, [cardId, queryClient]);
-
-//   const updateDescriptionMutation = useMutation({
-//     mutationFn: (description) => updateDescription(cardId, description), // Gọi API cập nhật mô tả
-//     onSuccess: (data, { cardId }) => {
-//       console.log("Mô tả đã được cập nhật:", data);
-
-//       queryClient.invalidateQueries({
-//         queryKey: ["cardDetail", cardId],
-//         exact: true,
-//       });
-//       queryClient.invalidateQueries({ queryKey: ["lists"] });
-//     },
-//     onError: (error) => {
-//       console.error("Lỗi khi cập nhật mô tả:", error);
-//     },
-//   });
-
-//   const memoizedReturnValue = useMemo(
-//     () => ({
-//       ...cardDetail,
-//       updateDescriptionCard: updateDescriptionMutation.mutate,
-//     }),
-//     [cardDetail, updateDescriptionMutation.mutate]
-//   );
-
-//   return memoizedReturnValue;
-// };
-
 export const useCreateCard = () => {
   return useMutation({
     mutationFn: createCard,
     onError: (error) => {
       console.error("❌ Lỗi khi tạo thẻ:", error);
-    },
-  });
-};
-
-export const useUpdateCardTitle = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ cardId, title }) => updateCardTitle(cardId, title),
-    onSuccess: (data, variables) => {
-      // Cập nhật dữ liệu card trong cache sau khi update thành công
-      queryClient.invalidateQueries({ queryKey: ["cards", variables.cardId] });
-      queryClient.invalidateQueries({ queryKey: ["lists"] });
-    },
-    onError: (error) => {
-      console.error("Lỗi khi cập nhật tên card:", error);
     },
   });
 };
@@ -566,7 +1011,6 @@ export const useGetMemberInCard = (cardId) => {
     if (!cardId || !echoInstance) return;
 
     const channel = echoInstance.channel(`card.${cardId}`);
-    // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
 
     channel.listen(".CardMemberUpdated", (event) => {
       if (event?.card?.id === cardId) {

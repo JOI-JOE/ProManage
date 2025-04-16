@@ -22,13 +22,11 @@ export const useListByBoardId = (boardId) => {
     queryKey: ["lists", boardId],
     queryFn: () => fetchListByBoardId(boardId),
     enabled: !!boardId,
-    retry: 0,
     staleTime: 5 * 60 * 1000,
     cacheTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   });
-
   // Hàm cập nhật dữ liệu danh sách
   const updateListData = useCallback(
     (updateEvent, key, conditionFn) => {
@@ -49,7 +47,6 @@ export const useListByBoardId = (boardId) => {
   const handleCardUpdate = useCallback(
     (updateEvent) => {
       if (!updateEvent?.id) return;
-      console.log(updateEvent);
       updateListData(
         updateEvent,
         "cards",
@@ -107,14 +104,6 @@ export const useListByBoardId = (boardId) => {
           title: event.title,
           list_board_id: event.list_board_id,
           position: event.position,
-          description: event.description ?? null,
-          thumbnail: event.thumbnail ?? null,
-          start_date: event.start_date ?? null,
-          end_date: event.end_date ?? null,
-          end_time: event.end_time ?? null,
-          reminder: event.reminder ?? null,
-          is_completed: event.is_completed ?? false,
-          is_archived: event.is_archived ?? false,
         };
 
         return {
@@ -204,7 +193,6 @@ export const useListByBoardId = (boardId) => {
     refetch,
   };
 };
-
 /// Function thông thường --------------------------------------------------------
 
 // Function Create ------------------------------------------------------------------

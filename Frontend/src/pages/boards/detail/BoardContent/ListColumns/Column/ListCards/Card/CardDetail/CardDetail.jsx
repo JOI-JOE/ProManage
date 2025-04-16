@@ -60,7 +60,7 @@ import {
   useCardById,
   useCardSchedule,
   useGetMemberInCard,
-  useUpdateCardTitle,
+  // useUpdateCardTitle,
 } from "../../../../../../../../../hooks/useCard";
 import {
   useCreateComment,
@@ -73,9 +73,9 @@ import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { toast, ToastContainer } from "react-toastify";
 import {
-  useChecklistsByCard,
-  useDeleteCheckList,
-  useUpdateCheckList,
+  // useChecklistsByCard,
+  // useDeleteCheckList,
+  // useUpdateCheckList,
 } from "../../../../../../../../../hooks/useCheckList";
 import {
   useCreateCheckListItem,
