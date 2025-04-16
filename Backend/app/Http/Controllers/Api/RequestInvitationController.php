@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\AcceptRequest;
+use App\Events\CreatorComeBackBoard;
 use App\Events\RequestJoinBoard;
 use App\Http\Controllers\Controller;
 use App\Models\Board;
@@ -57,6 +59,20 @@ class RequestInvitationController extends Controller
                     'role' => 'admin',
 
                 ]);
+                $memberIds = $board->members()->pluck('users.id')->toArray();
+                // Broadcast event tới các thành viên khác
+                broadcast(new CreatorComeBackBoard(
+                    $boardId,
+                    $user->id,
+                    $user->full_name,
+                    array_diff($memberIds, [$user->id]) // Loại creator khỏi danh sách nhận
+                ))->toOthers();
+                
+                Log::info("Broadcasting CreatorRejoinedBoard", [
+                    'boardId' => $boardId,
+                    'userId' => $user->id,
+                    'memberIds' => $memberIds,
+                ]);
                 return response()->json([
                     'success' => true,
                     'message' => 'Bạn đã tham gia lại bảng với vai trò quản trị viên!',
@@ -86,7 +102,7 @@ class RequestInvitationController extends Controller
                 if ($admin) {
                     $admin->notify(
                         (new JoinBoardRequestNotification($board->id, $board->name, $user->full_name, $requestId))
-                            // ->delay(now()->addSeconds(5)) // Tùy chọn: delay để xử lý queue
+                        // ->delay(now()->addSeconds(5)) // Tùy chọn: delay để xử lý queue
                     );
                 }
             }
@@ -149,6 +165,9 @@ class RequestInvitationController extends Controller
 
             // Gửi email thông báo cho người dùng
             $user->notify(new AcceptRequestJoinBoard($board->id, $board->name));
+            
+            // Phát event thời gian thực để thông báo cho người dùng
+            event(new AcceptRequest($user->id, $board->id, $board->name));
             // Xóa bản ghi yêu cầu tham gia sau khi xử lý thành công
             $requestInvitation->delete();
 

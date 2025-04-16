@@ -138,7 +138,7 @@ class BoardMemberController extends Controller
     public function join(Request $request, $token)
     {
         $invite = BoardInvitation::where('invite_token', $token)
-            ->where('status', 'pending')
+            // ->where('status', 'pending')
             ->first();
 
         if (!$invite) {
@@ -160,7 +160,11 @@ class BoardMemberController extends Controller
             'role' => 'member',
 
         ]);
-        $invite->update(['status' => 'accepted']);
+        $invite->update([
+            'status' => 'accepted',
+            'invited_member_id' => $user->id, // Cập nhật ID người đã chấp nhận
+            'accept_unconfirmed' => false, // Đánh dấu là đã xác nhận
+        ]);
 
         $user->notify(new BoardInvitationReceivedNotification($board, $inviter));
         // Gửi event tới chủ bảng
@@ -248,11 +252,17 @@ class BoardMemberController extends Controller
             $removeUser = User::findOrFail($request->user_id);
             Log::info("Current User ID: " . $currentUser->id . " | Remove User ID: " . $removeUser->id);
             // Kiểm tra quyền admin
-            if (
-                !$board->members()->where('board_members.user_id', $currentUser->id)
-                    ->where('board_members.role', 'admin')
-                    ->exists()
-            ) {
+            // Kiểm tra quyền: Phải là Admin hoặc tự rời (và là thành viên)
+            $isAdmin = $board->members()
+                ->where('board_members.user_id', $currentUser->id)
+                ->where('board_members.role', 'admin')
+                ->exists();
+            $isSelfRemoval = $currentUser->id === $request->user_id;
+            $isMember = $board->members()
+                ->where('board_members.user_id', $currentUser->id)
+                ->exists();
+
+            if (!($isAdmin || ($isSelfRemoval && $isMember))) {
                 return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
             }
 
@@ -305,7 +315,7 @@ class BoardMemberController extends Controller
             }
             // Lấy danh sách tất cả member_ids SAu khi xóa
             // Lấy danh sách thành viên còn lại sau khi xóa
-         
+
 
             // Chỉ gửi event tới các thành viên còn lại, không gửi tới người bị xóa
             broadcast(new MemberRemovedFromBoard($board->id, $request->user_id, $removeUser->full_name, $memberIds));
