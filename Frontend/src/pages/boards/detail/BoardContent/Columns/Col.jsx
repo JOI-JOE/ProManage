@@ -24,6 +24,8 @@ import Card_new from "../Cards/Card_new";
 import { useCreateCard } from "../../../../../hooks/useCard";
 import { useUpdateListClosed, useUpdateListName } from "../../../../../hooks/useList";
 import { optimisticIdManager } from "../../../../../../utils/optimisticIdManager";
+import { useParams } from "react-router-dom";
+import { useBoard } from "../../../../../contexts/BoardContext";
 
 const StyledMenu = styled((props) => (
     <Menu
@@ -64,6 +66,8 @@ const StyledMenu = styled((props) => (
 }));
 
 const Col = ({ column, onArchive }) => {
+    const { boardId } = useParams();
+    const { refetchListData } = useBoard();
     const [openCopyDialog, setOpenCopyDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
@@ -95,7 +99,7 @@ const Col = ({ column, onArchive }) => {
     }, [column?.cards]);
 
     //======================================== Thêm card mới========================================
-    const handleAddCard = async (cardName) => {
+    const handleAddCard = async (cardName, boardId) => {
         if (!cardName.trim()) return;
 
         const typename = "card";
@@ -117,11 +121,11 @@ const Col = ({ column, onArchive }) => {
 
         try {
             const savedCard = await createCardMutation.mutateAsync(newCard);
-
             // Cập nhật lại thẻ với ID thật từ server
             setLocalCards((prev = []) =>
                 prev.map((card) => (card.id === tempId ? savedCard : card))
             );
+            refetchListData();
         } catch (error) {
             console.error("Lỗi khi thêm thẻ:", error);
             // Rollback nếu lỗi

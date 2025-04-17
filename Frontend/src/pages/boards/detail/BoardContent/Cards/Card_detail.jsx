@@ -451,26 +451,26 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
 
     const label = { inputProps: { 'aria-label': 'Checkbox demo' } };
 
-    const labels = [
-        {
-            "id": "label1",
-            "name": "High Priority",
-            "color": "#ff4d4f",
-            "symbol": "⚡"
-        },
-        {
-            "id": "label2",
-            "name": "In Progress",
-            "color": "#1890ff",
-            "symbol": "⏳"
-        },
-        {
-            "id": "label3",
-            "name": "Review",
-            "color": "#52c41a",
-            "symbol": "👀"
-        }
-    ]
+    // const labels = [
+    //     {
+    //         "id": "label1",
+    //         "name": "High Priority",
+    //         "color": "#ff4d4f",
+    //         "symbol": "⚡"
+    //     },
+    //     {
+    //         "id": "label2",
+    //         "name": "In Progress",
+    //         "color": "#1890ff",
+    //         "symbol": "⏳"
+    //     },
+    //     {
+    //         "id": "label3",
+    //         "name": "Review",
+    //         "color": "#52c41a",
+    //         "symbol": "👀"
+    //     }
+    // ]
 
     return (
         <AttachmentsProvider cardId={cardId} setCard={setCard} setCoverLoading={setCoverLoading}>

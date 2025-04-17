@@ -20,7 +20,7 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
         dueComplete: false,
     });
 
-    const { updateDates, updateIsCompleted, isUpdating, error } = useUpdateCardById(cardId);
+    const { updateCard, isUpdating, error } = useUpdateCardById(cardId);
 
     // Update state when cardData changes
     useEffect(() => {
@@ -62,27 +62,15 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
         setDate(newDate);
 
         if (hasChanges) {
-            const dateUpdates = {};
-            if (dateData.startDate !== (cardData.start || null)) {
-                dateUpdates.startDate = dateData.startDate || null;
-            }
-            if (dateData.endDate !== (cardData.due || null)) {
-                dateUpdates.endDate = dateData.endDate || null;
-            }
-            if (dateData.endTime !== (cardData.dueTime || null)) {
-                dateUpdates.endTime = dateData.endTime || null;
-            }
-            if (dateData.reminder !== (cardData.dueReminder || null)) {
-                dateUpdates.reminder = dateData.reminder || null;
-            }
+            const dateUpdates = {
+                start_date: dateData.startDate || null,
+                end_date: dateData.endDate || null,
+                end_time: dateData.endTime || null,
+                reminder: dateData.reminder || null,
+                is_completed: dateData.dueComplete ?? false,
+            };
 
-            if (Object.keys(dateUpdates).length > 0) {
-                updateDates(dateUpdates);
-            }
-
-            if (dateData.dueComplete !== (cardData.dueComplete ?? false)) {
-                updateIsCompleted(dateData.dueComplete);
-            }
+            updateCard(dateUpdates); // Single API call for all updates
         }
     };
 

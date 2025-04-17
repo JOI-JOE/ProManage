@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class CardController extends Controller
 {
@@ -262,10 +263,10 @@ class CardController extends Controller
             'description' => 'sometimes|nullable|string',
             'thumbnail' => 'sometimes|nullable|string|max:255',
             'position' => 'sometimes|numeric|min:0',
-            'start_date' => 'sometimes|nullable|date',
-            'end_date' => 'sometimes|nullable|date',
+            'start_date' => 'sometimes|nullable|date_format:Y-m-d',
+            'end_date' => 'sometimes|nullable|date_format:Y-m-d',
             'end_time' => 'sometimes|nullable|date_format:H:i',
-            'reminder' => 'sometimes|nullable|date',
+            'reminder' => 'sometimes|nullable|date_format:Y-m-d H:i:s',
             'is_completed' => 'sometimes|boolean',
             'is_archived' => 'sometimes|boolean',
             'list_board_id' => 'sometimes|required|uuid|exists:list_boards,id',
@@ -297,11 +298,26 @@ class CardController extends Controller
                 $targetListBoardId = $validatedData['list_board_id'] ?? $card->list_board_id;
                 $position = $validatedData['position'] ?? $card->position;
 
-                $moveResult = $this->moveCard($card, $targetListBoardId, $position, $user, $userName);
-                if ($moveResult['status'] !== 'success') {
-                    return response()->json($moveResult, 500);
+                // Check if moveCard method exists, otherwise handle the move directly
+                if (method_exists($this, 'moveCard')) {
+                    $moveResult = $this->moveCard($card, $targetListBoardId, $position, $user, $userName);
+                    if ($moveResult['status'] !== 'success') {
+                        return response()->json($moveResult, 500);
+                    }
+                    $updatedFields = array_merge($updatedFields, $moveResult['updatedFields']);
+                } else {
+                    // Handle the move directly if the moveCard method doesn't exist
+                    if ($card->list_board_id != $targetListBoardId) {
+                        $oldListBoardName = $card->list_board->name;
+                        $card->list_board_id = $targetListBoardId;
+                        $updatedFields['list_board_id'] = $targetListBoardId;
+                    }
+
+                    if ($card->position != $position) {
+                        $card->position = $position;
+                        $updatedFields['position'] = $position;
+                    }
                 }
-                $updatedFields = array_merge($updatedFields, $moveResult['updatedFields']);
             }
 
             // Update other fields
@@ -331,9 +347,15 @@ class CardController extends Controller
             ]);
         } catch (Exception $e) {
             DB::rollBack();
+            Log::error('Failed to update card: ' . $e->getMessage(), [
+                'card_id' => $cardId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['message' => 'Failed to update card.', 'error' => $e->getMessage()], 500);
         }
     }
+
     public function updatePositionCard(Request $request, $cardId)
     {
         try {
@@ -486,24 +508,68 @@ class CardController extends Controller
                     ->where('card_id', $cardId)
                     ->get()
                     ->map(function ($attachment) use ($newCardId) {
-                        $newFileName = Str::random(20) . '_' . time() . '.' . pathinfo($attachment->file_name, PATHINFO_EXTENSION);
-                        return [
+                        $newAttachment = [
                             'id' => Str::uuid()->toString(),
                             'card_id' => $newCardId,
-                            'path_url' => str_replace($attachment->file_name, $newFileName, $attachment->path_url),
                             'type' => $attachment->type,
                             'file_name_defaut' => $attachment->file_name_defaut,
-                            'file_name' => $newFileName,
                             'is_cover' => $attachment->is_cover,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];
-                    })->toArray();
+
+                        if ($attachment->type === 'file') {
+                            $originalFileName = $attachment->file_name;
+
+                            // Kiểm tra định dạng tên file
+                            if (!preg_match('/^[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$/', $originalFileName)) {
+                                $parsedPath = parse_url($attachment->path_url, PHP_URL_PATH);
+                                $possibleFileName = basename($parsedPath);
+
+                                if (preg_match('/^[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$/', $possibleFileName)) {
+                                    $originalFileName = $possibleFileName;
+                                } else {
+                                    return null; // Không thể xác định file_name hợp lệ
+                                }
+                            }
+
+                            $extension = pathinfo($originalFileName, PATHINFO_EXTENSION);
+                            $newFileName = Str::random(20) . '_' . time() . '.' . $extension;
+
+                            $originalFilePath = 'attachments/' . $originalFileName;
+                            $newFilePath = 'attachments/' . $newFileName;
+
+                            if (Storage::disk('public')->exists($originalFilePath)) {
+                                Storage::disk('public')->copy($originalFilePath, $newFilePath);
+                            } else {
+                                throw new Exception('Attachment file not found: ' . $originalFilePath);
+                            }
+
+                            $newPathUrl = asset('storage/attachments/' . $newFileName);
+
+                            $newAttachment['file_name'] = $newFileName;
+                            $newAttachment['path_url'] = $newPathUrl;
+                        } else {
+                            // Là link: tạo file_name duy nhất
+                            $parsedUrl = parse_url($attachment->path_url, PHP_URL_HOST) . parse_url($attachment->path_url, PHP_URL_PATH);
+                            $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '', $parsedUrl);
+                            $uniqueFileName = $safeName . '_' . Str::random(6);
+
+                            $newAttachment['file_name'] = $uniqueFileName;
+                            $newAttachment['path_url'] = $attachment->path_url;
+                        }
+
+                        return $newAttachment;
+                    })
+                    ->filter()
+                    ->toArray();
 
                 if (!empty($attachments)) {
                     DB::table('attachments')->insert($attachments);
                 }
             }
+
+
 
             // Log activity
             $user = auth()->user();

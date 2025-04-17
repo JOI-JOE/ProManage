@@ -191,44 +191,59 @@ const BoardContent = () => {
       const { active, over } = event;
       if (!over) return;
 
-      if (dragState.activeType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
-        const activeList = findListByCardId(active.id);
-        if (activeList) {
-          const newIndex = activeList.cards.findIndex(c => c.id === initialActiveRef.current.id);
-          const draggedCard = activeList.cards[newIndex];
+      const processDrag = async () => {
+        if (dragState.activeType === ACTIVE_DRAG_ITEM_TYPE.CARD) {
+          const activeList = findListByCardId(active.id);
+          if (activeList) {
+            const newIndex = activeList.cards.findIndex(c => c.id === initialActiveRef.current.id);
+            const draggedCard = activeList.cards[newIndex];
 
-          updateCardPositionMutation.mutate({
-            cardId: draggedCard.id,
-            listId: draggedCard.list_board_id,
-            position: draggedCard.position,
-          });
+            await updateCardPositionMutation.mutateAsync({
+              cardId: draggedCard.id,
+              listId: draggedCard.list_board_id,
+              position: draggedCard.position,
+            });
+
+            await refetchListData();
+          }
+        } else if (dragState.activeType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
+          const previousIndex = dragState.initialLists.findIndex(list => list.id === active.id);
+          const newIndex = orderedLists.findIndex(list => list.id === over.id);
+
+          if (previousIndex !== -1 && newIndex !== -1 && previousIndex !== newIndex) {
+            const draggedList = dragState.initialLists[previousIndex];
+            const newPosition = calculateItemPosition(newIndex, dragState.initialLists, draggedList);
+
+            await updatePositionListMutation.mutateAsync({
+              listId: draggedList.id,
+              position: newPosition,
+            });
+
+            await refetchListData();
+          }
         }
-      } else if (dragState.activeType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) {
-        const previousIndex = dragState.initialLists.findIndex(list => list.id === active.id);
-        const newIndex = orderedLists.findIndex(list => list.id === over.id);
 
-        if (previousIndex !== -1 && newIndex !== -1 && previousIndex !== newIndex) {
-          const draggedList = dragState.initialLists[previousIndex];
-          const newPosition = calculateItemPosition(newIndex, dragState.initialLists, draggedList);
+        setDragState({
+          activeId: null,
+          activeType: null,
+          activeData: null,
+          oldList: null,
+          initialLists: [],
+        });
+        initialActiveRef.current = null;
+        initialOverRef.current = null;
+      };
 
-          updatePositionListMutation.mutate({
-            listId: draggedList.id,
-            position: newPosition,
-          });
-        }
-      }
-
-      setDragState({
-        activeId: null,
-        activeType: null,
-        activeData: null,
-        oldList: null,
-        initialLists: [],
-      });
-      initialActiveRef.current = null;
-      initialOverRef.current = null;
+      processDrag();
     },
-    [dragState, orderedLists, findListByCardId, updateCardPositionMutation, updatePositionListMutation]
+    [
+      dragState,
+      orderedLists,
+      findListByCardId,
+      updateCardPositionMutation,
+      updatePositionListMutation,
+      refetchListData,
+    ]
   );
 
   const dropAnimation = useMemo(

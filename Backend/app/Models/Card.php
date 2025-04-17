@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Jobs\SendCardReminder;
+use Carbon\Carbon;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\Contracts\Activity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Str;
 
@@ -34,16 +37,81 @@ class Card extends Model
 
     protected $casts = [
         'position' => 'decimal:6',
+        'start_date' => 'date', // Cast thành date
+        'end_date' => 'date',   // Cast thành date
+        'end_time' => 'datetime', // Cast thành datetime (bao gồm cả thời gian)
+        'reminder' => 'datetime', // Cast thành datetime
         'is_completed' => 'boolean',
         'is_archived' => 'boolean',
     ];
 
+    // protected static function boot()
+    // {
+    //     parent::boot();
+    //     static::creating(function ($model) {
+    //         if (empty($model->id)) {
+    //             $model->id = (string) Str::uuid();
+    //         }
+    //     });
+    // }
     protected static function boot()
     {
         parent::boot();
+
         static::creating(function ($model) {
             if (empty($model->id)) {
                 $model->id = (string) Str::uuid();
+            }
+        });
+
+        // Khi card được cập nhật
+        static::updating(function ($card) {
+            // Kiểm tra nếu end_date hoặc reminder thay đổi
+            if ($card->isDirty('end_date') || $card->isDirty('reminder')) {
+                $now = Carbon::now();
+                $checkTime = null;
+
+                // Nếu có reminder, sử dụng reminder
+                if ($card->reminder) {
+                    try {
+                        $checkTime = Carbon::parse($card->reminder);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to parse reminder date', [
+                            'card_id' => $card->id,
+                            'reminder' => $card->reminder,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+                // Nếu không có reminder, sử dụng end_date và end_time
+                elseif ($card->end_date) {
+                    try {
+                        // Ensure end_date is properly formatted and combine with end_time appropriately
+                        $dateString = $card->end_date;
+
+                        // Remove any time component that might be in end_date
+                        if (strpos($dateString, ' ') !== false) {
+                            $dateString = explode(' ', $dateString)[0];
+                        }
+
+                        // Combine with end_time if available, otherwise default to beginning of day
+                        $timeString = $card->end_time ?? '00:00:00';
+
+                        $checkTime = Carbon::parse($dateString . ' ' . $timeString);
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to parse end date/time', [
+                            'card_id' => $card->id,
+                            'end_date' => $card->end_date,
+                            'end_time' => $card->end_time,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+
+                // Nếu thời điểm cần nhắc nhở đã đến hoặc sắp đến
+                if ($checkTime && $checkTime->lte($now)) {
+                    SendCardReminder::dispatch($card)->onQueue('reminders');
+                }
             }
         });
     }
@@ -103,7 +171,7 @@ class Card extends Model
             'id', // Khóa chính của Board
             'list_board_id', // Khóa ngoại trong Card
             'board_id' // Khóa ngoại trong ListBoard
-    );
+        );
     }
 
     public function checklists()

@@ -39,7 +39,6 @@ const CopyCardPopUp = forwardRef(({ onCopyCard, card }, ref) => {
         dates: true,
     });
 
-    // Initialize with boardId to ensure controlled state
     const [board, setBoard] = useState(boardId || '');
     const [list, setList] = useState('');
     const [position, setPosition] = useState('1');
@@ -82,7 +81,7 @@ const CopyCardPopUp = forwardRef(({ onCopyCard, card }, ref) => {
                 ),
             ];
             setBoards(allBoards);
-            setBoard(boardId || allBoards[0]?.id || ''); // Default to boardId or first board
+            setBoard(boardId || allBoards[0]?.id || '');
 
             if (orderedLists && boardId) {
                 const currentLists = orderedLists.map((list) => ({
@@ -155,7 +154,7 @@ const CopyCardPopUp = forwardRef(({ onCopyCard, card }, ref) => {
     const handleClose = () => {
         setOpen(false);
         setRemoteListsData(null);
-        setBoard(boardId || ''); // Reset to boardId
+        setBoard(boardId || '');
         setList('');
         setPosition('1');
         setSelectedPositionIndex(0);
@@ -188,46 +187,9 @@ const CopyCardPopUp = forwardRef(({ onCopyCard, card }, ref) => {
 
             const positionIndex = selectedPositionIndex;
             const cardsInList = getCardsInSelectedList();
-
-            // Calculate position
             const calculatedPosition = calculateItemPosition(positionIndex, cardsInList, null);
 
-            // Optimistic update for the current board
-            if (board === boardId) {
-                updateOrderedLists((prevLists) => {
-                    const nextLists = cloneDeep(prevLists);
-                    const targetList = nextLists.find((l) => l.id === list);
-                    if (!targetList) return prevLists;
-
-                    const typename = 'card';
-                    const optimisticId = optimisticIdManager.generateOptimisticId(typename);
-                    const newCard = {
-                        ...card,
-                        id: optimisticId,
-                        title: name,
-                        list_board_id: list,
-                        position: calculatedPosition,
-                        FE_PlaceholderCard: false,
-                        labels: keepItems.labels ? [...(card.labels || [])] : [],
-                        tasks: keepItems.checklists ? [...(card.tasks || [])] : [],
-                        attachments: keepItems.attachments ? [...(card.attachments || [])] : [],
-                    };
-
-                    targetList.cards = targetList.cards
-                        .filter((c) => !c.FE_PlaceholderCard)
-                        .sort((a, b) => a.position - b.position);
-
-                    if (positionIndex >= targetList.cards.length) {
-                        targetList.cards.push(newCard);
-                    } else {
-                        targetList.cards.splice(positionIndex, 0, newCard);
-                    }
-
-                    return nextLists;
-                });
-            }
-
-            // Call API to copy card
+            // Call API to copy card directly
             const response = await copyCard({
                 cardId: card.id,
                 data: {
@@ -241,29 +203,6 @@ const CopyCardPopUp = forwardRef(({ onCopyCard, card }, ref) => {
                     keepMembers: keepItems.members,
                 },
             });
-
-            // Update UI with actual data from API
-            if (board === boardId && response?.card) {
-                updateOrderedLists((prevLists) => {
-                    const nextLists = cloneDeep(prevLists);
-                    const targetList = nextLists.find((l) => l.id === list);
-                    if (targetList) {
-                        targetList.cards = targetList.cards.filter(
-                            (c) => !c.id.startsWith('Optimistic_card_') || c.title !== name
-                        );
-
-                        const newCard = {
-                            ...response.card,
-                            position: response.card.position || calculatedPosition,
-                        };
-
-                        targetList.cards.push(newCard);
-                        targetList.cards.sort((a, b) => a.position - b.position);
-                    }
-                    return nextLists;
-                });
-            }
-
             if (onCopyCard) {
                 onCopyCard(response?.card);
             }
@@ -272,26 +211,13 @@ const CopyCardPopUp = forwardRef(({ onCopyCard, card }, ref) => {
             handleClose();
         } catch (error) {
             console.error('Failed to copy card:', error);
-            if (board === boardId) {
-                updateOrderedLists((prevLists) => {
-                    const nextLists = cloneDeep(prevLists);
-                    const targetList = nextLists.find((l) => l.id === list);
-                    if (targetList) {
-                        targetList.cards = targetList.cards.filter(
-                            (c) => !c.id.startsWith('Optimistic_card_') || c.title !== name
-                        );
-                    }
-                    return nextLists;
-                });
-            }
             setIsSubmitting(false);
         }
     };
 
-    // Calculate badge counts safely
-    const checklistCount = card?.badges?.checkItems;
-    const labelCount = card?.labels?.length;
-    const attachmentCount = card?.badges?.attachments;
+    const checklistCount = card?.badges?.checkItems || 0;
+    const labelCount = card?.labels?.length || 0;
+    const attachmentCount = card?.badges?.attachments || 0;
 
     return (
         <Popover

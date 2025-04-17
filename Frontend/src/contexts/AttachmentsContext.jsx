@@ -7,6 +7,7 @@ import {
     useRemoveAttachment,
 } from '../hooks/useCard';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
 
 const AttachmentsContext = createContext();
 
@@ -18,6 +19,13 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
     const { mutateAsync: postAttachmentLinkMutate } = usePostAttachmentLink();
     const { mutateAsync: updateAttachmentMutate } = usePutAttachment();
     const { mutateAsync: removeAttachmentMutate } = useRemoveAttachment();
+
+    const invalidateAttachments = () => {
+        queryClient.invalidateQueries({
+            queryKey: ["attachments", cardId],
+            exact: true,
+        });
+    };
 
     // Update attachments state when fetchedAttachments changes
     useEffect(() => {
@@ -34,13 +42,6 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
         }
     }, [fetchedAttachments?.data]);
 
-    // Function to invalidate attachments query
-    const invalidateAttachments = () => {
-        queryClient.invalidateQueries({
-            queryKey: ["attachments", cardId],
-            exact: true,
-        });
-    };
 
     const handleUploadNewFiles = async (cardId, filesToUpload) => {
         try {
@@ -50,8 +51,8 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 return postAttachmentFileMutate({ cardId, file: formData });
             });
             await Promise.all(uploadFilePromises);
-            invalidateAttachments();
         } catch (error) {
+            toast.error('❌ Lỗi khi tải lên tệp. Vui lòng thử lại.');
             console.error('❌ Error uploading files:', error);
             throw error;
         }
@@ -59,6 +60,7 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
 
     const handleAddNewLinks = async (cardId, linksToAdd) => {
         if (!cardId || !linksToAdd || linksToAdd.length === 0) {
+            toast.error('❌ Thiếu thông tin cardId hoặc dữ liệu liên kết.');
             throw new Error('Thiếu cardId hoặc dữ liệu link.');
         }
 
@@ -74,13 +76,13 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 });
             });
             await Promise.all(linkPromises);
-            invalidateAttachments();
         } catch (error) {
+            toast.error(
+                error.response?.data?.message ||
+                error.message ||
+                '❌ Không thể thêm liên kết. Vui lòng thử lại.'
+            );
             console.error('❌ Error adding new links:', error);
-            // setAttachments(prev => ({
-            //     ...prev,
-            //     links: prev.links.filter(link => !link.id.startsWith('attachment-temp-')),
-            // }));
             throw new Error(
                 error.response?.data?.message ||
                 error.message ||
@@ -95,8 +97,8 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 attachmentId: fileId,
                 data: { file_name_defaut: newFileName },
             });
-            invalidateAttachments();
         } catch (error) {
+            toast.error('❌ Lỗi khi chỉnh sửa tên tệp. Vui lòng thử lại.');
             console.error('Error editing file name:', error);
             throw error;
         }
@@ -112,8 +114,8 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                     type: 'link',
                 },
             });
-            invalidateAttachments();
         } catch (error) {
+            toast.error('❌ Lỗi khi chỉnh sửa liên kết. Vui lòng thử lại.');
             console.error('Error editing link:', error);
             throw error;
         }
@@ -147,8 +149,8 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                     thumbnail: newThumbnailUrl,
                 }));
             }
-            invalidateAttachments();
         } catch (error) {
+            toast.error('❌ Lỗi khi cập nhật ảnh bìa. Vui lòng thử lại.');
             console.error('❌ Error updating cover:', error);
             throw error;
         } finally {
@@ -167,8 +169,8 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                     thumbnail: null,
                 }));
             }
-            invalidateAttachments();
         } catch (error) {
+            toast.error('❌ Lỗi khi xóa tệp. Vui lòng thử lại.');
             console.error('❌ Error deleting file:', error);
             throw error;
         }
@@ -177,8 +179,8 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
     const handleDeleteLink = async (linkId) => {
         try {
             await removeAttachmentMutate(linkId);
-            invalidateAttachments();
         } catch (error) {
+            toast.error('❌ Lỗi khi xóa liên kết. Vui lòng thử lại.');
             console.error('❌ Error deleting link:', error);
             throw error;
         }

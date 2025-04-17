@@ -38,6 +38,7 @@ class AttachmentController extends Controller
 
             $user = Auth::user();
             $userName = $user->full_name ?? 'ai đó';
+            $responseData = null;
 
             if ($request->hasFile('file')) {
                 $request->validate([
@@ -127,7 +128,7 @@ class AttachmentController extends Controller
                     'file_name_defaut' => $request->input('file_name_defaut'),
                     'file_name' => $fileNameForLink,
                     'type' => 'link',
-                    'is_cover' => $isCover,
+                    'is_cover' => false, // Links can't be covers as per your validation
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -141,10 +142,24 @@ class AttachmentController extends Controller
                         'file_name_defaut' => $request->input('file_name_defaut'),
                         'path_url' => $request->input('path_url'),
                         'type' => 'link',
-                        'is_cover' => $isCover,
+                        'is_cover' => false,
                         'card_id' => $cardId,
                     ])
                     ->log("{$userName} đã thêm liên kết '{$request->input('file_name_defaut')}' vào card '{$card->title}'.");
+
+                // Define responseData for links too
+                $responseData = [
+                    'id' => $attachmentId,
+                    'file_name_defaut' => $request->input('file_name_defaut'),
+                    'path_url' => $request->input('path_url'),
+                    'file_name' => $fileNameForLink,
+                    'card_id' => $cardId,
+                    'type' => 'link',
+                    'is_cover' => false,
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ];
+                $message = 'Link added successfully';
             } else {
                 throw new \Exception('No file uploaded or invalid link data provided');
             }
@@ -166,6 +181,7 @@ class AttachmentController extends Controller
 
             return response()->json([
                 'success' => true,
+                'message' => $message ?? 'Attachment added successfully',
                 'data' => $responseData,
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {

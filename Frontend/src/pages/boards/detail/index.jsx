@@ -18,7 +18,7 @@ const BoardLayout = () => {
   return (
     <Box
       sx={{
-        backgroundImage: `url(${board?.logo || "https://images.unsplash.com/photo-1738249034651-1896f689be58?q=80&w=1974&auto=format&fit=crop"})`,
+        backgroundImage: `url(${board?.logo})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

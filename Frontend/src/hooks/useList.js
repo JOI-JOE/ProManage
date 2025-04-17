@@ -197,8 +197,15 @@ export const useListByBoardId = (boardId) => {
 
 // Function Create ------------------------------------------------------------------
 export const useCreateList = () => {
+  const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: createListAPI,
+    onSuccess: (newList, { boardId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["lists", boardId],
+        exact: true,
+      });
+    },
     onError: (error) => {
       console.error("Lỗi khi tạo danh sách:", error);
     },

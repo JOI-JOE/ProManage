@@ -14,6 +14,8 @@ import LoginForm from "../pages/Auth/LoginForm";
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 
+// import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import InviteHandling from "../pages/workspace/invite/InviteHandling";
@@ -25,7 +27,6 @@ import AcceptInvitePage from "../pages/boards/invite/AcceptInvitePage";
 import Board from "../pages/boards/detail/Board";
 import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileDisplay";
 import Activity from "../components/Navigation/Menus/Profile and display/Activity";
-import GoogleAuth from "../pages/auth/GoogleAuth";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
