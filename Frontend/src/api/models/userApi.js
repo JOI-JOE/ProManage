@@ -18,7 +18,7 @@ const fetchUserDataWithParams = async (params, userId = "me") => {
 
 export const fetchUserProfile = () => {
   return fetchUserDataWithParams({
-    fields: "id,user_name,full_name,email,image",
+    fields: "id,user_name,biography,full_name,email,image",
     workspaces: "all",
     workspace_fields: "id,name,display_name",
   });
@@ -189,3 +189,28 @@ export const userRegister = async (userData) => {
     throw error;
   }
 };
+
+
+export const getUserById = async () => {
+  try {
+    const response = await authClient.get(`/user`);
+    return response.data.user; // do API trả về { user: ... }
+  } catch (error) {
+    console.error("Lỗi khi lấy người dùng theo ID:", error);
+    throw error;
+  }
+};
+
+
+
+
+export const updateUserProfile = async (data) => {
+  try {
+    const response = await authClient.put(`/user/update-profile`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật hồ sơ người dùng:", error);
+    throw error;
+  }
+};
+

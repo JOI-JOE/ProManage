@@ -8,28 +8,15 @@ import { getBoardMembers } from "../api/models/inviteBoardApi";
  * @param {string} month - Chuỗi tháng định dạng YYYY-MM (ví dụ: 2025-04)
  * @returns {object} - Kết quả từ useQuery (data, isLoading, isError, ...)
  */
-export const useCalendar = (board_id = [], month) => {
+export const useCalendar = (boardIds = [], month) => {
 
     return useQuery({
-        queryKey: ["calendar", { board_id, month }],
-        queryFn: () => getCalendar(board_id, month),
-        enabled: !!board_id && !!month, // Chỉ chạy khi đủ điều kiện
+        queryKey: ["calendar",  boardIds, month ],
+        queryFn: () => getCalendar(boardIds, month),
+        enabled: boardIds.length > 0 && !!month,
         staleTime: 1000 * 60 * 5, // 5 phút
         cacheTime: 1000 * 60 * 30, // 30 phút
         refetchOnWindowFocus: false,
-    });
-};
-export const useMultiBoardMembers = (boardIds) => {
-    return useQueries({
-        queries: boardIds.map((boardId) => ({
-            queryKey: ['boardMembers', boardId],
-            queryFn: () => getBoardMembers(boardId),
-            enabled: !!boardId,
-            staleTime: 60 * 1000,
-            cacheTime: 5 * 60 * 1000,
-            retry: 2,
-            refetchOnWindowFocus: false,
-        })),
     });
 };
 export const useUpdateCardCalendar = () => {
@@ -38,22 +25,14 @@ export const useUpdateCardCalendar = () => {
 
     return useMutation({
 
-        mutationFn: ({ cardId, board_id, end_date, month }) =>
-            UpdateCardCalendar(cardId, board_id, end_date, month),
-        onSuccess: (_, variables) => {
-            const { board_id, month } = variables;
-
-            queryClient.invalidateQueries({
-                predicate: (query) => {
-                    const key = query.queryKey[1];
-                    return (
-                        query.queryKey[0] === "calendar" &&
-                        key?.month === month &&
-                        key?.board_ids?.includes(board_id)
-                    );
-                },
-            });
-        },
+        mutationFn: ({ cardId, board_id,start_date, end_date, month }) =>
+            UpdateCardCalendar(cardId, board_id,start_date, end_date, month),
+       
+        onMutate: async (variables) => {
+            return {
+              revert: variables?.revert, // đẩy từ component
+            };
+          },
         onError: (error) => {
             // ⚠️ Nếu backend trả lỗi, gọi revert() để quay lại vị trí cũ
             info.revert();

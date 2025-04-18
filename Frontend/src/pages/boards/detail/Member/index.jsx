@@ -41,6 +41,7 @@ import WorkspaceInfo from "../../../../components/WorkspaceInfo";
 import { useGetInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 
 const Member = () => {
+  
   const { workspaceName } = useParams();
 
   // Dữ liệu để lấy được workspace bằng tên
@@ -480,39 +481,39 @@ const Member = () => {
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ padding: 0 }}>
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
               gap: 2,
               width: "100%",
+              padding: "16px 24px", // Tự quản lý padding
             }}
           >
+            {/* Phần Autocomplete và TextField */}
             <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
               <Paper
                 elevation={0}
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  flex: 1, // 🔥 Giúp Paper mở rộng full width
+                  flex: 1,
                   borderRadius: "3px",
                   boxShadow: "inset 0 0 0 1px rgba(9, 30, 66, 0.15)",
-                  transition:
-                    "background-color 85ms ease, border-color 85ms ease, box-shadow 85ms ease",
+                  transition: "background-color 85ms ease, border-color 85ms ease, box-shadow 85ms ease",
                   backgroundColor: "#ffffff",
-                  padding: "5px 10px", // 🔥 Tạo khoảng cách padding đẹp hơn
+                  padding: "5px 10px",
                 }}
               >
                 <Autocomplete
                   multiple
                   id="custom-autocomplete"
                   options={options.filter(
-                    (option) =>
-                      !selectedUsers.some((user) => user.id === option.id)
+                    (option) => !selectedUsers.some((user) => user.id === option.id)
                   )}
                   getOptionLabel={(option) => option.full_name}
-                  getOptionDisabled={(option) => option.joined} // 🔥 Vô hiệu hóa nếu đã joined
+                  getOptionDisabled={(option) => option.joined}
                   filterOptions={(options, state) =>
                     options.filter(
                       (option) =>
@@ -531,9 +532,7 @@ const Member = () => {
                   popupIcon={null}
                   loading={isLoadingMember}
                   loadingText={
-                    <Box
-                      sx={{ display: "flex", justifyContent: "center", py: 1 }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
                       <SvgIcon
                         component={loadingLogo}
                         sx={{ width: 50, height: 50, transform: "scale(0.5)" }}
@@ -546,25 +545,19 @@ const Member = () => {
                     isLoadingMember
                       ? "Đang tìm kiếm..."
                       : inputValue.length >= 3
-                        ? "Không tìm thấy thành viên nào."
-                        : ""
+                      ? "Không tìm thấy thành viên nào."
+                      : ""
                   }
                   open={open}
                   value={selectedUsers}
                   onChange={handleOptionSelect}
                   fullWidth
                   renderOption={(props, option) => (
-                    <ListItem
-                      {...props}
-                      alignItems="flex-start"
-                      disabled={option.joined}
-                    >
+                    <ListItem {...props} alignItems="flex-start" disabled={option.joined}>
                       <ListItemAvatar>
                         <Avatar
                           alt={option.full_name}
-                          src={
-                            option.image || "/static/images/avatar/default.jpg"
-                          }
+                          src={option.image || "/static/images/avatar/default.jpg"}
                         />
                       </ListItemAvatar>
                       <ListItemText
@@ -603,9 +596,7 @@ const Member = () => {
                   PopperComponent={(props) => (
                     <Popper
                       {...props}
-                      modifiers={[
-                        { name: "offset", options: { offset: [0, 15] } },
-                      ]}
+                      modifiers={[{ name: "offset", options: { offset: [0, 15] } }]}
                     />
                   )}
                   sx={{
@@ -647,7 +638,7 @@ const Member = () => {
                       sx={{
                         width: 50,
                         height: 50,
-                        transform: "scale(0.5)", // Giữ nguyên tỷ lệ nhưng thu nhỏ
+                        transform: "scale(0.5)",
                       }}
                       viewBox="0 0 24 24"
                       inheritViewBox
@@ -658,7 +649,7 @@ const Member = () => {
                     variant="contained"
                     sx={{ height: "40px", textTransform: "none" }}
                     onClick={handleSendInvitations}
-                    disabled={isProcessing} // Chặn nhấn nút khi đang loading
+                    disabled={isProcessing}
                   >
                     Gửi lời mời
                   </Button>
@@ -671,9 +662,9 @@ const Member = () => {
                 multiline
                 maxRows={2}
                 fullWidth
-                value={invitationMessage} // Gán giá trị từ state
-                onChange={(e) => setInvitationMessage(e.target.value)} // Cập nhật state khi nhập
-                disabled={isProcessing} // Vô hiệu hóa khi đang xử lý
+                value={invitationMessage}
+                onChange={(e) => setInvitationMessage(e.target.value)}
+                disabled={isProcessing}
                 sx={{
                   "& .MuiInputBase-input": { color: "gray" },
                   "& .MuiInputLabel-root": { color: "#9FADBC" },
@@ -681,37 +672,39 @@ const Member = () => {
                 }}
               />
             )}
-          </Box>
 
-          {isInviteLoading || isLoadingWorkspace ? (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "100%",
-              }}
-            >
-              <SvgIcon
-                component={loadingLogo}
+            {/* Phần GenerateLink hoặc Loading */}
+            {isInviteLoading || isLoadingWorkspace ? (
+              <Box
                 sx={{
-                  width: 50,
-                  height: 50,
-                  transform: "scale(0.5)", // Giữ nguyên tỷ lệ nhưng thu nhỏ
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "60px", // Đặt chiều cao cố định để tránh khoảng trắng
                 }}
-                viewBox="0 0 24 24"
-                inheritViewBox
-              />
-            </Box>
-          ) : (
-            // Đây là component dùng để tạo ra invite token
-            <GenerateLink
-              onGenerateLink={handleGenerateLink}
-              onDeleteLink={handleDeleteLink}
-              secret={inviteData?.invitationSecret}
-              workspaceId={workspace?.id}
-            />
-          )}
+              >
+                <SvgIcon
+                  component={loadingLogo}
+                  sx={{
+                    width: 50,
+                    height: 50,
+                    transform: "scale(0.5)",
+                  }}
+                  viewBox="0 0 24 24"
+                  inheritViewBox
+                />
+              </Box>
+            ) : (
+              <Box sx={{ paddingBottom: "16px" }}>
+                <GenerateLink
+                  onGenerateLink={handleGenerateLink}
+                  onDeleteLink={handleDeleteLink}
+                  secret={inviteData?.invitationSecret}
+                  workspaceId={workspace?.id}
+                />
+              </Box>
+            )}
+          </Box>
         </DialogContent>
       </Dialog>
     </Box>

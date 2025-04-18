@@ -1,12 +1,13 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import Gantt from 'frappe-gantt';
 import './GanttChart.css';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import authClient from '../../../../../api/authClient';
-
 
 const GanttChart = () => {
     const { boardId } = useParams();
+    const navigate = useNavigate();
 
     const ganttContainer = useRef(null);
     const ganttInstance = useRef(null);
@@ -39,7 +40,6 @@ const GanttChart = () => {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
-
             
             setTasks(response.data);
             setLoading(false);
@@ -79,59 +79,117 @@ const GanttChart = () => {
                         ? `<div class="description"><strong>Description:</strong> ${task.description}</div>`
                         : '';
 
+                    // Sử dụng task.id làm cardId
+                    const viewCardLink = `
+                        <div class="view-card-link" style="margin-top: 10px; text-align: center;">
+                            <a href="#" 
+                               onclick="event.stopPropagation(); window.openCardDetail('${task.id}'); return false;"
+                               style="display: inline-block; padding: 5px 10px; background-color: #007bff; color: white; 
+                                      text-decoration: none; border-radius: 3px; font-weight: bold;">
+                                View Card Details
+                            </a>
+                        </div>`;
+
                     return `
-                <div class="gantt-task-popup">
-                <h4>${task.name}</h4>
-                <div class="dates">
-                    <strong>Start:</strong> ${task.start} 
-                    <strong>End:</strong> ${task.end}
-                </div>
-                ${progress}
-                ${assignees}
-                ${description}
-                </div>
-            `;
+                        <div class="gantt-task-popup">
+                            <h4>${task.name}</h4>
+                            <div class="dates">
+                                <strong>Start:</strong> ${task.start} 
+                                <strong>End:</strong> ${task.end}
+                            </div>
+                            ${progress}
+                            ${assignees}
+                            ${description}
+                            ${viewCardLink}
+                        </div>
+                    `;
                 },
                 on_click: task => {
                     console.log('Task clicked', task);
-                    // Thêm xử lý để mở card tương ứng trong ứng dụng
+                    // Sử dụng task.id làm cardId
+                    navigateToCard(task.id);
                 },
                 on_date_change: (task, start, end) => {
-                    // console.log('Task date changed', task, start, end);
                     updateTaskDates(task.id, start, end);
                 }
-
-                // on_progress_change: (task, progress) => {
-                // console.log('Task progress changed', task, progress);
-                // // Thêm xử lý để cập nhật tiến độ
-                // }
             });
+
+            // Define global function to open card detail from the popup link
+            window.openCardDetail = (cardId) => {
+                navigateToCard(cardId);
+            };
         }
     };
 
+    // Helper function to navigate to card detail
+    const navigateToCard = (cardId) => {
+        if (!cardId) return;
+        
+        // Find the task that matches this cardId
+        const task = tasks.find(t => t.id === cardId);
+        
+        if (task && task.boardName) {
+            // Use the boardName directly from the task data
+            const cardUrl = `/b/${boardId}/${task.boardName}/c/${cardId}`;
+            // console.log(`Navigating to: ${cardUrl}`);
+            navigate(cardUrl);
+        } else {
+            // Fallback to the current implementation for cases where we can't find the task or it doesn't have boardName
+            const pathSegments = window.location.pathname.split('/');
+            let boardName = 'board1'; // Default fallback
+            
+            for (let i = 0; i < pathSegments.length; i++) {
+                if (pathSegments[i] === 'b' && pathSegments[i+1] === boardId && pathSegments[i+2]) {
+                    boardName = pathSegments[i+2];
+                    break;
+                }
+            }
+            
+            const cardUrl = `/b/${boardId}/${boardName}/c/${cardId}`;
+            console.log(`Navigating to: ${cardUrl}`);
+            navigate(cardUrl);
+        }
+    };
+   
+    
+
     const updateTaskDates = async (taskId, start, end) => {
         try {
+            // Format dates consistently to prevent timezone issues
+            const formattedStart = formatDateForServer(start);
+            const formattedEnd = formatDateForServer(end);
+            
             await authClient.post('/gantt/update-task', {
                 id: taskId,
-                start: start,
-                end: end
+                start: formattedStart,
+                end: formattedEnd
             }, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
-            // Cập nhật lại state tasks
+            
+            // Update the local state with the same formatted dates
             setTasks(prevTasks =>
                 prevTasks.map(task =>
                     task.id === taskId
-                        ? { ...task, start: start, end: end }
+                        ? { ...task, start: formattedStart, end: formattedEnd }
                         : task
                 )
             );
         } catch (err) {
             console.error('Error updating task dates:', err);
-            // Có thể hiển thị thông báo lỗi
         }
+    };
+
+    const formatDateForServer = (dateStr) => {
+        // Create a date object without time components to avoid timezone issues
+        const date = new Date(dateStr);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        
+        return `${year}-${month}-${day}`;
     };
 
     const changeViewMode = (mode) => {
@@ -146,7 +204,6 @@ const GanttChart = () => {
         <div className="gantt-wrapper">
             <div className="gantt-controls">
                 <div className="view-modes">
-        
                     <button
                         className={viewMode === 'Day' ? 'active' : ''}
                         onClick={() => changeViewMode('Day')}
@@ -166,9 +223,6 @@ const GanttChart = () => {
                         Month
                     </button>
                 </div>
-                {/* <button className="refresh-btn" onClick={fetchGanttData}>
-            Refresh
-            </button> */}
 
                 <div className="gantt-legend">
                     <span className="legend-item">
@@ -180,7 +234,6 @@ const GanttChart = () => {
                     <span className="legend-item">
                         <span className="legend-color notstarted" /> Thẻ chưa hoàn thành
                     </span>
-
                 </div>
             </div>
             <div className="gantt-container" ref={ganttContainer}></div>

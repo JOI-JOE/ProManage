@@ -18,17 +18,30 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
+import { useMe } from "../../../contexts/MeContext";
+import { Link } from 'react-router-dom';
 
-export default function ProfileMenu({ email }) {
+
+export default function ProfileMenu({ email, user_name }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
   const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
   const [selectedTheme, setSelectedTheme] = React.useState("system");
   const [workspaceType, setWorkspaceType] = React.useState("");
+
+  // const {data: user } = useMe();
+
+  // console.log(user);
+
+  const goToCard = () => {
+    if (user?.user_name) {
+      navigate(`/u/${user?.user_name}/cards`);
+    }
+  };
 
   const open = Boolean(anchorEl);
   const themeOpen = Boolean(themeAnchorEl);
@@ -121,11 +134,15 @@ export default function ProfileMenu({ email }) {
         >
           ProManage
         </Typography>
-        <MenuItem onClick={() => navigate("/profile-display")}>
+        <MenuItem component={Link} to={`/u/${user_name}`}>
           Hồ sơ và Hiển thị
         </MenuItem>
-        <MenuItem>Hoạt động</MenuItem>
-        <MenuItem>Thẻ</MenuItem>
+        <MenuItem component={Link} to={`/u/${user_name}/activity`}>
+          Hoạt động
+        </MenuItem>
+        <MenuItem component={Link} to={`/u/${user_name}/cards`}>
+          Thẻ
+        </MenuItem>
         <MenuItem>Cài đặt</MenuItem>
         <MenuItem onClick={handleThemeClick}>
           Chủ đề <ArrowRightIcon fontSize="small" sx={{ ml: "auto" }} />

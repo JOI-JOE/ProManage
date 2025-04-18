@@ -16,21 +16,29 @@ class CalendarController extends Controller
     {
         $boardId = $request->query('board_id');
         $month = $request->query('month'); // ví dụ: 2025-04
+        $startOfMonth = Carbon::createFromFormat('Y-m', $month)->startOfMonth()->toDateString();
+        $endOfMonth = Carbon::createFromFormat('Y-m', $month)->endOfMonth()->toDateString();
 
         $cards = DB::table('cards')
             ->join('list_boards', 'cards.list_board_id', '=', 'list_boards.id')
             ->join('boards', 'list_boards.board_id', '=', 'boards.id')
             ->where('boards.id', $boardId)
-            ->whereMonth('cards.end_date', '=', date('m', strtotime($month)))
-            ->whereYear('cards.end_date', '=', date('Y', strtotime($month)))
+            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+                $query->whereDate('cards.start_date', '<=', $endOfMonth)
+                    ->whereDate('cards.end_date', '>=', $startOfMonth);
+            })
             ->select(
                 'cards.id',
                 'cards.title',
-                'cards.end_date as start',
+                'cards.start_date as start',
+                'cards.end_date as end',
+                'cards.is_completed as is_completed',
                 'list_boards.name as list_title',
-                'boards.id as board_id'
+                'boards.id as board_id',
+                'boards.name as board_name'
             )
             ->get();
+
         $cardIds = $cards->pluck('id')->toArray();
         $labels = DB::table('card_label')
             ->join('labels', 'card_label.label_id', '=', 'labels.id')
@@ -59,7 +67,10 @@ class CalendarController extends Controller
                 'id' => $card->id,
                 'title' => $card->title,
                 'start' => $card->start,
+                'end' => $card->end,
+                'is_completed'=>$card->is_completed,
                 'list_title' => $card->list_title,
+                'board_name' => $card->board_name,
                 'board_id' => $card->board_id, // 👈 thêm dòng này
                 'labels' => $labels->get($card->id, collect())->values(),
                 'members' => $members->get($card->id, collect())->values(),
@@ -71,6 +82,7 @@ class CalendarController extends Controller
     public function update(Request $request, $boardId, $cardId)
     {
         $request->validate([
+            'start_date' => 'nullable|date',
             'end_date' => 'required|date',
             'month' => 'required|string'
         ]);
@@ -85,16 +97,16 @@ class CalendarController extends Controller
         }
 
         // Update end_date
-        $start_date = $card->start_date;
-        $end_date = Carbon::parse($request->end_date);
-        if ($end_date->lt($start_date)) {
+        $start = $request->start_date ? Carbon::parse($request->start_date) : $card->start_date;
+        $end = Carbon::parse($request->end_date);
+        if ($end->lt($start)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu đã lưu.'
             ], 422);
         }
-
-        $card->end_date = $request->end_date;
+        $card->start_date = $start;
+        $card->end_date = $end;
 
         // Giữ lại giờ và phút của reminder cũ
         if ($card->reminder) {

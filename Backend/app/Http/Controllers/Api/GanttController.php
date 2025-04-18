@@ -59,6 +59,7 @@ class GanttController extends Controller
                 'name' => $card->title ?? 'Untitled Card', // Thêm giá trị mặc định
                 'start' => $startDate,
                 'end' => $endDate,
+                'boardName' => optional($card->listBoard->board)->name ?? '', // nếu có quan hệ board -> slug
                 'progress' => round($progress, 0), // Làm tròn giá trị
                 'dependencies' => '', 
                 'custom_class' => $card->is_completed ? 'task-completed' : '',

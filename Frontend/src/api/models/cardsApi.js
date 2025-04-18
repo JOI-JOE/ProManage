@@ -263,6 +263,19 @@ export const moveCard = async ({
   });
 };
 
+export const getCardsByUserBoards = async (userId) => {
+  try {
+    const response = await authClient.get(`/user/${userId}/cards`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy các card của user từ board:", error);
+    throw error;
+  }
+};
+
+
+
+
 
 
 
