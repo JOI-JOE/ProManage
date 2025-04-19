@@ -19,10 +19,11 @@ import CreateBoard from "../../../components/CreateBoard";
 import MyStar from "../../../components/MyStar";
 import emptyBoard from "~/assets/emptyBoard.svg?react";
 import { useSelector } from "react-redux";
+import WorkspaceAvatar from "../../../components/Common/WorkspaceAvatar";
 
 
 const HomeWorkspace = ({ workspace }) => {
-  
+
   const [showCreateBoard, setShowCreateBoard] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isFormVisible, setFormVisible] = useState(false);
@@ -56,7 +57,6 @@ const HomeWorkspace = ({ workspace }) => {
     : [];  // Nếu starredBoards không phải mảng, trả về mảng rỗng
 
 
-  console.log(filteredStarredBoards);
   return (
     <Box
       sx={{
@@ -78,9 +78,11 @@ const HomeWorkspace = ({ workspace }) => {
         >
           <Avatar sx={{ bgcolor: "#5D87FF", width: "80px", height: "80px" }}>
             <span style={{ fontSize: "30px", fontWeight: "bold" }}>
-              {workspace?.display_name.charAt(0).toUpperCase()}
+              {/* {workspace?.display_name.charAt(0).toUpperCase()} */}
+              skjf
             </span>
           </Avatar>
+          {/* <WorkspaceAvatar workspace={workspace} size={100} /> */}
           <Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
               <Typography

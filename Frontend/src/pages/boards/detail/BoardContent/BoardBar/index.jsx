@@ -161,11 +161,14 @@ const BoardBar = () => {
   return (
     <Box
       sx={{
-        backgroundColor: "primary.main",
+        // ---------------------------
+        backgroundColor: "rgba(46, 46, 46, 0.3)", // 👈 Từ 0.6 → 0.8
+        backdropFilter: "blur(4px)",        // 👈 Từ 10px → 4px
+        WebkitBackdropFilter: "blur(4px)",  // Safari
+        // ---------------------------
         height: (theme) => theme.trello.boardBarHeight,
         display: "flex",
         alignItems: "center",
-        borderBottom: "2px solid #808e9b",
         justifyContent: "space-between",
         gap: 2,
         overflowX: "auto",
@@ -190,15 +193,11 @@ const BoardBar = () => {
                 backgroundColor: "#2E4053",
                 color: "#ffffff",
               },
-              "& .MuiInputBase-input": {
-                textAlign: "center",
-              },
               "& .MuiOutlinedInput-root": {
                 borderRadius: "8px",
                 backgroundColor: "#ffffff",
               },
               "& .MuiInputBase-input": { textAlign: "center" },
-              "& .MuiOutlinedInput-root": { borderRadius: "8px" },
             }}
           />
         ) : (

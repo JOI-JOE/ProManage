@@ -10,6 +10,7 @@ import PeopleIcon from '@mui/icons-material/People'
 import SettingsIcon from '@mui/icons-material/Settings'
 import AddIcon from '@mui/icons-material/Add'
 import { Link } from 'react-router-dom'
+import WorkspaceAvatar from '../../Common/WorkspaceAvatar';
 
 
 
@@ -40,9 +41,21 @@ const WorkspaceMenu = ({ workspace }) => {
       <ListItemButton key="workspace-item" onClick={toggleSettings} sx={{ display: "flex", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <ListItemIcon sx={{ color: "black" }}>
-            <Avatar sx={{ bgcolor: "#5D87FF" }}>
+            {/* <Avatar
+              sx={{
+                bgcolor: "hsl(0deg 0% 92.16%)",
+                color: "gray",
+                width: 40,  // Đặt chiều rộng
+                height: 40, // Đặt chiều cao
+                borderRadius: '8px', // Bo góc nhẹ nếu cần
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
               {workspace.display_name.charAt(0)}
-            </Avatar>
+            </Avatar> */}
+            <WorkspaceAvatar workspace={workspace} />
           </ListItemIcon>
           <ListItemText
             primary={

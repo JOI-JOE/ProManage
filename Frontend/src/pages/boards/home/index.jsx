@@ -27,7 +27,9 @@ const HomeBoard = ({ workspaces }) => {
   const starredBoards = useSelector((state) => state.starredBoards.starred);
   const listStar = starredBoards?.board_stars || [];  // Sử dụng mảng rỗng nếu không có dữ liệu
 
-  const { guestWorkspace } = useWorkspace()
+  const { guestWorkspaces } = useWorkspace()
+  console.log("gú ", guestWorkspaces)
+
 
   // const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
   // const [openClosedBoards, setOpenClosedBoards] = useState(false);
@@ -131,8 +133,8 @@ const HomeBoard = ({ workspaces }) => {
           CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
         </Typography>
         <div id="myGuestWorkspace">
-          {guestWorkspace?.length > 0 ? (
-            guestWorkspace.map((workspace) => (
+          {guestWorkspaces?.length > 0 ? (
+            guestWorkspaces.map((workspace) => (
               <div key={workspace.id} style={{ marginBottom: "20px" }}>
                 {/* Hiển thị thông tin workspace */}
                 <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
@@ -174,69 +176,3 @@ const HomeBoard = ({ workspaces }) => {
 
 export default HomeBoard;
 
-{/* Nút xem tất cả bảng đã đóng */ }
-//   <Button
-//   variant="outlined"
-//   sx={{
-//     backgroundColor: "#EDEBFC",
-//     height: "30px",
-//     width: "250px",
-//     marginTop: "40px",
-//   }}
-//   onClick={handleOpenClosedBoards}
-//   startIcon={<Archive />}
-// >
-//   Xem tất cả các bảng đã đóng
-// </Button>
-
-{/* Popup hiển thị danh sách bảng đã đóng */ }
-{/* <Dialog open={openClosedBoards} onClose={handleCloseClosedBoards} fullWidth>
-  <DialogTitle fontWeight="bold">📌 Các bảng đã đóng</DialogTitle>
-  <DialogContent>
-    {loadingClosed ? (
-      <CircularProgress />
-    ) : closedBoards?.data?.length > 0 ? (
-      <List>
-        {closedBoards?.data?.map((board) => (
-          <ListItem
-            key={board.id}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              padding: "8px 0",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                backgroundColor: "#f4f4f4",
-                borderRadius: "8px",
-              },
-            }}
-          >
-            <ListItemAvatar>
-              <Avatar src={board.thumbnail || "https://via.placeholder.com/150"} />
-            </ListItemAvatar>
-            <ListItemText
-              primary={board.name}
-              secondary={`Không gian làm việc: ${board.workspace?.display_name || "Không rõ"}`}
-            />
-            <IconButton onClick={() => handleReopenBoard(board.id)} color="primary">
-              <Restore />
-            </IconButton>
-            <IconButton onClick={() => handleDeleteBoard(board.id)} color="error">
-              <Delete />
-            </IconButton>
-          </ListItem>
-        ))}
-      </List>
-    ) : (
-      <Typography variant="body2" color="textSecondary" >
-        Không có bảng nào đã đóng!
-      </Typography>
-    )}
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={handleCloseClosedBoards} color="primary">
-      Đóng
-    </Button>
-  </DialogActions>
-</Dialog> */}

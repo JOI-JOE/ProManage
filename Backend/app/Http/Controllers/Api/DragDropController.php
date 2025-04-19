@@ -14,34 +14,6 @@ use Illuminate\Support\Facades\Cache;
 
 class DragDropController extends Controller
 {
-    // public function updatePositionList(Request $request, $listId)
-    // {
-    //     // Lấy thông tin từ request và validate
-    //     $validated = $request->validate([
-    //         'position' => 'required',  // Kiểm tra vị trí mới phải là số nguyên
-    //     ]);
-
-    //     // Tìm list cần cập nhật
-    //     $list = ListBoard::find($listId);
-
-    //     // Nếu không tìm thấy list, trả về lỗi 404
-    //     if (!$list) {
-    //         return response()->json(['error' => 'List not found'], 404);
-    //     }
-
-    //     // Cập nhật vị trí mới
-    //     $list->update(['position' => $validated['position']]);
-
-    //     // Lấy lại thông tin sau khi cập nhật
-    //     $list->refresh();
-
-    //     // Gửi sự kiện broadcast đến các client khác
-    //     broadcast(new ListUpdated($list))->toOthers();
-
-    //     // Trả về kết quả sau khi cập nhật thành công
-    //     return response()->json(['updatedList' => $list]);
-    // }
-
     public function updatePositionCard(Request $request, $cardId)
     {
         try {

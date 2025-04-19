@@ -15,8 +15,6 @@ import echoInstance from "./realtime/useRealtime";
 // };
 
 
-
-
 export const useCreateCheckListItem = () => {
     const queryClient = useQueryClient();
 

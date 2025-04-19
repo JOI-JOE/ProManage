@@ -28,9 +28,9 @@ import Email from "./Component_BoardMenu/Email";
 import Copy from "./Component_BoardMenu/Copy";
 import Print from "./Component_BoardMenu/Print";
 import ChangeBackground from "./Component_BoardMenu/ChangeBackground/ChangeBackground";
-import LabelList from "./Component_BoardMenu/Label/Label";
+import SetLabel from "./Component_BoardMenu/Label/SetLabel";
 
-const BoardMenu = React.memo(({board}) => {
+const BoardMenu = React.memo(({ board }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
@@ -78,7 +78,7 @@ const BoardMenu = React.memo(({board}) => {
 
   const settingsItems = [
     { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) },
-   
+
     {
       text: "Thay đổi hình nền",
       icon: <PaletteIcon />,
@@ -174,7 +174,8 @@ const BoardMenu = React.memo(({board}) => {
         open={backgroundOpen}
         onClose={toggleBackground(false)}
       />{" "}
-      <LabelList open={labelOpen} onClose={toggleLabel(false)} />
+
+      <SetLabel open={labelOpen} onClose={toggleLabel(false)} />
     </div>
   );
 });

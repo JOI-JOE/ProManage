@@ -3,51 +3,59 @@ import { generatePlaceholderCard } from "./formatters";
 import { calculateItemPosition } from "./calculateItemPosition";
 
 /**
- * Chuẩn hóa vị trí của tất cả các card trong danh sách.
- */
-const normalizePositions = (cards) => {
-  return cards.map((card, index) => ({
-    ...card,
-    position: calculateItemPosition(index, cards, card),
-  }));
-};
-
-/**
- * Di chuyển card trong cùng một column.
+ * Di chuyển card trong cùng một column với xử lý position số lẻ
  */
 export const moveCardWithinSameColumn = async (
-  column,
-  activeCardId,
+  overList,
   overCardId,
-  setOrderedColumns
+  activeList,
+  activeCardId,
+  activeData,
+  setOrderedLists
 ) => {
-  await Promise.resolve();
-  setOrderedColumns((prevColumns) => {
-    const nextColumns = cloneDeep(prevColumns);
-    const targetColumn = nextColumns.find((col) => col.id === column.id);
-    if (!targetColumn) return prevColumns;
+  try {
+    await Promise.resolve();
 
-    const validCards = targetColumn.cards.filter((c) => !c.FE_PlaceholderCard);
-    const activeIndex = validCards.findIndex((c_1) => c_1.id === activeCardId);
-    const overIndex = validCards.findIndex((c_2) => c_2.id === overCardId);
+    setOrderedLists((prevLists) => {
+      const nextLists = cloneDeep(prevLists);
+      const targetList = nextLists.find((list) => list.id === overList.id);
+      if (!targetList) return prevLists;
 
-    if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
-      return prevColumns;
-    }
+      const validCards = targetList.cards.filter((c) => !c.FE_PlaceholderCard);
+      const activeIndex = validCards.findIndex((c) => c.id === activeCardId);
+      const overIndex = validCards.findIndex((c) => c.id === overCardId);
 
-    const [movedCard] = validCards.splice(activeIndex, 1);
-    validCards.splice(overIndex, 0, movedCard);
+      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
+        return prevLists;
+      }
 
-    // Chuẩn hóa lại vị trí
-    targetColumn.cards = normalizePositions(validCards);
-    targetColumn.cardOrderIds = targetColumn.cards.map((c_3) => c_3.id);
+      const cardsWithoutActive = validCards.filter(
+        (c) => c.id !== activeCardId
+      );
+      const newPosition = calculateItemPosition(
+        overIndex,
+        validCards,
+        validCards.find((c) => c.id === activeCardId)
+      );
 
-    return nextColumns;
-  });
+      const updatedCards = validCards.map((card) => {
+        if (card.id === activeCardId) {
+          return { ...card, position: newPosition };
+        }
+        return card;
+      });
+
+      targetList.cards = updatedCards.sort((a, b) => a.position - b.position);
+      return nextLists;
+    });
+  } catch (error) {
+    console.error("Error in moveCardWithinSameColumn:", error);
+    throw error;
+  }
 };
 
 /**
- * Di chuyển card giữa các column khác nhau.
+ * Di chuyển card giữa các column khác nhau với xử lý position số lẻ
  */
 export const moveCardBetweenDifferentColumns = async (
   overColumn,
@@ -55,57 +63,83 @@ export const moveCardBetweenDifferentColumns = async (
   activeColumn,
   activeCardId,
   activeCardData,
-  setOrderedColumns
+  setOrderedLists
 ) => {
-  return Promise.resolve().then(() => {
-    setOrderedColumns((prevColumns) => {
-      const nextColumns = cloneDeep(prevColumns);
-      const sourceColumn = nextColumns.find(
-        (col) => col.id === activeColumn.id
-      );
-      const targetColumn = nextColumns.find((col) => col.id === overColumn.id);
-      if (!sourceColumn || !targetColumn) return prevColumns;
+  try {
+    await Promise.resolve();
 
-      // Lấy card cần di chuyển
-      const movedCard = sourceColumn.cards.find(
-        (card) => card.id === activeCardId
-      );
-      if (!movedCard) return prevColumns;
+    setOrderedLists((prevLists) => {
+      const nextLists = cloneDeep(prevLists);
+      const sourceList = nextLists.find((list) => list.id === activeColumn.id);
+      const targetList = nextLists.find((list) => list.id === overColumn.id);
 
-      // Xóa card khỏi column nguồn
-      sourceColumn.cards = sourceColumn.cards.filter(
-        (card) => card.id !== activeCardId
-      );
-      if (isEmpty(sourceColumn.cards)) {
-        sourceColumn.cards = [generatePlaceholderCard(sourceColumn)];
+      if (!sourceList || !targetList) {
+        console.log(
+          "moveCardBetweenDifferentColumns - Source or Target list not found:",
+          { sourceList, targetList }
+        );
+        return prevLists;
       }
 
-      // Xác định vị trí mới trong column đích
-      const targetCards = targetColumn.cards.filter(
-        (c) => !c.FE_PlaceholderCard
-      );
-      let newIndex = targetCards.findIndex((c) => c.id === overCardId);
+      const movedCard = sourceList.cards.find((c) => c.id === activeCardId);
+      if (!movedCard) {
+        console.log(
+          "moveCardBetweenDifferentColumns - Moved card not found:",
+          activeCardId
+        );
+        return prevLists;
+      }
+
+      // Xóa card khỏi list nguồn
+      sourceList.cards = sourceList.cards.filter((c) => c.id !== activeCardId);
+      if (isEmpty(sourceList.cards)) {
+        sourceList.cards = [generatePlaceholderCard(sourceList)];
+      }
+
+      // Xử lý list đích
+      const targetCards = targetList.cards.filter((c) => !c.FE_PlaceholderCard);
+      let newIndex = overCardId
+        ? targetCards.findIndex((c) => c.id === overCardId)
+        : targetCards.length;
       newIndex = newIndex >= 0 ? newIndex : targetCards.length;
 
-      // Cập nhật position và list_board_id dựa vào index mới
-      movedCard.position = calculateItemPosition(
+      console.log(
+        "moveCardBetweenDifferentColumns - newIndex:",
+        newIndex,
+        "targetCards:",
+        targetCards
+      );
+
+      const newPosition = calculateItemPosition(
         newIndex,
         targetCards,
         movedCard
       );
-      movedCard.list_board_id = targetColumn.id; // Sử dụng list_board_id thay vì columnId
 
-      // Chèn card vào vị trí mới
-      targetCards.splice(newIndex, 0, movedCard);
+      const newCard = {
+        ...movedCard,
+        position: newPosition,
+        list_board_id: targetList.id,
+      };
 
-      // Chuẩn hóa lại vị trí cho cả hai column
-      targetColumn.cards = normalizePositions(targetCards);
-      sourceColumn.cards = normalizePositions(sourceColumn.cards);
+      targetList.cards = targetList.cards.filter((c) => !c.FE_PlaceholderCard);
+      targetList.cards.push(newCard);
+      targetList.cards = targetList.cards.sort(
+        (a, b) => a.position - b.position
+      );
 
-      targetColumn.cardOrderIds = targetColumn.cards.map((c) => c.id);
-      sourceColumn.cardOrderIds = sourceColumn.cards.map((c) => c.id);
+      sourceList.cards = sourceList.cards.sort(
+        (a, b) => a.position - b.position
+      );
 
-      return nextColumns;
+      console.log(
+        "moveCardBetweenDifferentColumns - Updated lists:",
+        nextLists
+      );
+      return nextLists;
     });
-  });
+  } catch (error) {
+    console.error("Error in moveCardBetweenDifferentColumns:", error);
+    throw error;
+  }
 };

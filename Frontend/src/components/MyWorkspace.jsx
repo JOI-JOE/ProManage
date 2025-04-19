@@ -14,6 +14,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAltOutlined";
 import MyBoard from "./MyBoard";
 import CreateBoard from "./CreateBoard";
+import WorkspaceAvatar from "./Common/WorkspaceAvatar";
 
 const MyWorkspace = ({ workspace, boards }) => {
 
@@ -43,9 +44,8 @@ const MyWorkspace = ({ workspace, boards }) => {
             >
                 {/* Avatar & Tiêu đề */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <Avatar sx={{ bgcolor: "#5D87FF" }}>
-                        {workspace.display_name.charAt(0).toUpperCase()}
-                    </Avatar>
+                    {/* Logo của workspace */}
+                    <WorkspaceAvatar workspace={workspace} />
                     <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
                         {workspace.display_name.length > 10 ? workspace.display_name.substring(0, 20) + "..." : workspace.name}
                     </Typography>
@@ -158,17 +158,21 @@ const MyWorkspace = ({ workspace, boards }) => {
                 ))}
                 <ListItem sx={{ width: "auto", padding: 0 }}>
                     <Box
-                        onClick={handleOpenCreateBoard} // Mở popover khi nhấn
+                        onClick={handleOpenCreateBoard}
                         sx={{
-                            width: "180px",
-                            height: "100px",
-                            backgroundColor: "#EDEBFC",
-                            borderRadius: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            "&:hover": { backgroundColor: "#DCDFE4" },
+                            width: '193.88px',
+                            height: '96px',
+                            backgroundColor: '#091e420f',
+                            borderRadius: '3px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: "14px",
+                            cursor: 'pointer',
+                            '&:hover': {
+                                backgroundColor: '#DCDFE4',
+                                transition: 'background-color 85ms ease-in', // Apply transition to background-color
+                            },
                         }}
                     >
                         Tạo bảng mới
@@ -196,7 +200,7 @@ const MyWorkspace = ({ workspace, boards }) => {
 
                 <CreateBoard />
             </List> */}
-        </div>
+        </div >
     );
 };
 

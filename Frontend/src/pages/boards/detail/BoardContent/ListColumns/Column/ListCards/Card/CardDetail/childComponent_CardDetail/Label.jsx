@@ -19,7 +19,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
 import {
-  useCardLabels,
+  // useCardLabels,
   useCreateLabel,
   useDeleteLabelByBoard,
   // useLabels,
@@ -43,7 +43,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
 
   // const { data: fetchedLabels } = useLabels(boardId);
 
-  const { data: fetchedCardLabels } = useCardLabels(cardId);
+  // const { data: fetchedCardLabels } = useCardLabels(cardId);
   // Cập nhật labels khi fetchedLabels thay đổi
   const createLabelMutation = useCreateLabel();
   const updateLabelMutation = useUpdateCardLabel();
@@ -67,12 +67,12 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   //     setCheckedLabels(new Set(fetchedCardLabels.map(label => label.id))); // Đánh dấu các nhãn đã được gán vào thẻ
   //   }
   // }, [fetchedLabels, fetchedCardLabels]);
-  useEffect(() => {
-    if (fetchedLabels) setLabels(fetchedLabels);
-    if (fetchedCardLabels) {
-      setCheckedLabels(new Set(fetchedCardLabels.map((label) => label.id)));
-    }
-  }, [fetchedLabels, fetchedCardLabels]);
+  // useEffect(() => {
+  //   if (fetchedLabels) setLabels(fetchedLabels);
+  //   if (fetchedCardLabels) {
+  //     setCheckedLabels(new Set(fetchedCardLabels.map((label) => label.id)));
+  //   }
+  // }, [fetchedLabels, fetchedCardLabels]);
 
   // tạo mới
   // console.log(createLabelMutation);

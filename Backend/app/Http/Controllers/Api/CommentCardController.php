@@ -2,143 +2,341 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\CardCommentAdded;
-use App\Events\CommentDeleted;
+use App\Events\CardUpdated;
+use App\Events\CommentCreated;
 use App\Events\CommentUpdated;
+use App\Events\CommentDeleted;
 use App\Http\Controllers\Controller;
-use App\Models\Card;
-use App\Models\CommentCard;
-use App\Notifications\CardCommentNotification;
-use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class CommentCardController extends Controller
 {
-    //
     public function index($cardId)
     {
+        // Verify if the card exists
+        $cardExists = DB::table('cards')
+            ->where('id', $cardId)
+            ->exists();
 
-        $card = Card::find($cardId);
-        if (!$card) {
+        if (!$cardExists) {
             return response()->json(['message' => 'Card không tồn tại!'], 404);
         }
 
-        $comments = CommentCard::where('card_id', $cardId)
-            ->with('user:id,full_name')
-            ->orderBy('created_at', 'desc')
+        // Fetch comments with user data
+        $comments = DB::table('comment_cards')
+            ->select(
+                'comment_cards.id',
+                'comment_cards.content',
+                'comment_cards.card_id',
+                'comment_cards.user_id',
+                'comment_cards.created_at',
+                'comment_cards.updated_at',
+                'users.id as user_id',
+                'users.full_name',
+                'users.initials',
+                'users.user_name',
+                'users.image'
+            )
+            ->join('users', 'comment_cards.user_id', '=', 'users.id')
+            ->where('comment_cards.card_id', $cardId)
+            ->orderBy('comment_cards.created_at', 'desc')
             ->get();
 
-        return response()->json($comments);
+        // Transform the results to match the expected structure
+        $formattedComments = $comments->map(function ($comment) {
+            return [
+                'id' => $comment->id,
+                'content' => $comment->content,
+                'card_id' => $comment->card_id,
+                'member_id' => $comment->user_id,
+                'created_at' => $comment->created_at,
+                'updated_at' => $comment->updated_at,
+                'member' => [
+                    'id' => $comment->user_id,
+                    'full_name' => $comment->full_name,
+                    'user_name' => $comment->user_name,
+                    'avatar' => $comment->image,
+                    'initials' => $comment->initials,
+                ],
+            ];
+        });
+
+        return response()->json($formattedComments);
     }
-    public function addCommentIntoCard(Request $request)
+
+    public function store(Request $request, $cardId)
     {
-        $rules = [
-            'card_id' => 'required|exists:cards,id',
-            'content' => 'required|string',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Dữ liệu không hợp lệ!',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $card = Card::find($request->card_id);
-        if (!$card) {
-            return response()->json(['message' => 'Card không tồn tại!'], 404);
-        }
-
-        $comment = CommentCard::create([
-            'card_id' => $request->card_id,
-            'user_id' => Auth::id(), // Sử dụng Auth::id() thay vì request user_id
-            'content' => $request->content,
-        ]);
-
-
-        // $comment = CommentCard::with('user')->find($newComment->id);
-        broadcast(new CardCommentAdded($comment))->toOthers();
-
-        $users = $card->members; // Lấy danh sách thành viên liên quan trong card
-
-        foreach ($users as $user) {
-            // Không gửi cho người vừa comment
-            if ($user->id !== Auth::id()) {
-                $user->notify(new CardCommentNotification($comment));
+        try {
+            // Verify if the card exists
+            $card = \App\Models\Card::find($cardId);
+            if (!$card) {
+                return response()->json(['message' => 'Card không tồn tại!'], 404);
             }
-        }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Bình luận đã được thêm!',
-            'comment' => $comment
-        ], 201);
+            // Check if user is authenticated
+            if (!Auth::check()) {
+                return response()->json(['message' => 'Bạn cần đăng nhập để tạo comment!'], 401);
+            }
+
+            // Validate request data
+            $validated = $request->validate([
+                'content' => 'required|string|max:1000',
+            ]);
+
+            // Create new comment
+            $commentId = DB::table('comment_cards')
+                ->insertGetId([
+                    'content' => $validated['content'],
+                    'card_id' => $cardId,
+                    'user_id' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            // Fetch the created comment with user data
+            $newComment = DB::table('comment_cards')
+                ->select(
+                    'comment_cards.id',
+                    'comment_cards.content',
+                    'comment_cards.card_id',
+                    'comment_cards.user_id',
+                    'comment_cards.created_at',
+                    'comment_cards.updated_at',
+                    'users.id as user_id',
+                    'users.full_name',
+                    'users.initials',
+                    'users.user_name',
+                    'users.image'
+                )
+                ->join('users', 'comment_cards.user_id', '=', 'users.id')
+                ->where('comment_cards.id', $commentId)
+                ->first();
+
+            // Check if comment was retrieved successfully
+            if (!$newComment) {
+                throw new \Exception('Không thể lấy thông tin comment vừa tạo!');
+            }
+
+            // Format the response
+            $formattedComment = [
+                'id' => $newComment->id,
+                'content' => $newComment->content,
+                'card_id' => $newComment->card_id,
+                'member_id' => $newComment->user_id,
+                'created_at' => $newComment->created_at,
+                'updated_at' => $newComment->updated_at,
+                'member' => [
+                    'id' => $newComment->user_id,
+                    'full_name' => $newComment->full_name,
+                    'user_name' => $newComment->user_name,
+                    'avatar' => $newComment->image,
+                    'initials' => $newComment->initials,
+                ],
+            ];
+
+            // Ghi log khi tạo comment
+            $user = auth()->user();
+            $userName = $user ? $user->full_name : 'ai đó';
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('created_comment')
+                ->withProperties([
+                    'comment_id' => $newComment->id,
+                    'content' => $newComment->content,
+                    'card_id' => $cardId,
+                ])
+                ->log("{$userName} đã thêm bình luận vào card '{$card->title}'.");
+
+            // Broadcast to others
+            broadcast(new CommentCreated($formattedComment, $card, $user))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
+
+            return response()->json($formattedComment, 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Dữ liệu không hợp lệ!',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'message' => 'Lỗi cơ sở dữ liệu khi tạo comment!',
+                'error' => env('APP_DEBUG', false) ? $e->getMessage() : null,
+            ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi tạo comment!',
+                'error' => env('APP_DEBUG', false) ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
-    // Xóa bình luận (chỉ cho phép người tạo bình luận hoặc admin xóa)
-    public function destroy($id)
+    public function update(Request $request, $commentId)
     {
-        $comment = CommentCard::find($id);
-        if (!$comment) {
-            return response()->json(['message' => 'Bình luận không tồn tại'], 404);
+        try {
+            // Verify if the comment exists and fetch card
+            $comment = DB::table('comment_cards')
+                ->where('id', $commentId)
+                ->first();
+
+            if (!$comment) {
+                return response()->json(['message' => 'Comment không tồn tại!'], 404);
+            }
+
+            $card = \App\Models\Card::find($comment->card_id);
+            if (!$card) {
+                return response()->json(['message' => 'Card không tồn tại!'], 404);
+            }
+
+            // Check if user is authenticated
+            if (!Auth::check()) {
+                return response()->json(['message' => 'Bạn cần đăng nhập để chỉnh sửa comment!'], 401);
+            }
+
+            // Check if the authenticated user owns the comment
+            if ($comment->user_id !== Auth::id()) {
+                return response()->json(['message' => 'Bạn không có quyền chỉnh sửa comment này!'], 403);
+            }
+
+            // Validate request data
+            $validated = $request->validate([
+                'content' => 'required|string|max:1000',
+            ]);
+
+            // Ghi log trước khi cập nhật
+            $user = auth()->user();
+            $userName = $user ? $user->full_name : 'ai đó';
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('updated_comment')
+                ->withProperties([
+                    'comment_id' => $commentId,
+                    'old_content' => $comment->content,
+                    'new_content' => $validated['content'],
+                    'card_id' => $card->id,
+                ])
+                ->log("{$userName} đã chỉnh sửa bình luận trong card '{$card->title}'.");
+
+            // Update the comment
+            DB::table('comment_cards')
+                ->where('id', $commentId)
+                ->update([
+                    'content' => $validated['content'],
+                    'updated_at' => now(),
+                ]);
+
+            // Fetch the updated comment with user data
+            $updatedComment = DB::table('comment_cards')
+                ->select(
+                    'comment_cards.id',
+                    'comment_cards.content',
+                    'comment_cards.card_id',
+                    'comment_cards.user_id',
+                    'comment_cards.created_at',
+                    'comment_cards.updated_at',
+                    'users.id as user_id',
+                    'users.full_name',
+                    'users.initials',
+                    'users.user_name',
+                    'users.image'
+                )
+                ->join('users', 'comment_cards.user_id', '=', 'users.id')
+                ->where('comment_cards.id', $commentId)
+                ->first();
+
+            // Format the response
+            $formattedComment = [
+                'id' => $updatedComment->id,
+                'content' => $updatedComment->content,
+                'card_id' => $updatedComment->card_id,
+                'member_id' => $updatedComment->user_id,
+                'created_at' => $updatedComment->created_at,
+                'updated_at' => $updatedComment->updated_at,
+                'member' => [
+                    'id' => $updatedComment->user_id,
+                    'full_name' => $updatedComment->full_name,
+                    'user_name' => $updatedComment->user_name,
+                    'avatar' => $updatedComment->image,
+                    'initials' => $updatedComment->initials,
+                ],
+            ];
+
+            // Broadcast to others
+            broadcast(new CommentUpdated($formattedComment, $card, $user))->toOthers();
+
+            return response()->json($formattedComment);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Dữ liệu không hợp lệ!',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi cập nhật comment!',
+                'error' => env('APP_DEBUG', false) ? $e->getMessage() : null,
+            ], 500);
         }
-
-        if (Auth::id() !== $comment->user_id && Auth::user()->role !== 'admin') {
-            return response()->json(['message' => 'Bạn không có quyền xóa bình luận này'], 403);
-        }
-
-        // Xóa notification liên quan đến comment
-
-
-        $cardId = $comment->card_id; // Lưu lại cardId trước khi xóa
-        $commentId = $comment->id;
-
-        // Xóa notification liên quan đến comment
-        \DB::table('notifications')
-            ->whereJsonContains('data->comment_id', $commentId)
-            ->delete();
-            
-        $comment->delete();
-
-        broadcast(new CommentDeleted($commentId, $cardId))->toOthers();
-        return response()->json(['message' => 'Bình luận đã bị xóa']);
     }
 
-    public function update(Request $request, $id)
+    public function delete($commentId)
     {
-        $comment = CommentCard::find($id);
+        try {
+            // Verify if the comment exists and fetch card
+            $comment = DB::table('comment_cards')
+                ->where('id', $commentId)
+                ->first();
 
-        // Kiểm tra nếu bình luận không tồn tại
-        if (!$comment) {
-            return response()->json(['message' => 'Bình luận không tồn tại'], 404);
+            if (!$comment) {
+                return response()->json(['message' => 'Comment không tồn tại!'], 404);
+            }
+
+            $card = \App\Models\Card::find($comment->card_id);
+            if (!$card) {
+                return response()->json(['message' => 'Card không tồn tại!'], 404);
+            }
+
+            // Check if user is authenticated
+            if (!Auth::check()) {
+                return response()->json(['message' => 'Bạn cần đăng nhập để xóa comment!'], 401);
+            }
+
+            // Check if the authenticated user owns the comment
+            if ($comment->user_id !== Auth::id()) {
+                return response()->json(['message' => 'Bạn không có quyền xóa comment này!'], 403);
+            }
+
+            // Ghi log trước khi xóa
+            $user = auth()->user();
+            $userName = $user ? $user->full_name : 'ai đó';
+            activity()
+                ->causedBy($user)
+                ->performedOn($card)
+                ->event('deleted_comment')
+                ->withProperties([
+                    'comment_id' => $commentId,
+                    'content' => $comment->content,
+                    'card_id' => $card->id,
+                ])
+                ->log("{$userName} đã xóa bình luận khỏi card '{$card->title}'.");
+
+            // Broadcast to others
+            broadcast(new CommentDeleted($commentId, $card->id, $user ? $user->id : null))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
+
+            // Delete the comment
+            DB::table('comment_cards')
+                ->where('id', $commentId)
+                ->delete();
+
+            return response()->json(['message' => 'Comment đã được xóa thành công!'], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi xóa comment!',
+                'error' => env('APP_DEBUG', false) ? $e->getMessage() : null,
+            ], 500);
         }
-
-        // Kiểm tra quyền sửa (chỉ cho phép chủ sở hữu hoặc admin chỉnh sửa)
-        if (Auth::id() !== $comment->user_id && Auth::user()->role !== 'admin') {
-            return response()->json(['message' => 'Bạn không có quyền chỉnh sửa bình luận này'], 403);
-        }
-
-        // Validate dữ liệu
-        $request->validate([
-            'content' => 'required|string|max:500',
-        ]);
-
-        // Cập nhật nội dung bình luận
-        $comment->update([
-            'content' => $request->content,
-        ]);
-
-        broadcast(new CommentUpdated($comment))->toOthers();
-
-        return response()->json([
-            'message' => 'Bình luận đã được cập nhật!',
-            'comment' => $comment
-        ], 200);
     }
 }

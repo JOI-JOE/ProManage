@@ -1,33 +1,11 @@
+import { data } from "react-router-dom";
 import authClient from "../authClient";
 // Lấy danh sách card theo list
-export const getCardByList = async (listId) => {
-  const response = await authClient.get(`/cards/${listId}/getCardsByList`);
-  return response.data.data;
-};
 
-// Tạo card mới
-export const createCard = async (data) => {
-  const response = await authClient.post("/cards", data);
-  return response.data;
-};
-
-export const updatePositionCard = async ({ cardId, listId, position }) => {
+// Fetch dữ liệu card -------------------------------------------------------
+export const fetchCardById = async (cardId) => {
   try {
-    const response = await authClient.put(`cards/${cardId}`, {
-      listId: listId, // ID của list cần cập nhật
-      position: position, // Vị trí bạn muốn cập nhật
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error in updateCardPositions:", error);
-    throw new Error("Failed to update card positions");
-  }
-};
-
-export const getCardById = async (cardId) => {
-  try {
-    const response = await authClient.get(`/cards/${cardId}/show`);
-    // console.log("API response:", response); // Kiểm tra toàn bộ response
+    const response = await authClient.get(`/card/${cardId}`);
     if (response.data) {
       return response.data;
     } else {
@@ -38,6 +16,206 @@ export const getCardById = async (cardId) => {
     console.error("Error fetching data:", error);
     throw error;
   }
+};
+// - checklists
+export const fetchCheckLists = async (cardId) => {
+  const { data } = await authClient.get(`/card/${cardId}/checklists`);
+  return data;
+};
+// - attachments
+export const fetchAttachments = async (cardId) => {
+  const response = await authClient.get(`/card/${cardId}/attachments`);
+  return response.data;
+};
+// - comments
+export const fetchComments = async (cardId) => {
+  const response = await authClient.get(`/card/${cardId}/comments`);
+  return response.data;
+};
+// - activity
+export const fetchActivities = async (cardId) => {
+  const response = await authClient.get(`/activity/cards/${cardId}`);
+  return response.data;
+};
+// function create ----------------------------------------------------------
+// Copy card
+export const copyCard = async ({ cardId, data }) => {
+  const response = await authClient.post(`/card/${cardId}/copy`, data);
+  return response.data;
+};
+// Move a card
+export const moveCard = async ({ cardId, data }) => {
+  const response = await authClient.post(`/card/${cardId}/move`, data);
+  return response.data;
+};
+// - checklist
+export const postCheckLists = async ({ cardId, data }) => {
+  const response = await authClient.post(`/card/${cardId}/checklists`, data);
+  return response.data;
+};
+// - checklistitem
+//----
+export const postChecklistItem = async ({ checklistId, data }) => {
+  const response = await authClient.post(
+    `/checklist/${checklistId}/items`,
+    data
+  );
+  return response.data;
+};
+// - attachment - file
+export const postAttachmentFile = async ({ cardId, file }) => {
+  try {
+    const response = await authClient.post(
+      `/card/${cardId}/attachments`,
+      file,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data", // Explicitly set the content type for file uploads
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tải lên file:", error);
+    throw error;
+  }
+};
+// - attachment - link
+export const postAttachmentLink = async ({ cardId, link }) => {
+  try {
+    const response = await authClient.post(
+      `/card/${cardId}/attachments`,
+      link
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi thêm link:", error);
+    throw error;
+  }
+};
+// comment
+export const postComment = async ({ cardId, content }) => {
+  try {
+    const response = await authClient.post(`/card/${cardId}/comments`, {
+      content,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi thêm bình luận:", error);
+    throw error;
+  }
+};
+
+/// function update --------------------------------------------------------
+// ChecklistItem
+export const updateCheckListItem = async (checklistItemId, data) => {
+  const response = await authClient.put(
+    `/checklist/${checklistItemId}/items`,
+    data
+  );
+  return response.data;
+};
+// Checklist
+export const updateCheckList = async (checklistId, data) => {
+  const response = await authClient.put(`card/checklist/${checklistId}`, data);
+  return response.data;
+};
+// Card
+export const updateCardById = async (cardId, data) => {
+  const response = await authClient.put(`/card/${cardId}`, data);
+  return response.data;
+};
+// Member card
+export const joinCard = async (cardId) => {
+  const { data } = await authClient.post(`/card/${cardId}/idMember`);
+  return data;
+};
+// Member card
+export const putMemberToCard = async (cardId, memberId) => {
+  const { data } = await authClient.post(
+    `/card/${cardId}/idMember/${memberId}`
+  );
+  return data;
+};
+// Attachment
+export const putAttachment = async (attachmentId, data) => {
+  const response = await authClient.put(
+    `/card/attachment/${attachmentId}`,
+    data
+  );
+  return response.data; // Return only the data for consistency
+};
+// Comment
+export const putComment = async (commentId, content) => {
+  const response = await authClient.put(`card/comment/${commentId}`, {
+    content: content,
+  });
+  return response.data;
+};
+
+//fucntion delete ---------------------------------------------------------------
+// Bỏ ra
+export const removeMemberFromCard = async (cardId, memberId) => {
+  const { data } = await authClient.delete(
+    `/card/${cardId}/idMember/${memberId}`
+  );
+  return data;
+};
+// Attachment
+export const removeAttachment = async (attachmentId) => {
+  const response = await authClient.delete(
+    `/card/attachment/${attachmentId}`,
+    data
+  );
+  return response.data;
+};
+// checklist
+export const removeCheckListFromCard = async (checklistId) => {
+  const { data } = await authClient.delete(`card/checklist/${checklistId}`);
+  return data;
+};
+// checklistitem
+export const removeCheckListItem = async (checklistItemId) => {
+  const response = await authClient.delete(
+    `/checklist/${checklistItemId}/items`,
+    data
+  );
+  return response.data;
+};
+// Comment
+export const removeComment = async (commentId) => {
+  const response = await authClient.delete(`card/comment/${commentId}`);
+  return response.data;
+};
+// card
+export const removeCard = async (cardId) => {
+  const response = await authClient.delete(`card/${cardId}`);
+  return response.data;
+};
+/// ---------------------------------------------------------------
+
+// Tạo card mới
+export const createCard = async (data) => {
+  const response = await authClient.post("/card", data);
+  return response.data;
+};
+
+export const updatePositionCard = async ({ cardId, listId, position }) => {
+  try {
+    const response = await authClient.put(`card/${cardId}/drag`, {
+      listId: listId, // ID của list cần cập nhật
+      position: position, // Vị trí bạn muốn cập nhật
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in updateCardPositions:", error);
+    throw new Error("Failed to update card positions");
+  }
+};
+
+export const getCardByList = async (listId) => {
+  const response = await authClient.get(`/cards/${listId}/getCardsByList`);
+  return response.data.data;
 };
 
 export const updateDescription = async (cardId, description) => {

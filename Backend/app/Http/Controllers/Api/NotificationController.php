@@ -11,7 +11,7 @@ class NotificationController extends Controller
     public function getNotifications(Request $request)
     {
         $user = $request->user(); // Người dùng hiện tại qua Sanctum
-    
+
         // Lấy tất cả thông báo
         $notifications = $user->notifications()
             ->orderBy('created_at', 'desc') // Sắp xếp mới nhất trước
@@ -25,7 +25,7 @@ class NotificationController extends Controller
                     'created_at' => $notification->created_at,
                 ];
             });
-    
+
         return response()->json([
             'success' => true,
             'data' => $notifications,
@@ -38,6 +38,23 @@ class NotificationController extends Controller
     //     if ($notification) {
     //         $notification->update(['read_at' => now()]);
     //     }
+    //     return response()->json(['message' => 'Notification marked as read']);
+    // }
+    // public function index(Request $request)
+    // {
+    //     $user = auth()->user();
+    //     $notifications = $user->unreadNotifications()->get();
+
+    //     return response()->json([
+    //         'notifications' => $notifications,
+    //     ]);
+    // }
+
+    // public function markAsRead(Request $request, $id)
+    // {
+    //     $notification = auth()->user()->notifications()->findOrFail($id);
+    //     $notification->markAsRead();
+
     //     return response()->json(['message' => 'Notification marked as read']);
     // }
 }

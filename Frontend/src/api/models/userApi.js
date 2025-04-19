@@ -26,7 +26,6 @@ export const loginUser = async (credentials) => {
     throw error;
   }
 };
-
 /**
  * Hàm này chịu trách nhiệm đăng xuất người dùng.
  * @returns {Promise<object>} - Promise xác nhận đăng xuất thành công.

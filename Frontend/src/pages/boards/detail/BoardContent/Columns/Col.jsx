@@ -1,26 +1,31 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Box, TextField, Tooltip, Typography } from "@mui/material";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+    Alert,
+    Box,
+    TextField,
+    Tooltip,
+    Typography,
+    Button,
+    Snackbar
+} from "@mui/material";
 import { styled } from "@mui/material/styles";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { mapOrder } from "../../../../../../utils/sort";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "react-toastify";
-import CopyColumn from "./Col_option/CoppyColumn";
 import ConfirmDeleteDialog from "./Col_option/DeleteColumn";
 import ArchiveColumnDialog from "./Col_option/Archive";
 import Card_list from "../Cards/Card_list";
 import Card_new from "../Cards/Card_new";
-import { v4 as uuidv4 } from "uuid";
 import { useCreateCard } from "../../../../../hooks/useCard";
-import { useUpdateListName } from "../../../../../hooks/useList";
+import { useUpdateListClosed, useUpdateListName } from "../../../../../hooks/useList";
+import { optimisticIdManager } from "../../../../../../utils/optimisticIdManager";
+import { useParams } from "react-router-dom";
+import { useBoard } from "../../../../../contexts/BoardContext";
 
 const StyledMenu = styled((props) => (
     <Menu
@@ -60,23 +65,34 @@ const StyledMenu = styled((props) => (
     },
 }));
 
-const Col = ({ column }) => {
-
+const Col = ({ column, onArchive }) => {
+    const { boardId } = useParams();
     const [openCopyDialog, setOpenCopyDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
     const [openCard, setOpenCard] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
+    // Thông báo
+    const [showAlert, setShowAlert] = useState(false);
+
+    // Lưu trữ thông tin cột đã lưu trữ
+    // const archivedColumnRef = useRef(null);
+    // const [archivedColumn, setArchivedColumn] = useState(null);
 
     // Api của list
     const [tempName, setTempName] = useState(column?.name);
     const [isEditing, setIsEditing] = useState(false);
     const { mutate: updateList } = useUpdateListName();
+    const { refetchListData } = useBoard();
+
+    // Api lưu trữ
+    const { mutate: closeList } = useUpdateListClosed();
 
     /// Api của card
-    const createCardMutation = useCreateCard();
+    const createCardMutation = useCreateCard(boardId);
     const [cardName, setCardName] = useState("");
     const [localCards, setLocalCards] = useState(column?.cards || []);
+
 
     useEffect(() => {
         setLocalCards(column?.cards || []); // Chỉ theo dõi sự thay đổi của cards
@@ -86,9 +102,12 @@ const Col = ({ column }) => {
     const handleAddCard = async (cardName) => {
         if (!cardName.trim()) return;
 
-        const tempId = `temp-${uuidv4()}`;
+        const typename = "card";
+        const optimisticId = optimisticIdManager.generateOptimisticId(typename);
+        const tempId = optimisticId;
+
         const newCard = {
-            id: tempId, // ID tạm thời
+            id: tempId, // ID tạm
             title: cardName,
             columnId: column.id,
             position: localCards.length
@@ -96,16 +115,22 @@ const Col = ({ column }) => {
                 : 1000,
         };
 
-        setLocalCards((prev = []) => [...prev, newCard]); // 🔥 Đảm bảo prev luôn là mảng
+        // Thêm card tạm vào UI ngay lập tức với ID tạm
+        setLocalCards((prev = []) => [...prev, newCard]);
         setCardName("");
-
         try {
+            // Delay nhẹ để tránh flicker trước khi gọi API
             await createCardMutation.mutateAsync(newCard);
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            // Refetch list data (cập nhật danh sách) mà không gây flicker
+            await refetchListData();
         } catch (error) {
             console.error("Lỗi khi thêm thẻ:", error);
-            setLocalCards((prev = []) => prev.filter((card) => card.id !== tempId)); // Rollback nếu lỗi
+            // Rollback nếu có lỗi trong quá trình tạo thẻ
+            setLocalCards((prev = []) => prev.filter((card) => card.id !== tempId));
         }
     };
+    // ---------------------------------------------------------------------------------------------
 
     const {
         attributes,
@@ -154,15 +179,22 @@ const Col = ({ column }) => {
     };
 
     const handleArchiveConfirm = async () => {
-        try {
-            await updateClosed(column.id);
-            toast.success(`Cột "${column.name}" đã được lưu trữ.`);
-        } catch (error) {
-            toast.error("Có lỗi xảy ra khi lưu trữ cột.");
-        }
         setOpenArchiveDialog(false);
-    };
+        try {
+            // Gọi API để lưu trữ cột
+            onArchive(column.id);
+            setShowAlert(true);
+            await closeList({
+                listId: column.id,
+                closed: 1,
+            });
 
+        } catch (error) {
+            console.error("Lỗi khi lưu trữ:", error);
+            toast.error("Có lỗi xảy ra khi lưu trữ cột.");
+            setShowAlert(false); // Tắt alert khi có lỗi
+        }
+    };
     //======================================== Sửa tiêu đề========================================
     useEffect(() => {
         if (column?.name !== tempName) {
@@ -231,8 +263,8 @@ const Col = ({ column }) => {
             <Box
                 {...listeners}
                 sx={{
-                    minWidth: "245px",
-                    maxWidth: "245px",
+                    minWidth: "272px",
+                    maxWidth: "272px",
                     backgroundColor: "#dcdde1",
                     ml: 2,
                     borderRadius: "6px",
@@ -243,7 +275,7 @@ const Col = ({ column }) => {
                 <Box
                     sx={{
                         height: (theme) => theme.trello.columnFooterHeight,
-                        p: 2,
+                        p: 1,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
@@ -259,7 +291,6 @@ const Col = ({ column }) => {
                             variant="outlined"
                             size="bold"
                             sx={{
-                                height: "10px",
                                 width: "200px",
                                 "& .MuiInputBase-input": {
                                     fontSize: "0.765rem",
@@ -267,7 +298,7 @@ const Col = ({ column }) => {
                                 },
                                 "& .MuiInputBase-input": {
                                     fontSize: "0.765rem",
-                                    padding: "10px", // Căn chỉnh padding để text không bị lệch
+                                    padding: "5px", // Căn chỉnh padding để text không bị lệch
                                 },
                                 "& .MuiOutlinedInput-root": {
                                     "& fieldset": {
@@ -309,10 +340,13 @@ const Col = ({ column }) => {
                         </Tooltip>
 
                         <StyledMenu
-                            id="demo-customized-menu-workspace"
+                            id="column-actions-menu"
                             MenuListProps={{
-                                "aria-labelledby": "basic-column-dropdown",
+                                "aria-labelledby": "column-actions-button",
                             }}
+                            anchorEl={anchorEl}
+                            open={open}
+                            onClose={handleClose}
                             anchorOrigin={{
                                 vertical: "bottom",
                                 horizontal: "right",
@@ -324,74 +358,82 @@ const Col = ({ column }) => {
                             sx={{
                                 mt: 1,
                                 "& .MuiPaper-root": {
-                                    minWidth: "220px",
+                                    minWidth: "240px",
                                     boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
                                     borderRadius: "8px",
+                                    padding: "4px 0",
                                 }
                             }}
-                            anchorEl={anchorEl}
-                            open={open}
-                            onClose={handleClose}
-                            {...(!open && { inert: "true" })}
                         >
-                            <Box sx={{ p: 0.5 }}>
-                                {/* Phần "Thêm thê" */}
+                            {/* Nhóm thao tác chính */}
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <AddIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Thêm thẻ
+                            </MenuItem>
 
-                                <MenuItem
-                                    onClick={handleClose}
-                                    disableRipple
-                                    sx={{ fontSize: "0.85rem" }}
-                                >
-                                    Thêm thẻ
-                                </MenuItem>
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <ContentCopyIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Sao chép danh sách
+                            </MenuItem>
 
-                                <MenuItem
-                                    onClick={handleClose}
-                                    disableRipple
-                                    sx={{ fontSize: "0.85rem" }}
-                                >
-                                    Di chuyển danh sách
-                                </MenuItem>
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <DriveFileMoveIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Di chuyển danh sách
+                            </MenuItem>
 
-                                <MenuItem
-                                    onClick={handleClose}
-                                    disableRipple
-                                    sx={{ fontSize: "0.85rem" }}
-                                >
-                                    Di chuyển tất cả thẻ trong danh sách này
-                                </MenuItem>
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <ListAltIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Di chuyển tất cả thẻ trong danh sách này
+                            </MenuItem>
 
-                                <MenuItem
-                                    onClick={handleClose}
-                                    disableRipple
-                                    sx={{ fontSize: "0.85rem" }}
-                                >
-                                    Sắp xếp theo...
-                                </MenuItem>
+                            <MenuItem sx={{ fontSize: "14px", px: 2, py: 1 }}>
+                                {/* <ListItemIcon>
+                                    <SortIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Sắp xếp theo...
+                            </MenuItem>
 
-                                <Divider />
+                            <Divider sx={{ my: 0.5 }} />
 
-                                <MenuItem
-                                    onClick={handleArchiveClick}
-                                    disableRipple
-                                    sx={{ fontSize: "0.85rem", py: 1 }}
-                                >
-                                    Lưu trữ danh sách này
-                                </MenuItem>
+                            {/* Nhóm lưu trữ */}
+                            <MenuItem
+                                onClick={handleArchiveClick}
+                                sx={{
+                                    fontSize: "14px",
+                                    px: 2,
+                                    py: 1,
+                                }}
+                            >
+                                Lưu trữ danh sách này
+                            </MenuItem>
 
-                                <MenuItem
-                                    onClick={handleDeleteClick}
-                                    disableRipple
-                                    sx={{ fontSize: "0.85rem", px: 2, py: 1 }}
-                                >
-                                    Lưu trữ tất cả các thẻ trong danh sách này
-                                </MenuItem>
-                            </Box>
+                            <MenuItem
+                                // onClick={handleArchiveAllCards}
+                                sx={{
+                                    fontSize: "14px",
+                                    px: 2,
+                                    py: 1,
+                                }}
+                            >
+                                {/* <ListItemIcon sx={{ color: "inherit" }}>
+                                    <ArchiveIcon fontSize="small" />
+                                </ListItemIcon> */}
+                                Lưu trữ tất cả các thẻ trong danh sách này
+                            </MenuItem>
                         </StyledMenu>
                     </Box>
                 </Box>
 
                 {/* Column List Card */}
+
                 <Card_list cards={orderedCards} />
 
                 {/* Column Footer */}
@@ -417,6 +459,8 @@ const Col = ({ column }) => {
                 onConfirm={handleDeleteConfirm}
             />
         </div >
+
+
     );
 };
 
