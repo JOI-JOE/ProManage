@@ -13,6 +13,8 @@ import {
     Select,
     MenuItem,
     FormControl,
+    Alert,
+    Collapse
 } from "@mui/material";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -50,6 +52,11 @@ const DateItem = ({ open, onClose, type, item, onSave }) => {
     const [isEndDateChecked, setIsEndDateChecked] = useState(true);
     const [reminder, setReminder] = useState("Không có");
     const [selectionMode, setSelectionMode] = useState("end");
+    const [alert, setAlert] = useState({
+        open: false,
+        message: "",
+        severity: "error"
+    });
 
     useEffect(() => {
         if (!item) {
@@ -110,16 +117,16 @@ const DateItem = ({ open, onClose, type, item, onSave }) => {
             setEndDate(newValue);
         } else if (type === "card") {
             if (selectionMode === "start") {
-                if (isEndDateChecked && endDate && newValue.isAfter(endDate)) {
-                    setEndDate(newValue.add(1, "day"));
-                }
                 setStartDate(newValue);
                 if (isStartDateChecked && isEndDateChecked) {
                     setSelectionMode("end");
                 }
             } else {
-                if (isStartDateChecked && startDate && newValue.isBefore(startDate)) {
-                    setStartDate(newValue.subtract(1, "day"));
+                // Removed the check preventing end date from being the same as start date
+                // Now we only prevent end date from being before start date
+                if (isStartDateChecked && startDate && newValue.isBefore(startDate, 'day')) {
+                    showAlert("Ngày kết thúc không được nhỏ hơn ngày bắt đầu");
+                    return;
                 }
                 setEndDate(newValue);
                 if (isStartDateChecked && isEndDateChecked) {
@@ -134,24 +141,43 @@ const DateItem = ({ open, onClose, type, item, onSave }) => {
         setEndTime(roundedTime);
     };
 
+    const showAlert = (message) => {
+        setAlert({
+            open: true,
+            message: message,
+            severity: "error"
+        });
+    };
+
+    const handleCloseAlert = () => {
+        setAlert({ ...alert, open: false });
+    };
+
     const handleSave = (e) => {
         e.preventDefault();
 
         if (isEndDateChecked && (!endDate || !endTime)) {
-            console.error("Ngày kết thúc hoặc thời gian chưa được chọn!");
+            showAlert("Ngày kết thúc hoặc thời gian chưa được chọn!");
             return;
         }
 
-        if (type === "card" && isStartDateChecked && startDate && endDate && startDate.isAfter(endDate)) {
-            console.error("Ngày bắt đầu không thể lớn hơn ngày kết thúc!");
-            return;
+        if (type === "card" && isStartDateChecked && startDate && endDate) {
+            // Only check if end date is before start date
+            if (endDate.isBefore(startDate, 'day')) {
+                showAlert("Ngày kết thúc không thể nhỏ hơn ngày bắt đầu!");
+                return;
+            }
+            // No check preventing same date for start and end
         }
 
         const payload = {};
 
         if (isEndDateChecked && endDate && endTime) {
             const endDateTime = dayjs(`${endDate.format("YYYY-MM-DD")} ${endTime.format("HH:mm")}`);
-            if (!endDateTime.isValid()) return;
+            if (!endDateTime.isValid()) {
+                showAlert("Thời gian không hợp lệ!");
+                return;
+            }
 
             const reminderMinutes = {
                 "Không có": null,
@@ -206,6 +232,15 @@ const DateItem = ({ open, onClose, type, item, onSave }) => {
             endDate &&
             day.isSame(endDate, "day");
 
+        const isSameDay =
+            type === "card" &&
+            isStartDateChecked &&
+            isEndDateChecked &&
+            startDate &&
+            endDate &&
+            day.isSame(startDate, "day") &&
+            day.isSame(endDate, "day");
+
         return (
             <PickersDay
                 {...pickersDayProps}
@@ -215,17 +250,23 @@ const DateItem = ({ open, onClose, type, item, onSave }) => {
                         borderRadius: 0,
                         "&:hover": { backgroundColor: "#bbdefb" },
                     }),
-                    ...(isStartDay && {
+                    ...(isStartDay && !isSameDay && {
                         backgroundColor: "#00C4B4",
                         color: "white",
                         borderRadius: "50%",
                         "&:hover": { backgroundColor: "#00b3a3" },
                     }),
-                    ...(isEndDay && {
+                    ...(isEndDay && !isSameDay && {
                         backgroundColor: "#00C4B4",
                         color: "white",
                         borderRadius: "50%",
                         "&:hover": { backgroundColor: "#00b3a3" },
+                    }),
+                    ...(isSameDay && {
+                        backgroundColor: "#7B68EE",
+                        color: "white",
+                        borderRadius: "50%",
+                        "&:hover": { backgroundColor: "#6A5ACD" },
                     }),
                 }}
             />
@@ -246,7 +287,6 @@ const DateItem = ({ open, onClose, type, item, onSave }) => {
                     boxShadow: "0 8px 16px rgba(0,0,0,0.1)"
                 },
                 "& .MuiBackdrop-root": {
-                    // Đảm bảo backdrop không có aria-hidden
                     backdropFilter: "blur(2px)",
                     backgroundColor: "rgba(0, 0, 0, 0.5)"
                 }
@@ -274,6 +314,17 @@ const DateItem = ({ open, onClose, type, item, onSave }) => {
                     <CloseIcon fontSize="small" />
                 </IconButton>
             </DialogTitle>
+
+            {/* Alert section inside the dialog */}
+            <Collapse in={alert.open}>
+                <Alert
+                    severity={alert.severity}
+                    onClose={handleCloseAlert}
+                    sx={{ mx: 2, mt: 1 }}
+                >
+                    {alert.message}
+                </Alert>
+            </Collapse>
 
             <DialogContent
                 id="date-dialog-description"

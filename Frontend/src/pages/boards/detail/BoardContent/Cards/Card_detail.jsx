@@ -27,8 +27,6 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { PlusIcon } from "@heroicons/react/24/solid";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PersonRemoveAlt1Icon from '@mui/icons-material/PersonRemoveAlt1';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import RemoveIcon from '@mui/icons-material/Remove';
 import { Delete } from "@mui/icons-material";
 import dayjs from 'dayjs';
 import ChecklistGroup from "./ChildComponent/Checklist/ChecklistGroup.jsx";
@@ -54,7 +52,7 @@ dayjs.extend(relativeTime);
 
 const Card_detail = ({ cardId, closeCard, openCard }) => {
     const { user } = useMe();
-    const { orderedLists, members, refetchorderedLists, listLoading } = useBoard();
+    const { orderedLists, members, refetchorderedLists } = useBoard();
     const { data: fetchedCard, isLoading: isLoadingCard, isError, refetch: refetchCard } = useCardById(cardId);
     const { updateTitle, updateDescription, updateIsCompleted, updateIsArchived, isUpdating } = useUpdateCardById(cardId || card?.id);
     const { mutateAsync: useRemoveCardMutate } = useRemoveCard();
@@ -225,17 +223,20 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
         div.innerHTML = html;
         return div.innerText.trim() === "";
     };
-
     const handleSaveDescription = async () => {
+        // Check if the description is empty or unchanged
         if (descriptionText === card?.description) {
             setIsEditingDescription(false);
             return;
         }
+        const isDescriptionEmpty = isEmptyHTML(descriptionText);
+        const newDescription = isDescriptionEmpty ? null : descriptionText;
+
         try {
-            await updateDescription(descriptionText);
+            await updateDescription(newDescription);
             setCard(prev => ({
                 ...prev,
-                description: descriptionText,
+                description: newDescription,
             }));
             setIsEditingDescription(false);
         } catch (error) {
@@ -327,29 +328,14 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
         try {
             if (!card?.id) return;
             await updateIsArchived(true);
-            setRemoveLoading(true)
+            setRemoveLoading(true);
             setCard(prev => ({
                 ...prev,
                 is_archived: true,
             }));
         } catch (error) {
-            console.error("❌ Lỗi khi lưu trữ card:", error);
-            setRemoveLoading(false)
-        }
-    };
-
-    const handleRestoreCard = async () => {
-        try {
-            if (!card?.id) return;
-            await updateIsArchived(false);
-            setCard(prev => ({
-                ...prev,
-                is_archived: false,
-            }));
-        } catch (error) {
-            console.error("❌ Lỗi khi khôi phục thẻ:", error);
-        } finally {
-            handleCloseDeletePopover();
+            setRemoveLoading(false);
+            console.error("❌ Lỗi khi lưu trữ thẻ:", error);
         }
     };
 
@@ -417,60 +403,14 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
             icon: <ContentCopyIcon fontSize="small" />,
             onClick: handleOpenCopy,
         },
-        // ...(card?.is_archived
-        //     ? [
-        //         {
-        //             label: "Gửi tới bảng",
-        //             icon: <RestartAltIcon fontSize="small" />,
-        //             onClick: () => handleRestoreCard(),
-        //         },
-        //         {
-        //             label: "Xoá",
-        //             icon: <RemoveIcon fontSize="small" />,
-        //             onClick: handleOpenDeletePopover,
-        //             sx: {
-        //                 backgroundColor: "error.main",
-        //                 color: "white",
-        //                 "&:hover": {
-        //                     backgroundColor: "error.dark",
-        //                 },
-        //             },
-        //             ref: deleteButtonRef,
-        //         },
-        //     ]
-        //     :
-        // [
-
         {
             label: "Lưu trữ",
-            icon: isRemoveLoading ? <LogoLoading scale={0.3} y={40} x={40} /> : < InventoryIcon fontSize="small" />,
+            icon: isRemoveLoading ? <LogoLoading scale={0.3} y={40} x={40} /> : <InventoryIcon fontSize="small" />,
             onClick: () => handleArchiveCard(),
-        }
-        // ]),
+        },
     ];
 
     const label = { inputProps: { 'aria-label': 'Checkbox demo' } };
-
-    // const labels = [
-    //     {
-    //         "id": "label1",
-    //         "name": "High Priority",
-    //         "color": "#ff4d4f",
-    //         "symbol": "⚡"
-    //     },
-    //     {
-    //         "id": "label2",
-    //         "name": "In Progress",
-    //         "color": "#1890ff",
-    //         "symbol": "⏳"
-    //     },
-    //     {
-    //         "id": "label3",
-    //         "name": "Review",
-    //         "color": "#52c41a",
-    //         "symbol": "👀"
-    //     }
-    // ]
 
     return (
         <AttachmentsProvider cardId={cardId} setCard={setCard} setCoverLoading={setCoverLoading}>
@@ -686,20 +626,15 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                                         ))}
                                                         <IconButton
                                                             sx={(theme) => ({
-                                                                backgroundColor: "#e0e0e0",
+                                                                backgroundColor: theme.palette.background.paper,
                                                                 width: "32px",
                                                                 height: "32px",
-                                                                borderRadius: 2,
-                                                                backgroundColor: theme.palette.background.paper,
                                                                 boxShadow: theme.shadows[1],
                                                                 borderRadius: "50%",
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s ease-in-out',
-                                                                '&:hover': {
-                                                                    boxShadow: theme.shadows[3],
-                                                                    backgroundColor: theme.palette.action.hover,
-                                                                },
+                                                                cursor: "pointer",
+                                                                transition: "all 0.2s ease-in-out",
                                                                 "&:hover": {
+                                                                    boxShadow: theme.shadows[3],
                                                                     backgroundColor: "#ccc",
                                                                 },
                                                             })}
@@ -711,22 +646,36 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                                 </Box>
                                             ) : null}
 
-                                            {/* <Box>
-                                            <LabelList ref={labelListRef} cardId={cardId} />
-                                        </Box> */}
-
-
                                             <Box sx={{ minWidth: "200px" }}>
                                                 <CardDateSection ref={dateSectionRef} cardData={card?.badges} cardId={cardId} />
                                             </Box>
 
-                                            <Box sx={{ width: "100%" }}>
+                                            <Box sx={{ width: "100%", mb: "20px" }}>
                                                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                                    <Typography variant="body2" sx={{ color: "#5e6c84", fontWeight: 500, marginBottom: "3px" }}>
+                                                    <Typography
+                                                        variant="subtitle1"
+                                                        sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}
+                                                    >
                                                         Mô tả
                                                     </Typography>
                                                     {card && !isEditingDescription && !isEmptyHTML(card?.description) && (
-                                                        <Button onClick={handleEditDescription}>Chỉnh sửa</Button>
+                                                        <Button
+                                                            variant="contained"
+                                                            size="small"
+                                                            onClick={handleEditDescription}
+                                                            sx={{
+                                                                textTransform: 'none',
+                                                                fontSize: '14px',
+                                                                borderRadius: '6px',
+                                                                backgroundColor: '#e4e6ea',
+                                                                color: '#172b4d',
+                                                                '&:hover': {
+                                                                    backgroundColor: '#d6d8da',
+                                                                },
+                                                            }}
+                                                        >
+                                                            Chỉnh sửa
+                                                        </Button>
                                                     )}
                                                 </Box>
 
@@ -768,7 +717,7 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                                             </Box>
 
                                             <Box sx={{ width: "100%" }}>
-                                                <AttachmentFolder ref={attachmentFolderRef} cardId={cardId} />
+                                                <AttachmentFolder ref={attachmentFolderRef} cardId={cardId} refetchCard={refetchCard} />
                                             </Box>
 
                                             <Box sx={{ width: "100%" }}>
@@ -968,9 +917,8 @@ const Card_detail = ({ cardId, closeCard, openCard }) => {
                         </>
                     )}
                 </Dialog>
-            </CommentProvider >
+            </CommentProvider>
         </AttachmentsProvider>
-
     );
 };
 

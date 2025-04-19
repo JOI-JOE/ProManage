@@ -18,15 +18,14 @@ const ChecklistItem = ({
     onDeleteItem,
     onNameChange,
     onDateChange,
+    refetchChecklist,
 }) => {
     const {
         updateStatus,
         updateAssignee,
         updateName,
-        updateEndDate,
-        updateEndTime,
-        updateReminder,
-        isPending: isUpdating,
+        updateDueInfo,
+        isUpdating,
     } = useUpdateCheckListItem(item.id);
 
     const { removeItem } = useRemoveCheckListItem();
@@ -36,7 +35,7 @@ const ChecklistItem = ({
         item.assignee ? members.find((m) => m.id === item.assignee) || null : null
     );
 
-    // Sync assignedMember chỉ khi item.assignee thay đổi từ real-time updates
+    // Sync assignedMember khi item.assignee thay đổi
     useEffect(() => {
         const currentAssignee = item.assignee ?? null;
         const newMember = currentAssignee ? members.find((m) => m.id === currentAssignee) || null : null;
@@ -45,26 +44,43 @@ const ChecklistItem = ({
         }
     }, [item.assignee, members]);
 
-    const handleToggle = () => {
-        onToggle?.();
-        updateStatus(!item.is_completed);
+    const handleToggle = async () => {
+        const prevStatus = item.is_completed;
+        try {
+            onToggle?.();
+            await updateStatus(!item.is_completed);
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            await refetchChecklist();
+        } catch (err) {
+            console.error('❌ Failed to toggle checklist item status:', err);
+            onToggle?.(); // Rollback UI
+        }
     };
 
     const handleAssign = async (memberId) => {
         const prevMember = assignedMember;
         const newMember = memberId ? members.find((m) => m.id === memberId) || null : null;
-        setAssignedMember(newMember); // Update UI instantly
+
+        setAssignedMember(newMember); // Optimistic update
         try {
             await updateAssignee(memberId);
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            await refetchChecklist();
         } catch (error) {
             console.error('❌ Failed to assign member:', error);
-            setAssignedMember(prevMember); // Rollback on error
+            setAssignedMember(prevMember); // Rollback
         }
     };
 
-    const handleDeleteItem = () => {
-        onDeleteItem?.(item.checklistId, item.id);
-        removeItem(item.id);
+    const handleDeleteItem = async () => {
+        try {
+            onDeleteItem?.(item.checklistId, item.id);
+            await removeItem(item.id);
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            await refetchChecklist();
+        } catch (err) {
+            console.error('Failed to delete item:', err);
+        }
     };
 
     // State for editing name
@@ -93,6 +109,7 @@ const ChecklistItem = ({
         try {
             await updateName(trimmedName);
             onNameChange?.(item.id, trimmedName);
+            await refetchChecklist();
         } catch (error) {
             console.error('❌ Failed to update checklist item name:', error);
             setEditedName(item.name);
@@ -112,6 +129,7 @@ const ChecklistItem = ({
     // State & handler for Date Dialog
     const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
     const [selectedChecklistItem, setSelectedChecklistItem] = useState(null);
+
     const handleOpenDateDialog = () => {
         setSelectedChecklistItem({
             ...item,
@@ -120,6 +138,7 @@ const ChecklistItem = ({
         });
         setIsDateDialogOpen(true);
     };
+
     const handleCloseDateDialog = () => {
         setIsDateDialogOpen(false);
         setSelectedChecklistItem(null);
@@ -138,32 +157,31 @@ const ChecklistItem = ({
                 })
                 : null;
 
-            const promises = [];
+            // Optimistic update
+            onDateChange?.({
+                end_date: endDate,
+                end_time: formattedEndTime,
+                reminder,
+            });
 
-            if (endDate !== item.end_date) {
-                promises.push(updateEndDate(endDate));
-            }
+            // Gọi API với một mutation duy nhất
+            await updateDueInfo({
+                end_date: endDate,
+                end_time: formattedEndTime,
+                reminder,
+            });
 
-            if (formattedEndTime && formattedEndTime !== item.end_time) {
-                promises.push(updateEndTime(formattedEndTime));
-            }
-
-            if (reminder !== item.reminder) {
-                promises.push(updateReminder(reminder));
-            }
-
-            if (promises.length > 0) {
-                await Promise.all(promises);
-                onDateChange?.({
-                    end_date: endDate,
-                    end_time: formattedEndTime,
-                    reminder,
-                });
-            }
-
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            await refetchChecklist();
             handleCloseDateDialog();
         } catch (error) {
             console.error('❌ Failed to update checklist item date:', error);
+            // Rollback UI
+            onDateChange?.({
+                end_date: item.end_date,
+                end_time: item.end_time,
+                reminder: item.reminder,
+            });
         }
     };
 

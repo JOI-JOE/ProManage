@@ -67,7 +67,6 @@ const StyledMenu = styled((props) => (
 
 const Col = ({ column, onArchive }) => {
     const { boardId } = useParams();
-    const { refetchListData } = useBoard();
     const [openCopyDialog, setOpenCopyDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
@@ -84,12 +83,13 @@ const Col = ({ column, onArchive }) => {
     const [tempName, setTempName] = useState(column?.name);
     const [isEditing, setIsEditing] = useState(false);
     const { mutate: updateList } = useUpdateListName();
+    const { refetchListData } = useBoard();
 
     // Api lưu trữ
     const { mutate: closeList } = useUpdateListClosed();
 
     /// Api của card
-    const createCardMutation = useCreateCard();
+    const createCardMutation = useCreateCard(boardId);
     const [cardName, setCardName] = useState("");
     const [localCards, setLocalCards] = useState(column?.cards || []);
 
@@ -99,7 +99,7 @@ const Col = ({ column, onArchive }) => {
     }, [column?.cards]);
 
     //======================================== Thêm card mới========================================
-    const handleAddCard = async (cardName, boardId) => {
+    const handleAddCard = async (cardName) => {
         if (!cardName.trim()) return;
 
         const typename = "card";
@@ -115,20 +115,18 @@ const Col = ({ column, onArchive }) => {
                 : 1000,
         };
 
-        // Thêm card tạm vào UI
+        // Thêm card tạm vào UI ngay lập tức với ID tạm
         setLocalCards((prev = []) => [...prev, newCard]);
         setCardName("");
-
         try {
-            const savedCard = await createCardMutation.mutateAsync(newCard);
-            // Cập nhật lại thẻ với ID thật từ server
-            setLocalCards((prev = []) =>
-                prev.map((card) => (card.id === tempId ? savedCard : card))
-            );
-            refetchListData();
+            // Delay nhẹ để tránh flicker trước khi gọi API
+            await createCardMutation.mutateAsync(newCard);
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            // Refetch list data (cập nhật danh sách) mà không gây flicker
+            await refetchListData();
         } catch (error) {
             console.error("Lỗi khi thêm thẻ:", error);
-            // Rollback nếu lỗi
+            // Rollback nếu có lỗi trong quá trình tạo thẻ
             setLocalCards((prev = []) => prev.filter((card) => card.id !== tempId));
         }
     };

@@ -29,7 +29,7 @@ const AttachmentMenu = ({ open, onClose, onAlert }) => {
     const [errorSnackbarOpen, setErrorSnackbarOpen] = useState(false);
     const [uploadingSnackbarOpen, setUploadingSnackbarOpen] = useState(false);
     const fileInputRef = useRef(null);
-    const { attachments, isLoading, cardId, handleUploadNewFiles, handleAddNewLinks } = useAttachments();
+    const { attachments, isLoading, cardId, handleUploadNewFiles, handleAddNewLinks, refetchAttachment } = useAttachments();
 
     useEffect(() => {
         if (searchTerm) {
@@ -115,10 +115,10 @@ const AttachmentMenu = ({ open, onClose, onAlert }) => {
             await handleUploadNewFiles(cardId, filesToUpload);
             handleClose();
         } catch (err) {
-            console.error('❌ Failed to upload files:', err);
             const errorMessage = err?.response?.data?.message || 'Tải tệp thất bại. Vui lòng thử lại.';
             setUploadError(errorMessage);
         } finally {
+            refetchAttachment()
             setIsUploading(false);
         }
     };
@@ -163,14 +163,14 @@ const AttachmentMenu = ({ open, onClose, onAlert }) => {
             await handleAddNewLinks(cardId, [newLink]);
             setLinkText('');
             setLinkUrl('');
-            setIsUploading(false); // Đặt lại trạng thái loading trước khi đóng
-            console.log(newLink)
-            handleClose(); // Đóng dialog sau khi thêm thành công
+            setIsUploading(false);
+            handleClose(); // Nếu không phải async, gọi bình thường
         } catch (err) {
-            console.error('❌ Failed to add link:', err);
             const errorMessage = err.response?.data?.message || 'Thêm liên kết thất bại. Vui lòng thử lại.';
             setUploadError(errorMessage);
-            setIsUploading(false); // Đảm bảo trạng thái loading được đặt lại
+        } finally {
+            setIsUploading(false);
+            refetchAttachment()
         }
     };
 

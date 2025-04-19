@@ -10,6 +10,7 @@ import Col from "./Col";
 import Col_new from "./Col_new";
 import { useCreateList, useUpdateListClosed } from "../../../../../hooks/useList";
 import { SPACING } from "../../../../../../utils/position.constant";
+import { useBoard } from "../../../../../contexts/BoardContext";
 
 const Col_list = React.memo(({ columns = [], boardId }) => {
     const [openColumn, setOpenColumn] = useState(false);
@@ -20,6 +21,8 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
     const [showAlert, setShowAlert] = useState(false);
     const archivedColumnRef = useRef(null);
     const { mutate: closeList } = useUpdateListClosed();
+    const { refetchListData } = useBoard();
+
 
     useEffect(() => {
         setLocalColumns(columns || []);
@@ -50,30 +53,14 @@ const Col_list = React.memo(({ columns = [], boardId }) => {
             setOpenColumn(false);
 
             try {
-                const response = await createList({
+                await createList({
                     boardId,
                     name,
                     pos: maxPosition,
                 });
-
-                // Giả sử response trả về dữ liệu của list vừa tạo (bao gồm id thực tế từ server)
-                const createdList = response?.data; // Điều chỉnh tùy theo cấu trúc response của bạn
-                if (createdList) {
-                    // Thay thế mục tạm thời bằng dữ liệu thật từ server
-                    setLocalColumns((prev) =>
-                        prev.map((col) =>
-                            col.id === optimisticId
-                                ? { ...col, ...createdList, isOptimistic: false }
-                                : col
-                        )
-                    );
-                    // Cập nhật lại ref để đồng bộ
-                    localColumnsRef.current = localColumnsRef.current.map((col) =>
-                        col.id === optimisticId
-                            ? { ...col, ...createdList, isOptimistic: false }
-                            : col
-                    );
-                }
+                await new Promise((resolve) => setTimeout(resolve, 50));
+                // Refetch list data (cập nhật danh sách) mà không gây flicker
+                await refetchListData();
             } catch (error) {
                 console.error("Error creating list:", error);
                 // Nếu lỗi, xóa mục tạm thời khỏi danh sách

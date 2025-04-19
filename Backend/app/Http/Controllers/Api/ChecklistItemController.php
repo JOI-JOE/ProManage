@@ -42,7 +42,7 @@ class ChecklistItemController extends Controller
             $card->touch();
             DB::commit();
 
-            broadcast(new ChecklistItemCreated($checklistItem, $card, auth()->user()))->toOthers();
+            broadcast(new ChecklistItemCreated($checklistItem, $card))->toOthers();
             broadcast(new CardUpdated($card))->toOthers();
 
             return response()->json($checklistItem->fresh(), 201);
@@ -83,13 +83,12 @@ class ChecklistItemController extends Controller
             ])
             ->log("{$userName} đã xóa mục '{$item->name}' (ID: {$checklistItemId}) khỏi checklist trong card '{$card->title}'.");
 
+        $item->delete();
         try {
-            $item->delete();
-            
             $card->touch();
             DB::commit();
 
-            broadcast(new ChecklistItemDeleted($checklistItemId, $card))->toOthers();
+            broadcast(new ChecklistItemDeleted($checklistItemId, $checklist->id, $card))->toOthers();
             broadcast(new CardUpdated($card))->toOthers();
 
             return response()->json(['message' => 'Checklist item deleted'], 200);
@@ -102,19 +101,18 @@ class ChecklistItemController extends Controller
     public function update(Request $request, $checklistItemId)
     {
         try {
-            // Tìm checklist item cùng với card liên quan
+            // Lấy checklist item và quan hệ liên quan
             $item = ChecklistItem::with('checklist.card')->findOrFail($checklistItemId);
             $checklist = $item->checklist;
             $card = $checklist->card;
 
             $validated = $this->validateChecklistItemUpdate($request);
             $user = auth()->user();
-            $userName = $user ? $user->full_name : 'Người dùng không xác định';
+            $userName = $user?->full_name ?? 'Người dùng không xác định';
 
-            $changes = []; // Chứa các thay đổi sẽ được log
-            $logData = []; // Chứa thông tin cho log activity
+            $logData = [];
 
-            // Tạo mảng các thuộc tính cần được kiểm tra và cập nhật
+            // Danh sách field cần kiểm tra
             $attributes = [
                 'name' => 'Tên',
                 'is_completed' => 'Trạng thái',
@@ -122,45 +120,36 @@ class ChecklistItemController extends Controller
                 'end_date' => 'Ngày kết thúc',
                 'end_time' => 'Thời gian kết thúc',
                 'reminder' => 'Nhắc nhở',
-                'assignee' => 'Người được giao',
             ];
 
-            // Xử lý từng thuộc tính và cập nhật
             foreach ($attributes as $field => $label) {
-                if (array_key_exists($field, $validated)) {
-                    $oldValue = $item->{$field};
+                if (array_key_exists($field, $validated) && $validated[$field] !== $item->{$field}) {
+                    $old = $item->{$field};
                     $item->{$field} = $validated[$field];
 
-                    $changes[$field] = [
-                        'old' => $oldValue,
-                        'new' => $validated[$field],
-                        'label' => $label
-                    ];
-
-                    // Lưu log cho thay đổi
                     $logData[] = [
                         'field' => $field,
-                        'old' => $oldValue,
+                        'old' => $old,
                         'new' => $validated[$field],
-                        'log' => "{$userName} đã cập nhật {$label} mục '{$item->name}' từ '" . ($oldValue ?? 'không có') . "' thành '" . ($validated[$field] ?? 'không có') . "' trong card '{$card->title}'"
+                        'log' => "{$userName} đã cập nhật {$label} mục '{$item->name}' từ '" . ($old ?? 'không có') . "' thành '" . ($validated[$field] ?? 'không có') . "' trong card '{$card->title}'"
                     ];
                 }
             }
 
-            // Cập nhật assignee
+            // Gán assignee nếu có
             if (array_key_exists('assignee', $validated)) {
-                $oldAssignee = DB::table('checklist_item_user')
+                $oldAssigneeId = DB::table('checklist_item_user')
                     ->where('checklist_item_id', $checklistItemId)
                     ->value('user_id');
-                $this->updateChecklistItemAssignee($checklistItemId, $validated['assignee']);
-                $newAssigneeName = $validated['assignee']
-                    ? \App\Models\User::find($validated['assignee'])->full_name ?? 'không xác định'
-                    : 'không có';
-                $oldAssigneeName = $oldAssignee
-                    ? \App\Models\User::find($oldAssignee)->full_name ?? 'không xác định'
-                    : 'không có';
 
-                // Ghi log cho assignee
+                $this->updateChecklistItemAssignee($checklistItemId, $validated['assignee']);
+
+                $userIdsToFetch = array_filter([$oldAssigneeId, $validated['assignee']]);
+                $users = \App\Models\User::whereIn('id', $userIdsToFetch)->pluck('full_name', 'id');
+
+                $oldAssigneeName = $users[$oldAssigneeId] ?? 'không có';
+                $newAssigneeName = $users[$validated['assignee']] ?? 'không có';
+
                 $logData[] = [
                     'field' => 'assignee',
                     'old' => $oldAssigneeName,
@@ -169,44 +158,40 @@ class ChecklistItemController extends Controller
                 ];
             }
 
-            // Lưu checklist item và log activity
             $item->save();
+            $card->touch();
 
-            // Log tất cả thay đổi đã được xác định
-            foreach ($logData as $logItem) {
+            // Ghi activity log
+            foreach ($logData as $log) {
                 activity()
                     ->causedBy($user)
                     ->performedOn($card)
-                    ->event('updated_checklist_item_' . $logItem['field'])
+                    ->event("updated_checklist_item_{$log['field']}")
                     ->withProperties([
                         'checklist_item_id' => $checklistItemId,
-                        'old' => $logItem['old'],
-                        'new' => $logItem['new'],
+                        'old' => $log['old'],
+                        'new' => $log['new'],
                         'card_id' => $card->id,
                     ])
-                    ->log($logItem['log']);
+                    ->log($log['log']);
             }
 
-            // Trả về thông tin checklist item đã cập nhật
+            DB::commit();
+
+            // Gửi sự kiện realtime
             $response = $this->buildChecklistItemResponse($checklistItemId);
-            $checklistItemData = $response->getData(true);
-
-            $card->touch();  // Cập nhật trường updated_at
-            DB::commit();  // Cam kết thay đổi
-
-            // Broadcast sự kiện
-            broadcast(new ChecklistItemUpdated($checklistItemData, $card, auth()->user()))->toOthers();
+            broadcast(new ChecklistItemUpdated($item, $card))->toOthers();
             broadcast(new CardUpdated($card))->toOthers();
 
             return $response;
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['message' => 'Checklist item, Checklist or Card not found'], 404);
+            return response()->json(['message' => 'Checklist item, Checklist hoặc Card không tồn tại'], 404);
         } catch (\Exception $e) {
-            Log::error('Failed to update checklist item: ' . $e->getMessage());
+            DB::rollBack();
+            Log::error('Lỗi khi cập nhật checklist item: ' . $e->getMessage());
             return response()->json(['message' => 'Không thể cập nhật mục do lỗi'], 500);
         }
     }
-
 
     private function validateChecklistItemUpdate(Request $request)
     {

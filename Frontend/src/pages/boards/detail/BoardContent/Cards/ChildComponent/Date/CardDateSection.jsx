@@ -20,9 +20,8 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
         dueComplete: false,
     });
 
-    const { updateCard, isUpdating, error } = useUpdateCardById(cardId);
+    const { updateDates, isUpdating, error } = useUpdateCardById(cardId);
 
-    // Update state when cardData changes
     useEffect(() => {
         if (cardData) {
             setDate({
@@ -59,18 +58,27 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
             dateData.reminder !== (cardData.dueReminder || null) ||
             dateData.dueComplete !== (cardData.dueComplete ?? false);
 
-        setDate(newDate);
-
         if (hasChanges) {
-            const dateUpdates = {
-                start_date: dateData.startDate || null,
-                end_date: dateData.endDate || null,
-                end_time: dateData.endTime || null,
-                reminder: dateData.reminder || null,
-                is_completed: dateData.dueComplete ?? false,
-            };
-
-            updateCard(dateUpdates); // Single API call for all updates
+            updateDates(
+                {
+                    startDate: dateData.startDate,
+                    endDate: dateData.endDate,
+                    endTime: dateData.endTime,
+                    reminder: dateData.reminder,
+                    dueComplete: dateData.dueComplete,
+                },
+                {
+                    onSuccess: () => {
+                        setDate(newDate); // Update local state only on success
+                        handleCloseDateDialog();
+                    },
+                    onError: (error) => {
+                        console.error("Failed to update card dates:", error.message || error);
+                    },
+                }
+            );
+        } else {
+            handleCloseDateDialog();
         }
     };
 
@@ -94,10 +102,16 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
             const dueDate = dayjs(date.due);
             const dueTime = date.dueTime && dayjs(date.dueTime, 'HH:mm').isValid() ? dayjs(date.dueTime, 'HH:mm') : null;
 
-            displayText += date.start && dayjs(date.start).isValid() ? ' → ' : '';
-            displayText += dueTime
-                ? `${dueTime.format('HH:mm')} - ${dueDate.format('DD/MM')}`
-                : `${dueDate.format('DD/MM')}`;
+            if (date.start && dayjs(date.start).isSame(dueDate, 'day')) {
+                displayText = dueTime
+                    ? `${dueTime.format('HH:mm')} - ${dueDate.format('DD/MM')}`
+                    : `${dueDate.format('DD/MM')}`;
+            } else {
+                displayText += date.start && dayjs(date.start).isValid() ? ' → ' : '';
+                displayText += dueTime
+                    ? `${dueTime.format('HH:mm')} - ${dueDate.format('DD/MM')}`
+                    : `${dueDate.format('DD/MM')}`;
+            }
         } else if (date.due) {
             return 'Invalid Date';
         }
@@ -118,9 +132,7 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
 
         let dueDateTime = dueDate;
         if (dueTime) {
-            dueDateTime = dueDate
-                .set('hour', dueTime.hour())
-                .set('minute', dueTime.minute());
+            dueDateTime = dueDate.set('hour', dueTime.hour()).set('minute', dueTime.minute());
         }
 
         if (dueDateTime.isBefore(now)) {
@@ -135,8 +147,6 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
     };
 
     const dueStatus = getDueStatus();
-
-    // Only render the date section if start or due is set
     const hasDates = date.start || date.due;
 
     return (
@@ -169,7 +179,11 @@ const CardDateSection = forwardRef(({ cardData, cardId }, ref) => {
                             },
                         }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box sx={{
+                            display
+
+                                : 'flex', alignItems: 'center', gap: 1.5
+                        }}>
                             <CalendarTodayIcon sx={{ fontSize: 18, color: theme.palette.text.secondary }} />
                             <Typography
                                 variant="body2"

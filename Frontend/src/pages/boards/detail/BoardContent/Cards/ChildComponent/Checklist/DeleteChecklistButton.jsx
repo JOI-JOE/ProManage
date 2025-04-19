@@ -25,9 +25,19 @@ const DeleteChecklistButton = ({ checklistId, handleDeleteChecklist }) => {
     return (
         <>
             <Button
+                variant="contained"
                 size="small"
                 onClick={handleOpenDialog}
-                sx={{ backgroundColor: "#DFE1E6" }}
+                sx={{
+                    textTransform: 'none',
+                    fontSize: '14px',
+                    borderRadius: '6px',
+                    backgroundColor: '#e4e6ea',
+                    color: '#172b4d',
+                    '&:hover': {
+                        backgroundColor: '#d6d8da',
+                    },
+                }}
             >
                 Xóa
             </Button>

@@ -7,9 +7,9 @@ import CustomButton from "../../../../../components/Common/CustomButton";
 const Col_new = ({ open, setOpen, onAdd }) => {
     const [columnName, setColumnName] = useState("");
 
-    const handleAdd = async () => {
+    const handleAdd = () => {
         if (!columnName.trim()) return; // Tránh thêm danh sách rỗng
-        await onAdd(columnName.trim());
+        onAdd(columnName.trim());
         setColumnName("");
         setOpen(false);
     };

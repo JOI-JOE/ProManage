@@ -231,12 +231,14 @@ class ChecklistController extends Controller
             return response()->json(['message' => 'Failed to retrieve updated checklist'], 500);
         }
 
-        // Broadcast ChecklistUpdated
-        broadcast(new ChecklistUpdated($updatedChecklist, $cardModel, $user))->toOthers();
 
-        // Broadcast CardUpdated to update checklistsId and badges
+        $cardModel->touch();
+        DB::commit();
+
+
         try {
-            // broadcast(new CardUpdated($cardModel, ['checklists', 'badges']))->toOthers();
+            broadcast(new ChecklistUpdated($updatedChecklist, $cardModel))->toOthers();
+            broadcast(new CardUpdated($cardModel))->toOthers(); // Broadcasting CardUpdated với cardModel
         } catch (\Exception $e) {
             Log::error('Failed to broadcast CardUpdated event: ' . $e->getMessage());
         }
@@ -249,50 +251,61 @@ class ChecklistController extends Controller
      */
     public function delete($checklistId)
     {
-        // Kiểm tra checklist tồn tại
-        $checklist = DB::table('checklists')
-            ->where('id', $checklistId)
-            ->first();
+        // Bắt đầu giao dịch để đảm bảo tính toàn vẹn của các thao tác
+        DB::beginTransaction();
 
-        if (!$checklist) {
-            return response()->json(['message' => 'Checklist not found'], 404);
-        }
-
-        // Kiểm tra card tồn tại
-        $cardModel = Card::find($checklist->card_id);
-        if (!$cardModel) {
-            return response()->json(['message' => 'Card not found'], 404);
-        }
-
-        // Ghi log trước khi xóa
-        $user = auth()->user();
-        $userName = $user ? $user->full_name : 'ai đó';
-        activity()
-            ->causedBy($user)
-            ->performedOn($cardModel)
-            ->event('deleted_checklist')
-            ->withProperties(['checklist_name' => $checklist->name, 'checklist_id' => $checklistId])
-            ->log("{$userName} đã xóa checklist '{$checklist->name}' trong card '{$cardModel->title}'.");
-
-        // Broadcast ChecklistDeleted
-        broadcast(new ChecklistDeleted($checklistId, $cardModel, $user))->toOthers();
-
-        // Broadcast CardUpdated to update checklistsId and badges
         try {
-            // broadcast(new CardUpdated($cardModel, ['checklists', 'badges']))->toOthers();
+            // Kiểm tra checklist tồn tại
+            $checklist = DB::table('checklists')
+                ->where('id', $checklistId)
+                ->first();
+
+            if (!$checklist) {
+                return response()->json(['message' => 'Checklist not found'], 404);
+            }
+
+            // Kiểm tra card tồn tại
+            $cardModel = Card::find($checklist->card_id);
+            if (!$cardModel) {
+                return response()->json(['message' => 'Card not found'], 404);
+            }
+
+            // Ghi log trước khi xóa
+            $user = auth()->user();
+            $userName = $user ? $user->full_name : 'ai đó';
+            activity()
+                ->causedBy($user)
+                ->performedOn($cardModel)
+                ->event('deleted_checklist')
+                ->withProperties(['checklist_name' => $checklist->name, 'checklist_id' => $checklistId])
+                ->log("{$userName} đã xóa checklist '{$checklist->name}' trong card '{$cardModel->title}'.");
+
+
+
+
+            // Xóa checklist
+            $deleted = DB::table('checklists')
+                ->where('id', $checklistId)
+                ->delete();
+
+            if ($deleted) {
+                // Cập nhật card sau khi xóa checklist
+                $cardModel->touch(); // Cập nhật thời gian sửa đổi của card
+                DB::commit();
+
+                // Broadcast ChecklistDeleted
+                broadcast(new ChecklistDeleted($checklistId, $cardModel))->toOthers();
+                broadcast(new CardUpdated($cardModel))->toOthers(); // Broadcasting CardUpdated với cardModel
+
+                return response()->json(['message' => 'Checklist deleted successfully'], 200);
+            } else {
+                DB::rollBack(); // Rollback nếu không xóa được checklist
+                return response()->json(['message' => 'Failed to delete checklist'], 500);
+            }
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast CardUpdated event: ' . $e->getMessage());
+            DB::rollBack(); // Rollback nếu có lỗi
+            Log::error('Failed to delete checklist: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to delete checklist'], 500);
         }
-
-        // Xóa checklist
-        $deleted = DB::table('checklists')
-            ->where('id', $checklistId)
-            ->delete();
-
-        if ($deleted) {
-            return response()->json(['message' => 'Checklist deleted successfully'], 200);
-        }
-
-        return response()->json(['message' => 'Failed to delete checklist'], 500);
     }
 }

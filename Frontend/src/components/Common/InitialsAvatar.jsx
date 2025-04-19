@@ -1,12 +1,14 @@
 import React from "react";
 import { Avatar, Tooltip } from "@mui/material";
 
-// Hàm để lấy chữ cái đầu
+// Hàm để lấy chữ cái đầu của tên
 const getInitials = (name) => {
   if (!name) return "Ω";
   const nameParts = name.trim().split(" ");
-  const initials = nameParts.map((part) => part.charAt(0).toUpperCase()).join("");
-  return initials.length > 1 ? initials : initials + nameParts[1]?.charAt(0).toUpperCase() || "";
+  if (nameParts.length > 0) {
+    return nameParts[0].charAt(0).toUpperCase();
+  }
+  return "Ω";
 };
 
 // Dùng forwardRef để hỗ trợ ref từ Tooltip
@@ -27,6 +29,7 @@ const InitialsAvatar = React.forwardRef(
         <Avatar
           ref={ref}
           sx={{
+            backgroundColor: "primary.main",
             width: size,
             height: size,
             fontSize: "0.6rem",

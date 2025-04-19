@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
     useFetchAttachments,
     usePostAttachmentFile,
@@ -8,57 +8,50 @@ import {
 } from '../hooks/useCard';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import Pusher from 'pusher-js';
 
 const AttachmentsContext = createContext();
 
 export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading }) => {
-    const queryClient = useQueryClient();
-    const { data: fetchedAttachments, isLoading, error } = useFetchAttachments(cardId);
+    const { data: fetchedAttachments, isLoading, error, refetch: refetchAttachment } = useFetchAttachments(cardId);
     const [attachments, setAttachments] = useState({ links: [], files: [] });
+
     const { mutateAsync: postAttachmentFileMutate } = usePostAttachmentFile();
     const { mutateAsync: postAttachmentLinkMutate } = usePostAttachmentLink();
-    const { mutateAsync: updateAttachmentMutate } = usePutAttachment();
+    const { mutateAsync: updateAttachmentMutate } = usePutAttachment(cardId);
     const { mutateAsync: removeAttachmentMutate } = useRemoveAttachment();
 
-    const invalidateAttachments = () => {
-        queryClient.invalidateQueries({
-            queryKey: ["attachments", cardId],
-            exact: true,
-        });
-    };
 
     // Update attachments state when fetchedAttachments changes
     useEffect(() => {
         if (fetchedAttachments?.data && Array.isArray(fetchedAttachments.data)) {
             const fetchedLinks = fetchedAttachments.data
-                .filter(item => item.type === 'link')
+                .filter((item) => item.type === 'link')
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
             const fetchedFiles = fetchedAttachments.data
-                .filter(item => item.type === 'file')
+                .filter((item) => item.type === 'file')
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
             setAttachments({ links: fetchedLinks, files: fetchedFiles });
         }
     }, [fetchedAttachments?.data]);
 
-
-    const handleUploadNewFiles = async (cardId, filesToUpload) => {
+    const handleUploadNewFiles = useCallback(async (cardId, filesToUpload) => {
         try {
             const uploadFilePromises = filesToUpload.map(async (file) => {
                 const formData = new FormData();
                 formData.append('file', file.originalFile);
-                return postAttachmentFileMutate({ cardId, file: formData });
+                await postAttachmentFileMutate({ cardId, file: formData });
             });
             await Promise.all(uploadFilePromises);
         } catch (error) {
-            toast.error('❌ Lỗi khi tải lên tệp. Vui lòng thử lại.');
-            console.error('❌ Error uploading files:', error);
+            toast.error(error.response?.data?.message || '❌ Lỗi khi tải lên tệp. Vui lòng thử lại.');
             throw error;
         }
-    };
+    }, [postAttachmentFileMutate]);
 
-    const handleAddNewLinks = async (cardId, linksToAdd) => {
+    const handleAddNewLinks = useCallback(async (cardId, linksToAdd) => {
         if (!cardId || !linksToAdd || linksToAdd.length === 0) {
             toast.error('❌ Thiếu thông tin cardId hoặc dữ liệu liên kết.');
             throw new Error('Thiếu cardId hoặc dữ liệu link.');
@@ -76,35 +69,26 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 });
             });
             await Promise.all(linkPromises);
+            // await ();
         } catch (error) {
-            toast.error(
-                error.response?.data?.message ||
-                error.message ||
-                '❌ Không thể thêm liên kết. Vui lòng thử lại.'
-            );
-            console.error('❌ Error adding new links:', error);
-            throw new Error(
-                error.response?.data?.message ||
-                error.message ||
-                'Không thể thêm liên kết. Vui lòng thử lại.'
-            );
+            toast.error(error.response?.data?.message || '❌ Không thể thêm liên kết. Vui lòng thử lại.');
+            throw error;
         }
-    };
+    }, [postAttachmentLinkMutate]);
 
-    const handleEditFile = async (fileId, newFileName) => {
+    const handleEditFile = useCallback(async (fileId, newFileName) => {
         try {
             await updateAttachmentMutate({
                 attachmentId: fileId,
                 data: { file_name_defaut: newFileName },
             });
         } catch (error) {
-            toast.error('❌ Lỗi khi chỉnh sửa tên tệp. Vui lòng thử lại.');
-            console.error('Error editing file name:', error);
+            toast.error(error.response?.data?.message || '❌ Lỗi khi chỉnh sửa tên tệp. Vui lòng thử lại.');
             throw error;
         }
-    };
+    }, [updateAttachmentMutate]);
 
-    const handleEditLink = async (linkId, newLinkName, newLinkUrl) => {
+    const handleEditLink = useCallback(async (linkId, newLinkName, newLinkUrl) => {
         try {
             await updateAttachmentMutate({
                 attachmentId: linkId,
@@ -114,14 +98,25 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                     type: 'link',
                 },
             });
+            setAttachments((prevAttachments) => ({
+                ...prevAttachments,
+                links: prevAttachments.links.map((link) =>
+                    link.id === linkId
+                        ? {
+                            ...link,
+                            file_name_defaut: newLinkName || newLinkUrl,
+                            path_url: newLinkUrl,
+                        }
+                        : link
+                ),
+            }));
         } catch (error) {
-            toast.error('❌ Lỗi khi chỉnh sửa liên kết. Vui lòng thử lại.');
-            console.error('Error editing link:', error);
+            toast.error(error.response?.data?.message || '❌ Lỗi khi chỉnh sửa liên kết. Vui lòng thử lại.');
             throw error;
         }
-    };
+    }, [updateAttachmentMutate]);
 
-    const handleEditCover = async (attachmentId, isCover, file = null) => {
+    const handleEditCover = useCallback(async (attachmentId, isCover, file = null) => {
         try {
             setCoverLoading?.(true);
             const updateData = { is_cover: isCover };
@@ -130,61 +125,66 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('is_cover', isCover);
-                await updateAttachmentMutate({
-                    attachmentId,
-                    data: formData,
-                });
+                await updateAttachmentMutate({ attachmentId, data: formData });
             } else {
-                await updateAttachmentMutate({
-                    attachmentId,
-                    data: updateData,
-                });
+                await updateAttachmentMutate({ attachmentId, data: updateData });
             }
-
-            const updatedAttachment = attachments.files.concat(attachments.links).find(a => a.id === attachmentId);
-            if (setCard && isCover && updatedAttachment) {
-                const newThumbnailUrl = updatedAttachment.path_url || updatedAttachment.file_url;
-                setCard(prev => ({
-                    ...prev,
-                    thumbnail: newThumbnailUrl,
-                }));
+            if (setCard) {
+                if (isCover) {
+                    const updatedAttachment = attachments.files
+                        .concat(attachments.links)
+                        .find((a) => a.id === attachmentId);
+                    if (updatedAttachment) {
+                        const newThumbnailUrl = updatedAttachment.path_url || updatedAttachment.file_url;
+                        setCard((prev) => ({
+                            ...prev,
+                            thumbnail: newThumbnailUrl,
+                        }));
+                    }
+                } else {
+                    setCard((prev) => ({
+                        ...prev,
+                        thumbnail: null,
+                    }));
+                }
             }
         } catch (error) {
-            toast.error('❌ Lỗi khi cập nhật ảnh bìa. Vui lòng thử lại.');
-            console.error('❌ Error updating cover:', error);
+            toast.error(error.response?.data?.message || '❌ Lỗi khi cập nhật ảnh bìa. Vui lòng thử lại.');
             throw error;
         } finally {
             setCoverLoading?.(false);
         }
-    };
+    }, [updateAttachmentMutate, setCard, setCoverLoading, attachments]);
 
-    const handleDeleteFile = async (attachmentId) => {
+    const handleDeleteFile = useCallback(async (attachmentId) => {
         try {
             await removeAttachmentMutate(attachmentId);
-            const deletedAttachment = attachments.files.concat(attachments.links).find(a => a.id === attachmentId);
-            const isCover = deletedAttachment?.is_cover;
-            if (setCard && isCover) {
-                setCard(prev => ({
-                    ...prev,
-                    thumbnail: null,
-                }));
+            setAttachments((prevAttachments) => ({
+                ...prevAttachments,
+                files: prevAttachments.files.filter((file) => file.id !== attachmentId),
+            }));
+            const deletedAttachment = attachments.files.concat(attachments.links).find((a) => a.id === attachmentId);
+            if (setCard && deletedAttachment?.is_cover) {
+                setCard((prev) => ({ ...prev, thumbnail: null }));
             }
         } catch (error) {
-            toast.error('❌ Lỗi khi xóa tệp. Vui lòng thử lại.');
-            console.error('❌ Error deleting file:', error);
+            toast.error(error.response?.data?.message || '❌ Lỗi khi xóa tệp. Vui lòng thử lại.');
             throw error;
         }
-    };
+    }, [removeAttachmentMutate, setCard, attachments]);
 
-    const handleDeleteLink = async (linkId) => {
+    const handleDeleteLink = useCallback(async (linkId) => {
         try {
             await removeAttachmentMutate(linkId);
+            setAttachments((prevAttachments) => ({
+                ...prevAttachments,
+                links: prevAttachments.links.filter((link) => link.id !== linkId),
+            }));
         } catch (error) {
-            toast.error('❌ Lỗi khi xóa liên kết. Vui lòng thử lại.');
-            console.error('❌ Error deleting link:', error);
+            toast.error(error.response?.data?.message || '❌ Lỗi khi xóa liên kết. Vui lòng thử lại.');
             throw error;
         }
-    };
+    }, [removeAttachmentMutate]);
 
     return (
         <AttachmentsContext.Provider
@@ -193,6 +193,7 @@ export const AttachmentsProvider = ({ children, cardId, setCard, setCoverLoading
                 cardId,
                 isLoading,
                 error,
+                refetchAttachment,
                 handleUploadNewFiles,
                 handleAddNewLinks,
                 handleEditFile,

@@ -11,6 +11,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class ChecklistUpdated implements ShouldBroadcast
 {
@@ -18,16 +19,13 @@ class ChecklistUpdated implements ShouldBroadcast
 
     public $checklist;
     public $card;
-    public $user;
-
     /**
      * Create a new event instance.
      */
-    public function __construct($checklist, Card $card, $user)
+    public function __construct($checklist, $card)
     {
         $this->checklist = $checklist;
         $this->card = $card;
-        $this->user = $user;
     }
 
     /**
@@ -55,9 +53,11 @@ class ChecklistUpdated implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
-        return [
-            'checklist' => $this->checklist,
+        $data = [
+            'id' => $this->checklist['id'] ?? null,
             'card_id' => $this->card->id,
         ];
+        Log::info('Hậu sửa checklist data: ', $data);
+        return $data;
     }
 }

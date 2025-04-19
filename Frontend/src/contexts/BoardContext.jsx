@@ -15,6 +15,9 @@ export const useBoard = () => {
 
 export const BoardProvider = ({ children }) => {
     const { boardId } = useParams();
+
+    // if (!boardId) return null; // 🔥 quan trọng: tránh gọi hook khi chưa có boardId
+
     const { data: boardData, isLoading: boardLoading, error: boardError } = useBoardById(boardId);
     const { data: listData, isLoading: listLoading, error: listError, refetch: refetchListData } = useListByBoardId(boardId);
     const [orderedLists, setOrderedLists] = useState([]);

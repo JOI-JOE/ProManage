@@ -7,7 +7,7 @@ import AttachmentMenu from './AttachmentMenu';
 import { useAttachments } from '../../../../../../../contexts/AttachmentsContext';
 import LogoLoading from '../../../../../../../components/LogoLoading';
 
-const AttachmentFolder = forwardRef(({ cardId }, ref) => {
+const AttachmentFolder = forwardRef(({ cardId, refetchCard }, ref) => {
     const {
         attachments,
         isLoading,
@@ -26,7 +26,6 @@ const AttachmentFolder = forwardRef(({ cardId }, ref) => {
     // Expose functions to parent via ref
     useImperativeHandle(ref, () => ({
         openAttachmentDialog: () => {
-            console.log("Open dialog called");
             setIsUploadDialogOpen(true);
         },
     }));
@@ -104,12 +103,11 @@ const AttachmentFolder = forwardRef(({ cardId }, ref) => {
                 >
                     <Typography
                         variant="subtitle1"
-                        sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}
+                        sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', fontSize: '18px' }}  // Thay đổi fontSize tại đây
                     >
                         <AttachFileIcon sx={{ fontSize: '20px', mr: 1 }} />
                         Các tập tin đính kèm
                     </Typography>
-
                     <Button
                         variant="contained"
                         size="small"

@@ -14,11 +14,14 @@ class ChecklistItemDeleted implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $checklistItemId;
+
+    public $checklistId;
     public $card;
 
-    public function __construct($checklistItemId, $card)
+    public function __construct($checklistItemId, $checklistId, $card)
     {
         $this->card = $card;
+        $this->checklistId = $checklistId;
         $this->checklistItemId = $checklistItemId;
     }
 
@@ -29,16 +32,17 @@ class ChecklistItemDeleted implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'checklistItemItem.deleted';
+        return 'checklistItem.deleted';
     }
 
 
     public function broadcastWith()
     {
         $data = [
-            'checklist_item_id' => $this->checklistItemId,
+            'id' => $this->checklistItemId,
+            'checklist_id' => $this->checklistId,
         ];
-        Log::info('Hậu xóa checklistitem', $data);
+        Log::info('Broadcasting hậu xóa cái này', $data);
         return $data;
     }
 }

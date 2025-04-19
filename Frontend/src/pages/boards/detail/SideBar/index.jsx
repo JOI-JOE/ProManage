@@ -28,12 +28,12 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
-import { useBoard } from "../../../../contexts/BoardContext";
 import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 import PrivateSideBar from "./component/PrivateSideBar";
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import LogoLoading from "../../../../components/LogoLoading";
 import WorkspaceAvatar from "../../../../components/Common/WorkspaceAvatar";
+import { useBoard } from "../../../../contexts/BoardContext";
 
 // Custom hook chứa toàn bộ logic
 const useSideBarLogic = () => {
@@ -137,17 +137,16 @@ const SideBar = () => {
   } = useSideBarLogic();
 
   {
-    // listLoading || !currentWorkspace 
+    // Hiển thị loading khi đang tải
     if (boardLoading) {
-      <LogoLoading />
+      return <LogoLoading />;
     }
 
-
+    // Hiển thị sidebar riêng nếu là workspace cần yêu cầu quyền truy cập
     if (isActive === "request_access" && !isMember) {
-      return (
-        <PrivateSideBar />
-      )
+      return <PrivateSideBar />;
     }
+
 
     return (
       <Drawer

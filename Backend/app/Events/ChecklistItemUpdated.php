@@ -20,23 +20,16 @@ class ChecklistItemUpdated implements ShouldBroadcast
 
     public $checklistItem;
     public $card;
-    public $user;
 
     /**
      * Create a new event instance.
      */
-    public function __construct($checklistItem, Card $card, $user)
+    public function __construct($checklistItem, $card)
     {
         $this->checklistItem = $checklistItem;
         $this->card = $card;
-        $this->user = $user;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
     public function broadcastOn(): array
     {
         return [
@@ -58,11 +51,11 @@ class ChecklistItemUpdated implements ShouldBroadcast
     public function broadcastWith(): array
     {
         $data = [
-            'checklist_item' => $this->checklistItem,
+            'id' => $this->checklistItem->id,
+            'checklist_id' => $this->checklistItem->checklist_id,
             'card_id' => $this->card->id,
-            'user_id' => $this->user ? $this->user->id : null,
         ];
-        Log::info(' data:', $data);
+        Log::info('hậu đang cập nhập cai này data:', $data);
         return $data;
     }
 }

@@ -324,6 +324,7 @@ class CommentCardController extends Controller
 
             // Broadcast to others
             broadcast(new CommentDeleted($commentId, $card->id, $user ? $user->id : null))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
 
             // Delete the comment
             DB::table('comment_cards')

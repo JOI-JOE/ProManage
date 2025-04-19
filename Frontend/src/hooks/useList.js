@@ -32,18 +32,38 @@ export const useListByBoardId = (boardId) => {
     (updateEvent, key, conditionFn) => {
       queryClient.setQueryData(["lists", boardId], (oldData) => {
         if (!oldData || !Array.isArray(oldData[key])) return oldData;
-
-        const updatedData = oldData[key].map((item) =>
-          conditionFn(item, updateEvent) ? { ...item, ...updateEvent } : item
-        );
-
+        let hasChanged = false;
+        const updatedData = oldData[key].map((item) => {
+          if (conditionFn(item, updateEvent)) {
+            const newItem = { ...item, ...updateEvent };
+            const isEqual = JSON.stringify(item) === JSON.stringify(newItem);
+            if (!isEqual) {
+              hasChanged = true;
+              return newItem;
+            }
+          }
+          return item;
+        });
+        if (!hasChanged) return oldData; // Không có thay đổi, không update cache
         return { ...oldData, [key]: updatedData };
       });
     },
     [boardId, queryClient]
   );
 
-  // Xử lý cập nhật thẻ
+  const handleListUpdate = useCallback(
+    (updateEvent) => {
+      if (!updateEvent?.id) return;
+      updateListData(
+        updateEvent,
+        "lists",
+        (list, event) => list.id === event.id
+      );
+    },
+    [updateListData]
+  );
+
+  // Xử lý cập nhập dữ liệu card
   const handleCardUpdate = useCallback(
     (updateEvent) => {
       if (!updateEvent?.id) return;
@@ -90,70 +110,44 @@ export const useListByBoardId = (boardId) => {
     [boardId, queryClient]
   );
 
-  // Xử lý tạo thẻ mới
-  const handleCardCreate = useCallback(
-    (event) => {
-      if (!event?.id) return;
-      queryClient.setQueryData(["lists", boardId], (oldData) => {
-        const oldCards = Array.isArray(oldData?.cards) ? oldData.cards : [];
-        const exists = oldCards.some((card) => card.id === event.id);
-        if (exists) return oldData;
-
-        const newCard = {
-          id: event.id,
-          title: event.title,
-          list_board_id: event.list_board_id,
-          position: event.position,
-        };
-
-        return {
-          ...oldData,
-          cards: [...oldCards, newCard],
-        };
-      });
-    },
-    [boardId, queryClient]
-  );
-
-  // Xử lý cập nhật danh sách
-  const handleListUpdate = useCallback(
-    (updateEvent) => {
-      if (!updateEvent?.id) return;
-      updateListData(
-        updateEvent,
-        "lists",
-        (list, event) => list.id === event.id
-      );
-    },
-    [updateListData]
-  );
-
   // Xử lý tạo danh sách mới
   const handleListCreate = useCallback(
     (event) => {
       if (!event?.id) return;
-      queryClient.setQueryData(["lists", boardId], (oldData) => {
-        const oldLists = Array.isArray(oldData?.lists) ? oldData.lists : [];
+      queryClient.setQueryData(["lists", boardId], (oldData = {}) => {
+        if (!oldData || typeof oldData !== "object") return oldData;
+
+        const oldLists = Array.isArray(oldData.lists) ? oldData.lists : [];
+        // Kiểm tra nếu list đã tồn tại
         const exists = oldLists.some((list) => list.id === event.id);
-        if (exists) return oldData;
-
-        const newList = {
-          id: event.id,
-          name: event.name,
-          position: event.position,
-          closed: event.closed ?? false,
-          board_id: event.board_id ?? boardId,
-        };
-
-        return {
-          ...oldData,
-          lists: [...oldLists, newList],
-        };
+        if (exists) return oldData; // Không làm gì nếu đã tồn tại
+        queryClient.invalidateQueries({
+          queryKey: ["lists", boardId],
+          exact: true,
+        });
       });
     },
     [boardId, queryClient]
   );
 
+  // Xử lý tạo thẻ mới
+  const handleCardCreate = useCallback(
+    (event) => {
+      if (!event?.id) return;
+      queryClient.setQueryData(["lists", boardId], (oldData = {}) => {
+        if (!oldData || typeof oldData !== "object") return oldData;
+        const oldCards = Array.isArray(oldData.cards) ? oldData.cards : [];
+        // Kiểm tra nếu có thẻ nào trong cards có id trùng với event.id
+        const exists = oldCards.some((card) => card.id === event.id);
+        if (exists) return oldData; // Nếu đã tồn tại, không làm gì t
+        queryClient.invalidateQueries({
+          queryKey: ["lists", boardId],
+          exact: true,
+        });
+      });
+    },
+    [boardId, queryClient]
+  );
   // Subscribe các channel
   useEffect(() => {
     if (!boardId) return;
@@ -161,11 +155,12 @@ export const useListByBoardId = (boardId) => {
     const channel = echoInstance.channel(`board.${boardId}`);
     channelRef.current = channel;
 
-    channel.listen(".list.created", handleListCreate);
-    channel.listen(".list.updated", handleListUpdate);
-    channel.listen(".card.created", handleCardCreate);
-    channel.listen(".card.updated", handleCardUpdate);
-    channel.listen(".card.moved", handleCardMove);
+    channel
+      .listen(".list.created", handleListCreate)
+      .listen(".list.updated", handleListUpdate)
+      .listen(".card.created", handleCardCreate)
+      .listen(".card.updated", handleCardUpdate)
+      .listen(".card.moved", handleCardMove);
 
     return () => {
       if (channelRef.current) {
@@ -194,18 +189,10 @@ export const useListByBoardId = (boardId) => {
   };
 };
 /// Function thông thường --------------------------------------------------------
-
 // Function Create ------------------------------------------------------------------
-export const useCreateList = () => {
-  const queryClient = useQueryClient();
+export const useCreateList = (boardId) => {
   const mutation = useMutation({
     mutationFn: createListAPI,
-    onSuccess: (newList, { boardId }) => {
-      queryClient.invalidateQueries({
-        queryKey: ["lists", boardId],
-        exact: true,
-      });
-    },
     onError: (error) => {
       console.error("Lỗi khi tạo danh sách:", error);
     },

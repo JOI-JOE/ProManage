@@ -11,7 +11,8 @@ import {
     TextField,
     DialogActions,
     Button,
-    Typography
+    Typography,
+    CircularProgress
 } from "@mui/material";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import { useAttachments } from '../../../../../../../contexts/AttachmentsContext'; // Adjust path
@@ -25,53 +26,36 @@ const getDomain = (url) => {
         return "";
     }
 };
+
 const LinkItem = ({ file }) => {
-    const { handleDeleteLink, handleEditLink } = useAttachments();
+    const { handleDeleteLink, handleEditLink, refetchAttachment } = useAttachments();
     const domain = getDomain(file.path_url);
     const [anchorEl, setAnchorEl] = useState(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false); // State for delete loading
+    const [isEditing, setIsEditing] = useState(false); // New state for edit loading
     const [editedLink, setEditedLink] = useState({
         url: file.path_url,
         displayText: file.file_name_defaut
     });
-
     const open = Boolean(anchorEl);
-
     // Xử lý menu
     const handleMenuClick = (event) => {
         event.stopPropagation();
         setAnchorEl(event.currentTarget);
     };
-
     const handleMenuClose = () => {
         setAnchorEl(null);
     };
-
     // Xử lý dialog chỉnh sửa
     const handleEditDialogOpen = () => {
         setEditDialogOpen(true);
         handleMenuClose();
     };
-
     const handleEditDialogClose = () => {
         setEditDialogOpen(false);
     };
-
-    const handleSaveEdit = async () => {
-        try {
-            await handleEditLink(
-                file.id,
-                editedLink.displayText || editedLink.url, // newLinkName
-                editedLink.url // newLinkUrl
-            );
-            handleEditDialogClose();
-        } catch (error) {
-            console.error("Failed to save edited link:", error);
-        }
-    };
-
-    // Xử lý dialog xóa
     const handleDeleteDialogOpen = () => {
         setDeleteDialogOpen(true);
         handleMenuClose();
@@ -80,10 +64,29 @@ const LinkItem = ({ file }) => {
     const handleDeleteDialogClose = () => {
         setDeleteDialogOpen(false);
     };
-
-    const handleConfirmDelete = () => {
-        handleDeleteLink(file.id);
-        handleDeleteDialogClose();
+    const handleSaveEdit = async () => {
+        setIsEditing(true); // Start loading
+        try {
+            await handleEditLink(file.id, editedLink.displayText || editedLink.url, editedLink.url);
+            refetchAttachment();
+            handleEditDialogClose(); // Close dialog on success
+        } catch (error) {
+            console.error("Failed to save edited link:", error);
+        } finally {
+            setIsEditing(false); // Stop loading
+        }
+    };
+    const handleConfirmDelete = async () => {
+        setIsDeleting(true); // Start loading
+        try {
+            await handleDeleteLink(file.id); // Perform delete operation
+            refetchAttachment();
+            handleDeleteDialogClose(); // Close dialog on success
+        } catch (error) {
+            console.error("Failed to delete link:", error);
+        } finally {
+            setIsDeleting(false); // Stop loading
+        }
     };
 
     // Xử lý thay đổi input
@@ -217,6 +220,7 @@ const LinkItem = ({ file }) => {
                             name="url"
                             value={editedLink.url}
                             onChange={handleInputChange}
+                            disabled={isEditing}
                             sx={{
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: "4px",
@@ -235,6 +239,7 @@ const LinkItem = ({ file }) => {
                             name="displayText"
                             value={editedLink.displayText}
                             onChange={handleInputChange}
+                            disabled={isEditing}
                             sx={{
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: "4px",
@@ -247,6 +252,7 @@ const LinkItem = ({ file }) => {
                 <DialogActions sx={{ p: 0, mt: 3 }}>
                     <Button
                         onClick={handleEditDialogClose}
+                        disabled={isEditing}
                         sx={{
                             color: "#42526E",
                             textTransform: "none",
@@ -258,6 +264,7 @@ const LinkItem = ({ file }) => {
                     <Button
                         onClick={handleSaveEdit}
                         variant="contained"
+                        disabled={isEditing}
                         sx={{
                             backgroundColor: "#0052CC",
                             color: "white",
@@ -265,10 +272,20 @@ const LinkItem = ({ file }) => {
                             fontWeight: 500,
                             "&:hover": {
                                 backgroundColor: "#0747A6",
-                            }
+                            },
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1
                         }}
                     >
-                        Lưu
+                        {isEditing ? (
+                            <>
+                                <CircularProgress size={16} sx={{ color: "white" }} />
+                                Đang lưu...
+                            </>
+                        ) : (
+                            "Lưu"
+                        )}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -299,6 +316,7 @@ const LinkItem = ({ file }) => {
                 <DialogActions sx={{ p: 0, mt: 3 }}>
                     <Button
                         onClick={handleDeleteDialogClose}
+                        disabled={isDeleting}
                         sx={{
                             color: "#42526E",
                             textTransform: "none",
@@ -310,6 +328,7 @@ const LinkItem = ({ file }) => {
                     <Button
                         onClick={handleConfirmDelete}
                         variant="contained"
+                        disabled={isDeleting}
                         sx={{
                             backgroundColor: "#FF5630",
                             color: "white",
@@ -317,10 +336,20 @@ const LinkItem = ({ file }) => {
                             fontWeight: 500,
                             "&:hover": {
                                 backgroundColor: "#DE350B",
-                            }
+                            },
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1
                         }}
                     >
-                        Xóa
+                        {isDeleting ? (
+                            <>
+                                <CircularProgress size={16} sx={{ color: "white" }} />
+                                Đang xóa...
+                            </>
+                        ) : (
+                            "Xóa"
+                        )}
                     </Button>
                 </DialogActions>
             </Dialog>

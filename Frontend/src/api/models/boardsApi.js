@@ -16,7 +16,7 @@ export const fetchBoardById = async (boardId) => {
     }
     return {
       ...data,
-    action: data.action || data.board?.action || null, // Normalize action field
+      action: data.action || data.board?.action || null, // Normalize action field
     };
   } catch (error) {
     // Handle 403 response with action
@@ -88,14 +88,20 @@ export const logBoardAccess = async (boardId) => {
 
 export const updateBoardName = async (boardId, name) => {
   try {
-    const response = await authClient.patch(`/boards/${boardId}/name`, { name });
+    const response = await authClient.patch(`/boards/${boardId}/name`, {
+      name,
+    });
     return response.data;
   } catch (error) {
-    console.error("❌ Lỗi khi cập nhật tên bảng:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || "Không thể cập nhật tên bảng");
+    console.error(
+      "❌ Lỗi khi cập nhật tên bảng:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message || "Không thể cập nhật tên bảng"
+    );
   }
 };
-
 
 export const toggleBoardMarked = async (boardId) => {
   try {
@@ -119,7 +125,8 @@ export const getBoardMarked = async () => {
 export const getUnsplashImages = async () => {
   try {
     const response = await axios.get(
-      "https://api.unsplash.com/search/photos?query=workspace&per_page=10&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"
+      // "https://api.unsplash.com/search/photos?query=workspace&per_page=10&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"
+      "https://api.unsplash.com/search/photos?query=nature&per_page=10&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"
     );
 
     return response.data.results; // Lấy danh sách ảnh từ `results`

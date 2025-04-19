@@ -5,7 +5,6 @@ namespace App\Http\Controllers\api;
 use App\Events\CardCreated;
 use App\Events\CardUpdated;
 use App\Http\Controllers\Controller;
-use App\Jobs\BroadcastCardCreated;
 use App\Models\Card;
 use Exception;
 use Illuminate\Http\Request;

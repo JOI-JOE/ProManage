@@ -26,8 +26,8 @@ import { useBoard } from '../../../../../../../contexts/BoardContext';
 import { useChecklist } from '../../../../../../../hooks/useCheckList';
 
 const ChecklistGroup = forwardRef(({ cardId }, ref) => {
-    const { data, isLoading, error } = useChecklist(cardId);
-    const { mutate: postChecklist } = usePostCheckList();
+    const { data, isLoading, error, refetch: refetchChecklist } = useChecklist(cardId);
+    const { mutate: postChecklist, isLoading: isPosting, error: postError } = usePostCheckList();
     const { mutate: createItem } = usePostChecklistItem();
     const { mutate: removeChecklist } = useRemoveChecklistFromCard();
     const { mutate: updateChecklistTitle } = useUpdateCheckList();
@@ -44,7 +44,9 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
 
     useEffect(() => {
         if (data && Array.isArray(data)) {
-            const mapped = data.map((cl) => ({
+            const sortedData = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            const mapped = sortedData.map((cl) => ({
                 id: cl.id,
                 title: cl.name,
                 items: cl.items.map((item) => ({
@@ -58,9 +60,16 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                     reminder: item.reminder,
                 })),
             }));
-            setChecklists(mapped);
+
+            // Chỉ cập nhật nếu khác với state hiện tại
+            const isDifferent = JSON.stringify(mapped) !== JSON.stringify(checklists);
+            if (isDifferent) {
+                setChecklists(mapped);
+            }
         }
     }, [data]);
+
+
 
     useImperativeHandle(ref, () => ({
         addChecklistFromOutside: ({ title, copyFrom }) => {
@@ -72,7 +81,6 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                 items: [],
             };
             setChecklists((prev) => [...prev, optimisticChecklist]);
-
             const payload = {
                 name: title,
                 copyFrom,
@@ -88,6 +96,7 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                                     : cl
                             )
                         );
+                        refetchChecklist();
                     },
                     onError: (err) => {
                         setChecklists((prev) => prev.filter((cl) => cl.id !== tempId));
@@ -101,13 +110,16 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
     const handleDeleteChecklist = (checklistId) => {
         setChecklists((prev) => prev.filter((cl) => cl.id !== checklistId));
         removeChecklist(checklistId, {
+            onSuccess: () => {
+                refetchChecklist();
+            },
             onError: (err) => {
-                console.error('Xoá checklist thất bại:', err);
+                console.error('❌ Xoá checklist thất bại:', err);
             },
         });
     };
 
-    const handleAddItem = (checklistId) => {
+    const handleAddItem = async (checklistId) => {
         const trimmedText = newItemText.trim();
         if (!trimmedText) return;
 
@@ -131,14 +143,22 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                     : cl
             )
         );
+
         setNewItemText('');
         setIsAddingItemId(null);
-        createItem(
+
+        await createItem(
             {
                 checklistId,
                 data: { name: trimmedText },
             },
             {
+                onSuccess: () => {
+                    // Không cần cập nhật lại UI vì refetch sẽ làm việc này
+                    setTimeout(() => {
+                        refetchChecklist();
+                    }, 300); // delay nhẹ để backend kịp xử lý xong
+                },
                 onError: () => {
                     setChecklists((prev) =>
                         prev.map((cl) =>
@@ -154,6 +174,8 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
             }
         );
     };
+
+
 
     const handleToggleItem = (checklistId, itemId) => {
         setChecklists((prev) =>
@@ -309,6 +331,7 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
 
                 return (
                     <Box key={checklist.id} sx={{ mb: 3 }}>
+
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <CheckBoxIcon sx={{ color: '#42526E' }} />
@@ -386,6 +409,7 @@ const ChecklistGroup = forwardRef(({ cardId }, ref) => {
                                 members={members}
                                 onToggle={() => handleToggleItem(checklist.id, item.id)}
                                 onDeleteItem={handleDeleteItem}
+                                refetchChecklist={refetchChecklist}
                                 onNameChange={handleUpdateItemName}
                                 onDateChange={(newDateData) =>
                                     handleUpdateItemDate(checklist.id, item.id, newDateData)

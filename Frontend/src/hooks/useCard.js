@@ -49,58 +49,52 @@ export const useCardById = (cardId) => {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["card", cardId],
     queryFn: () => fetchCardById(cardId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    cacheTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 1000 * 60 * 5, // 5 phút
+    cacheTime: 1000 * 60 * 30, // 30 phút
     enabled: !!cardId,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
 
-  // Handle card updates from WebSocket events
   const handleCardUpdate = useCallback(
-    (updateEvent) => {
-      console.log("Received card update event:", updateEvent);
-      if (!updateEvent?.id || updateEvent.id !== parseInt(cardId)) return;
+    (event) => {
+      if (!event || !event.id || event.id.toString() !== cardId?.toString())
+        return;
 
-      // Update the query cache with the new data
       queryClient.setQueryData(["card", cardId], (oldData) => {
-        if (!oldData) return updateEvent;
-
-        // Merge new data with existing data, focusing on updated fields
-        return {
-          ...oldData,
-          ...updateEvent,
-          // Ensure nested objects are properly updated
-          badges: {
-            ...(oldData.badges || {}),
-            ...(updateEvent.badges || {}),
-          },
-          // Make sure arrays are completely replaced rather than merged
-          members: updateEvent.members || oldData.members,
-          membersId: updateEvent.membersId || oldData.membersId,
-          labels: updateEvent.labels || oldData.labels,
-          labelId: updateEvent.labelId || oldData.labelId,
-        };
+        if (!oldData) return event;
+        // Nếu dữ liệu không thay đổi, bỏ qua
+        if (JSON.stringify(oldData) === JSON.stringify(event)) {
+          return oldData;
+        }
+        return { ...oldData, ...event };
       });
+
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["card", cardId],
+          exact: true,
+        });
+      }, 500);
     },
     [cardId, queryClient]
   );
 
-  // Subscribe to the board channel for card updates
   useEffect(() => {
-    if (!cardId || !data?.list_board?.board_id) return;
+    if (!cardId) return;
 
-    const boardId = data.list_board.board_id;
-    const channel = echoInstance.channel(`board.${boardId}`);
+    const channel = echoInstance.channel(`card.${cardId}`);
     channelRef.current = channel;
 
-    // Listen for the card.updated event
     channel.listen(".card.updated", handleCardUpdate);
 
     return () => {
       if (channelRef.current) {
         channelRef.current.stopListening(".card.updated");
+        echoInstance.leaveChannel(`card.${cardId}`);
       }
     };
-  }, [cardId, data?.list_board?.board_id, handleCardUpdate]);
+  }, [cardId, handleCardUpdate]);
 
   return {
     data,
@@ -109,111 +103,101 @@ export const useCardById = (cardId) => {
     refetch,
   };
 };
-// Checklist card
+// GET Attachments
 export const useFetchAttachments = (cardId) => {
   const queryClient = useQueryClient();
   const channelRef = useRef(null);
 
   // Fetch attachments using React Query
-  const { data, isLoading, isError, refetch } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["attachments", cardId],
     queryFn: () => fetchAttachments(cardId),
     enabled: !!cardId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   });
-
-  // Helper function to update attachments in the query cache
-  const updateAttachmentData = useCallback(
-    (updateEvent, conditionFn) => {
-      queryClient.setQueryData(["attachments", cardId], (oldData = []) => {
-        if (!Array.isArray(oldData)) return oldData;
-
-        return oldData.map((item) =>
-          conditionFn(item, updateEvent) ? { ...item, ...updateEvent } : item
-        );
-      });
-    },
-    [cardId, queryClient]
-  );
-
   // Handle adding new attachment
   const handleAddAttachment = useCallback(
     (event) => {
-      const newAttachment = event?.attachment;
-      if (!newAttachment) return;
+      if (!event?.id) return;
+      const existingData = queryClient.getQueryData(["attachments", cardId]);
+      const dataArray = Array.isArray(existingData) ? existingData : [];
 
-      queryClient.setQueryData(["attachments", cardId], (oldData = []) => {
-        if (!Array.isArray(oldData)) return [newAttachment];
+      const exists = dataArray.some((item) => item.id === event.id);
+      if (exists) return; // Nếu đã có thì không làm gì
 
-        const exists = oldData.some((item) => item.id === newAttachment.id);
-        if (exists) {
-          console.log("Attachment already exists:", newAttachment);
-          return oldData;
-        }
-
-        console.log("New attachment added:", newAttachment);
-        return [...oldData, newAttachment];
-      });
-
+      // Nếu chưa có thì gọi refetch từ server
       queryClient.invalidateQueries({
         queryKey: ["attachments", cardId],
         exact: true,
       });
     },
-    [cardId, queryClient]
+    [cardId, data, queryClient]
   );
-
   // Handle attachment update
   const handleUpdateAttachment = useCallback(
     (event) => {
-      const updatedAttachment = event?.attachment;
-      if (!updatedAttachment) return;
+      if (!event) {
+        return;
+      }
 
-      updateAttachmentData(
-        updatedAttachment,
-        (item, updateEvent) => item.id === updateEvent.id
-      );
-
+      queryClient.setQueryData(["attachments", cardId], (oldData = []) => {
+        const dataArray = Array.isArray(oldData) ? oldData : [];
+        // Kiểm tra nếu attachment đã tồn tại và không thay đổi
+        const existingAttachment = dataArray.find(
+          (item) => item.id === event.attachment_id
+        );
+        if (
+          existingAttachment &&
+          JSON.stringify(existingAttachment) === JSON.stringify(event)
+        ) {
+          // Nếu attachment không thay đổi, không làm gì cả
+          return oldData;
+        }
+        // Nếu attachment thay đổi, cập nhật lại dữ liệu
+        return dataArray.map((item) =>
+          item.id === event.attachment_id ? { ...item, ...event } : item
+        );
+      });
+      // Chỉ gọi invalidateQueries nếu có sự thay đổi
       queryClient.invalidateQueries({
         queryKey: ["attachments", cardId],
         exact: true,
       });
     },
-    [updateAttachmentData, cardId, queryClient]
+    [cardId, data, queryClient]
   );
-
   // Handle attachment deletion
   const handleAttachmentDeleted = useCallback(
     (event) => {
       const attachmentId = event?.attachment_id;
       const eventCardId = event?.card_id;
-
       if (
         !attachmentId ||
         (eventCardId && eventCardId.toString() !== cardId.toString())
       ) {
         return;
       }
-
-      queryClient.setQueryData(["attachments", cardId], (oldData) => {
-        const existingAttachments = Array.isArray(oldData) ? oldData : [];
-        const updatedAttachments = existingAttachments.filter(
-          (item) => item.id !== attachmentId
-        );
-        return updatedAttachments;
+      queryClient.setQueryData(["attachments", cardId], (oldData = []) => {
+        const dataArray = Array.isArray(oldData) ? oldData : [];
+        return dataArray.filter((item) => item.id !== attachmentId);
       });
       queryClient.invalidateQueries({
         queryKey: ["attachments", cardId],
         exact: true,
       });
     },
-    [cardId, queryClient]
+    [cardId, data, queryClient]
   );
 
-  // Subscribe to relevant channels for real-time updates
+  // Subscribe to real-time updates
   useEffect(() => {
     if (!cardId) return;
 
@@ -250,159 +234,106 @@ export const useFetchAttachments = (cardId) => {
 export const useFetchComments = (cardId, userId) => {
   const queryClient = useQueryClient();
   const channelRef = useRef(null);
-  const pendingOpsRef = useRef(new Set());
 
-  // Main data fetch query
-  const { data, isLoading, isError, refetch } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["comments", cardId],
     queryFn: () => fetchComments(cardId),
-    enabled: Boolean(cardId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!cardId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
 
-  // Safely update query data with error handling
-  const safelyUpdateQueryData = useCallback(
-    (updater) => {
-      try {
-        queryClient.setQueryData(["comments", cardId], updater);
-      } catch (error) {
-        console.error("Failed to update comments query data:", error);
-        queryClient.invalidateQueries({
-          queryKey: ["comments", cardId],
-          exact: true,
-        });
-      }
+  const handleAddComment = useCallback(
+    (event) => {
+      if (!event?.comment) return;
+
+      console.log(event);
+
+      const newComment = event.comment;
+      const existingData = queryClient.getQueryData(["comments", cardId]);
+      const dataArray = Array.isArray(existingData) ? existingData : [];
+
+      const exists = dataArray.some((item) => item.id === newComment.id);
+      if (exists) return;
+
+      queryClient.setQueryData(["comments", cardId], (old = []) => [
+        ...old,
+        newComment,
+      ]);
     },
     [cardId, queryClient]
   );
 
-  // Selective refetch to verify data consistency
-  const handleRefetchIfNeeded = useCallback(
-    (eventType, id) => {
-      const opKey = `${eventType}-${id}`;
-      pendingOpsRef.current.add(opKey);
-
-      // Debounce refetch to handle multiple events
-      setTimeout(() => {
-        if (pendingOpsRef.current.size > 0) {
-          refetch()
-            .then(() => {
-              pendingOpsRef.current.clear();
-            })
-            .catch((error) => {
-              console.error("Refetch failed:", error);
-            });
-        }
-      }, 2000);
-    },
-    [refetch]
-  );
-
-  // Handle comment created event
-  const handleCommentCreated = useCallback(
-    (event) => {
-      const newComment = event?.comment;
-      const eventCardId = event?.card_id;
-      const eventUserId = event?.user_id;
-      if (!newComment) {
-        console.warn("No comment data in event:", event);
-        return;
-      }
-      if (eventCardId && eventCardId.toString() !== cardId.toString()) {
-        return;
-      }
-      if (eventUserId && eventUserId.toString() === userId?.toString()) {
-        console.log("Skipping comment.created event from self:", eventUserId);
-        return;
-      }
-
-      console.log("New comment created:", newComment);
-
-      safelyUpdateQueryData((oldData) => {
-        if (!Array.isArray(oldData)) return [newComment];
-        const exists = oldData.some((item) => item.id === newComment.id);
-        return exists ? oldData : [newComment, ...oldData]; // Prepend for newest first
-      });
-
-      handleRefetchIfNeeded("created", newComment.id);
-    },
-    [cardId, userId, safelyUpdateQueryData, handleRefetchIfNeeded]
-  );
-
-  // Handle comment updated event
-  const handleCommentUpdated = useCallback(
+  const handleUpdateComment = useCallback(
     (event) => {
       const updatedComment = event?.comment;
       const eventCardId = event?.card_id;
       const eventUserId = event?.user_id;
-      if (!updatedComment) {
-        console.warn("No comment data in event:", event);
-        return;
-      }
-      if (eventCardId && eventCardId.toString() !== cardId.toString()) {
-        return;
-      }
-      if (eventUserId && eventUserId.toString() === userId?.toString()) {
-        console.log("Skipping comment.updated event from self:", eventUserId);
+
+      if (
+        !updatedComment ||
+        eventCardId?.toString() !== cardId?.toString() ||
+        eventUserId?.toString() === userId?.toString()
+      ) {
         return;
       }
 
-      console.log("Comment updated:", updatedComment);
-
-      safelyUpdateQueryData((oldData) => {
-        if (!Array.isArray(oldData)) return [updatedComment];
-        return oldData.map((comment) =>
-          comment.id === updatedComment.id ? updatedComment : comment
+      queryClient.setQueryData(["comments", cardId], (oldData = []) => {
+        const dataArray = Array.isArray(oldData) ? oldData : [];
+        const index = dataArray.findIndex(
+          (item) => item.id === updatedComment.id
         );
-      });
+        if (index === -1) return oldData;
 
-      handleRefetchIfNeeded("updated", updatedComment.id);
+        const existing = dataArray[index];
+        if (JSON.stringify(existing) === JSON.stringify(updatedComment)) {
+          return oldData;
+        }
+
+        const newData = [...dataArray];
+        newData[index] = { ...existing, ...updatedComment };
+        return newData;
+      });
     },
-    [cardId, userId, safelyUpdateQueryData, handleRefetchIfNeeded]
+    [cardId, userId, queryClient]
   );
 
-  // Handle comment deleted event
-  const handleCommentDeleted = useCallback(
+  const handleDeleteComment = useCallback(
     (event) => {
       const commentId = event?.comment_id;
-      const eventCardId = event?.card_id;
-      const eventUserId = event?.user_id;
+
       if (!commentId) {
-        console.warn("No comment ID in event:", event);
         return;
       }
-      if (eventCardId && eventCardId.toString() !== cardId.toString()) {
-        return;
-      }
-      if (eventUserId && eventUserId.toString() === userId?.toString()) {
-        console.log("Skipping comment.deleted event from self:", eventUserId);
-        return;
-      }
-
-      console.log("Comment deleted:", { commentId });
-
-      safelyUpdateQueryData((oldData) => {
-        if (!Array.isArray(oldData)) return oldData;
-        return oldData.filter((comment) => comment.id !== commentId);
+      queryClient.setQueryData(["comments", cardId], (oldData = []) => {
+        const dataArray = Array.isArray(oldData) ? oldData : [];
+        return dataArray.filter((item) => item.id !== commentId);
       });
 
-      handleRefetchIfNeeded("deleted", commentId);
+      queryClient.invalidateQueries({
+        queryKey: ["comments", cardId],
+        exact: true,
+      });
     },
-    [cardId, userId, safelyUpdateQueryData, handleRefetchIfNeeded]
+    [cardId, data, queryClient]
   );
 
-  // Set up real-time listeners
   useEffect(() => {
-    if (!cardId) {
-      return;
-    }
+    if (!cardId) return;
 
     const channel = echoInstance.channel(`card.${cardId}`);
     channelRef.current = channel;
 
-    channel.listen(".comment.created", handleCommentCreated);
-    channel.listen(".comment.updated", handleCommentUpdated);
-    channel.listen(".comment.deleted", handleCommentDeleted);
+    channel.listen(".comment.created", handleAddComment);
+    channel.listen(".comment.updated", handleUpdateComment);
+    channel.listen(".comment.deleted", handleDeleteComment);
 
     return () => {
       if (channelRef.current) {
@@ -412,23 +343,13 @@ export const useFetchComments = (cardId, userId) => {
         echoInstance.leaveChannel(`card.${cardId}`);
       }
     };
-  }, [
-    cardId,
-    handleCommentCreated,
-    handleCommentUpdated,
-    handleCommentDeleted,
-  ]);
+  }, [cardId, handleAddComment, handleUpdateComment, handleDeleteComment]);
 
   return {
     data,
     isLoading,
     isError,
     refetch,
-    forceRefresh: () =>
-      queryClient.invalidateQueries({
-        queryKey: ["comments", cardId],
-        exact: true,
-      }),
   };
 };
 // Activity
@@ -453,7 +374,6 @@ export const useCopyCard = () => {
     },
   });
 };
-// Di chuyển
 export const useMoveCard = () => {
   return useMutation({
     mutationFn: ({ cardId, ...copyData }) => moveCard({ cardId, ...copyData }), // Sửa: truyền đúng cấu trúc object
@@ -465,11 +385,10 @@ export const useMoveCard = () => {
 };
 // thêm mới list
 export const usePostCheckList = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ cardId, data }) => postCheckLists({ cardId, data }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["checklist", cardId] });
+    onSuccess: (data) => {
+      console.log("✅ Checklist đã được tạo thành công", data);
     },
     onError: (error) => {
       console.error("❌ Lỗi khi tạo checklist:", error);
@@ -478,20 +397,15 @@ export const usePostCheckList = () => {
 };
 // thêm mới item
 export const usePostChecklistItem = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ checklistId, data }) =>
       postChecklistItem({ checklistId, data }),
-
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["checklist"] });
-    },
     onError: (error) => {
       console.error("❌ Lỗi khi tạo checklist item:", error);
     },
   });
 };
-// Thêm mới file
+// Thêm mới file -------------------------------------
 export const usePostAttachmentFile = () => {
   return useMutation({
     mutationFn: ({ cardId, file }) => postAttachmentFile({ cardId, file }),
@@ -500,14 +414,10 @@ export const usePostAttachmentFile = () => {
     },
   });
 };
-// thêm mới link
+// thêm mới link -------------------------------------
 export const usePostAttachmentLink = () => {
-  // const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ cardId, link }) => postAttachmentLink({ cardId, link }),
-    onSuccess: () => {
-      // queryClient.invalidateQueries({ queryKey: ["card", cardId] });
-    },
     onError: (error) => {
       console.error("❌ Lỗi khi thêm link:", error);
     },
@@ -534,14 +444,8 @@ export const useUpdateCheckList = () => {
 };
 // Item
 export const useUpdateCheckListItem = (checklistItemId) => {
-  const queryClient = useQueryClient();
-
   const mutation = useMutation({
     mutationFn: (data) => updateCheckListItem(checklistItemId, data),
-    onSuccess: () => {
-      // Optionally invalidate checklist data
-      queryClient.invalidateQueries({ queryKey: ["checklist"] });
-    },
     onError: (error) => {
       console.error("Lỗi khi cập nhật mục checklist:", error);
     },
@@ -551,15 +455,18 @@ export const useUpdateCheckListItem = (checklistItemId) => {
     updateName: (name) => mutation.mutate({ name }),
     updateStatus: (is_completed) => mutation.mutate({ is_completed }),
     updateStartDate: (start_date) => mutation.mutate({ start_date }),
-    updateEndDate: (end_date) => mutation.mutate({ end_date }),
-    updateEndTime: (end_time) => mutation.mutate({ end_time }),
-    updateReminder: (reminder) => mutation.mutate({ reminder }),
+    // updateEndDate: (end_date) => mutation.mutate({ end_date }),
+    // updateEndTime: (end_time) => mutation.mutate({ end_time }),
+    // updateReminder: (reminder) => mutation.mutate({ reminder }),
+    updateDueInfo: ({ end_date, end_time, reminder }) =>
+      mutation.mutate({ end_date, end_time, reminder }),
+
     updateAssignee: (assignee) => mutation.mutate({ assignee }),
     isUpdating: mutation.isLoading,
   };
 };
 // Card
-export const useUpdateCardById = (cardId) => {
+export const useUpdateCardById = (cardId, boardId) => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -577,7 +484,6 @@ export const useUpdateCardById = (cardId) => {
   };
 
   return {
-    updateCard,
     updateTitle: (title) => updateCard({ title }),
     updateDescription: (description) => updateCard({ description }),
     updateThumbnail: (thumbnail) => updateCard({ thumbnail }),
@@ -660,7 +566,7 @@ export const useJoinOrPutMember = (cardId) => {
   };
 };
 // Attachment
-export const usePutAttachment = () => {
+export const usePutAttachment = (cardId) => {
   const mutation = useMutation({
     mutationFn: ({ attachmentId, data }) => putAttachment(attachmentId, data),
     onError: (error) => {
@@ -739,8 +645,7 @@ export const useRemoveCard = () => {
 };
 // ------------------------------------------------------
 
-export const useCreateCard = () => {
-  const queryClient = useQueryClient();
+export const useCreateCard = (boardId) => {
   return useMutation({
     mutationFn: createCard,
     onError: (error) => {

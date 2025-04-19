@@ -19,16 +19,14 @@ class ChecklistDeleted implements ShouldBroadcast
 
     public $checklistId;
     public $card;
-    public $user;
 
     /**
      * Create a new event instance.
      */
-    public function __construct($checklistId, Card $card, $user)
+    public function __construct($checklistId, Card $card)
     {
         $this->checklistId = $checklistId;
         $this->card = $card;
-        $this->user = $user;
     }
 
     /**
@@ -57,7 +55,7 @@ class ChecklistDeleted implements ShouldBroadcast
     public function broadcastWith(): array
     {
         $data = [
-            'checklist_id' => $this->checklistId,
+            'id' => $this->checklistId,
             'card_id' => $this->card->id,
         ];
 

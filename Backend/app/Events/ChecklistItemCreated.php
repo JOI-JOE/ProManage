@@ -18,13 +18,11 @@ class ChecklistItemCreated implements ShouldBroadcast
 
     public $checklistItem;
     public $card;
-    public $user;
 
-    public function __construct(ChecklistItem $checklistItem, Card $card, $user)
+    public function __construct($checklistItem, $card)
     {
         $this->checklistItem = $checklistItem;
         $this->card = $card;
-        $this->user = $user;
     }
 
     public function broadcastOn(): array
@@ -42,23 +40,10 @@ class ChecklistItemCreated implements ShouldBroadcast
     public function broadcastWith(): array
     {
         $data = [
-            'checklist_item' => [
-                'id' => $this->checklistItem->id,
-                'checklist_id' => $this->checklistItem->checklist_id,
-                'name' => $this->checklistItem->name,
-                'is_completed' => $this->checklistItem->is_completed,
-                'start_date' => $this->checklistItem->start_date,
-                'end_date' => $this->checklistItem->end_date,
-                'end_time' => $this->checklistItem->end_time,
-                'reminder' => $this->checklistItem->reminder,
-                'assignee' => $this->checklistItem->assignee,
-                'created_at' => $this->checklistItem->created_at,
-                'updated_at' => $this->checklistItem->updated_at,
-            ],
+            'id' => $this->checklistItem->id,
             'card_id' => $this->card->id,
-            'user_id' => $this->user ? $this->user->id : null,
         ];
-        Log::info('Broadcasting checklistItem.created:', $data);
+        Log::info('hậu đang làm checklistItem.created:', $data);
         return $data;
     }
 }
