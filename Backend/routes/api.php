@@ -182,7 +182,7 @@ Route::delete('/boards/{boardId}', [BoardController::class, 'toggleBoardClosed']
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
 
-
+Route::post('/boards/copy', [BoardController::class, 'copyBoard'])->middleware('auth:sanctum');
 Route::get('/boards/{board}/details', [BoardController::class, 'getBoardDetails']);
 Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
