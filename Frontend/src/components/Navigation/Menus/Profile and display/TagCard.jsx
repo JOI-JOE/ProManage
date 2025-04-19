@@ -197,7 +197,9 @@ const filteredListNames = [...new Set(
                     <Typography>{item.title}</Typography>
                   </TableCell>
 
-                  <TableCell onClick={(e) => handleListClick(e, item.board_name ,item.list_name)} sx={{ borderBottom: "1px solid #e0e0e0", cursor:"pointer","&:hover": {
+                  <TableCell
+                  // onClick={(e) => handleListClick(e, item.board_name ,item.list_name)}
+                   sx={{ borderBottom: "1px solid #e0e0e0", cursor:"pointer","&:hover": {
                           backgroundColor: "#e0ebeb",
                         }, }}>
                     <Typography>{item.list_name}</Typography>
@@ -250,19 +252,19 @@ const filteredListNames = [...new Set(
                   </TableCell>
                 </TableRow>
               ))}
-              <Menu anchorEl={listMenuAnchor} open={listMenuOpen} onClose={handleListMenuClose}>
+              {/* <Menu anchorEl={listMenuAnchor} open={listMenuOpen} onClose={handleListMenuClose}>
                 <Typography sx={{ padding:2,textAlign:"center",borderBottom:"1px solid black"}}>Thay đổi danh sách</Typography>
                 {filteredListNames.map((listName, index) => (
                   <MenuItem key={index} onClick={handleListMenuClose}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", width: 210, padding:1}}>
                       <Typography>{listName}</Typography>
                       {listName === currentListName && (
-                        <Typography sx={{ color: "green", fontWeight: "bold" }}>✓</Typography>
+                        <Typography sx={{ color: "gray", fontWeight: "bold" }}>✓</Typography>
                       )}
                     </Box>
                   </MenuItem>
                 ))}
-              </Menu>
+              </Menu> */}
             </TableBody>
           </Table>
         </TableContainer>
