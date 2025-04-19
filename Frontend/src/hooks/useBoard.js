@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createBoard,
   fetchBoardDetails,
+  forceDestroyBoard,
   getBoardById,
   getBoardClosed,
   getBoardMarked,
@@ -280,8 +281,11 @@ export const useToggleBoardClosed = () => {
       console.log("✅ Đã cập nhật trạng thái board:", data);
 
       // Cập nhật lại cache cho danh sách board
+      // queryClient.invalidateQueries({
+      //   queryKey: ['closedBoards'],
+      //   exact: true,
+      // });
       queryClient.invalidateQueries(["boards"]);
-      // queryClient.invalidateQueries(["board", boardId]);
 
     },
 
@@ -311,6 +315,25 @@ export const useBoardDetails = (boardId) => {
     queryKey: ["boardDetails", boardId],
     queryFn: () => fetchBoardDetails(boardId),
     enabled: !!boardId, // chỉ fetch khi có boardId
+  });
+};
+
+
+export const useForceDestroyBoard = (boardId) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (boardId) => forceDestroyBoard(boardId),
+    onSuccess: (_, boardId) => {
+      // Invalidate duy nhất query của danh sách closedBoards
+      queryClient.invalidateQueries({
+        queryKey: ['closedBoards'],
+        exact: true,
+      });
+
+      // (Optional) Invalidate workspace nếu bạn cần cập nhật số lượng board chẳng hạn:
+      // queryClient.invalidateQueries({ queryKey: ['workspaces'], exact: true });
+    },
   });
 };
 

@@ -192,6 +192,7 @@ Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth
 
 
 Route::prefix('boards/{id}/')->group(function () {
+    Route::delete('fDestroy', [BoardController::class, 'ForceDestroy']);
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
     Route::patch('marked', [BoardController::class, 'updateIsMarked']);
     Route::patch('archive', [BoardController::class, 'updateArchive']);

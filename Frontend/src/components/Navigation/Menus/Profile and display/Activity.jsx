@@ -121,7 +121,7 @@ const Activity = () => {
                         padding: 0.5,
                         textDecoration: "none",
                         "&:hover": {
-                          backgroundColor: "#b6c2cf",
+                          backgroundColor: "#e0ebeb",
                         },
                       }}
                     >
