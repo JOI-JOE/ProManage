@@ -40,6 +40,7 @@ const SideBar = () => {
   // console.log(boardId);
   const { data: guestBoards } = useGuestBoards();
   // console.log(guestBoards);
+
   const { currentWorkspace } = useContext(WorkspaceContext);
   const { data: boardMembers = [] } = useGetBoardMembers(boardId);
 
@@ -51,13 +52,7 @@ const SideBar = () => {
     )
     : false;
 
-
   const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
-  // console.log(adminCount);
-
-  // useMemberJoinedListener(user?.id)
-
-
 
   const foundWorkspace = guestBoards?.find((workspace) =>
     workspace.boards.some((board) => board.id === boardId)
@@ -161,7 +156,7 @@ const SideBar = () => {
           <ListItem disablePadding>
             <ListItemButton
               component={Link}
-              to={`/w/${currentWorkspace?.name}/members`}
+              to={`/w/${currentWorkspace?.id}/members`}
             >
               <ListItemIcon sx={{ color: "white" }}>
                 <PeopleIcon />
@@ -225,122 +220,122 @@ const SideBar = () => {
         {(isGuest ? foundWorkspace : currentWorkspace)?.boards
           .filter((board) => board.closed === 0)
           .map((board) => (
-          <ListItem
-            key={board.id}
-            disablePadding
-            sx={{ p: 1, display: "flex", alignItems: "center" }}
-          >
-            {/* Phần tên bảng dẫn link */}
-            <ListItemButton
-              component={Link}
-              to={`/b/${board.id}/${board.name}`}
-              sx={{
-                flexGrow: 1,
-                backgroundColor:
-                  board.id === Number(board.id) ? "#ffffff33" : "transparent",
-                "&:hover": { backgroundColor: "#ffffff22" },
-                borderRadius: "6px",
-              }}
+            <ListItem
+              key={board.id}
+              disablePadding
+              sx={{ p: 1, display: "flex", alignItems: "center" }}
             >
-              <ListItemIcon sx={{ color: "white" }}>
-                <FolderIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary={board.name}
+              {/* Phần tên bảng dẫn link */}
+              <ListItemButton
+                component={Link}
+                to={`/b/${board.id}/${board.name}`}
                 sx={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              />
-            </ListItemButton>
-
-            {/* Nút ... mở dropdown, tách riêng hoàn toàn */}
-            <IconButton
-              onClick={(e) => handleMenuOpen(e, board.id)}
-              sx={{ color: "white", ml: "auto" }}
-            >
-              <MoreVertIcon />
-            </IconButton>
-
-            {/* Dropdown menu của từng bảng */}
-            <Menu
-              anchorEl={menuAnchor}
-              open={selectedBoardId === board.id}
-              onClose={handleMenuClose}
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-              transformOrigin={{ vertical: "top", horizontal: "left" }}
-              sx={{
-                "& .MuiPaper-root": {
-                  backgroundColor: "#2e2e2e",
-                  color: "white",
-                  borderRadius: "8px",
-                  minWidth: "300px",
-                },
-              }}
-            >
-              <MenuItem
-                disabled
-                sx={{
-                  fontWeight: "bold",
-                  fontSize: "1rem",
-                  opacity: 1,
-                  textAlign: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  padding: "12px 16px",
+                  flexGrow: 1,
+                  backgroundColor:
+                    board.id === Number(board.id) ? "#ffffff33" : "transparent",
+                  "&:hover": { backgroundColor: "#ffffff22" },
+                  borderRadius: "6px",
                 }}
               >
-                {board.name}
-              </MenuItem>
+                <ListItemIcon sx={{ color: "white" }}>
+                  <FolderIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={board.name}
+                  sx={{
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                />
+              </ListItemButton>
 
-              {(adminCount >= 2 || isMember) && (
-                [
-                  {
-                    text: "Rời khỏi bảng",
-                    icon: <ExitToAppIcon />,
-                    color: "#ff4d4d",
+              {/* Nút ... mở dropdown, tách riêng hoàn toàn */}
+              <IconButton
+                onClick={(e) => handleMenuOpen(e, board.id)}
+                sx={{ color: "white", ml: "auto" }}
+              >
+                <MoreVertIcon />
+              </IconButton>
+
+              {/* Dropdown menu của từng bảng */}
+              <Menu
+                anchorEl={menuAnchor}
+                open={selectedBoardId === board.id}
+                onClose={handleMenuClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                transformOrigin={{ vertical: "top", horizontal: "left" }}
+                sx={{
+                  "& .MuiPaper-root": {
+                    backgroundColor: "#2e2e2e",
+                    color: "white",
+                    borderRadius: "8px",
+                    minWidth: "300px",
                   },
-                ].map((item, index) => (
-                  <MenuItem
-                    key={index}
-                    onClick={() => console.log(item.text)}
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "10px 16px",
-                      "&:hover": { backgroundColor: item.color, color: "white" },
-                    }}
-                  >
-                    {item.text}
-                    {item.icon}
-                  </MenuItem>
-                ))
-              )}
+                }}
+              >
+                <MenuItem
+                  disabled
+                  sx={{
+                    fontWeight: "bold",
+                    fontSize: "1rem",
+                    opacity: 1,
+                    textAlign: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                    padding: "12px 16px",
+                  }}
+                >
+                  {board.name}
+                </MenuItem>
+
+                {(adminCount >= 2 || isMember) && (
+                  [
+                    {
+                      text: "Rời khỏi bảng",
+                      icon: <ExitToAppIcon />,
+                      color: "#ff4d4d",
+                    },
+                  ].map((item, index) => (
+                    <MenuItem
+                      key={index}
+                      onClick={() => console.log(item.text)}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        padding: "10px 16px",
+                        "&:hover": { backgroundColor: item.color, color: "white" },
+                      }}
+                    >
+                      {item.text}
+                      {item.icon}
+                    </MenuItem>
+                  ))
+                )}
 
 
-              {!isMember && (
-                [
-                  { text: "Đóng bảng", icon: <CloseIcon />, color: "#ff4d4d" },
-                ].map((item, index) => (
-                  <MenuItem
-                    key={index}
-                    onClick={() => handleCloseBoard(board.id)}
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "10px 16px",
-                      "&:hover": { backgroundColor: item.color, color: "white" },
-                    }}
-                  >
-                    {item.text}
-                    {item.icon}
-                  </MenuItem>
-                ))
-              )}
+                {!isMember && (
+                  [
+                    { text: "Đóng bảng", icon: <CloseIcon />, color: "#ff4d4d" },
+                  ].map((item, index) => (
+                    <MenuItem
+                      key={index}
+                      onClick={() => handleCloseBoard(board.id)}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        padding: "10px 16px",
+                        "&:hover": { backgroundColor: item.color, color: "white" },
+                      }}
+                    >
+                      {item.text}
+                      {item.icon}
+                    </MenuItem>
+                  ))
+                )}
 
-            </Menu>
-          </ListItem>
+              </Menu>
+            </ListItem>
           ))}
       </List>
     </Drawer>

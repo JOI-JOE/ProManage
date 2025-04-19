@@ -5,14 +5,14 @@ const WorkspaceContext = createContext();
 
 export const WorkspaceProvider = ({ children }) => {
   const [currentWorkspace, setCurrentWorkspace] = useState(null);
-  
+
   // Gọi API lấy danh sách workspace mà user tham gia
   const { data: workspaces, isLoading, isError } = useGetWorkspaces();
-  
+
   // Mặc định chọn workspace đầu tiên nếu chưa có workspace nào được chọn
   useEffect(() => {
     if (workspaces && workspaces.length > 0 && !currentWorkspace) {
-      setCurrentWorkspace(workspaces[0]); 
+      setCurrentWorkspace(workspaces[0]);
     }
   }, [workspaces]);
 

@@ -82,9 +82,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
+        Route::get('workspaces/{workspaceId}', 'show');
+        // Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
+
         Route::get('guestWorkspace', 'getGuestWorkspaces');
 
-        Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
         Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::post('workspaces', 'store');
@@ -143,11 +145,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     //user profile
     Route::get('/user', [ApiUserController::class, 'getUserById']);
-    
+
     Route::put('/user/update-profile', [ApiUserController::class, 'updateProfile']);
 
     Route::get('/user/activities', [ActivityLogController::class, 'getMyActivities']);
-    
+
     Route::get('/user/workspaces', [WorkspaceMembersController::class, 'getUserWorkspaces']);
 
     Route::get('/user/{id}/cards', [CardController::class, 'getCardsByUserBoards']);

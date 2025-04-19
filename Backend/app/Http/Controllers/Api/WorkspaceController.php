@@ -10,6 +10,7 @@ use App\Models\WorkspaceMembers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -33,6 +34,122 @@ class WorkspaceController extends Controller
             return WorkspaceResource::collection($workspaces);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+        }
+    }
+    public function show($workspaceId)
+    {
+        try {
+            // Fetch workspace data
+            $workspace = DB::table('workspaces')
+                ->where('id', $workspaceId)
+                ->first();
+
+            if (!$workspace) {
+                Log::error("Không tìm thấy workspace ID: $workspaceId");
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy workspace.',
+                ], 404);
+            }
+
+            // Fetch creator data
+            $creator = DB::table('users')
+                ->where('id', $workspace->id_member_creator)
+                ->first();
+
+            // Fetch boards
+            $boards = DB::table('boards')
+                ->where('workspace_id', $workspaceId)
+                ->get()
+                ->map(function ($board) {
+                    return [
+                        'id' => $board->id,
+                        'name' => $board->name,
+                        'thumbnail' => $board->thumbnail,
+                        'description' => $board->description,
+                        'is_marked' => (bool) $board->is_marked,
+                        'archive' => (bool) $board->archive,
+                        'closed' => (bool) $board->closed,
+                        'visibility' => $board->visibility,
+                        'created_at' => (new \DateTime($board->created_at))->format(\DateTime::ISO8601),
+                        'updated_at' => (new \DateTime($board->updated_at))->format(\DateTime::ISO8601),
+                    ];
+                })->toArray();
+
+            // Fetch members and their user details
+            $members = DB::table('workspace_members')
+                ->join('users', 'workspace_members.user_id', '=', 'users.id')
+                ->where('workspace_members.workspace_id', $workspaceId)
+                ->select(
+                    'users.id',
+                    'users.user_name',
+                    'users.full_name',
+                    'users.email',
+                    'users.image',
+                    'workspace_members.member_type',
+                    'workspace_members.is_unconfirmed',
+                    'workspace_members.joined',
+                    'workspace_members.is_deactivated',
+                    'workspace_members.last_active'
+                )
+                ->get()
+                ->map(function ($member) {
+                    return [
+                        'id' => $member->id,
+                        'user_name' => $member->user_name,
+                        'full_name' => $member->full_name,
+                        'email' => $member->email,
+                        'image' => $member->image,
+                        'member_type' => $member->member_type,
+                        'is_unconfirmed' => (bool) $member->is_unconfirmed,
+                        'joined' => (bool) $member->joined,
+                        'is_deactivated' => (bool) $member->is_deactivated,
+                        'last_active' => $member->last_active
+                            ? (new \DateTime($member->last_active))->format(\DateTime::ISO8601)
+                            : null,
+                    ];
+                })->toArray();
+
+            // Format the response
+            $response = [
+                'id' => $workspace->id,
+                'name' => $workspace->name,
+                'display_name' => $workspace->display_name,
+                'description' => $workspace->desc,
+                'logo_hash' => $workspace->logo_hash,
+                'logo_url' => $workspace->logo_url,
+                'permission_level' => $workspace->permission_level,
+                'board_invite_restrict' => $workspace->board_invite_restrict,
+                'org_invite_restrict' => json_decode($workspace->org_invite_restrict, true),
+                'board_delete_restrict' => json_decode($workspace->board_delete_restrict, true),
+                'board_visibility_restrict' => json_decode($workspace->board_visibility_restrict, true),
+                'team_type' => $workspace->team_type,
+                'created_at' => (new \DateTime($workspace->created_at))->format(\DateTime::ISO8601),
+                'updated_at' => (new \DateTime($workspace->updated_at))->format(\DateTime::ISO8601),
+                'creator' => $creator ? [
+                    'id' => $creator->id,
+                    'user_name' => $creator->user_name,
+                    'full_name' => $creator->full_name,
+                    'email' => $creator->email,
+                    'image' => $creator->image,
+                ] : null,
+                'boards' => $boards,
+                'members' => $members,
+            ];
+
+            return response()->json($response, 200);
+        } catch (QueryException $e) {
+            Log::error('Lỗi truy vấn cơ sở dữ liệu khi lấy workspace: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lấy workspace.',
+            ], 500);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy workspace: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lấy workspace.',
+            ], 500);
         }
     }
 
@@ -92,25 +209,7 @@ class WorkspaceController extends Controller
             ]);
         }
     }
-    public function showWorkspaceById($workspaceId)
-    {
-        try {
-            $workspace = Workspace::findOrFail($workspaceId);
-            return new WorkspaceResource($workspace);
-        } catch (ModelNotFoundException $e) {
-            Log::error("Không tìm thấy workspace ID: $workspaceId");
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy workspace.',
-            ], 404);
-        } catch (\Exception $e) {
-            Log::error('Lỗi khi lấy workspace: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra khi lấy workspace.',
-            ], 500);
-        }
-    }
+
     public function store(WorkspaceRequest $request)
     {
         $user = Auth::user();
@@ -362,7 +461,6 @@ class WorkspaceController extends Controller
                 'owned_workspaces' => $ownedWorkspaces,
                 'guest_workspaces' => $guestWorkspaces,
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Something went wrong',
@@ -371,6 +469,4 @@ class WorkspaceController extends Controller
             ], 500);
         }
     }
-
-
 }

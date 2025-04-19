@@ -15,10 +15,9 @@ import {
   toggleBoardClosed,
   toggleBoardMarked,
   updateBoardName,
-  updateBoardVisibility
+  updateBoardVisibility,
 } from "../api/models/boardsApi";
 import { useCallback, useContext, useEffect } from "react";
-import WorkspaceContext from "../contexts/WorkspaceContext";
 import echoInstance from "./realtime/useRealtime";
 import { toast } from "react-toastify";
 
@@ -38,7 +37,6 @@ export const useCreateBoard = () => {
 };
 
 export const useGetBoardByID = (boardId) => {
-
   const queryClient = useQueryClient();
 
   const boardDetail = useQuery({
@@ -71,7 +69,6 @@ export const useGetBoardByID = (boardId) => {
       // queryClient.invalidateQueries({ queryKey: ["checklist-item-members", itemId]});
       queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
       queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
-
     });
 
     channel.listen(".board.updateName", (data) => {
@@ -85,7 +82,6 @@ export const useGetBoardByID = (boardId) => {
       echoInstance.leave(`boards.${boardId}`);
     };
   }, [boardId, queryClient]);
-
 
   return boardDetail;
 };
@@ -155,7 +151,6 @@ export const useRecentBoardAccess = () => {
  */
 export const useUpdateBoardName = () => {
   const queryClient = useQueryClient();
-  const { currentWorkspace } = useContext(WorkspaceContext);
 
   return useMutation({
     mutationFn: ({ boardId, name }) => updateBoardName(boardId, name), // Gọi API cập nhật tên board
@@ -163,8 +158,6 @@ export const useUpdateBoardName = () => {
       // Invalidate lại dữ liệu để cập nhật UI
 
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-
-
 
       // queryClient.invalidateQueries({ queryKey: ["boardDetail", boardId], exact: true });
     },
@@ -262,10 +255,14 @@ export const useUpdateBoardVisibility = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ boardId, visibility }) => updateBoardVisibility(boardId, visibility),
+    mutationFn: ({ boardId, visibility }) =>
+      updateBoardVisibility(boardId, visibility),
     onSuccess: (data, { boardId }) => {
       // Optionally invalidate queries to ensure data is fresh
-      queryClient.invalidateQueries({ queryKey: ["lists", boardId], exact: true });
+      queryClient.invalidateQueries({
+        queryKey: ["lists", boardId],
+        exact: true,
+      });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật visibility của bảng:", error);
@@ -289,10 +286,7 @@ export const useToggleBoardClosed = () => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
 
-
       // queryClient.invalidateQueries(["board", boardId]);
-
-
     },
 
     // Xử lý khi có lỗi
@@ -302,9 +296,7 @@ export const useToggleBoardClosed = () => {
   });
 };
 
-
 export const useClosedBoards = () => {
-
   return useQuery({
     queryKey: ["closedBoards"], // Key riêng cho danh sách board đã đóng
     queryFn: getBoardClosed, // Gọi API lấy danh sách bảng đã đóng
@@ -314,7 +306,6 @@ export const useClosedBoards = () => {
     },
   });
 };
-
 
 export const useBoardDetails = (boardId) => {
   return useQuery({
@@ -330,18 +321,15 @@ export const useCopyBoard = () => {
   return useMutation({
     mutationFn: copyBoard,
     onSuccess: (res) => {
-
       const newBoard = res.board;
 
       // Làm mới cache các board
-      queryClient.invalidateQueries({ queryKey: ["boards", newBoard.id], exact: true });
+      queryClient.invalidateQueries({
+        queryKey: ["boards", newBoard.id],
+        exact: true,
+      });
 
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-
-
-
-
-
       // queryClient.invalidateQueries({ queryKey: ["workspaceBoards", newBoard.workspace_id] });
 
       toast.success("Sao chép bảng thành công!");
@@ -353,7 +341,6 @@ export const useCopyBoard = () => {
   });
 };
 
-
 export const useForceDestroyBoard = (boardId) => {
   const queryClient = useQueryClient();
 
@@ -362,7 +349,7 @@ export const useForceDestroyBoard = (boardId) => {
     onSuccess: (_, boardId) => {
       // Invalidate duy nhất query của danh sách closedBoards
       queryClient.invalidateQueries({
-        queryKey: ['closedBoards'],
+        queryKey: ["closedBoards"],
         exact: true,
       });
 
@@ -371,7 +358,6 @@ export const useForceDestroyBoard = (boardId) => {
     },
   });
 };
-
 
 // export const useForceDestroyBoard = (boardId) => {
 //   const queryClient = useQueryClient();
@@ -390,8 +376,3 @@ export const useForceDestroyBoard = (boardId) => {
 //     },
 //   });
 // };
-
-
-
-
-
