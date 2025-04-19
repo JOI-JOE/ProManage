@@ -11,177 +11,64 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class AttachmentController extends Controller
 {
-    public function store(Request $request, $cardId)
+    protected $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'svg'];
+
+    protected function getAuthenticatedUser()
     {
         if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bạn cần đăng nhập để thêm attachment!',
-            ], 401);
+            throw new \Exception('Bạn cần đăng nhập để thực hiện thao tác này!', 401);
         }
+        return Auth::user();
+    }
 
+    protected function findCardOrFail($cardId)
+    {
+        $card = \App\Models\Card::find($cardId);
+        if (!$card) {
+            throw new \Exception('Card không tồn tại!', 404);
+        }
+        return $card;
+    }
+
+    protected function createActivityLog($user, $card, $event, $properties, $message)
+    {
+        activity()
+            ->causedBy($user)
+            ->performedOn($card)
+            ->event($event)
+            ->withProperties($properties)
+            ->log($message);
+    }
+
+    public function store(Request $request, $cardId)
+    {
         DB::beginTransaction();
         try {
-            $card = \App\Models\Card::find($cardId);
-            if (!$card) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Card không tồn tại!',
-                ], 404);
-            }
-
-            $user = Auth::user();
+            $user = $this->getAuthenticatedUser();
+            $card = $this->findCardOrFail($cardId);
             $userName = $user->full_name ?? 'ai đó';
-            $responseData = null;
 
-            if ($request->hasFile('file')) {
-                $request->validate([
-                    'file' => 'required|file|max:10240|mimes:jpeg,png,gif,pdf,doc,docx,xls,xlsx,ppt,pptx,txt',
-                    'is_cover' => 'nullable|boolean',
-                ]);
+            $responseData = $this->handleAttachmentCreation($request, $cardId, $card, $user, $userName);
+            $message = $request->hasFile('file') ? 'Tệp đính kèm đã được tải lên thành công!' : 'Liên kết đã được thêm thành công!';
 
-                $file = $request->file('file');
-                $fileName = Str::random(20) . '_' . time() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('attachments', $fileName, 'public');
-                $publicUrl = Storage::url($path);
-                $attachmentId = Str::uuid()->toString();
-
-                $isCover = $request->boolean('is_cover');
-                if ($isCover && !in_array(strtolower($file->getClientOriginalExtension()), ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
-                    throw new \Exception('Only image files can be set as cover.');
-                }
-
-                DB::table('attachments')->insert([
-                    'id' => $attachmentId,
-                    'card_id' => $cardId,
-                    'path_url' => $publicUrl,
-                    'file_name_defaut' => $file->getClientOriginalName(),
-                    'file_name' => $fileName,
-                    'type' => 'file',
-                    'is_cover' => $isCover,
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ]);
-
-                if ($isCover) {
-                    DB::table('attachments')
-                        ->where('card_id', $cardId)
-                        ->where('id', '!=', $attachmentId)
-                        ->update(['is_cover' => false]);
-                    $card->thumbnail = $publicUrl;
-                    $card->save();
-                }
-
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($card)
-                    ->event('created_attachment_file')
-                    ->withProperties([
-                        'attachment_id' => $attachmentId,
-                        'file_name_defaut' => $file->getClientOriginalName(),
-                        'path_url' => $publicUrl,
-                        'type' => 'file',
-                        'is_cover' => $isCover,
-                        'card_id' => $cardId,
-                    ])
-                    ->log("{$userName} đã thêm tệp đính kèm '{$file->getClientOriginalName()}' vào card '{$card->title}'.");
-
-                $responseData = [
-                    'id' => $attachmentId,
-                    'file_name_defaut' => $file->getClientOriginalName(),
-                    'path_url' => $publicUrl,
-                    'file_name' => $fileName,
-                    'card_id' => $cardId,
-                    'size' => $file->getSize(),
-                    'mime_type' => $file->getMimeType(),
-                    'type' => 'file',
-                    'is_cover' => $isCover,
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ];
-                $message = 'Attachment uploaded successfully';
-            } elseif ($request->input('type') === 'link') {
-                $request->validate([
-                    'file_name_defaut' => 'required|string|max:255',
-                    'path_url' => 'required|url|max:2048',
-                    'is_cover' => 'nullable|boolean',
-                ]);
-
-                $fileNameForLink = Str::slug($request->input('file_name_defaut')) . '_' . Str::random(10);
-                $attachmentId = Str::uuid()->toString();
-                $isCover = $request->boolean('is_cover');
-
-                if ($isCover) {
-                    throw new \Exception('Links cannot be set as cover.');
-                }
-
-                DB::table('attachments')->insert([
-                    'id' => $attachmentId,
-                    'card_id' => $cardId,
-                    'path_url' => $request->input('path_url'),
-                    'file_name_defaut' => $request->input('file_name_defaut'),
-                    'file_name' => $fileNameForLink,
-                    'type' => 'link',
-                    'is_cover' => false, // Links can't be covers as per your validation
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($card)
-                    ->event('created_attachment_link')
-                    ->withProperties([
-                        'attachment_id' => $attachmentId,
-                        'file_name_defaut' => $request->input('file_name_defaut'),
-                        'path_url' => $request->input('path_url'),
-                        'type' => 'link',
-                        'is_cover' => false,
-                        'card_id' => $cardId,
-                    ])
-                    ->log("{$userName} đã thêm liên kết '{$request->input('file_name_defaut')}' vào card '{$card->title}'.");
-
-                // Define responseData for links too
-                $responseData = [
-                    'id' => $attachmentId,
-                    'file_name_defaut' => $request->input('file_name_defaut'),
-                    'path_url' => $request->input('path_url'),
-                    'file_name' => $fileNameForLink,
-                    'card_id' => $cardId,
-                    'type' => 'link',
-                    'is_cover' => false,
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ];
-                $message = 'Link added successfully';
-            } else {
-                throw new \Exception('No file uploaded or invalid link data provided');
-            }
-
+            // $card->updated_at = now();
+            // $card->save();
+            $card->touch(); // Cập nhật updated_at mà không cần gọi save()
             DB::commit();
 
-            $card->updated_at = now();
-            $card->save();
-
-            try {
-                broadcast(new AttachmentCreated($responseData))->toOthers();
-                event(new CardUpdated($card));
-            } catch (\Exception $e) {
-                Log::error("Failed to broadcast events: {$e->getMessage()}", [
-                    'card_id' => $cardId,
-                    'attachment_id' => $attachmentId ?? null,
-                ]);
-            }
+            // \App\Jobs\BroadcastAttachmentCreated::dispatch($responseData);
+            broadcast(new AttachmentCreated($responseData))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
 
             return response()->json([
                 'success' => true,
-                'message' => $message ?? 'Attachment added successfully',
+                'message' => $message,
                 'data' => $responseData,
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -195,22 +82,150 @@ class AttachmentController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to add attachment',
+                'message' => $e->getMessage(),
                 'error' => app()->environment('production') ? null : $e->getMessage(),
-            ], 500);
+            ], $e->getCode() ?: 500);
         }
+    }
+
+    protected function handleAttachmentCreation(Request $request, $cardId, $card, $user, $userName)
+    {
+        $attachmentId = Str::uuid()->toString();
+        $isCover = $request->boolean('is_cover');
+        $properties = ['attachment_id' => $attachmentId, 'card_id' => $cardId, 'is_cover' => $isCover];
+
+        if ($request->hasFile('file')) {
+            $request->validate([
+                'file' => 'required|file|max:20480|mimes:jpeg,png,gif,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,mp4,mov,avi,mkv,mp3,wav,flac,csv,xml,md,py,java,cpp,c,ts,tsx,php,rb,sh,bat,exe,dmg,iso,ai,psd,sketch,fig,webp,bmp,tiff,svg',
+                'is_cover' => 'nullable|boolean',
+            ], [
+                'file.required' => 'Vui lòng chọn một tệp để tải lên!',
+                'file.file' => 'Tệp không hợp lệ!',
+                'file.max' => 'Tệp không được vượt quá 20MB!',
+                'file.mimes' => 'Định dạng tệp không được hỗ trợ! Các định dạng được hỗ trợ: ảnh, video, âm thanh, tài liệu, mã nguồn, v.v.',
+            ]);
+
+            $file = $request->file('file');
+            $fileName = Str::random(20) . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('attachments', $fileName, 'public');
+            $publicUrl = Storage::url($path);
+
+            if ($isCover && !in_array(strtolower($file->getClientOriginalExtension()), $this->imageExtensions)) {
+                throw new \Exception('Chỉ các tệp hình ảnh mới có thể được đặt làm ảnh bìa.');
+            }
+
+            DB::table('attachments')->insert([
+                'id' => $attachmentId,
+                'card_id' => $cardId,
+                'path_url' => $publicUrl,
+                'file_name_defaut' => $file->getClientOriginalName(),
+                'file_name' => $fileName,
+                'type' => 'file',
+                'is_cover' => $isCover,
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]);
+
+            if ($isCover) {
+                DB::table('attachments')
+                    ->where('card_id', $cardId)
+                    ->where('id', '!=', $attachmentId)
+                    ->update(['is_cover' => false]);
+                $card->thumbnail = $publicUrl;
+                $card->save();
+            }
+
+            $properties = array_merge($properties, [
+                'file_name_defaut' => $file->getClientOriginalName(),
+                'path_url' => $publicUrl,
+                'type' => 'file',
+            ]);
+
+            $this->createActivityLog(
+                $user,
+                $card,
+                'created_attachment_file',
+                $properties,
+                "{$userName} đã thêm tệp đính kèm '{$file->getClientOriginalName()}' vào card '{$card->title}'."
+            );
+
+            return [
+                'id' => $attachmentId,
+                'file_name_defaut' => $file->getClientOriginalName(),
+                'path_url' => $publicUrl,
+                'file_name' => $fileName,
+                'card_id' => $cardId,
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'type' => 'file',
+                'is_cover' => $isCover,
+                'updated_at' => now(),
+                'created_at' => now(),
+            ];
+        } elseif ($request->input('type') === 'link') {
+            $request->validate([
+                'file_name_defaut' => 'required|string|max:255',
+                'path_url' => 'required|url|max:2048',
+                'is_cover' => 'nullable|boolean',
+            ], [
+                'file_name_defaut.required' => 'Tên liên kết là bắt buộc!',
+                'file_name_defaut.max' => 'Tên liên kết không được vượt quá 255 ký tự!',
+                'path_url.required' => 'URL liên kết là bắt buộc!',
+                'path_url.url' => 'URL không hợp lệ!',
+                'path_url.max' => 'URL không được vượt quá 2048 ký tự!',
+            ]);
+
+            if ($isCover) {
+                throw new \Exception('Liên kết không thể được đặt làm ảnh bìa.');
+            }
+
+            $fileNameForLink = Str::slug($request->input('file_name_defaut')) . '_' . Str::random(10);
+            DB::table('attachments')->insert([
+                'id' => $attachmentId,
+                'card_id' => $cardId,
+                'path_url' => $request->input('path_url'),
+                'file_name_defaut' => $request->input('file_name_defaut'),
+                'file_name' => $fileNameForLink,
+                'type' => 'link',
+                'is_cover' => $isCover,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $properties = array_merge($properties, [
+                'file_name_defaut' => $request->input('file_name_defaut'),
+                'path_url' => $request->input('path_url'),
+                'type' => 'link',
+            ]);
+
+            $this->createActivityLog(
+                $user,
+                $card,
+                'created_attachment_link',
+                $properties,
+                "{$userName} đã thêm liên kết '{$request->input('file_name_defaut')}' vào card '{$card->title}'."
+            );
+
+            return [
+                'id' => $attachmentId,
+                'file_name_defaut' => $request->input('file_name_defaut'),
+                'path_url' => $request->input('path_url'),
+                'file_name' => $fileNameForLink,
+                'card_id' => $cardId,
+                'type' => 'link',
+                'is_cover' => $isCover,
+                'updated_at' => now(),
+                'created_at' => now(),
+            ];
+        }
+
+        throw new \Exception('Không có tệp được tải lên hoặc dữ liệu liên kết không hợp lệ!');
     }
 
     public function index($cardId)
     {
         try {
-            $card = \App\Models\Card::find($cardId);
-            if (!$card) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Card không tồn tại!',
-                ], 404);
-            }
+            $this->findCardOrFail($cardId);
 
             $attachments = DB::table('attachments')
                 ->where('card_id', $cardId)
@@ -234,118 +249,82 @@ class AttachmentController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error retrieving attachments',
+                'message' => $e->getMessage(),
                 'error' => app()->environment('production') ? null : $e->getMessage(),
-            ], 500);
+            ], $e->getCode() ?: 500);
         }
     }
 
     public function delete($attachmentId)
     {
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bạn cần đăng nhập để xóa attachment!',
-            ], 401);
-        }
-
         DB::beginTransaction();
         try {
-            $attachment = DB::table('attachments')->where('id', $attachmentId)->first();
-            if (!$attachment) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Attachment not found',
-                ], 404);
-            }
-
-            $card = \App\Models\Card::find($attachment->card_id);
-            if (!$card) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Card không tồn tại!',
-                ], 404);
-            }
-
-            $user = Auth::user();
+            $user = $this->getAuthenticatedUser();
+            $attachment = $this->findAttachmentOrFail($attachmentId);
+            $card = $this->findCardOrFail($attachment->card_id);
             $userName = $user->full_name ?? 'ai đó';
 
-            activity()
-                ->causedBy($user)
-                ->performedOn($card)
-                ->event('deleted_attachment')
-                ->withProperties([
+            $this->createActivityLog(
+                $user,
+                $card,
+                'deleted_attachment',
+                [
                     'attachment_id' => $attachmentId,
                     'file_name_defaut' => $attachment->file_name_defaut,
                     'type' => $attachment->type,
                     'card_id' => $attachment->card_id,
-                ])
-                ->log("{$userName} đã xóa đính kèm '{$attachment->file_name_defaut}' khỏi card '{$card->title}'.");
+                ],
+                "{$userName} đã xóa đính kèm '{$attachment->file_name_defaut}' khỏi card '{$card->title}'."
+            );
 
             if ($attachment->type === 'file' && $attachment->file_name) {
-                $filePath = 'attachments/' . $attachment->file_name;
-                if (Storage::disk('public')->exists($filePath)) {
-                    Storage::disk('public')->delete($filePath);
-                }
+                Log::info('Deleting file from storage', ['file' => $attachment->file_name]);
+                Storage::disk('public')->delete('attachments/' . $attachment->file_name);
             }
 
             if ($attachment->is_cover) {
+                Log::info('Removing cover thumbnail');
                 $card->thumbnail = null;
             }
 
+            Log::info('Deleting attachment from database');
             DB::table('attachments')->where('id', $attachmentId)->delete();
-            $card->updated_at = now();
-            $card->save();
 
+            $card->touch();
             DB::commit();
 
-            // Trigger real-time events
-            try {
-                broadcast(new AttachmentDeleted($attachmentId, $card))->toOthers();
-                event(new CardUpdated($card));
-            } catch (\Exception $e) {
-                Log::error("Failed to broadcast events: {$e->getMessage()}", [
-                    'card_id' => $card->id,
-                    'attachment_id' => $attachmentId,
-                ]);
-            }
+            broadcast(new AttachmentDeleted($attachmentId, $card->id))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Attachment deleted successfully',
+                'message' => 'Đính kèm đã được xóa thành công!',
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Attachment deletion failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error deleting attachment',
+                'message' => $e->getMessage(),
                 'error' => app()->environment('production') ? null : $e->getMessage(),
-            ], 500);
+            ], $e->getCode() ?: 500);
         }
     }
 
     public function update(Request $request, string $attachmentId)
     {
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bạn cần đăng nhập để cập nhật attachment!',
-            ], 401);
-        }
-
         DB::beginTransaction();
         try {
+            $user = $this->getAuthenticatedUser();
             $attachment = $this->findAttachmentOrFail($attachmentId);
-            $card = \App\Models\Card::find($attachment->card_id);
-            if (!$card) {
-                throw new \Exception('Card không tồn tại!');
-            }
-
-            $user = Auth::user();
+            $card = $this->findCardOrFail($attachment->card_id);
             $userName = $user->full_name ?? 'ai đó';
 
             $request->validate([
-                'file' => 'nullable|file|max:10240|mimes:jpeg,png,gif,pdf,doc,docx,xls,xlsx,ppt,pptx,txt',
+                'file' => 'nullable|file|max:20480|mimes:jpeg,png,gif,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,mp4,mov,avi,mkv,mp3,wav,flac,csv,xml,md,py,java,cpp,c,ts,tsx,php,rb,sh,bat,exe,dmg,iso,ai,psd,sketch,fig,webp,bmp,tiff,svg',
                 'path_url' => 'nullable|url|required_if:type,link',
                 'file_name_defaut' => 'nullable|string|max:255',
                 'is_cover' => 'nullable|boolean',
@@ -356,19 +335,14 @@ class AttachmentController extends Controller
             $logProperties = ['attachment_id' => $attachmentId, 'card_id' => $attachment->card_id];
             $wasCover = $attachment->is_cover;
 
-            // Handle file upload
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
                 $fileName = Str::random(20) . '_' . time() . '.' . $file->getClientOriginalExtension();
                 $path = $file->storeAs('attachments', $fileName, 'public');
                 $publicUrl = Storage::url($path);
 
-                // Delete old file if it exists
                 if ($attachment->type === 'file' && $attachment->file_name) {
-                    $oldFilePath = 'attachments/' . $attachment->file_name;
-                    if (Storage::disk('public')->exists($oldFilePath)) {
-                        Storage::disk('public')->delete($oldFilePath);
-                    }
+                    Storage::disk('public')->delete('attachments/' . $attachment->file_name);
                 }
 
                 $updateData = [
@@ -384,13 +358,11 @@ class AttachmentController extends Controller
                 $logProperties['old_path_url'] = $attachment->path_url;
                 $logProperties['new_path_url'] = $publicUrl;
 
-                // Update card thumbnail if this was the cover
                 if ($wasCover || $request->boolean('is_cover')) {
                     $card->thumbnail = $publicUrl;
                 }
             }
 
-            // Handle link update
             if ($request->filled('path_url') && $request->input('type') === 'link') {
                 $updateData['path_url'] = $request->input('path_url');
                 $updateData['type'] = 'link';
@@ -402,36 +374,32 @@ class AttachmentController extends Controller
                 $logProperties['old_type'] = $attachment->type;
                 $logProperties['new_type'] = 'link';
 
-                // If this was a cover, it can no longer be as links can't be covers
                 if ($wasCover) {
                     $updateData['is_cover'] = false;
                     $card->thumbnail = null;
                 }
             }
 
-            // Handle file name update
             if ($request->filled('file_name_defaut')) {
                 $updateData['file_name_defaut'] = $request->input('file_name_defaut');
                 $logProperties['old_file_name_defaut'] = $attachment->file_name_defaut;
                 $logProperties['new_file_name_defaut'] = $request->input('file_name_defaut');
             }
 
-            // Handle cover flag update
             if ($request->has('is_cover')) {
                 $isCover = $request->boolean('is_cover');
-                $allowedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
                 $isImage = false;
 
                 if ($request->hasFile('file')) {
                     $file = $request->file('file');
-                    $isImage = in_array(strtolower($file->getClientOriginalExtension()), $allowedImageExtensions);
+                    $isImage = in_array(strtolower($file->getClientOriginalExtension()), $this->imageExtensions);
                 } else {
-                    $extension = strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION));
-                    $isImage = in_array($extension, $allowedImageExtensions);
+                    $extension = strtolower(pathinfo($attachment->file_name ?? $attachment->path_url, PATHINFO_EXTENSION));
+                    $isImage = in_array($extension, $this->imageExtensions);
                 }
 
                 if ($isCover && (!$isImage || $request->input('type') === 'link')) {
-                    throw new \Exception('Only image files can be set as cover.');
+                    throw new \Exception('Chỉ các tệp hình ảnh mới có thể được đặt làm ảnh bìa.');
                 }
 
                 $updateData['is_cover'] = $isCover;
@@ -439,68 +407,46 @@ class AttachmentController extends Controller
                 $logProperties['new_is_cover'] = $isCover;
 
                 if ($isCover) {
-                    // Remove is_cover flag from all other attachments
                     DB::table('attachments')
                         ->where('card_id', $attachment->card_id)
                         ->where('id', '!=', $attachmentId)
                         ->update(['is_cover' => false]);
-
-                    // Set thumbnail to the current attachment path
                     $card->thumbnail = $updateData['path_url'] ?? $attachment->path_url;
                 } elseif ($wasCover) {
-                    // If this was a cover but no longer is, remove thumbnail
                     $card->thumbnail = null;
                 }
             }
 
             if (empty($updateData)) {
-                throw new \Exception('No valid data provided for update');
+                throw new \Exception('Không có dữ liệu hợp lệ để cập nhật!');
             }
 
-            // Update the attachment
             DB::table('attachments')->where('id', $attachmentId)->update($updateData);
 
-            // Create activity log
-            if (!empty($logProperties)) {
-                $logMessage = "{$userName} đã cập nhật đính kèm '{$attachment->file_name_defaut}' trong card '{$card->title}'.";
-                if (isset($updateData['is_cover'])) {
-                    $logMessage = "{$userName} đã " . ($updateData['is_cover'] ? 'đặt' : 'bỏ') . " đính kèm '{$attachment->file_name_defaut}' làm ảnh bìa trong card '{$card->title}'.";
-                }
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($card)
-                    ->event('updated_attachment')
-                    ->withProperties($logProperties)
-                    ->log($logMessage);
+            $logMessage = "{$userName} đã cập nhật đính kèm '{$attachment->file_name_defaut}' trong card '{$card->title}'.";
+            if (isset($updateData['is_cover'])) {
+                $logMessage = "{$userName} đã " . ($updateData['is_cover'] ? 'đặt' : 'bỏ') . " đính kèm '{$attachment->file_name_defaut}' làm ảnh bìa trong card '{$card->title}'.";
             }
+            $this->createActivityLog($user, $card, 'updated_attachment', $logProperties, $logMessage);
 
-            // Always update card's timestamp and save any thumbnail changes
-            $card->updated_at = now();
-            $card->save();
-
+            $card->touch();
             DB::commit();
 
             $updatedAttachment = $this->findAttachment($attachmentId);
-            try {
-                broadcast(new AttachmentUpdated($updatedAttachment, $card))->toOthers();
-                event(new CardUpdated($card));
-            } catch (\Exception $e) {
-                Log::error("Failed to broadcast events: {$e->getMessage()}", [
-                    'card_id' => $card->id,
-                    'attachment_id' => $attachmentId,
-                ]);
-            }
+
+            broadcast(new AttachmentUpdated($updatedAttachment, $card->id))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Attachment updated successfully',
+                'message' => 'Đính kèm đã được cập nhật thành công!',
                 'data' => $updatedAttachment,
             ], 200);
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Attachment not found',
+                'message' => 'Đính kèm không tồn tại!',
                 'id' => $attachmentId,
             ], 404);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -514,9 +460,9 @@ class AttachmentController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update attachment',
+                'message' => $e->getMessage(),
                 'error' => app()->environment('production') ? null : $e->getMessage(),
-            ], 500);
+            ], $e->getCode() ?: 500);
         }
     }
 
@@ -542,7 +488,7 @@ class AttachmentController extends Controller
     {
         $attachment = $this->findAttachment($id);
         if (!$attachment) {
-            throw new ModelNotFoundException('Attachment not found');
+            throw new ModelNotFoundException('Đính kèm không tồn tại!');
         }
         return $attachment;
     }

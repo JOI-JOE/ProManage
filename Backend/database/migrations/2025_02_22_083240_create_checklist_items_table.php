@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('checklist_id')->constrained()->onDelete('cascade'); // Liên kết với checklist
             $table->string('name'); // Tên của mục trong checklist
-            $table->dateTime('start_date')->nullable(); // Thời gian bắt đầuđầu
+            // $table->dateTime('start_date')->nullable(); // Thời gian bắt đầuđầu
             $table->date('end_date')->nullable(); //Hạn cuối làm việc của thẻ
             $table->boolean('is_completed')->default(false); // Trạng thái hoàn thành của mục
             $table->timestamps();

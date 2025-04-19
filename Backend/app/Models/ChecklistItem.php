@@ -12,7 +12,7 @@ class ChecklistItem extends Model
     protected $fillable = [
         'checklist_id',
         'name',
-        'start_date',
+        // 'start_date',
         'end_date',
         'is_completed',
         'end_time',

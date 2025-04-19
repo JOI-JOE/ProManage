@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CardUpdated;
 use App\Events\ChecklistItemCreated;
 use App\Events\ChecklistItemUpdated;
 use App\Events\ChecklistItemDeleted;
@@ -38,21 +39,13 @@ class ChecklistItemController extends Controller
                 'is_completed' => false,
             ]);
 
-            broadcast(new ChecklistItemCreated($checklistItem, $card, auth()->user()))->toOthers();
+            $card->touch();
+            DB::commit();
 
-            return response()->json([
-                'id' => $checklistItem->id,
-                'checklist_id' => $checklistItem->checklist_id,
-                'name' => $checklistItem->name,
-                'is_completed' => $checklistItem->is_completed,
-                'start_date' => $checklistItem->start_date,
-                'end_date' => $checklistItem->end_date,
-                'end_time' => $checklistItem->end_time,
-                'reminder' => $checklistItem->reminder,
-                'assignee' => null,
-                'created_at' => $checklistItem->created_at,
-                'updated_at' => $checklistItem->updated_at,
-            ], 201);
+            broadcast(new ChecklistItemCreated($checklistItem, $card, auth()->user()))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
+
+            return response()->json($checklistItem->fresh(), 201);
         } catch (\Exception $e) {
             Log::error('Failed to create checklist item: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to create checklist item'], 500);
@@ -92,13 +85,12 @@ class ChecklistItemController extends Controller
 
         try {
             $item->delete();
+            
+            $card->touch();
+            DB::commit();
 
-            broadcast(new ChecklistItemDeleted(
-                $checklistItemId,
-                $item->checklist_id,
-                $card->id,
-                $user ? $user->id : null
-            ))->toOthers();
+            broadcast(new ChecklistItemDeleted($checklistItemId, $card))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
 
             return response()->json(['message' => 'Checklist item deleted'], 200);
         } catch (\Exception $e) {
@@ -109,122 +101,53 @@ class ChecklistItemController extends Controller
 
     public function update(Request $request, $checklistItemId)
     {
-        $item = ChecklistItem::find($checklistItemId);
-        if (!$item) {
-            return response()->json(['message' => 'Checklist item not found'], 404);
-        }
-
-        $checklist = Checklist::find($item->checklist_id);
-        if (!$checklist) {
-            return response()->json(['message' => 'Checklist not found'], 404);
-        }
-
-        $card = Card::find($checklist->card_id);
-        if (!$card) {
-            return response()->json(['message' => 'Card not found'], 404);
-        }
-
-        $validated = $this->validateChecklistItemUpdate($request);
-        $user = auth()->user();
-        $userName = $user ? $user->full_name : 'Người dùng không xác định';
-
         try {
-            if (isset($validated['name'])) {
-                $oldName = $item->name;
-                $item->name = $validated['name'];
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($card)
-                    ->event('updated_checklist_item_name')
-                    ->withProperties([
-                        'checklist_item_id' => $checklistItemId,
-                        'old_name' => $oldName,
-                        'new_name' => $validated['name'],
-                        'card_id' => $card->id,
-                    ])
-                    ->log("{$userName} đã cập nhật tên mục từ '{$oldName}' thành '{$validated['name']}' trong card '{$card->title}'.");
+            // Tìm checklist item cùng với card liên quan
+            $item = ChecklistItem::with('checklist.card')->findOrFail($checklistItemId);
+            $checklist = $item->checklist;
+            $card = $checklist->card;
+
+            $validated = $this->validateChecklistItemUpdate($request);
+            $user = auth()->user();
+            $userName = $user ? $user->full_name : 'Người dùng không xác định';
+
+            $changes = []; // Chứa các thay đổi sẽ được log
+            $logData = []; // Chứa thông tin cho log activity
+
+            // Tạo mảng các thuộc tính cần được kiểm tra và cập nhật
+            $attributes = [
+                'name' => 'Tên',
+                'is_completed' => 'Trạng thái',
+                'start_date' => 'Ngày bắt đầu',
+                'end_date' => 'Ngày kết thúc',
+                'end_time' => 'Thời gian kết thúc',
+                'reminder' => 'Nhắc nhở',
+                'assignee' => 'Người được giao',
+            ];
+
+            // Xử lý từng thuộc tính và cập nhật
+            foreach ($attributes as $field => $label) {
+                if (array_key_exists($field, $validated)) {
+                    $oldValue = $item->{$field};
+                    $item->{$field} = $validated[$field];
+
+                    $changes[$field] = [
+                        'old' => $oldValue,
+                        'new' => $validated[$field],
+                        'label' => $label
+                    ];
+
+                    // Lưu log cho thay đổi
+                    $logData[] = [
+                        'field' => $field,
+                        'old' => $oldValue,
+                        'new' => $validated[$field],
+                        'log' => "{$userName} đã cập nhật {$label} mục '{$item->name}' từ '" . ($oldValue ?? 'không có') . "' thành '" . ($validated[$field] ?? 'không có') . "' trong card '{$card->title}'"
+                    ];
+                }
             }
 
-            if (isset($validated['is_completed'])) {
-                $oldStatus = $item->is_completed;
-                $item->is_completed = $validated['is_completed'];
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($card)
-                    ->event('updated_checklist_item_status')
-                    ->withProperties([
-                        'checklist_item_id' => $checklistItemId,
-                        'old_status' => $oldStatus,
-                        'new_status' => $validated['is_completed'],
-                        'card_id' => $card->id,
-                    ])
-                    ->log("{$userName} đã cập nhật trạng thái mục '{$item->name}' thành '" . ($validated['is_completed'] ? 'hoàn thành' : 'chưa hoàn thành') . "' trong card '{$card->title}'.");
-            }
-
-            if (array_key_exists('start_date', $validated)) {
-                $oldStartDate = $item->start_date;
-                $item->start_date = $validated['start_date'];
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($card)
-                    ->event('updated_checklist_item_start_date')
-                    ->withProperties([
-                        'checklist_item_id' => $checklistItemId,
-                        'old_start_date' => $oldStartDate,
-                        'new_start_date' => $validated['start_date'],
-                        'card_id' => $card->id,
-                    ])
-                    ->log("{$userName} đã cập nhật ngày bắt đầu mục '{$item->name}' từ '" . ($oldStartDate ?? 'không có') . "' thành '" . ($validated['start_date'] ?? 'không có') . "' trong card '{$card->title}'.");
-            }
-
-            if (array_key_exists('end_date', $validated)) {
-                $oldEndDate = $item->end_date;
-                $item->end_date = $validated['end_date'];
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($card)
-                    ->event('updated_checklist_item_end_date')
-                    ->withProperties([
-                        'checklist_item_id' => $checklistItemId,
-                        'old_end_date' => $oldEndDate,
-                        'new_end_date' => $validated['end_date'],
-                        'card_id' => $card->id,
-                    ])
-                    ->log("{$userName} đã cập nhật ngày kết thúc mục '{$item->name}' từ '" . ($oldEndDate ?? 'không có') . "' thành '" . ($validated['end_date'] ?? 'không có') . "' trong card '{$card->title}'.");
-            }
-
-            if (array_key_exists('end_time', $validated)) {
-                $oldEndTime = $item->end_time;
-                $item->end_time = $validated['end_time'];
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($card)
-                    ->event('updated_checklist_item_end_time')
-                    ->withProperties([
-                        'checklist_item_id' => $checklistItemId,
-                        'old_end_time' => $oldEndTime,
-                        'new_end_time' => $validated['end_time'],
-                        'card_id' => $card->id,
-                    ])
-                    ->log("{$userName} đã cập nhật thời gian kết thúc mục '{$item->name}' từ '" . ($oldEndTime ?? 'không có') . "' thành '" . ($validated['end_time'] ?? 'không có') . "' trong card '{$card->title}'.");
-            }
-
-            if (array_key_exists('reminder', $validated)) {
-                $oldReminder = $item->reminder;
-                $item->reminder = $validated['reminder'];
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($card)
-                    ->event('updated_checklist_item_reminder')
-                    ->withProperties([
-                        'checklist_item_id' => $checklistItemId,
-                        'old_reminder' => $oldReminder,
-                        'new_reminder' => $validated['reminder'],
-                        'card_id' => $card->id,
-                    ])
-                    ->log("{$userName} đã cập nhật nhắc nhở mục '{$item->name}' từ '" . ($oldReminder ?? 'không có') . "' thành '" . ($validated['reminder'] ?? 'không có') . "' trong card '{$card->title}'.");
-            }
-
+            // Cập nhật assignee
             if (array_key_exists('assignee', $validated)) {
                 $oldAssignee = DB::table('checklist_item_user')
                     ->where('checklist_item_id', $checklistItemId)
@@ -236,32 +159,54 @@ class ChecklistItemController extends Controller
                 $oldAssigneeName = $oldAssignee
                     ? \App\Models\User::find($oldAssignee)->full_name ?? 'không xác định'
                     : 'không có';
+
+                // Ghi log cho assignee
+                $logData[] = [
+                    'field' => 'assignee',
+                    'old' => $oldAssigneeName,
+                    'new' => $newAssigneeName,
+                    'log' => "{$userName} đã cập nhật người được giao mục '{$item->name}' từ '{$oldAssigneeName}' thành '{$newAssigneeName}' trong card '{$card->title}'"
+                ];
+            }
+
+            // Lưu checklist item và log activity
+            $item->save();
+
+            // Log tất cả thay đổi đã được xác định
+            foreach ($logData as $logItem) {
                 activity()
                     ->causedBy($user)
                     ->performedOn($card)
-                    ->event('updated_checklist_item_assignee')
+                    ->event('updated_checklist_item_' . $logItem['field'])
                     ->withProperties([
                         'checklist_item_id' => $checklistItemId,
-                        'old_assignee_id' => $oldAssignee,
-                        'new_assignee_id' => $validated['assignee'],
+                        'old' => $logItem['old'],
+                        'new' => $logItem['new'],
                         'card_id' => $card->id,
                     ])
-                    ->log("{$userName} đã cập nhật người được giao mục '{$item->name}' từ '{$oldAssigneeName}' thành '{$newAssigneeName}' trong card '{$card->title}'.");
+                    ->log($logItem['log']);
             }
 
-            $item->save();
-
+            // Trả về thông tin checklist item đã cập nhật
             $response = $this->buildChecklistItemResponse($checklistItemId);
             $checklistItemData = $response->getData(true);
 
+            $card->touch();  // Cập nhật trường updated_at
+            DB::commit();  // Cam kết thay đổi
+
+            // Broadcast sự kiện
             broadcast(new ChecklistItemUpdated($checklistItemData, $card, auth()->user()))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
 
             return $response;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Checklist item, Checklist or Card not found'], 404);
         } catch (\Exception $e) {
             Log::error('Failed to update checklist item: ' . $e->getMessage());
             return response()->json(['message' => 'Không thể cập nhật mục do lỗi'], 500);
         }
     }
+
 
     private function validateChecklistItemUpdate(Request $request)
     {

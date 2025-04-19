@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api;
 use App\Events\CardCreated;
 use App\Events\CardUpdated;
 use App\Http\Controllers\Controller;
+use App\Jobs\BroadcastCardCreated;
 use App\Models\Card;
 use Exception;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class CardController extends Controller
 {
     public function show($cardId)
     {
-        // 1. Lấy thông tin cơ bản của card cùng với list board
+        // Unchanged: Returns full card data for initial fetch
         $card = DB::table('cards')
             ->select([
                 'cards.id',
@@ -58,7 +59,6 @@ class CardController extends Controller
             return response()->json(['message' => 'Card not found'], 404);
         }
 
-        // 2. Lấy labels
         $labels = DB::table('card_label')
             ->join('labels', 'card_label.label_id', '=', 'labels.id')
             ->select('labels.id as label_id', 'labels.title', 'labels.color_id')
@@ -73,18 +73,13 @@ class CardController extends Controller
             });
 
         $labelIds = $labels->pluck('id');
-
-        // 3. Lấy member IDs
         $memberIds = DB::table('card_user')
             ->where('card_user.card_id', $cardId)
             ->pluck('user_id');
-
-        // 4. Lấy checklists IDs
         $checklistsIds = DB::table('checklists')
             ->where('card_id', $cardId)
             ->pluck('id');
 
-        // 5. Trả về dữ liệu
         return [
             'id' => $card->id,
             'title' => $card->title,
@@ -112,8 +107,10 @@ class CardController extends Controller
             ],
         ];
     }
+
     public function store(Request $request)
     {
+        // Unchanged: Broadcasts CardCreated, not CardUpdated
         $validator = Validator::make($request->all(), [
             'columnId' => 'required|uuid|exists:list_boards,id',
             'position' => 'required|numeric',
@@ -132,11 +129,6 @@ class CardController extends Controller
                 'title' => $request->title,
             ]);
 
-            $user = auth()->user();
-            $userName = $user ? $user->full_name : 'ai đó';
-
-            $card->load('list_board');
-
             DB::commit();
 
             try {
@@ -152,8 +144,10 @@ class CardController extends Controller
             return response()->json(['message' => 'Failed to create card.', 'error' => $e->getMessage()], 500);
         }
     }
+
     public function destroy($cardId)
     {
+        // Unchanged: Uses CardDeleted (not implemented), not CardUpdated
         if (!Str::isUuid($cardId)) {
             return response()->json(['message' => 'Invalid card ID'], 422);
         }
@@ -199,6 +193,7 @@ class CardController extends Controller
             return response()->json(['message' => 'Failed to delete card.', 'error' => $e->getMessage()], 500);
         }
     }
+
     private function updateCardFields($card, $validatedData, $user, $userName)
     {
         try {
@@ -221,7 +216,11 @@ class CardController extends Controller
                 if (array_key_exists($field, $validatedData) && $card->$field != $validatedData[$field]) {
                     $changes[$field] = ['old' => $card->$field, 'new' => $validatedData[$field]];
                     $card->$field = $validatedData[$field];
-                    $updatedFields[$field] = $validatedData[$field];
+                    $updatedFields[] = $field;
+                    // Add 'badges' to updatedFields if date or completion fields change
+                    if (in_array($field, ['start_date', 'end_date', 'end_time', 'reminder', 'is_completed', 'description'])) {
+                        $updatedFields[] = 'badges';
+                    }
                 }
             }
 
@@ -241,7 +240,7 @@ class CardController extends Controller
 
             return [
                 'status' => 'success',
-                'updatedFields' => $updatedFields,
+                'updatedFields' => array_unique($updatedFields), // Ensure no duplicate fields
             ];
         } catch (Exception $e) {
             Log::error('Failed to update card fields: ' . $e->getMessage());
@@ -252,6 +251,7 @@ class CardController extends Controller
             ];
         }
     }
+
     public function update(Request $request, $cardId)
     {
         if (!Str::isUuid($cardId)) {
@@ -266,7 +266,7 @@ class CardController extends Controller
             'start_date' => 'sometimes|nullable|date_format:Y-m-d',
             'end_date' => 'sometimes|nullable|date_format:Y-m-d',
             'end_time' => 'sometimes|nullable|date_format:H:i',
-            'reminder' => 'sometimes|nullable|date_format:Y-m-d H:i:s',
+            'reminder' => 'sometimes|nullable|date_format:Y-m-d H:s',
             'is_completed' => 'sometimes|boolean',
             'is_archived' => 'sometimes|boolean',
             'list_board_id' => 'sometimes|required|uuid|exists:list_boards,id',
@@ -277,7 +277,6 @@ class CardController extends Controller
             return response()->json(['message' => 'Card not found'], 404);
         }
 
-        // Kiểm tra xem list_board có tồn tại không
         if (!$card->list_board) {
             Log::warning('List board not found for card', [
                 'card_id' => $cardId,
@@ -291,32 +290,21 @@ class CardController extends Controller
             $user = auth()->user();
             $userName = $user ? $user->full_name : 'Unknown';
             $updatedFields = [];
-            $oldListBoardId = $card->list_board_id;
 
             // Handle card movement (position or list_board_id)
             if (isset($validatedData['list_board_id']) || isset($validatedData['position'])) {
                 $targetListBoardId = $validatedData['list_board_id'] ?? $card->list_board_id;
                 $position = $validatedData['position'] ?? $card->position;
 
-                // Check if moveCard method exists, otherwise handle the move directly
-                if (method_exists($this, 'moveCard')) {
-                    $moveResult = $this->moveCard($card, $targetListBoardId, $position, $user, $userName);
-                    if ($moveResult['status'] !== 'success') {
-                        return response()->json($moveResult, 500);
-                    }
-                    $updatedFields = array_merge($updatedFields, $moveResult['updatedFields']);
-                } else {
-                    // Handle the move directly if the moveCard method doesn't exist
-                    if ($card->list_board_id != $targetListBoardId) {
-                        $oldListBoardName = $card->list_board->name;
-                        $card->list_board_id = $targetListBoardId;
-                        $updatedFields['list_board_id'] = $targetListBoardId;
-                    }
+                if ($card->list_board_id != $targetListBoardId) {
+                    $oldListBoardName = $card->list_board->name;
+                    $card->list_board_id = $targetListBoardId;
+                    $updatedFields[] = 'list_board_id';
+                }
 
-                    if ($card->position != $position) {
-                        $card->position = $position;
-                        $updatedFields['position'] = $position;
-                    }
+                if ($card->position != $position) {
+                    $card->position = $position;
+                    $updatedFields[] = 'position';
                 }
             }
 
@@ -330,12 +318,15 @@ class CardController extends Controller
             $card->save();
             $card->refresh();
 
-            // Phát sự kiện CardUpdated
+            // Broadcast CardUpdated with specific updated fields
             try {
-                broadcast(new CardUpdated($card))->toOthers();
+                if (!empty($updatedFields)) {
+                    broadcast(new CardUpdated($card))->toOthers();
+                }
             } catch (Exception $e) {
                 Log::error('Failed to broadcast CardUpdated event: ' . $e->getMessage(), [
-                    'card_id' => $card->id
+                    'card_id' => $card->id,
+                    'updated_fields' => $updatedFields,
                 ]);
             }
 
@@ -359,24 +350,32 @@ class CardController extends Controller
     public function updatePositionCard(Request $request, $cardId)
     {
         try {
-            // Validate dữ liệu đầu vào
             $validated = $request->validate([
                 'position' => 'required|numeric',
-                'listId'   => 'required|exists:list_boards,id',
+                'listId' => 'required|exists:list_boards,id',
             ]);
 
-            // Tìm card để cập nhật
             $card = Card::findOrFail($cardId);
+            $updatedFields = [];
 
-            $card->position = $validated['position'];
-            $card->list_board_id = $validated['listId'];
+            if ($card->position != $validated['position']) {
+                $card->position = $validated['position'];
+                $updatedFields[] = 'position';
+            }
+
+            if ($card->list_board_id != $validated['listId']) {
+                $card->list_board_id = $validated['listId'];
+                $updatedFields[] = 'list_board_id';
+            }
+
             $card->save();
 
             try {
                 broadcast(new CardUpdated($card))->toOthers();
             } catch (Exception $e) {
                 Log::error('Failed to broadcast CardUpdated event: ' . $e->getMessage(), [
-                    'card_id' => $card->id
+                    'card_id' => $card->id,
+                    'updated_fields' => $updatedFields,
                 ]);
             }
 
@@ -386,13 +385,14 @@ class CardController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'An error occurred while updating card position.',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
     public function copy(Request $request, $cardId)
     {
-        // Validate request
+        // Unchanged: Broadcasts CardCreated, not CardUpdated
         $validator = Validator::make($request->all(), [
             'targetListBoardId' => 'required|uuid|exists:list_boards,id',
             'position' => 'required|numeric',
@@ -407,7 +407,6 @@ class CardController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Kiểm tra source card
         $sourceCard = DB::table('cards')
             ->where('id', $cardId)
             ->first();
@@ -418,7 +417,6 @@ class CardController extends Controller
 
         DB::beginTransaction();
         try {
-            // Tạo new card
             $newCardId = Str::uuid()->toString();
             $newCardData = [
                 'id' => $newCardId,
@@ -433,7 +431,6 @@ class CardController extends Controller
                 'updated_at' => now(),
             ];
 
-            // Xử lý dates nếu không giữ
             if ($request->input('keepDates', false)) {
                 $newCardData['start_date'] = $sourceCard->start_date;
                 $newCardData['end_date'] = $sourceCard->end_date;
@@ -448,7 +445,6 @@ class CardController extends Controller
 
             DB::table('cards')->insert($newCardData);
 
-            // Copy labels nếu được yêu cầu
             if ($request->input('keepLabels', false)) {
                 $labels = DB::table('card_label')
                     ->where('card_id', $cardId)
@@ -465,7 +461,6 @@ class CardController extends Controller
                 }
             }
 
-            // Copy checklists nếu được yêu cầu
             if ($request->input('keepChecklists', false)) {
                 $checklists = DB::table('checklists')
                     ->where('card_id', $cardId)
@@ -502,7 +497,6 @@ class CardController extends Controller
                 }
             }
 
-            // Copy attachments nếu được yêu cầu
             if ($request->input('keepAttachments', false)) {
                 $attachments = DB::table('attachments')
                     ->where('card_id', $cardId)
@@ -521,7 +515,6 @@ class CardController extends Controller
                         if ($attachment->type === 'file') {
                             $originalFileName = $attachment->file_name;
 
-                            // Kiểm tra định dạng tên file
                             if (!preg_match('/^[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$/', $originalFileName)) {
                                 $parsedPath = parse_url($attachment->path_url, PHP_URL_PATH);
                                 $possibleFileName = basename($parsedPath);
@@ -529,7 +522,7 @@ class CardController extends Controller
                                 if (preg_match('/^[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$/', $possibleFileName)) {
                                     $originalFileName = $possibleFileName;
                                 } else {
-                                    return null; // Không thể xác định file_name hợp lệ
+                                    return null;
                                 }
                             }
 
@@ -546,11 +539,9 @@ class CardController extends Controller
                             }
 
                             $newPathUrl = asset('storage/attachments/' . $newFileName);
-
                             $newAttachment['file_name'] = $newFileName;
                             $newAttachment['path_url'] = $newPathUrl;
                         } else {
-                            // Là link: tạo file_name duy nhất
                             $parsedUrl = parse_url($attachment->path_url, PHP_URL_HOST) . parse_url($attachment->path_url, PHP_URL_PATH);
                             $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '', $parsedUrl);
                             $uniqueFileName = $safeName . '_' . Str::random(6);
@@ -569,9 +560,6 @@ class CardController extends Controller
                 }
             }
 
-
-
-            // Log activity
             $user = auth()->user();
             $userName = $user ? $user->full_name : 'Someone';
 
@@ -585,7 +573,6 @@ class CardController extends Controller
                 ->select('name')
                 ->first();
 
-            // Create a temporary Card instance for activity logging
             $tempCard = new Card();
             $tempCard->id = $newCardId;
             $tempCard->title = $request->title;
@@ -614,7 +601,6 @@ class CardController extends Controller
 
             DB::commit();
 
-            // Create a temporary Card instance for broadcasting
             $newCard = DB::table('cards')->where('id', $newCardId)->first();
             $broadcastCard = new Card();
             $broadcastCard->id = $newCard->id;
@@ -634,7 +620,6 @@ class CardController extends Controller
 
             broadcast(new CardCreated($broadcastCard))->toOthers();
 
-            // Lấy thông tin chi tiết của new card để trả về
             $newCardDetails = DB::table('cards')
                 ->leftJoin('list_boards', 'cards.list_board_id', '=', 'list_boards.id')
                 ->leftJoin('boards', 'list_boards.board_id', '=', 'boards.id')
@@ -654,6 +639,7 @@ class CardController extends Controller
             ], 500);
         }
     }
+
     public function move(Request $request, $cardId)
     {
         // Validate request
@@ -666,79 +652,43 @@ class CardController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Find the card using DB
-        $card = DB::table('cards')->where('id', $cardId)->first();
+        // Find the card
+        $card = Card::find($cardId);
         if (!$card) {
             return response()->json(['message' => 'Card not found'], 404);
         }
 
         $oldListBoardId = $card->list_board_id;
         $newListBoardId = $request->targetListBoardId;
+        $newPosition = $request->position;
+        $updatedFields = [];
 
-        // If no actual move is happening (same list, just re-position)
-        if ($oldListBoardId === $newListBoardId) {
-            // Just update position
-            DB::table('cards')
-                ->where('id', $cardId)
-                ->update([
-                    'position' => $request->position,
-                    'updated_at' => now(),
-                    'is_archived' => false,
-                ]);
-
-            $user = auth()->user();
-            $userName = $user ? $user->full_name : 'ai đó';
-
-            // Get a temporary Card instance just for activity logging
-            $tempCard = new Card();
-            $tempCard->id = $cardId;
-            $tempCard->title = $card->title;
-
-            activity()
-                ->causedBy($user)
-                ->performedOn($tempCard)
-                ->event('repositioned_card')
-                ->withProperties([
-                    'card_id' => $cardId,
-                    'list_board_id' => $oldListBoardId,
-                    'new_position' => $request->position
-                ])
-                ->log("{$userName} đã thay đổi vị trí card '{$card->title}' trong list.");
-
-            return response()->json([
-                'message' => 'Card position updated successfully.',
-                'card' => $this->show($cardId)
-            ]);
-        }
-
-        // Moving between lists
         DB::beginTransaction();
         try {
-            // Update the card
-            DB::table('cards')
-                ->where('id', $cardId)
-                ->update([
-                    'list_board_id' => $newListBoardId,
-                    'position' => $request->position,
-                    'updated_at' => now()
-                ]);
+            // Track updated fields
+            if ($card->list_board_id != $newListBoardId) {
+                $updatedFields[] = 'list_board_id';
+            }
+            if ($card->position != $newPosition) {
+                $updatedFields[] = 'position';
+            }
 
-            // Get source and target list names for better logging
-            $oldList = DB::table('list_boards')->where('id', $oldListBoardId)->first();
-            $newList = DB::table('list_boards')->where('id', $newListBoardId)->first();
+            // Update the card
+            $card->list_board_id = $newListBoardId;
+            $card->position = $newPosition;
+            $card->is_archived = false; // Ensure card is unarchived when moved
+            $card->save();
 
             // Log the activity
             $user = auth()->user();
             $userName = $user ? $user->full_name : 'ai đó';
 
-            // Get a temporary Card instance just for activity logging
-            $tempCard = new Card();
-            $tempCard->id = $cardId;
-            $tempCard->title = $card->title;
+            $oldList = DB::table('list_boards')->where('id', $oldListBoardId)->first();
+            $newList = DB::table('list_boards')->where('id', $newListBoardId)->first();
 
             activity()
                 ->causedBy($user)
-                ->performedOn($tempCard)
+                ->performedOn($card)
                 ->event('moved_card')
                 ->withProperties([
                     'card_id' => $cardId,
@@ -746,14 +696,21 @@ class CardController extends Controller
                     'new_list_board_id' => $newListBoardId,
                     'old_list_name' => $oldList->name ?? 'Không xác định',
                     'new_list_name' => $newList->name ?? 'Không xác định',
-                    'new_position' => $request->position
+                    'new_position' => $newPosition
                 ])
                 ->log("{$userName} đã di chuyển card '{$card->title}' từ list '{$oldList->name}' sang list '{$newList->name}'.");
 
-            // Broadcast event for real-time updates (still need a temporary model instance for event broadcasting)
-            $tempCard->list_board_id = $newListBoardId;
-            $tempCard->position = $request->position;
-            // broadcast(new CardMoved($tempCard, $oldListBoardId))->toOthers();
+            // Broadcast CardUpdated with specific fields
+            try {
+                if (!empty($updatedFields)) {
+                    // broadcast(new CardUpdated($card, array_unique($updatedFields)))->toOthers();
+                }
+            } catch (Exception $e) {
+                Log::error('Failed to broadcast CardUpdated event: ' . $e->getMessage(), [
+                    'card_id' => $cardId,
+                    'updated_fields' => $updatedFields,
+                ]);
+            }
 
             DB::commit();
 

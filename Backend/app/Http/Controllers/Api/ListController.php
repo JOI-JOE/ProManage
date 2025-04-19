@@ -10,10 +10,11 @@ use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Jobs\BroadcastListCreated;
 
 class ListController extends Controller
 {
-    public function show($boardId, Request $request)
+    public function show($boardId)
     {
         $userId = auth()->id();
 
@@ -79,10 +80,34 @@ class ListController extends Controller
             ->get()
             ->toArray(); // Convert Collection to array
 
-        // 6. Get additional card data (labels and members)
+        // 6. Get checklist items with dates for each card
         $cardIds = array_column($cards, 'id');
 
-        // Get labels for cards
+        // Get checklist items with start_date and end_date
+        $checklistItems = DB::table('checklists')
+            ->join('checklist_items', 'checklists.id', '=', 'checklist_items.checklist_id')
+            ->select(
+                'checklists.card_id',
+                'checklist_items.end_time as checklist_end_time',
+                'checklist_items.end_date as checklist_end_date'
+            )
+            ->whereIn('checklists.card_id', $cardIds)
+            ->get()
+            ->toArray();
+
+        // Group checklist dates by card_id (take the first non-null start_date and end_date)
+        $checklistDatesByCard = [];
+        foreach ($checklistItems as $item) {
+            $cardId = $item->card_id;
+            if (!isset($checklistDatesByCard[$cardId])) {
+                $checklistDatesByCard[$cardId] = [
+                    'checklist_end_time' => $item->checklist_end_time,
+                    'checklist_end_date' => $item->checklist_end_date,
+                ];
+            }
+        }
+
+        // 7. Get additional card data (labels and members)
         $cardLabels = DB::table('card_label')
             ->join('labels', 'card_label.label_id', '=', 'labels.id')
             ->select('card_label.card_id', 'labels.id as label_id', 'labels.title', 'labels.color_id')
@@ -110,7 +135,7 @@ class ListController extends Controller
             $membersByCard[$member->card_id][] = $member;
         }
 
-        // 7. Format cards data (without grouping by list_board_id)
+        // 8. Format cards data
         $formattedCards = [];
         foreach ($cards as $card) {
             $cardId = $card->id;
@@ -118,6 +143,10 @@ class ListController extends Controller
 
             $labels = $labelsByCard[$cardId] ?? [];
             $members = $membersByCard[$cardId] ?? [];
+            $checklistDates = $checklistDatesByCard[$cardId] ?? [
+                'checklist_end_date' => null,
+                'checklist_end_time' => null,
+            ];
 
             $labelIds = array_map(function ($label) {
                 return $label->label_id;
@@ -130,7 +159,7 @@ class ListController extends Controller
             foreach ($labels as $label) {
                 $formattedLabels[] = [
                     'id' => $label->label_id,
-                    'name' => $label->title, // Sửa title thành name để khớp với SQL dump
+                    'name' => $label->title,
                     'color' => $label->color_id
                 ];
             }
@@ -156,12 +185,14 @@ class ListController extends Controller
                     'dueComplete' => (bool)$card->is_completed,
                     'checkItems' => (int)$card->total_checklist_items,
                     'checkItemsChecked' => (int)$card->completed_checklist_items,
+                    'checklistDue' => $checklistDates['checklist_end_date'],   // Thêm end_date của checklist
+                    'checklistDueTime' => $checklistDates['checklist_end_time'], // Thêm start_date của checklist
                     'description' => !empty($card->description)
                 ]
             ];
         }
 
-        // 8. Format lists (without cards)
+        // 9. Format lists
         $formattedLists = [];
         foreach ($lists as $list) {
             $formattedLists[] = [
@@ -172,7 +203,7 @@ class ListController extends Controller
             ];
         }
 
-        // 9. Return the response with separated lists and cards
+        // 10. Return the response with separated lists and cards
         return response()->json([
             'id' => $boardId,
             'lists' => $formattedLists,
@@ -203,7 +234,6 @@ class ListController extends Controller
         // Các trường hợp khác không có quyền
         return false;
     }
-
 
     // ----------------------------------------------------
 
@@ -348,6 +378,7 @@ class ListController extends Controller
                 'position' => $validated['pos'],
             ]);
 
+            // BroadcastListCreated::dispatch($list);
             broadcast(new ListCreated($list))->toOthers();
 
             return response()->json([
@@ -380,7 +411,7 @@ class ListController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:50',   // Tên là tùy chọn, phải là chuỗi, tối đa 50 ký tự
             'closed' => 'sometimes|boolean',        // 'closed' là tùy chọn, phải là boolean
-            'position' => 'sometimes',     // 'position' là tùy chọn, phải là số nguyên
+            'position' => 'sometimes|numeric',     // 'position' là tùy chọn, phải là số nguyên
         ]);
 
         // Nếu có trường 'position', cập nhật 'position' của list
@@ -405,7 +436,6 @@ class ListController extends Controller
             'message' => 'List updated successfully'
         ], 200);
     }
-
     public function updateColor(Request $request, string $id)
     {
         $request->validate([

@@ -4,12 +4,12 @@ namespace App\Events;
 
 use App\Models\ListBoard;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class ListUpdated implements ShouldBroadcastNow
+class ListUpdated implements ShouldBroadcast
 {
     use Dispatchable, SerializesModels;
 
@@ -19,7 +19,6 @@ class ListUpdated implements ShouldBroadcastNow
     {
         $this->list = $list;
     }
-
     /**
      * Define the channels the event should broadcast on.
      *

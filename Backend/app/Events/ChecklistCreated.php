@@ -6,27 +6,26 @@ use App\Models\Card;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class ChecklistCreated implements ShouldBroadcastNow
+class ChecklistCreated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $checklistData;
-    public $card;
-    public $user;
+    public $checklist;
 
+    protected $card;
     /**
      * Create a new event instance.
      */
-    public function __construct(array $checklistData, Card $card, $user)
+    public function __construct($checklist, $card)
     {
-        $this->checklistData = $checklistData;
+        $this->checklist = $checklist;
         $this->card = $card;
-        $this->user = $user;
     }
 
     /**
@@ -53,11 +52,7 @@ class ChecklistCreated implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         $data = [
-            'checklist' => $this->checklistData,
-            'user' => $this->user ? [
-                'id' => (string) $this->user->id, // Ensure ID is a string
-                'full_name' => $this->user->full_name,
-            ] : null,
+            'id' => $this->checklist['id'] ?? null,
         ];
 
         // Debug: Log the data being broadcast

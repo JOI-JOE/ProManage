@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\ChecklistCreated; // Ensure this is included for reference
-use App\Events\ChecklistUpdated; // Add this import
-use App\Events\ChecklistDeleted; // Add this import
+use App\Events\ChecklistCreated;
+use App\Events\ChecklistUpdated;
+use App\Events\ChecklistDeleted;
+use App\Events\CardUpdated; // Add this import
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use Illuminate\Http\Request;
@@ -48,7 +49,6 @@ class ChecklistController extends Controller
             ->select([
                 'checklist_items.id',
                 'checklist_items.name',
-                'checklist_items.start_date',
                 'checklist_items.end_date',
                 'checklist_items.end_time',
                 'checklist_items.reminder',
@@ -66,7 +66,6 @@ class ChecklistController extends Controller
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
-                    'start_date' => $item->start_date,
                     'end_date' => $item->end_date,
                     'end_time' => $item->end_time,
                     'reminder' => $item->reminder,
@@ -88,13 +87,11 @@ class ChecklistController extends Controller
             'updated_at' => $checklist->updated_at,
         ];
     }
-
     /**
      * Display a listing of the resource.
      */
     public function index($cardId)
     {
-        // ... (unchanged)
         $cardExists = DB::table('cards')->where('id', $cardId)->exists();
         if (!$cardExists) {
             return response()->json(['message' => 'Card not found'], 404);
@@ -115,13 +112,11 @@ class ChecklistController extends Controller
 
         return response()->json($result);
     }
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request, $cardId)
     {
-        // ... (unchanged)
         $cardModel = Card::find($cardId);
         if (!$cardModel) {
             return response()->json(['message' => 'Card not found'], 404);
@@ -163,11 +158,17 @@ class ChecklistController extends Controller
             'updated_at' => now()->toDateTimeString(),
         ];
 
-        broadcast(new ChecklistCreated($checklistData, $cardModel, $user))->toOthers();
+        $cardModel->touch();
+        DB::commit();
 
+        try {
+            broadcast(new ChecklistCreated($checklistData, $cardModel))->toOthers();
+            broadcast(new CardUpdated($cardModel))->toOthers(); // Broadcasting CardUpdated với cardModel
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast event: ' . $e->getMessage());
+        }
         return response()->json($checklistData, 201);
     }
-
     /**
      * Update the specified resource in storage.
      */
@@ -230,8 +231,15 @@ class ChecklistController extends Controller
             return response()->json(['message' => 'Failed to retrieve updated checklist'], 500);
         }
 
-        // Phát event để broadcast
+        // Broadcast ChecklistUpdated
         broadcast(new ChecklistUpdated($updatedChecklist, $cardModel, $user))->toOthers();
+
+        // Broadcast CardUpdated to update checklistsId and badges
+        try {
+            // broadcast(new CardUpdated($cardModel, ['checklists', 'badges']))->toOthers();
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast CardUpdated event: ' . $e->getMessage());
+        }
 
         return response()->json($updatedChecklist);
     }
@@ -266,8 +274,15 @@ class ChecklistController extends Controller
             ->withProperties(['checklist_name' => $checklist->name, 'checklist_id' => $checklistId])
             ->log("{$userName} đã xóa checklist '{$checklist->name}' trong card '{$cardModel->title}'.");
 
-        // Phát event để broadcast trước khi xóa
+        // Broadcast ChecklistDeleted
         broadcast(new ChecklistDeleted($checklistId, $cardModel, $user))->toOthers();
+
+        // Broadcast CardUpdated to update checklistsId and badges
+        try {
+            // broadcast(new CardUpdated($cardModel, ['checklists', 'badges']))->toOthers();
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast CardUpdated event: ' . $e->getMessage());
+        }
 
         // Xóa checklist
         $deleted = DB::table('checklists')

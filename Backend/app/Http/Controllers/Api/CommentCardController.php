@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CardUpdated;
 use App\Events\CommentCreated;
 use App\Events\CommentUpdated;
 use App\Events\CommentDeleted;
@@ -151,6 +152,7 @@ class CommentCardController extends Controller
 
             // Broadcast to others
             broadcast(new CommentCreated($formattedComment, $card, $user))->toOthers();
+            broadcast(new CardUpdated($card))->toOthers();
 
             return response()->json($formattedComment, 201);
         } catch (\Illuminate\Validation\ValidationException $e) {

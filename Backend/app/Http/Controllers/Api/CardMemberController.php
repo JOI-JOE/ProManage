@@ -8,19 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\User;
 use App\Notifications\CardMemberUpdatedNotification;
-use App\Services\GoogleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Spatie\Activitylog\Models\Activity;
 
 class CardMemberController extends Controller
 {
-    protected $googleService;
-
-    public function __construct(GoogleService $googleService)
-    {
-        $this->googleService = $googleService;
-    }
 
     public function toggleJoin($cardId)
     {
@@ -110,7 +103,7 @@ class CardMemberController extends Controller
                     'subject' => "Bạn Đã Tham Gia Thẻ: {$card->title}",
                 ]);
 
-                broadcast(new CardMemberUpdated($card, $authUser, 'added', $activity))->toOthers();
+                // broadcast(new CardMemberUpdated($card, $authUser, 'added', $activity))->toOthers();
                 broadcast(new CardUpdated($card))->toOthers();
             } catch (\Exception $e) {
                 Log::error('Failed to queue email or broadcast in toggleJoin: ' . $e->getMessage(), ['card_id' => $card->id]);
@@ -249,8 +242,6 @@ class CardMemberController extends Controller
                     'email' => $user->email,
                     'subject' => "Bạn Đã Bị Xóa Khỏi Thẻ: {$card->title}",
                 ]);
-
-               
             } else {
                 Log::info('Skipping email in remove: User is removing themselves', [
                     'authUser_id' => $authUser->id,

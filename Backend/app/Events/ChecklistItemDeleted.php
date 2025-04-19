@@ -4,47 +4,41 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class ChecklistItemDeleted implements ShouldBroadcastNow
+class ChecklistItemDeleted implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $checklistItemId;
-    public $checklistId;
-    public $cardId;
-    public $userId;
+    public $card;
 
-    public function __construct($checklistItemId, $checklistId, $cardId, $userId)
+    public function __construct($checklistItemId, $card)
     {
+        $this->card = $card;
         $this->checklistItemId = $checklistItemId;
-        $this->checklistId = $checklistId;
-        $this->cardId = $cardId;
-        $this->userId = $userId;
     }
 
     public function broadcastOn()
     {
-        return new Channel('card.' . $this->cardId);
+        return new Channel('card.' . $this->card->id);
     }
+
+    public function broadcastAs()
+    {
+        return 'checklistItemItem.deleted';
+    }
+
 
     public function broadcastWith()
     {
         $data = [
             'checklist_item_id' => $this->checklistItemId,
-            'checklist_id' => $this->checklistId,
-            'card_id' => $this->cardId,
-            'user_id' => $this->userId,
         ];
-        Log::info('Broadcasting checklistItem.deleted:', $data);
+        Log::info('Hậu xóa checklistitem', $data);
         return $data;
-    }
-
-    public function broadcastAs()
-    {
-        return 'checklistItem.deleted';
     }
 }

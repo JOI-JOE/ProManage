@@ -4,59 +4,49 @@ namespace App\Events;
 
 use App\Models\Card;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class CardUpdated implements ShouldBroadcastNow
+class CardUpdated implements ShouldBroadcast
 {
-    use Dispatchable, SerializesModels;
+    use Dispatchable, SerializesModels, InteractsWithSockets;
 
     public $card;
-    protected $memberData;
-    protected $memberIds;
-    protected $labelIds;
-    protected $formattedLabels;
 
     public function __construct(Card $card)
     {
-        $this->card = $card->load(['members', 'labels', 'list_board']);
-
-        // Format member data
-        $this->memberData = $this->card->members->map(function ($member) {
-            return [
-                'id' => $member->id,
-                'full_name' => $member->full_name ?? '',
-                'user_name' => $member->user_name ?? '',
-            ];
-        })->toArray();
-
-        // Extract member IDs
-        $this->memberIds = array_column($this->memberData, 'id');
-
-        // Extract label IDs
-        $this->labelIds = $this->card->labels->pluck('id')->toArray();
-
-        // Format labels
-        $this->formattedLabels = $this->card->labels->map(function ($label) {
-            return [
-                'id' => $label->id,
-                'title' => $label->title ?? '',
-                'color' => $label->color->hex_code ?? null,
-            ];
-        })->toArray();
+        $this->card = $card;
     }
 
     public function broadcastOn()
     {
-        if (!$this->card->list_board || !$this->card->list_board->board_id) {
-            Log::warning('Missing list_board or board_id for CardUpdated broadcast', [
-                'card_id' => $this->card->id,
-            ]);
-            return new Channel('board.invalid');
+        // Load list_board nếu chưa có
+        if (!$this->card->relationLoaded('list_board')) {
+            $this->card->load('list_board');
         }
-        return new Channel('board.' . $this->card->list_board->board_id);
+
+        $boardId = $this->card->list_board?->board_id;
+        if (!$boardId) {
+            Log::warning('CardUpdated: list_board or board_id missing for card', [
+                'card_id' => $this->card->id,
+                'list_board_id' => $this->card->list_board_id,
+            ]);
+            return [new Channel('card.' . $this->card->id)]; // Chỉ gửi trên card channel
+        }
+
+        Log::info('Broadcasting card.updated', [
+            'card_channel' => 'card.' . $this->card->id,
+            'board_channel' => 'board.' . $boardId,
+        ]);
+
+        return [
+            new Channel('card.' . $this->card->id),
+            new Channel('board.' . $boardId),
+        ];
     }
 
     public function broadcastAs()
@@ -66,39 +56,82 @@ class CardUpdated implements ShouldBroadcastNow
 
     public function broadcastWith()
     {
+        // Load list_board nếu cần
+        $card = $this->card->loadMissing('list_board');
+
+        // Fetch labels
+        $labels = DB::table('card_label')
+            ->join('labels', 'card_label.label_id', '=', 'labels.id')
+            ->select('labels.id as label_id', 'labels.title', 'labels.color_id')
+            ->where('card_label.card_id', $card->id)
+            ->get()
+            ->map(function ($label) {
+                return [
+                    'id' => $label->label_id,
+                    'name' => $label->title,
+                    'color' => $label->color_id,
+                ];
+            });
+
+        $labelIds = $labels->pluck('id');
+
+        // Fetch member IDs
+        $memberIds = DB::table('card_user')
+            ->where('card_user.card_id', $card->id)
+            ->pluck('user_id');
+
+        // Fetch checklists IDs
+        $checklistsIds = DB::table('checklists')
+            ->where('card_id', $card->id)
+            ->pluck('id');
+
+        // Fetch badge-related counts
+        $commentCount = DB::table('comment_cards')
+            ->where('card_id', $card->id)
+            ->count();
+
+        $attachmentCount = DB::table('attachments')
+            ->where('card_id', $card->id)
+            ->count();
+
+        $checklistStats = DB::table('checklists')
+            ->leftJoin('checklist_items', 'checklists.id', '=', 'checklist_items.checklist_id')
+            ->where('checklists.card_id', $card->id)
+            ->selectRaw('
+                COUNT(checklist_items.id) as total_checklist_items,
+                SUM(checklist_items.is_completed) as completed_checklist_items
+            ')
+            ->first();
+
+        // Construct the data payload
         $data = [
-            'id' => $this->card->id,
-            'list_board_id' => $this->card->list_board_id,
-            'title' => $this->card->title ?? '',
-            'position' => (float)$this->card->position,
-            'description' => $this->card->description ?? '',
-            'thumbnail' => $this->card->thumbnail,
-            'start_date' => $this->card->start_date,
-            'end_date' => $this->card->end_date,
-            'end_time' => $this->card->end_time,
-            'reminder' => $this->card->reminder,
-            'is_completed' => (bool)$this->card->is_completed,
-            'is_archived' => (bool)$this->card->is_archived,
+            'id' => $card->id,
+            'title' => $card->title,
+            'description' => $card->description,
+            'thumbnail' => $card->thumbnail,
+            'position' => (float) $card->position,
+            'is_archived' => (bool) $card->is_archived,
+            'list_board_id' => $card->list_board_id,
+            'list_board_name' => $card->list_board ? $card->list_board->name : null,
+            'labelId' => $labelIds,
+            'labels' => $labels,
+            'membersId' => $memberIds,
+            'checklistsId' => $checklistsIds,
             'badges' => [
-                'checkItems' => (int)($this->card->total_checklist_items ?? 0),
-                'checkItemsChecked' => (int)($this->card->completed_checklist_items ?? 0),
-                'attachments' => (int)($this->card->attachment_count ?? $this->card->attachments()->count()),
-                'comments' => (int)($this->card->comment_count ?? $this->card->comments()->count()),
-                'start' => $this->card->start_date,
-                'due' => $this->card->end_date,
-                'dueTime' => $this->card->end_time,
-                'dueReminder' => $this->card->reminder,
-                'dueComplete' => (bool)$this->card->is_completed,
-                'description' => is_string($this->card->description) && trim(strip_tags($this->card->description)) !== '',
+                'attachments' => (int) $attachmentCount,
+                'comments' => (int) $commentCount,
+                'start' => $card->start_date,
+                'due' => $card->end_date,
+                'dueTime' => $card->end_time,
+                'dueReminder' => $card->reminder,
+                'dueComplete' => (bool) $card->is_completed,
+                'checkItems' => (int) ($checklistStats->total_checklist_items ?? 0),
+                'checkItemsChecked' => (int) ($checklistStats->completed_checklist_items ?? 0),
+                'description' => !empty($card->description),
             ],
-            'membersId' => $this->memberIds ?? [],
-            'members' => $this->memberData ?? [],
-            'labelId' => $this->labelIds ?? [],
-            'labels' => $this->formattedLabels ?? [],
         ];
 
-        Log::info('Broadcasting card updated event', ['thumnail' => $this->card->thumbnail]);
-
+        Log::info('CardUpdated payload', $data);
         return $data;
     }
 }

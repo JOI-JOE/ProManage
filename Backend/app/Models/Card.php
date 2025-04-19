@@ -9,13 +9,15 @@ use Spatie\Activitylog\Contracts\Activity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
-use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Str;
 
 class Card extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory;
+    // LogsActivity;
 
+    public $timestamps = true;
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -63,66 +65,16 @@ class Card extends Model
                 $model->id = (string) Str::uuid();
             }
         });
-
-        // Khi card được cập nhật
-        static::updating(function ($card) {
-            // Kiểm tra nếu end_date hoặc reminder thay đổi
-            if ($card->isDirty('end_date') || $card->isDirty('reminder')) {
-                $now = Carbon::now();
-                $checkTime = null;
-
-                // Nếu có reminder, sử dụng reminder
-                if ($card->reminder) {
-                    try {
-                        $checkTime = Carbon::parse($card->reminder);
-                    } catch (\Exception $e) {
-                        Log::error('Failed to parse reminder date', [
-                            'card_id' => $card->id,
-                            'reminder' => $card->reminder,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-                }
-                // Nếu không có reminder, sử dụng end_date và end_time
-                elseif ($card->end_date) {
-                    try {
-                        // Ensure end_date is properly formatted and combine with end_time appropriately
-                        $dateString = $card->end_date;
-
-                        // Remove any time component that might be in end_date
-                        if (strpos($dateString, ' ') !== false) {
-                            $dateString = explode(' ', $dateString)[0];
-                        }
-
-                        // Combine with end_time if available, otherwise default to beginning of day
-                        $timeString = $card->end_time ?? '00:00:00';
-
-                        $checkTime = Carbon::parse($dateString . ' ' . $timeString);
-                    } catch (\Exception $e) {
-                        \Log::error('Failed to parse end date/time', [
-                            'card_id' => $card->id,
-                            'end_date' => $card->end_date,
-                            'end_time' => $card->end_time,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-                }
-
-                // Nếu thời điểm cần nhắc nhở đã đến hoặc sắp đến
-                if ($checkTime && $checkTime->lte($now)) {
-                    SendCardReminder::dispatch($card)->onQueue('reminders');
-                }
-            }
-        });
     }
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logFillable()
-            ->logOnlyDirty()
-            ->useLogName('default');
-    }
+
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logFillable()
+    //         ->logOnlyDirty()
+    //         ->useLogName('default');
+    // }
 
     // Quan hệ với list_board
     public function list_board()
