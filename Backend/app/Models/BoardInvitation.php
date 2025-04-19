@@ -49,7 +49,7 @@ class BoardInvitation extends Model
      */
     public function board()
     {
-        return $this->belongsTo(Board::class);
+        return $this->belongsTo(Board::class, 'board_id');
     }
 
     /**

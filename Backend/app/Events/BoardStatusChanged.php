@@ -20,7 +20,7 @@ class BoardStatusChanged implements ShouldBroadcast
         $this->board = $board;
     }
 
-    // Xác định kênh phát sóng (private từng board)
+// Xác định kênh phát sóng (private từng board)
     public function broadcastOn()
     {
         return new Channel('boards.' . $this->board->id);

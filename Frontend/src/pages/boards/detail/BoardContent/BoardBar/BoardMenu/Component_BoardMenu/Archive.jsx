@@ -15,7 +15,7 @@ import Divider from "@mui/material/Divider";
 import CommentIcon from "@mui/icons-material/Comment";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DescriptionIcon from "@mui/icons-material/Description";
-import { useListsClosed } from "../../../../../../../hooks/useList";
+// import { useListsClosed } from "../../../../../../../hooks/useList";
 import { toast, ToastContainer } from "react-toastify";
 import { useParams } from "react-router-dom";
 import { useCardActions } from "../../../../../../../hooks/useCard";
@@ -35,12 +35,12 @@ const Archived = ({ open, onClose }) => {
   const [archivedItems, setArchivedItems] = useState(initialArchivedItems);
   const [viewMode, setViewMode] = useState("cards");
 
-  const { boardId } = useParams();
+  // const { boardId } = useParams();
   // console.log(boardId);
 
-  const { listsClosed, isLoading, error, deleteMutation, updateClosedMutation } = useListsClosed(boardId);
+  // const { listsClosed, isLoading, error, deleteMutation, updateClosedMutation } = useListsClosed(boardId);
 
-  const { cards, isLoadingCard, errorCard, archiveCard, deleteCard } = useCardActions(boardId);
+  // const { cards, isLoadingCard, errorCard, archiveCard, deleteCard } = useCardActions(boardId);
 
 
   // console.log(cardsArchivedByBoard);
@@ -76,19 +76,16 @@ const Archived = ({ open, onClose }) => {
     });
   };
 
-  const handleRestoreCard = (id) => {
-    archiveCard(id)
-  };
+  // const handleRestoreCard = (id) => {
+  //   archiveCard(id)
+  // };
 
-  const handleDeleteCard = (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa thẻ này?")) return;
+  // const handleDeleteCard = (id) => {
+  //   if (!window.confirm("Bạn có chắc muốn xóa thẻ này?")) return;
 
-    deleteCard(id)
+  //   deleteCard(id)
 
-  };
-
-
-
+  // };
 
 
   const filteredItems = archivedItems.filter((item) =>
@@ -142,7 +139,7 @@ const Archived = ({ open, onClose }) => {
         <Divider sx={{ backgroundColor: "#ccc", my: 2 }} />
 
         {/* Hiển thị danh sách theo chế độ */}
-        {viewMode === "cards" ? (
+        {/* {viewMode === "cards" ? (
           <List>
             {cards?.data?.map((item) => (
               <ListItem
@@ -239,7 +236,7 @@ const Archived = ({ open, onClose }) => {
               </Box>
             ))}
           </Box>
-        )}
+        )} */}
       </Box>
       <ToastContainer />
     </Drawer>

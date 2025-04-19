@@ -120,13 +120,3 @@ export const getChecklistItemsDate = async (targetId) => {
         throw error;
     }
 };
-export const deleteDateItem = async (targetId) => {
-
-    try {
-        const response = await authClient.delete(`/item/${targetId}/dates`);
-        return response.data.data; // Trả về dữ liệu từ API
-    } catch (error) {
-        console.error("Lỗi khi lấy danh sách checklist:", error);
-        throw error;
-    }
-};

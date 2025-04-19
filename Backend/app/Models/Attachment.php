@@ -30,12 +30,8 @@ class Attachment extends Model
     }
 
     public function card()
-    {
-        return $this->belongsTo(Card::class);
-    }
+{
+    return $this->belongsTo(Card::class, 'card_id');
+}
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 }

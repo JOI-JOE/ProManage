@@ -3,15 +3,12 @@ import authClient from "../authClient";
 export const getWorkspacesAll = async () => {
   try {
     const response = await authClient.get("/workspaces");
-    // console.log(response.data);
-    
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy workspace của người dùng:", error);
     throw error;
   }
 };
-
 
 export const getGuestWorkspace = async () => {
   try {
@@ -23,19 +20,8 @@ export const getGuestWorkspace = async () => {
   }
 };
 
-
 export const getWorkspaceByName = async (workspaceName) => {
   const response = await authClient.get(`/workspaces/name/${workspaceName}`);
-  return response.data;
-};
-export const getBoardMarkedByWorkspace = async (workspaceName) => {
-  const response = await authClient.get(`/workspaces/boardMarked/${workspaceName}`);
-  return response.data;
-};
-
-
-export const getWorkspaceById = async (workspaceId) => {
-  const response = await authClient.get(`/workspaces/${workspaceId}`);
   return response.data;
 };
 
@@ -65,18 +51,14 @@ export const updateWorkspaceInfo = async (id, data) => {
     });
 };
 
-export const getUserWorkspaces = async () => {
-  const response = await authClient.get('/workspaces/all');
-  return response.data;
-};
+// export const getBoardMarkedByWorkspace = async (workspaceName) => {
+//   const response = await authClient.get(
+//     `/workspaces/boardMarked/${workspaceName}`
+//   );
+//   return response.data;
+// };
 
-export const getUserWorkspaces2 = async () => {
-  try {
-    const response = await authClient.get("user/workspaces");
-    
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy workspace của người dùng:", error);
-    throw error;
-  }
-};
+// export const getWorkspaceById = async (workspaceId) => {
+//   const response = await authClient.get(`/workspaces/${workspaceId}`);
+//   return response.data;
+// };

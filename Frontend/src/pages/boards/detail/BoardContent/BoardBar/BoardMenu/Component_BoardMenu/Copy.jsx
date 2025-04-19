@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   Popover,
   Typography,
@@ -17,72 +17,14 @@ import LockIcon from "@mui/icons-material/Lock";
 import WorkIcon from "@mui/icons-material/Work";
 import PublicIcon from "@mui/icons-material/Public";
 import DomainIcon from "@mui/icons-material/Domain";
-import GroupIcon from "@mui/icons-material/Group"; // Icon cho Không gian làm việc
-import { useCopyBoard } from "../../../../../../../hooks/useBoard";
-import { useNavigate, useParams } from "react-router-dom";
-import { useGetWorkspaces } from "../../../../../../../hooks/useWorkspace";
-import { useUser } from "../../../../../../../hooks/useUser";
-import { useGetBoardMembers } from "../../../../../../../hooks/useInviteBoard";
 
-
-const Copy = ({ open, onClose, anchorEl, currentWorkspaceId }) => {
-  const { boardId, boardName } = useParams();
-
+const Copy = ({ open, onClose, anchorEl }) => {
   const [title, setTitle] = useState("");
-  // const { data: workspaces = [], isLoading, error } = useUserWorkspaces();
-  const { data: workspaces, isLoading: isLoadingWorkspaces, error } = useGetWorkspaces();
-  const memoizedWorkspaces = useMemo(() => workspaces ?? [], [workspaces]);
-
-  const navigate = useNavigate()
-  const [workspace, setWorkspace] = useState(currentWorkspaceId || "");
+  const [workspace, setWorkspace] = useState("j");
   const [keepCards, setKeepCards] = useState(true);
+  const [keepTemplates, setKeepTemplates] = useState(true);
   const [showChangePopover, setShowChangePopover] = useState(false);
   const [visibility, setVisibility] = useState("workspace"); // Mặc định là không gian làm việc
-  const { mutate: copyBoard, isCopyLoading } = useCopyBoard();
-  const { data: user } = useUser();
-  const { data: boardMembers = [] } = useGetBoardMembers(boardId);
-
-  const currentUserId = user?.id;
-
-  const isMember = Array.isArray(boardMembers?.data)
-    ? boardMembers.data.some(member =>
-      member.id === currentUserId && member.pivot.role === "member"
-    )
-    : false;
-
-
-
-
-  // console.log(currentWorkspaceId);
-  useEffect(() => {
-    if (currentWorkspaceId) {
-      setWorkspace(currentWorkspaceId);
-    }
-  }, [currentWorkspaceId]);
-
-  const handleCopy = () => {
-    const payload = {
-      name: title,
-      workspace_id: workspace,
-      source_board_id: boardId,
-      keep_cards: keepCards,
-      visibility: visibility,
-    };
-
-
-    copyBoard(payload, {
-      onSuccess: (response) => {
-        // console.log(response);
-        onClose();
-        const newBoardId = response.board.id; // Assuming the response contains the new board ID
-        const newBoardName = response.board.name; // Assuming the response contains the new board ID
-        navigate(`/b/${newBoardId}/${newBoardName}`);
-      },
-      onError: (error) => {
-        console.error("❌ Lỗi khi sao chép bảng:", error);
-      },
-    });
-  };
 
   // Hàm chọn quyền hiển thị bảng
   const handleVisibilityChange = (type) => {
@@ -125,7 +67,7 @@ const Copy = ({ open, onClose, anchorEl, currentWorkspaceId }) => {
             fullWidth
             variant="outlined"
             size="small"
-            placeholder="Ví dụ như 'kế hoạch bữa ăn hàng tuần' "
+            placeholder="Bạn đang tổ chức việc gì?"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             sx={{ mb: 2 }}
@@ -137,16 +79,11 @@ const Copy = ({ open, onClose, anchorEl, currentWorkspaceId }) => {
               Không gian làm việc
             </Typography>
             <Select
-              fullWidth
               value={workspace}
               onChange={(e) => setWorkspace(e.target.value)}
-              sx={{ marginBottom: 2 }}
             >
-              {(memoizedWorkspaces ?? []).map((ws) => (
-                <MenuItem key={ws.id} value={ws.id}>
-                  {ws.name}
-                </MenuItem>
-              ))}
+              <MenuItem value="j">j</MenuItem>
+              <MenuItem value="k">k</MenuItem>
             </Select>
           </FormControl>
 
@@ -162,7 +99,7 @@ const Copy = ({ open, onClose, anchorEl, currentWorkspaceId }) => {
               </>
             ) : visibility === "workspace" ? (
               <>
-                <GroupIcon
+                <WorkIcon
                   color="warning"
                   sx={{ verticalAlign: "middle", mr: 1 }}
                 />
@@ -197,27 +134,28 @@ const Copy = ({ open, onClose, anchorEl, currentWorkspaceId }) => {
             }
             label="Giữ các thẻ"
           />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={keepTemplates}
+                onChange={() => setKeepTemplates(!keepTemplates)}
+              />
+            }
+            label="Giữ các thẻ mẫu"
+          />
 
           {/*  Thông báo */}
           <Typography variant="body2" sx={{ color: "gray", mt: 1 }}>
             Hoạt động, nhận xét và các thành viên sẽ không được sao chép sang
             bảng thông tin mới.
           </Typography>
-          {isMember && (
-            <Typography variant="body2" sx={{ color: "red", mt: 1, fontSize: "0.75rem" }}>
-              Bạn không thể tạo bảng trong không gian làm việc này vì bạn là khách.
-              Vui lòng chọn một không gian làm việc khác hoặc liên hệ với quản trị viên không gian làm việc.
-            </Typography>
-          )}
 
           {/* Nút Tạo mới */}
           <Button
             fullWidth
             variant="contained"
             sx={{ mt: 2 }}
-            disabled={!title.trim() || isMember}
-            onClick={handleCopy}
-
+            disabled={!title.trim()}
           >
             Tạo mới
           </Button>
@@ -242,12 +180,12 @@ const Copy = ({ open, onClose, anchorEl, currentWorkspaceId }) => {
           </IconButton>
 
           {/*  Nút đóng Popover */}
-          {/* <IconButton
+          <IconButton
             onClick={onClose}
             sx={{ position: "absolute", top: 8, right: 8 }}
           >
             <CloseIcon />
-          </IconButton> */}
+          </IconButton>
 
           {/*  Tiêu đề */}
           <Typography
@@ -283,7 +221,7 @@ const Copy = ({ open, onClose, anchorEl, currentWorkspaceId }) => {
             }}
             onClick={() => handleVisibilityChange("workspace")}
           >
-            <GroupIcon color="warning" sx={{ mr: 1 }} />
+            <WorkIcon color="warning" sx={{ mr: 1 }} />
             <Typography variant="body2">
               <strong>Không gian làm việc</strong> - Thành viên của Không gian
               làm việc có thể xem và sửa.

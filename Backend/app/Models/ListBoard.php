@@ -24,10 +24,10 @@ class ListBoard extends Model
         'color_id',
     ];
 
-    protected $dispatchesEvents = [
-        'created' => ListCreated::class, // Khi tạo mới, phát sự kiện ListCreated
-        'updated' => ListUpdated::class, // Khi cập nhật, phát sự kiện ListUpdated
-    ];
+    // protected $dispatchesEvents = [
+    //     'created' => ListCreated::class, // Khi tạo mới, phát sự kiện ListCreated
+    //     'updated' => ListUpdated::class, // Khi cập nhật, phát sự kiện ListUpdated
+    // ];
 
     protected static function boot()
     {

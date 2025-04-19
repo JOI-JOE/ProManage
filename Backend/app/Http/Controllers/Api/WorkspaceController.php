@@ -12,30 +12,167 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class WorkspaceController extends Controller
 {
-
     public function index()
     {
-        try {
-            $user = Auth::user(); // Lấy user hiện tại
+        $userId = Auth::id();
 
-            if (!$user) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
-
-            // Lấy tất cả workspace mà user này đã tạo
-            $workspaces = $user->workspaces_2;
-
-            return WorkspaceResource::collection($workspaces);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+        if (!$userId) {
+            return response()->json(['message' => 'Unauthorized'], 401);
         }
-    }
 
+        // Lấy danh sách workspaces mà user tham gia hoặc tạo
+        $workspaces = DB::table('workspaces')
+            ->leftJoin('workspace_members', function ($join) use ($userId) {
+                $join->on('workspace_members.workspace_id', '=', 'workspaces.id')
+                    ->where('workspace_members.user_id', $userId)
+                    ->where('workspace_members.joined', 1)
+                    ->where('workspace_members.is_deactivated', 0);
+            })
+            ->select(
+                'workspaces.id',
+                'workspaces.name',
+                'workspaces.display_name',
+                'workspaces.id_member_creator',
+                'workspaces.logo_url as logo',
+                'workspaces.logo_hash as logo_hash',
+                'workspaces.permission_level',
+                'workspace_members.member_type',
+                'workspace_members.joined',
+                DB::raw('(SELECT COUNT(*) FROM workspace_members wm WHERE wm.workspace_id = workspaces.id AND wm.joined = 1 AND wm.is_deactivated = 0) AS member_count'),
+                DB::raw('IF(workspaces.id_member_creator = ?, TRUE, FALSE) AS is_creator')
+            )
+            ->addBinding($userId, 'select')
+            ->where(function ($query) use ($userId) {
+                $query->where('workspace_members.user_id', $userId)
+                    ->orWhere('workspaces.id_member_creator', $userId);
+            })
+            ->distinct()
+            ->get();
+
+        // Lấy tất cả boards mà user tham gia hoặc tạo
+        $boards = DB::table('boards')
+            ->leftJoin('board_members', function ($join) use ($userId) {
+                $join->on('board_members.board_id', '=', 'boards.id')
+                    ->where('board_members.user_id', $userId);
+            })
+            ->leftJoin('workspaces as ws', 'boards.workspace_id', '=', 'ws.id')
+            ->leftJoin('users as creator', 'boards.created_by', '=', 'creator.id')
+            ->select(
+                'boards.id',
+                'boards.name',
+                'boards.workspace_id',
+                'boards.thumbnail',
+                'boards.visibility',
+                'boards.created_by',
+                'boards.created_at',
+                DB::raw("EXISTS (SELECT 1 FROM board_stars bs WHERE bs.board_id = boards.id AND bs.user_id = ? LIMIT 1) AS starred"),
+                DB::raw('(SELECT COUNT(*) FROM board_members bm WHERE bm.board_id = boards.id) AS member_count'),
+                'ws.id as workspace_id_ref',
+                'ws.name as workspace_name',
+                'ws.display_name as workspace_display_name',
+                'ws.permission_level as workspace_visibility',
+                'ws.logo_url as workspace_logo',
+                'creator.user_name as created_by_name',
+                'creator.image as created_by_image'
+            )
+            ->addBinding($userId, 'select')
+            ->where(function ($query) use ($userId) {
+                $query->where('boards.created_by', $userId)
+                    ->orWhereNotNull('board_members.user_id');
+            })
+            ->where('boards.closed', 0)
+            ->orderByRaw('starred DESC')
+            ->orderBy('boards.created_at', 'desc')
+            ->get();
+
+        // Chuẩn bị dữ liệu trả về
+        $responseData = [
+            'workspaces' => [],
+            'guestWorkspaces' => [], // Thay personal_boards bằng guestWorkspaces
+            'id' => $userId
+        ];
+
+        // Chuẩn bị workspaces mà user đã tham gia
+        $workspaceIds = $workspaces->pluck('id')->toArray();
+        $responseData['workspaces'] = $workspaces->map(function ($workspace) {
+            return [
+                'id' => $workspace->id,
+                'name' => $workspace->name,
+                'display_name' => $workspace->display_name,
+                'logo' => $workspace->logo,
+                'logo_hash' => $workspace->logo_hash,
+                'id_member_creator' => $workspace->id_member_creator,
+                'permission_level' => $workspace->permission_level,
+                'member_type' => $workspace->member_type,
+                'joined' => $workspace->joined,
+                'member_count' => $workspace->member_count,
+                'is_creator' => $workspace->is_creator,
+                'boards' => []
+            ];
+        })->values()->all();
+
+        // Chuẩn bị guestWorkspaces (các workspace mà user chưa tham gia nhưng có tham gia board)
+        $guestWorkspaces = [];
+        foreach ($boards as $board) {
+            $boardData = [
+                'id' => $board->id,
+                'name' => $board->name,
+                'workspace_id' => $board->workspace_id,
+                'thumbnail' => $board->thumbnail,
+                'visibility' => $board->visibility,
+                'created_by' => $board->created_by,
+                'created_by_name' => $board->created_by_name,
+                'created_by_image' => $board->created_by_image,
+                'created_at' => $board->created_at,
+                'starred' => $board->starred,
+                'member_count' => $board->member_count
+            ];
+
+            if ($board->workspace_id && in_array($board->workspace_id, $workspaceIds)) {
+                // Board thuộc workspace mà user đã tham gia
+                foreach ($responseData['workspaces'] as &$workspaceData) {
+                    if ($workspaceData['id'] === $board->workspace_id) {
+                        $workspaceData['boards'][] = $boardData;
+                        break;
+                    }
+                }
+            } elseif ($board->workspace_id && $board->workspace_id_ref) {
+                // Board thuộc workspace mà user chưa tham gia (guest workspace)
+                $workspaceId = $board->workspace_id;
+                if (!isset($guestWorkspaces[$workspaceId])) {
+                    $guestWorkspaces[$workspaceId] = [
+                        'id' => $board->workspace_id_ref,
+                        'name' => $board->workspace_name,
+                        'display_name' => $board->workspace_display_name,
+                        'logo' => $board->workspace_logo,
+                        'permission_level' => $board->workspace_visibility,
+                        'boards' => []
+                    ];
+                }
+                $guestWorkspaces[$workspaceId]['boards'][] = $boardData;
+            }
+            // Bỏ qua các board không thuộc workspace (personal boards) vì không cần nữa
+        }
+
+        // Chuyển guestWorkspaces thành mảng và đảm bảo boards không bị lồng
+        $responseData['guestWorkspaces'] = array_values($guestWorkspaces);
+        foreach ($responseData['guestWorkspaces'] as &$guestWorkspace) {
+            $guestWorkspace['boards'] = array_values($guestWorkspace['boards']);
+        }
+
+        // Đảm bảo boards trong workspaces không bị lồng mảng
+        $responseData['workspaces'] = array_map(function ($workspace) {
+            $workspace['boards'] = array_values($workspace['boards']);
+            return $workspace;
+        }, $responseData['workspaces']);
+
+        return response()->json($responseData, 200);
+    }
+    //-----------------------------------------------------------
     public function showWorkspaceByName($workspaceName)
     {
         try {
@@ -76,41 +213,7 @@ class WorkspaceController extends Controller
             ], 500);
         }
     }
-    public function getBoardMarkedByWorkspace($workspaceName)
-    {
-        try {
-            $workspace = Workspace::where('name', $workspaceName)->first();
-            $boardMarked = $workspace->boards()->where('is_marked', 1)->get();
-            return response()->json([
-                'success' => true,
-                'data' => $boardMarked,
-            ]);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra khi lấy danh sách board.',
-            ]);
-        }
-    }
-    public function showWorkspaceById($workspaceId)
-    {
-        try {
-            $workspace = Workspace::findOrFail($workspaceId);
-            return new WorkspaceResource($workspace);
-        } catch (ModelNotFoundException $e) {
-            Log::error("Không tìm thấy workspace ID: $workspaceId");
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy workspace.',
-            ], 404);
-        } catch (\Exception $e) {
-            Log::error('Lỗi khi lấy workspace: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra khi lấy workspace.',
-            ], 500);
-        }
-    }
+
     public function store(WorkspaceRequest $request)
     {
         $user = Auth::user();
@@ -220,157 +323,115 @@ class WorkspaceController extends Controller
             'data' => $permissionLevels,
         ]);
     }
-    public function getWorkspaceInPulic(Request $request, $workspaceId)
-    {
-        try {
-            // 🔹 Tìm workspace theo ID
-            $workspace = Workspace::findOrFail($workspaceId);
 
-            // 🔹 Kiểm tra tham số query
-            $includeEnterprise = filter_var($request->query('enterprise', false), FILTER_VALIDATE_BOOLEAN);
-            $fields = $request->query('fields', 'basic');
-            $includeMembers = $request->query('members', false);
-            $memberFields = $request->query('member_fields', '');
+    ////-----------------------------------------------------------------------
+    // public function showWorkspaceById($workspaceId)
+    // {
+    //     try {
+    //         $workspace = Workspace::findOrFail($workspaceId);
+    //         return new WorkspaceResource($workspace);
+    //     } catch (ModelNotFoundException $e) {
+    //         Log::error("Không tìm thấy workspace ID: $workspaceId");
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Không tìm thấy workspace.',
+    //         ], 404);
+    //     } catch (\Exception $e) {
+    //         Log::error('Lỗi khi lấy workspace: ' . $e->getMessage());
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Có lỗi xảy ra khi lấy workspace.',
+    //         ], 500);
+    //     }
+    // }
+    // public function getWorkspaceInPulic(Request $request, $workspaceId)
+    // {
+    //     try {
+    //         // 🔹 Tìm workspace theo ID
+    //         $workspace = Workspace::findOrFail($workspaceId);
 
-            // 🔹 Danh sách trường hợp lệ của thành viên
-            $defaultMemberFields = [
-                // 'workspace_members.user_id as id',  // 🔹 Sử dụng `user_id` thay vì `id`
-                // 'users.full_name as fullName',
-                'users.user_name'
-            ];
+    //         // 🔹 Kiểm tra tham số query
+    //         $includeEnterprise = filter_var($request->query('enterprise', false), FILTER_VALIDATE_BOOLEAN);
+    //         $fields = $request->query('fields', 'basic');
+    //         $includeMembers = $request->query('members', false);
+    //         $memberFields = $request->query('member_fields', '');
 
-            // 🔹 Nếu có member_fields, lọc các trường hợp lệ
-            $selectedFields = [];
-            if (!empty($memberFields)) {
-                $allowedFields = array_map('trim', explode(',', $memberFields));
-                $mappedFields = array_intersect_key(array_flip($allowedFields), array_flip($defaultMemberFields));
-                $selectedFields = array_values(array_intersect($defaultMemberFields, array_keys($mappedFields)));
-            }
+    //         // 🔹 Danh sách trường hợp lệ của thành viên
+    //         $defaultMemberFields = [
+    //             // 'workspace_members.user_id as id',  // 🔹 Sử dụng `user_id` thay vì `id`
+    //             // 'users.full_name as fullName',
+    //             'users.user_name'
+    //         ];
 
-            if (empty($selectedFields)) {
-                $selectedFields = $defaultMemberFields;
-            }
+    //         // 🔹 Nếu có member_fields, lọc các trường hợp lệ
+    //         $selectedFields = [];
+    //         if (!empty($memberFields)) {
+    //             $allowedFields = array_map('trim', explode(',', $memberFields));
+    //             $mappedFields = array_intersect_key(array_flip($allowedFields), array_flip($defaultMemberFields));
+    //             $selectedFields = array_values(array_intersect($defaultMemberFields, array_keys($mappedFields)));
+    //         }
 
-            // 🔹 Chuẩn bị response
-            $response = [
-                'id' => $workspace->id,
-                'name' => $workspace->name,
-                'enterprise' => $includeEnterprise,
-            ];
+    //         if (empty($selectedFields)) {
+    //             $selectedFields = $defaultMemberFields;
+    //         }
 
-            if ($fields === 'all') {
-                $response['details'] = $workspace;
-            }
+    //         // 🔹 Chuẩn bị response
+    //         $response = [
+    //             'id' => $workspace->id,
+    //             'name' => $workspace->name,
+    //             'enterprise' => $includeEnterprise,
+    //         ];
 
-            if ($includeMembers === 'all') {
-                $response['members'] = DB::table('workspace_members')
-                    ->join('users', 'workspace_members.user_id', '=', 'users.id')
-                    ->where('workspace_members.workspace_id', $workspaceId)
-                    ->select($selectedFields)
-                    ->get();
-            }
+    //         if ($fields === 'all') {
+    //             $response['details'] = $workspace;
+    //         }
 
-            return response()->json($response, 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Workspace không tồn tại!',
-            ], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Lỗi khi lấy thông tin workspace!',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
-    public function getGuestWorkspaces(Request $request)
-    {
-        $userId = $request->user()->id;
+    //         if ($includeMembers === 'all') {
+    //             $response['members'] = DB::table('workspace_members')
+    //                 ->join('users', 'workspace_members.user_id', '=', 'users.id')
+    //                 ->where('workspace_members.workspace_id', $workspaceId)
+    //                 ->select($selectedFields)
+    //                 ->get();
+    //         }
 
-        $guestWorkspaces = DB::table('workspaces')
-            ->join('boards', 'workspaces.id', '=', 'boards.workspace_id')
-            ->join('board_members', function ($join) use ($userId) {
-                $join->on('boards.id', '=', 'board_members.board_id')
-                    ->where('board_members.user_id', '=', $userId);
-            })
-            ->where('workspaces.id_member_creator', '!=', $userId) // Loại bỏ workspace do user sở hữu
-            ->distinct()
-            ->select('workspaces.id', 'workspaces.name')
-            ->get();
+    //         return response()->json($response, 200);
+    //     } catch (ModelNotFoundException $e) {
+    //         return response()->json([
+    //             'message' => 'Workspace không tồn tại!',
+    //         ], 404);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Lỗi khi lấy thông tin workspace!',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+    // public function getGuestWorkspaces(Request $request)
+    // {
+    //     $user = $request->user();
+    //     $guestWorkspaces = $user->guestWorkspaces()->get();
 
-        return response()->json([
-            'message' => 'Lấy thành công không gian làm việc khách',
-            'data' => $guestWorkspaces,
-        ]);
-    }
-
-    public function getUserWorkspaces(Request $request)
-    {
-        try {
-            $user = $request->user();
-
-            if (!$user) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
-
-            // Lấy tất cả workspace mà user đã tạo (kèm theo board, list, card)
-            $ownedWorkspaces = Workspace::where('id_member_creator', $user->id)
-                ->with([
-                    'boards' => function ($query) {
-                        $query->select('id', 'workspace_id', 'name', 'closed')
-                            ->with([
-                                'lists' => function ($listQuery) {
-                                    $listQuery->select('id', 'board_id', 'name', 'closed')
-                                        ->with([
-                                            'cards' => function ($cardQuery) {
-                                                $cardQuery->select('id', 'list_board_id', 'title', 'position', 'is_archived'); // Thêm các field nếu cần
-                                            }
-                                        ]);
-                                }
-                            ]);
-                    }
-                ])
-                ->get();
-
-            // Lấy tất cả workspace mà user tham gia nhưng không phải là chủ sở hữu
-            $guestWorkspaces = Workspace::whereHas('boards.boardMembers', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-                ->where('id_member_creator', '!=', $user->id)
-                ->with([
-                    'boards' => function ($query) use ($user) {
-                        $query->whereHas('boardMembers', function ($q) use ($user) {
-                            $q->where('user_id', $user->id);
-                        })
-                            ->select('id', 'workspace_id', 'name', 'closed')
-                            ->with([
-                                'lists' => function ($listQuery) {
-                                    $listQuery->select('id', 'board_id', 'name', 'closed')
-                                        ->with([
-                                            'cards' => function ($cardQuery) {
-                                                $cardQuery->select('id', 'list_board_id', 'title', 'position', 'is_archived');
-                                            }
-                                        ]);
-                                }
-                            ]);
-                    }
-                ])
-                ->distinct()
-                ->get();
-
-            return response()->json([
-                'message' => 'Lấy danh sách không gian làm việc thành công',
-                'owned_workspaces' => $ownedWorkspaces,
-                'guest_workspaces' => $guestWorkspaces,
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Something went wrong',
-                'message' => $e->getMessage(),
-                'line' => $e->getLine(), // tiện debug
-            ], 500);
-        }
-    }
+    //     return response()->json([
+    //         'message' => 'Lấy thành công',
+    //         'data' => $guestWorkspaces,
+    //     ]);
+    // }
 
 
+    // public function getBoardMarkedByWorkspace($workspaceName)
+    // {
+    //     try {
+    //         $workspace = Workspace::where('name', $workspaceName)->first();
+    //         $boardMarked = $workspace->boards()->where('is_marked', 1)->get();
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => $boardMarked,
+    //         ]);
+    //     } catch (\Throwable $th) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Có lỗi xảy ra khi lấy danh sách board.',
+    //         ]);
+    //     }
+    // }
 }

@@ -7,7 +7,6 @@ import {
   TextField,
   Button,
 } from "@mui/material";
-import { useCreateCheckList } from "../../../../../../../../../../hooks/useCheckList";
 import { useParams } from "react-router-dom";
 
 const TaskModal = ({ open, onClose, onSave }) => {
@@ -19,7 +18,7 @@ const TaskModal = ({ open, onClose, onSave }) => {
     if (!taskName.trim()) return; // Kiểm tra tên checklist có dữ liệu
 
     createCheckListMutation.mutate(
-      {card_id: cardId, name: taskName }, // Gửi request API
+      { card_id: cardId, name: taskName }, // Gửi request API
       {
         onSuccess: () => {
           setTaskName(""); // Reset trường nhập

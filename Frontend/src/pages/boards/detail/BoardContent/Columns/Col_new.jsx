@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Box, Button, TextField } from "@mui/material";
-import NoteAddIcon from "@mui/icons-material/NoteAdd";
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import CloseIcon from "@mui/icons-material/Close";
+import CustomButton from "../../../../../components/Common/CustomButton";
 
 const Col_new = ({ open, setOpen, onAdd }) => {
     const [columnName, setColumnName] = useState("");
 
-    const handleAdd = async () => {
+    const handleAdd = () => {
         if (!columnName.trim()) return; // Tránh thêm danh sách rỗng
-        await onAdd(columnName.trim());
+        onAdd(columnName.trim());
         setColumnName("");
         setOpen(false);
     };
@@ -37,18 +38,30 @@ const Col_new = ({ open, setOpen, onAdd }) => {
     };
 
     const buttonStyles = {
-        boxShadow: "none",
-        border: "none",
-        bgcolor: "teal",
+        fontWeight: '600', // Sử dụng 600 (semi-bold) thay vì 5000
+        backgroundColor: '#0C66E4',
+        color: '#FFFFFF',
+        fontSize: '14px',
+        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+        padding: '3px 10px',
+        border: 'none',
+        borderRadius: '3px',
+        '&:hover': {
+            backgroundColor: '#0A5BC2', // Điều chỉnh màu hover nếu cần
+            opacity: 0.9, // Tăng độ mờ lên 0.9 thay vì giảm xuống 0.8
+        },
+        '&:focus': {
+            outline: 'none',
+            boxShadow: '0 0 0 2px rgba(12, 102, 228, 0.5)', // Thêm box-shadow để hiển thị focus
+        },
     };
-
     return (
         <>
             {open ? (
                 <Box
                     sx={{
-                        minWidth: "250px",
-                        maxWidth: "250px",
+                        minWidth: "272px",
+                        maxWidth: "272px",
                         mx: 2,
                         p: 1,
                         borderRadius: "6px",
@@ -78,38 +91,42 @@ const Col_new = ({ open, setOpen, onAdd }) => {
                             size="small"
                             sx={buttonStyles}
                         >
-                            Add Column
+                            Thêm danh sách
                         </Button>
-                        <CloseIcon
-                            fontSize="small"
-                            sx={{ color: "white", cursor: "pointer" }}
-                            onClick={handleClose}
-                        />
+                        <CustomButton type="close" onClick={handleClose} size={20} style={{ fontWeight: 'bold' }} />
                     </Box>
                 </Box>
             ) : (
                 <Box
                     sx={{
-                        minWidth: "200px",
-                        maxWidth: "200px",
+                        minWidth: "272px",
+                        maxWidth: "272px",
+                        width: "245px",
                         mx: 2,
                         borderRadius: "6px",
                         height: "fit-content",
-                        bgcolor: "#ffffff3d",
                     }}
                 >
                     <Button
-                        startIcon={<NoteAddIcon />}
+                        startIcon={<AddRoundedIcon />}
+                        onClick={() => setOpen(true)}
                         sx={{
-                            color: "#ffffff",
                             width: "100%",
                             justifyContent: "flex-start",
-                            pl: 2.5,
-                            py: 1,
+                            p: "12px",
+                            borderRadius: "12px",
+                            backgroundColor: "rgba(255, 255, 255, 0.24)",
+                            color: "#172B4D",
+                            fontSize: "14px",
+                            fontWeight: "700",
+                            lineHeight: "20px",
+                            textTransform: "none", // giữ nguyên chữ thường
+                            "&:hover": {
+                                backgroundColor: "rgba(0, 0, 0, 0.1)", // hover nhẹ hơn 1 chút
+                            },
                         }}
-                        onClick={() => setOpen(true)}
                     >
-                        Add new column
+                        Thêm danh sách
                     </Button>
                 </Box>
             )}

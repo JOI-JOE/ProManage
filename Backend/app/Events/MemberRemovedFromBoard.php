@@ -14,33 +14,25 @@ class MemberRemovedFromBoard implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $board_id;
-    public $user_id; // User bị xóa
-    public $user_name; // Tên của user bị xóa
-    public $member_ids; // Danh sách tất cả thành viên trong bảng
+    public $userId;
+    public $boardId;
 
-    public function __construct($board_id, $user_id, $user_name, $member_ids)
+    public function __construct($userId, $boardId)
     {
-        $this->board_id = $board_id;
-        $this->user_id = $user_id;
-        $this->user_name = $user_name;
-        $this->member_ids = $member_ids;
+        $this->userId = $userId;
+        $this->boardId = $boardId;
     }
+
     public function broadcastOn()
     {
-        // Gửi tới kênh private của tất cả thành viên
-        return array_map(function ($memberId) {
-            return new PrivateChannel("App.Models.User.{$memberId}");
-        }, $this->member_ids);
+        return new PrivateChannel('user.' . $this->userId);
     }
 
     public function broadcastWith()
     {
         return [
-            'board_id' => $this->board_id,
-            'user_id' => $this->user_id,
-            'user_name' => $this->user_name,
-            'message' => "Thành viên {$this->user_name} (ID: {$this->user_id}) đã rời khỏi bảng.",
+            'message' => 'Bạn đã được xóa ra khỏi bảng',
+            'board_id' => $this->boardId
         ];
     }
 }

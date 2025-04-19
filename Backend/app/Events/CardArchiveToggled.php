@@ -27,13 +27,13 @@ class CardArchiveToggled implements ShouldBroadcast
         return new Channel('boards.' . $this->card->list->board->id);
     }
 
-    // public function broadcastWith()
-    // {
-    //     return [
-    //         'card_id' => $this->card->id,
-    //         'is_archived' => $this->card->is_archived,
-    //     ];
-    // }
+    public function broadcastWith()
+    {
+        return [
+            'card_id' => $this->card->id,
+            'is_archived' => $this->card->is_archived,
+        ];
+    }
 
     public function broadcastAs()
     {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getChecklistItemsByCheckList, createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName, toggleCheckListItemMember, getMembersInCheckListItem, getChecklistItemsDate, updateDateItem, deleteDateItem } from "../api/models/checkListItemsApi";
+import { getChecklistItemsByCheckList, createCheckListItem, deleteCheckListItem, toggleCheckListItemStatus, updateCheckListItemName, toggleCheckListItemMember, getMembersInCheckListItem, getChecklistItemsDate, updateDateItem } from "../api/models/checkListItemsApi";
 import { useEffect } from "react";
 import echoInstance from "./realtime/useRealtime";
 
@@ -13,8 +13,6 @@ import echoInstance from "./realtime/useRealtime";
 //         cacheTime: 1000 * 60 * 30, // Giữ cache trong 30 phút
 //     });
 // };
-
-
 
 
 export const useCreateCheckListItem = () => {
@@ -120,7 +118,7 @@ export const useDeleteCheckListItem = () => {
             // Làm mới dữ liệu sau cùng
             // queryClient.invalidateQueries({ queryKey: ["checklistItems", checklist_id], exact: true });
             queryClient.invalidateQueries({ queryKey: ["checklists", cardId], exact: true });
-            // queryClient.invalidateQueries({ queryKey: ["lists"] });
+            queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
     });
 };
@@ -145,7 +143,7 @@ export const useGetMemberInCheckListItem = (itemId) => {
         channel.listen(".ChecklistItemMemberUpdated", (event) => {
             // console.log("🔄 Nhận sự kiện ChecklistItemMemberUpdated:", event);
 
-            queryClient.invalidateQueries({ queryKey: ["checklist-item-members", itemId] });
+            queryClient.invalidateQueries({ queryKey: ["checklist-item-members", itemId]});
 
         });
 
@@ -178,47 +176,30 @@ export const useToggleCheckListItemMember = () => {
 };
 export const useChecklistsItemByDate = (targetId) => {
     const queryClient = useQueryClient();
-
+  
     return useQuery({
-        queryKey: ["dateItem", targetId],
-        queryFn: () => getChecklistItemsDate(targetId),
-        enabled: !!targetId, // Chỉ gọi API nếu cardId tồn tại
-
+      queryKey: ["dateItem", targetId],
+      queryFn: () => getChecklistItemsDate(targetId),
+      enabled: !!targetId, // Chỉ gọi API nếu cardId tồn tại
+    
     });
-};
-export const useUpdateItemDate = () => {
-
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: ({ targetId, endDate, endTime, reminder }) =>
-            updateDateItem(targetId, endDate, endTime, reminder),
+  };
+  export const useUpdateItemDate = () => {
+      
+      const queryClient = useQueryClient();
+    
+      return useMutation({
+        mutationFn: ({ targetId,  endDate, endTime, reminder }) =>
+          updateDateItem(targetId, endDate, endTime, reminder),
         onSuccess: (data, variables) => {
-
-            // queryClient.invalidateQueries(["checklist-items"],variables.itemId);
-            queryClient.invalidateQueries({ queryKey: ["dateItem", variables.targetId], exact: true });
-
+         
+          // queryClient.invalidateQueries(["checklist-items"],variables.itemId);
+        queryClient.invalidateQueries({ queryKey: ["dateItem",variables.targetId], exact: true });
+  
         },
         onError: (error) => {
-            console.error("Lỗi khi cập nhật ngày card:", error);
+          console.error("Lỗi khi cập nhật ngày card:", error);
         },
-    });
-};
-export const useDeleteItemDate = () => {
+      });
+    }; 
 
-    const queryClient = useQueryClient();
-
-    return useMutation({
-
-        mutationFn: ({ targetId }) => deleteDateItem(targetId),
-
-        onSuccess: (_, variables) => {
-
-            queryClient.invalidateQueries({ queryKey: ["dateItem", variables.targetId], exact: true });
-
-        },
-        onError: (error) => {
-            console.error("❌ Lỗi khi xóa ngày giờ của item", error.response?.data || error.message);
-        },
-    });
-};

@@ -31,7 +31,7 @@ import MemberItem from "./MemberItem";
 import GenerateLink from "../../../../components/GenerateLink";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
 import {
-  useAddMemberToWorkspace,
+  // useAddMemberToWorkspace,
   useCancelInvitationWorkspace,
   useConfirmWorkspaceMember,
   useCreateInviteWorkspace,
@@ -41,10 +41,8 @@ import WorkspaceInfo from "../../../../components/WorkspaceInfo";
 import { useGetInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 
 const Member = () => {
-  
   const { workspaceName } = useParams();
 
-  // Dữ liệu để lấy được workspace bằng tên
   const {
     data: workspace,
     isLoading: isLoadingWorkspace,
@@ -63,7 +61,7 @@ const Member = () => {
     enabled: !!workspace?.id,
   });
 
-  const { mutate: addMember, isLoading, error } = useAddMemberToWorkspace();
+  // const { mutate: addMember, isLoading, error } = useAddMemberToWorkspace();
   const { mutate: confirmMember } = useConfirmWorkspaceMember();
 
   const [inputValue, setInputValue] = useState("");
@@ -80,7 +78,6 @@ const Member = () => {
     workspace?.id
   );
 
-  // ✅ Tạo debounce bằng useRef -> Tránh spam API khi gõ nhanh
   const debounceTimeout = useRef(null);
 
   const handleInputChange = (event) => {
@@ -111,8 +108,6 @@ const Member = () => {
     setSelectedUserIds((prevIds) => [...new Set([...prevIds, ...newIds])]);
 
     if (newIds.length > 0) {
-      console.log("📢 Sending API with userIds:", newIds);
-
       addMember({ workspaceId: workspace.id, userIds: newIds });
     }
     setInputValue("");
@@ -258,7 +253,8 @@ const Member = () => {
               }}
             >
               <span style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
-                {workspace?.display_name.charAt(0).toUpperCase()}
+                {/* {workspace?.display_name.charAt(0).toUpperCase()} */}
+                klsdgd
               </span>
             </Avatar>
             <Box>
@@ -444,21 +440,42 @@ const Member = () => {
             {/* Danh sách thành viên */}
             <Box
               sx={{
-                display: "flex",
-                flexDirection: "column", // Hiển thị theo hàng dọc
-                alignItems: "flex-start", // Căn lề trái cho các thành viên
-                gap: 2, // Khoảng cách giữa các thành viên
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                width: '100%',
+                maxWidth: '800px',
+                margin: '0 auto',
+                maxHeight: 'calc(100vh - 200px)', // Giới hạn chiều cao tối đa
+                overflowY: 'auto', // Thêm thanh cuộn khi cần
+                '&::-webkit-scrollbar': {
+                  width: '6px'
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: '#B6BBBF',
+                  borderRadius: '6px'
+                },
+                '&::-webkit-scrollbar-thumb:hover': {
+                  backgroundColor: '#ECF0F1'
+                }
               }}
             >
-              {/* Thông tin thành viên */}
               {members?.map((member, index) => (
-                <Box
-                  key={`${member.id}-${index}`} // Kết hợp member.id và index để tạo key duy nhất
-                  id="workspace-member-list"
-                >
-                  <MemberItem member={member} />{" "}
-                  {/* Truyền dữ liệu member vào MemberItem */}
-                </Box>
+                <MemberItem
+                  key={member.id || `member-${index}`} // Dùng index làm key nếu id bị undefined
+                  member={{
+                    id: member.id,
+                    name: member.name,
+                    username: member.username,
+                    last_active: member.last_active,
+                    board_count: member.boards?.length || 0,
+                    is_admin: member.is_admin
+                  }}
+                  sx={{
+                    flexShrink: 0, // Ngăn không cho các item co lại
+                    minHeight: '64px' // Chiều cao tối thiểu cho mỗi item
+                  }}
+                />
               ))}
             </Box>
           </Box>
@@ -481,39 +498,39 @@ const Member = () => {
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ padding: 0 }}>
+        <DialogContent>
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
               gap: 2,
               width: "100%",
-              padding: "16px 24px", // Tự quản lý padding
             }}
           >
-            {/* Phần Autocomplete và TextField */}
             <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
               <Paper
                 elevation={0}
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  flex: 1,
+                  flex: 1, // 🔥 Giúp Paper mở rộng full width
                   borderRadius: "3px",
                   boxShadow: "inset 0 0 0 1px rgba(9, 30, 66, 0.15)",
-                  transition: "background-color 85ms ease, border-color 85ms ease, box-shadow 85ms ease",
+                  transition:
+                    "background-color 85ms ease, border-color 85ms ease, box-shadow 85ms ease",
                   backgroundColor: "#ffffff",
-                  padding: "5px 10px",
+                  padding: "5px 10px", // 🔥 Tạo khoảng cách padding đẹp hơn
                 }}
               >
                 <Autocomplete
                   multiple
                   id="custom-autocomplete"
                   options={options.filter(
-                    (option) => !selectedUsers.some((user) => user.id === option.id)
+                    (option) =>
+                      !selectedUsers.some((user) => user.id === option.id)
                   )}
                   getOptionLabel={(option) => option.full_name}
-                  getOptionDisabled={(option) => option.joined}
+                  getOptionDisabled={(option) => option.joined} // 🔥 Vô hiệu hóa nếu đã joined
                   filterOptions={(options, state) =>
                     options.filter(
                       (option) =>
@@ -532,7 +549,9 @@ const Member = () => {
                   popupIcon={null}
                   loading={isLoadingMember}
                   loadingText={
-                    <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "center", py: 1 }}
+                    >
                       <SvgIcon
                         component={loadingLogo}
                         sx={{ width: 50, height: 50, transform: "scale(0.5)" }}
@@ -545,19 +564,25 @@ const Member = () => {
                     isLoadingMember
                       ? "Đang tìm kiếm..."
                       : inputValue.length >= 3
-                      ? "Không tìm thấy thành viên nào."
-                      : ""
+                        ? "Không tìm thấy thành viên nào."
+                        : ""
                   }
                   open={open}
                   value={selectedUsers}
                   onChange={handleOptionSelect}
                   fullWidth
                   renderOption={(props, option) => (
-                    <ListItem {...props} alignItems="flex-start" disabled={option.joined}>
+                    <ListItem
+                      {...props}
+                      alignItems="flex-start"
+                      disabled={option.joined}
+                    >
                       <ListItemAvatar>
                         <Avatar
                           alt={option.full_name}
-                          src={option.image || "/static/images/avatar/default.jpg"}
+                          src={
+                            option.image || "/static/images/avatar/default.jpg"
+                          }
                         />
                       </ListItemAvatar>
                       <ListItemText
@@ -596,7 +621,9 @@ const Member = () => {
                   PopperComponent={(props) => (
                     <Popper
                       {...props}
-                      modifiers={[{ name: "offset", options: { offset: [0, 15] } }]}
+                      modifiers={[
+                        { name: "offset", options: { offset: [0, 15] } },
+                      ]}
                     />
                   )}
                   sx={{
@@ -638,7 +665,7 @@ const Member = () => {
                       sx={{
                         width: 50,
                         height: 50,
-                        transform: "scale(0.5)",
+                        transform: "scale(0.5)", // Giữ nguyên tỷ lệ nhưng thu nhỏ
                       }}
                       viewBox="0 0 24 24"
                       inheritViewBox
@@ -649,7 +676,7 @@ const Member = () => {
                     variant="contained"
                     sx={{ height: "40px", textTransform: "none" }}
                     onClick={handleSendInvitations}
-                    disabled={isProcessing}
+                    disabled={isProcessing} // Chặn nhấn nút khi đang loading
                   >
                     Gửi lời mời
                   </Button>
@@ -662,9 +689,9 @@ const Member = () => {
                 multiline
                 maxRows={2}
                 fullWidth
-                value={invitationMessage}
-                onChange={(e) => setInvitationMessage(e.target.value)}
-                disabled={isProcessing}
+                value={invitationMessage} // Gán giá trị từ state
+                onChange={(e) => setInvitationMessage(e.target.value)} // Cập nhật state khi nhập
+                disabled={isProcessing} // Vô hiệu hóa khi đang xử lý
                 sx={{
                   "& .MuiInputBase-input": { color: "gray" },
                   "& .MuiInputLabel-root": { color: "#9FADBC" },
@@ -672,39 +699,37 @@ const Member = () => {
                 }}
               />
             )}
-
-            {/* Phần GenerateLink hoặc Loading */}
-            {isInviteLoading || isLoadingWorkspace ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: "60px", // Đặt chiều cao cố định để tránh khoảng trắng
-                }}
-              >
-                <SvgIcon
-                  component={loadingLogo}
-                  sx={{
-                    width: 50,
-                    height: 50,
-                    transform: "scale(0.5)",
-                  }}
-                  viewBox="0 0 24 24"
-                  inheritViewBox
-                />
-              </Box>
-            ) : (
-              <Box sx={{ paddingBottom: "16px" }}>
-                <GenerateLink
-                  onGenerateLink={handleGenerateLink}
-                  onDeleteLink={handleDeleteLink}
-                  secret={inviteData?.invitationSecret}
-                  workspaceId={workspace?.id}
-                />
-              </Box>
-            )}
           </Box>
+
+          {isInviteLoading || isLoadingWorkspace ? (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+              }}
+            >
+              <SvgIcon
+                component={loadingLogo}
+                sx={{
+                  width: 50,
+                  height: 50,
+                  transform: "scale(0.5)", // Giữ nguyên tỷ lệ nhưng thu nhỏ
+                }}
+                viewBox="0 0 24 24"
+                inheritViewBox
+              />
+            </Box>
+          ) : (
+            // Đây là component dùng để tạo ra invite token
+            <GenerateLink
+              onGenerateLink={handleGenerateLink}
+              onDeleteLink={handleDeleteLink}
+              secret={inviteData?.invitationSecret}
+              workspaceId={workspace?.id}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </Box>

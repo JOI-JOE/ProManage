@@ -2,6 +2,37 @@ import axios from "axios";
 import authClient from "../authClient";
 
 const UNSPLASH_ACCESS_KEY = "3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"; // Thay bằng Access Key của bạn
+///------------------------------------------------------
+
+export const fetchBoardById = async (boardId) => {
+  if (!boardId || typeof boardId !== "string") {
+    throw new Error("Board ID không hợp lệ");
+  }
+
+  try {
+    const { data } = await authClient.get(`/boards/${boardId}`);
+    if (!data?.board) {
+      throw new Error("Dữ liệu bảng không hợp lệ");
+    }
+    return {
+      ...data,
+      action: data.action || data.board?.action || null, // Normalize action field
+    };
+  } catch (error) {
+    // Handle 403 response with action
+    if (error.response?.status === 403 && error.response.data?.action) {
+      return { action: error.response.data.action };
+    }
+
+    // Log and throw for other errors
+    console.error("Lỗi khi lấy dữ liệu bảng:", error);
+    throw new Error(
+      error.response?.data?.message || "Lỗi khi tải dữ liệu bảng"
+    );
+  }
+};
+
+///------------------------------------------------------
 
 export const getBoardsAllByClosed = async () => {
   try {
@@ -33,27 +64,6 @@ export const showBoardByWorkspaceId = async (workspaceId) => {
   }
 };
 
-export const getBoardById = async (boardId) => {
-  if (!boardId) {
-    throw new Error("boardId không hợp lệ");
-  }
-
-  try {
-    const response = await authClient.get(`/boards/${boardId}`);
-    return response.data;
-  } catch (error) {
-    console.error(
-      "Lỗi khi lấy bảng:",
-      error?.response?.data?.message || error.message
-    );
-
-    throw new Error(
-      error?.response?.data?.message ||
-        "Không thể lấy dữ liệu bảng, vui lòng thử lại sau."
-    );
-  }
-};
-
 export const getRecentBoards = async () => {
   try {
     const response = await authClient.get("/recent-boards");
@@ -78,14 +88,20 @@ export const logBoardAccess = async (boardId) => {
 
 export const updateBoardName = async (boardId, name) => {
   try {
-    const response = await authClient.patch(`/boards/${boardId}/name`, { name });
+    const response = await authClient.patch(`/boards/${boardId}/name`, {
+      name,
+    });
     return response.data;
   } catch (error) {
-    console.error("❌ Lỗi khi cập nhật tên bảng:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || "Không thể cập nhật tên bảng");
+    console.error(
+      "❌ Lỗi khi cập nhật tên bảng:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message || "Không thể cập nhật tên bảng"
+    );
   }
 };
-
 
 export const toggleBoardMarked = async (boardId) => {
   try {
@@ -109,7 +125,8 @@ export const getBoardMarked = async () => {
 export const getUnsplashImages = async () => {
   try {
     const response = await axios.get(
-      "https://api.unsplash.com/search/photos?query=workspace&per_page=10&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"
+      // "https://api.unsplash.com/search/photos?query=workspace&per_page=10&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"
+      "https://api.unsplash.com/search/photos?query=nature&per_page=10&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"
     );
 
     return response.data.results; // Lấy danh sách ảnh từ `results`
@@ -128,7 +145,9 @@ export const updateBoardVisibility = async (boardId, visibility) => {
   }
 
   try {
-    const response = await authClient.patch(`/boards/${boardId}/visibility`, { visibility });
+    const response = await authClient.patch(`/boards/${boardId}/visibility`, {
+      visibility,
+    });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật visibility của bảng:", error);
@@ -155,36 +174,3 @@ export const getBoardClosed = async () => {
     throw error;
   }
 };
-
-export const fetchBoardDetails = async (boardId) => {
-  const response = await authClient.get(`/boards/${boardId}/details`);
-  return response.data;
-};
-
-
-export const copyBoard = async (data) => {
-  try {
-    const response = await authClient.post(`/boards/copy`, data);
-    return response.data;
-  } catch (error) {
-    console.error("❌ Lỗi khi sao chép bảng:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || "Không thể sao chép bảng");
-  }
-};
-
-
-
-export const forceDestroyBoard = async (boardId) => {
-  const response = await authClient.delete(`/boards/${boardId}/fDestroy`);
-  return response.data;
-};
-
-
-
-
-
-
-
-
-
-

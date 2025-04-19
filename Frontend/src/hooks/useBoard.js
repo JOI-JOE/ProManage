@@ -1,10 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  copyBoard,
   createBoard,
-  fetchBoardDetails,
-  forceDestroyBoard,
-  getBoardById,
+  fetchBoardById,
   getBoardClosed,
   getBoardMarked,
   getBoardsAllByClosed,
@@ -15,17 +12,21 @@ import {
   toggleBoardClosed,
   toggleBoardMarked,
   updateBoardName,
-  updateBoardVisibility
+  updateBoardVisibility,
 } from "../api/models/boardsApi";
 import { useCallback, useContext, useEffect } from "react";
-import WorkspaceContext from "../contexts/WorkspaceContext";
-import echoInstance from "./realtime/useRealtime";
-import { toast } from "react-toastify";
+// import WorkspaceContext from "../contexts/WorkspaceContext";
+// import echoInstance from "./realtime/useRealtime";
 
-/**
- * Hook useBoard để tạo bảng mới.
- * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
- */
+export const useBoardById = (boardId) => {
+  return useQuery({
+    queryKey: ["board", boardId],
+    queryFn: () => fetchBoardById(boardId),
+    staleTime: 5 * 60 * 1000, // 5 phút
+    gcTime: 15 * 60 * 1000, // 15 phút
+  });
+};
+
 export const useCreateBoard = () => {
   const queryClient = useQueryClient();
 
@@ -35,59 +36,6 @@ export const useCreateBoard = () => {
       queryClient.invalidateQueries(["workspaces"]);
     },
   });
-};
-
-export const useGetBoardByID = (boardId) => {
-
-  const queryClient = useQueryClient();
-
-  const boardDetail = useQuery({
-    queryKey: ["boards", boardId],
-    queryFn: async () => {
-      if (!boardId) return null; // Nếu không có boardId, không gọi API
-
-      try {
-        const response = await getBoardById(boardId);
-        if (!response?.data) {
-          throw new Error("Board data is empty or undefined");
-        }
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching board:", error);
-        throw new Error("Failed to fetch board data");
-      }
-    },
-  });
-
-  useEffect(() => {
-    if (!boardId || !echoInstance) return;
-
-    const channel = echoInstance.channel(`boards.${boardId}`);
-    // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
-
-    channel.listen(".BoardStatusUpdated", (event) => {
-      console.log("🔄 Nhận sự kiện BoardStatusUpdated:", event);
-
-      // queryClient.invalidateQueries({ queryKey: ["checklist-item-members", itemId]});
-      queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
-      queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
-
-    });
-
-    channel.listen(".board.updateName", (data) => {
-      console.log("📡 Board name updated: ", data);
-      queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
-    });
-
-    return () => {
-      channel.stopListening(".BoardStatusUpdated");
-      channel.stopListening(".board.updateName");
-      echoInstance.leave(`boards.${boardId}`);
-    };
-  }, [boardId, queryClient]);
-
-
-  return boardDetail;
 };
 
 export const getBoardByClosed = () => {
@@ -155,18 +103,11 @@ export const useRecentBoardAccess = () => {
  */
 export const useUpdateBoardName = () => {
   const queryClient = useQueryClient();
-  const { currentWorkspace } = useContext(WorkspaceContext);
 
   return useMutation({
     mutationFn: ({ boardId, name }) => updateBoardName(boardId, name), // Gọi API cập nhật tên board
     onSuccess: (_, { boardId, workspaceId }) => {
-      // Invalidate lại dữ liệu để cập nhật UI
-
-      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-
-
-
-      // queryClient.invalidateQueries({ queryKey: ["boardDetail", boardId], exact: true });
+      queryClient.invalidateQueries(["boards"]);
     },
     onError: (error) => {
       console.error("❌ Lỗi khi cập nhật tên bảng:", error);
@@ -262,10 +203,11 @@ export const useUpdateBoardVisibility = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ boardId, visibility }) => updateBoardVisibility(boardId, visibility),
+    mutationFn: ({ boardId, visibility }) =>
+      updateBoardVisibility(boardId, visibility),
     onSuccess: (data, { boardId }) => {
       // Optionally invalidate queries to ensure data is fresh
-      queryClient.invalidateQueries({ queryKey: ["lists", boardId], exact: true });
+      queryClient.invalidateQueries(["boards", boardId]); // Refresh board data
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật visibility của bảng:", error);
@@ -284,15 +226,8 @@ export const useToggleBoardClosed = () => {
       console.log("✅ Đã cập nhật trạng thái board:", data);
 
       // Cập nhật lại cache cho danh sách board
-
-      queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
-      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-      queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
-
-
+      queryClient.invalidateQueries(["boards"]);
       // queryClient.invalidateQueries(["board", boardId]);
-
-
     },
 
     // Xử lý khi có lỗi
@@ -302,9 +237,7 @@ export const useToggleBoardClosed = () => {
   });
 };
 
-
 export const useClosedBoards = () => {
-
   return useQuery({
     queryKey: ["closedBoards"], // Key riêng cho danh sách board đã đóng
     queryFn: getBoardClosed, // Gọi API lấy danh sách bảng đã đóng
@@ -314,84 +247,3 @@ export const useClosedBoards = () => {
     },
   });
 };
-
-
-export const useBoardDetails = (boardId) => {
-  return useQuery({
-    queryKey: ["boardDetails", boardId],
-    queryFn: () => fetchBoardDetails(boardId),
-    enabled: !!boardId, // chỉ fetch khi có boardId
-  });
-};
-
-export const useCopyBoard = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: copyBoard,
-    onSuccess: (res) => {
-
-      const newBoard = res.board;
-
-      // Làm mới cache các board
-      queryClient.invalidateQueries({ queryKey: ["boards", newBoard.id], exact: true });
-
-      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-
-
-
-
-
-      // queryClient.invalidateQueries({ queryKey: ["workspaceBoards", newBoard.workspace_id] });
-
-      toast.success("Sao chép bảng thành công!");
-    },
-    onError: (error) => {
-      const errorMessage = error.response?.data?.message || error.message;
-      toast.error(`Lỗi sao chép bảng: ${errorMessage}`);
-    },
-  });
-};
-
-
-export const useForceDestroyBoard = (boardId) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (boardId) => forceDestroyBoard(boardId),
-    onSuccess: (_, boardId) => {
-      // Invalidate duy nhất query của danh sách closedBoards
-      queryClient.invalidateQueries({
-        queryKey: ['closedBoards'],
-        exact: true,
-      });
-
-      // (Optional) Invalidate workspace nếu bạn cần cập nhật số lượng board chẳng hạn:
-      // queryClient.invalidateQueries({ queryKey: ['workspaces'], exact: true });
-    },
-  });
-};
-
-
-export const useForceDestroyBoard = (boardId) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (boardId) => forceDestroyBoard(boardId),
-    onSuccess: (_, boardId) => {
-      // Invalidate duy nhất query của danh sách closedBoards
-      queryClient.invalidateQueries({
-        queryKey: ['closedBoards'],
-        exact: true,
-      });
-
-      // (Optional) Invalidate workspace nếu bạn cần cập nhật số lượng board chẳng hạn:
-      // queryClient.invalidateQueries({ queryKey: ['workspaces'], exact: true });
-    },
-  });
-};
-
-
-
-
-

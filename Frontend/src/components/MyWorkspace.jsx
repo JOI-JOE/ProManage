@@ -14,10 +14,23 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAltOutlined";
 import MyBoard from "./MyBoard";
 import CreateBoard from "./CreateBoard";
+import WorkspaceAvatar from "./Common/WorkspaceAvatar";
 
 const MyWorkspace = ({ workspace, boards }) => {
 
-    const activeBoards = boards.filter(board => board.closed === 0);
+    const [showCreateBoard, setShowCreateBoard] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
+
+    const handleOpenCreateBoard = (event) => {
+        setAnchorEl(event.currentTarget);
+        setShowCreateBoard(true);
+    };
+
+    const handleCloseCreateBoard = () => {
+        setShowCreateBoard(false);
+        setAnchorEl(null);
+    };
+
     return (
         <div>
             <ListItem
@@ -31,15 +44,13 @@ const MyWorkspace = ({ workspace, boards }) => {
             >
                 {/* Avatar & Tiêu đề */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <Avatar sx={{ bgcolor: "#5D87FF" }}>
-                        {workspace.name.charAt(0).toUpperCase()}
-                    </Avatar>
+                    {/* Logo của workspace */}
+                    <WorkspaceAvatar workspace={workspace} />
                     <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
-                        {workspace.name.length > 10 ? workspace.name.substring(0, 20) + "..." : workspace.name}
+                        {workspace.display_name.length > 10 ? workspace.display_name.substring(0, 20) + "..." : workspace.name}
                     </Typography>
                 </Box>
 
-                {/* Các nút chức năng */}
                 <Box
                     sx={{
                         display: "flex",
@@ -97,7 +108,7 @@ const MyWorkspace = ({ workspace, boards }) => {
                         }}
                     >
                         <PeopleIcon fontSize="small" />
-                        Thành viên ({workspace.members?.length || 0})
+                        Thành viên ({workspace.member_count || 0})
                     </Button>
 
                     <Button
@@ -139,16 +150,42 @@ const MyWorkspace = ({ workspace, boards }) => {
             </ListItem>
 
             {/* Danh sách bảng Trello */}
-            {/* <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+            <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {boards?.map((board) => (
                     <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
                         <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
                     </ListItem>
                 ))}
-
-                <CreateBoard />
-            </List> */}
-            <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+                <ListItem sx={{ width: "auto", padding: 0 }}>
+                    <Box
+                        onClick={handleOpenCreateBoard}
+                        sx={{
+                            width: '193.88px',
+                            height: '96px',
+                            backgroundColor: '#091e420f',
+                            borderRadius: '3px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: "14px",
+                            cursor: 'pointer',
+                            '&:hover': {
+                                backgroundColor: '#DCDFE4',
+                                transition: 'background-color 85ms ease-in', // Apply transition to background-color
+                            },
+                        }}
+                    >
+                        Tạo bảng mới
+                    </Box>
+                </ListItem>
+                <CreateBoard
+                    workspaceId={workspace?.id} // Truyền workspaceId nếu cần
+                    open={showCreateBoard}
+                    anchorEl={anchorEl}
+                    onClose={handleCloseCreateBoard}
+                />
+            </List>
+            {/* <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {activeBoards.length > 0 ? (
                     activeBoards.map((board) => (
                         <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
@@ -162,8 +199,8 @@ const MyWorkspace = ({ workspace, boards }) => {
                 )}
 
                 <CreateBoard />
-            </List>
-        </div>  
+            </List> */}
+        </div >
     );
 };
 

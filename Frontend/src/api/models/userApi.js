@@ -1,103 +1,16 @@
 import authClient from "../authClient";
 
 // Phần để tối ưu gọi api
-
-// dữ liệu chính
-const fetchUserDataWithParams = async (params, userId = "me") => {
+export const fetchUserData = async () => {
   try {
-    const queryParams = new URLSearchParams(params);
-    const response = await authClient.get(
-      `/member/${userId}?${queryParams.toString()}`
-    );
+    const response = await authClient.get(`/member/me`);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy dữ liệu người dùng:", error);
     throw error;
   }
 };
-
-export const fetchUserProfile = () => {
-  return fetchUserDataWithParams({
-    fields: "id,user_name,biography,full_name,email,image",
-    workspaces: "all",
-    workspace_fields: "id,name,display_name",
-  });
-};
-
-export const fetchUserDashboardData = () => {
-  return fetchUserDataWithParams({
-    // fields: "id,user_name,full_name,email,image,url",
-    boards: "open,starred",
-    board_memberships: "me",
-    board_stars: "true",
-    workspaces: "all",
-    workspace_fields: "id,name,display_name",
-  });
-};
-
-// Để làm gì -> Lấy danh sách Boards và nhóm theo Workspaces
-// Nơi dùng  -> Hiển thị danh sách bảng trong từng Workspace để so sách
-export const fetchUserBoardsWithWorkspaces = async (userId) => {
-  return fetchUserDataWithParams(
-    {
-      fields: "id",
-      boards: "open,starred",
-      board_fields: "id,name,closed,workspace_id",
-      board_workspace: "true",
-      board_workspace_fields: "id,name,display_name",
-      workspaces: "all",
-      workspace_fields: "id,display_name,name",
-    },
-    userId
-  );
-};
-
-// Để làm gì -> Lấy danh sách Workspaces của người dùng
-// Nơi dùng ->	Sidebar và mục "Các Không Gian Làm Việc Của Bạn"
-export const fetchUserWorkspaces = async () => {
-  try {
-    const params = {
-      workspaces: "all",
-      workspace_fields: "id,name,display_name",
-    };
-    const response = await authClient.get("/member/me", { params });
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách Workspaces:", error);
-    throw error;
-  }
-};
-
-// Để làm gì -> Lấy danh sách Boards không nhóm theo Workspaces
-// Nơi dùng -> Hiển thị các bảng đã đánh dấu sao hoặc đã xem gần đây
-export const fetchUserBoards = async () => {
-  try {
-    const params = {
-      fields: "id",
-      boards: "open,starred",
-      board_fields: "id,name,closed,is_marked",
-      boardStars: "true",
-      board_memberships: "me",
-    };
-    const response = await authClient.get("/member/me", { params });
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách Boards:", error);
-    throw error;
-  }
-};
-
 // END
-
-export const getUser = async () => {
-  try {
-    const response = await authClient.get("/users/me");
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy dữ liệu người dùng:", error);
-    throw error;
-  }
-};
 
 /**
  * Hàm này chịu trách nhiệm đăng nhập người dùng.
@@ -113,7 +26,6 @@ export const loginUser = async (credentials) => {
     throw error;
   }
 };
-
 /**
  * Hàm này chịu trách nhiệm đăng xuất người dùng.
  * @returns {Promise<object>} - Promise xác nhận đăng xuất thành công.
@@ -136,41 +48,10 @@ export const logoutUser = async () => {
  */
 export const forgotPassword = async (email) => {
   try {
-    const response = await authClient.post("password/email", { email });
+    const response = await authClient.post("/forgot-password", { email });
     return response.data; // Trả về dữ liệu từ server
   } catch (error) {
     console.error("Lỗi khi yêu cầu quên mật khẩu:", error);
-    throw error;
-  }
-};
-/**
- * Hàm này chịu trách nhiệm gửi yêu cầu quên mật khẩu.
- * @param {string} email - Email của người dùng cần đặt lại mật khẩu.
- * @returns {Promise<object>} - Promise chứa phản hồi từ server.
- */
-
-export const checkCode = async (email,code) => {
-  // console.log(email);
-  // console.log(code);
-  try {
-    const response = await authClient.post("password/code", { email,code });
-    return response.data; // Trả về dữ liệu từ server
-  } catch (error) {
-    console.error("Lỗi khi check code", error);
-    throw error;
-  }
-};
-/**
- * Hàm này chịu trách nhiệm gửi yêu cầu quên mật khẩu.
- * @param {string} email - Email của người dùng cần đặt lại mật khẩu.
- * @returns {Promise<object>} - Promise chứa phản hồi từ server.
- */
-export const updatePass = async (email,password) => {
-  try {
-    const response = await authClient.put("password/update", { email,password });
-    return response.data; // Trả về dữ liệu từ server
-  } catch (error) {
-    console.error("Lỗi khi cập nhật mật khẩu", error);
     throw error;
   }
 };
@@ -189,28 +70,3 @@ export const userRegister = async (userData) => {
     throw error;
   }
 };
-
-
-export const getUserById = async () => {
-  try {
-    const response = await authClient.get(`/user`);
-    return response.data.user; // do API trả về { user: ... }
-  } catch (error) {
-    console.error("Lỗi khi lấy người dùng theo ID:", error);
-    throw error;
-  }
-};
-
-
-
-
-export const updateUserProfile = async (data) => {
-  try {
-    const response = await authClient.put(`/user/update-profile`, data);
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi cập nhật hồ sơ người dùng:", error);
-    throw error;
-  }
-};
-

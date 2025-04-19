@@ -18,30 +18,19 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import CloseIcon from "@mui/icons-material/Close";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
 import { useMe } from "../../../contexts/MeContext";
-import { Link } from 'react-router-dom';
 
-
-export default function ProfileMenu({ email, user_name }) {
+export default function ProfileMenu({ email }) {
+  const { user } = useMe()
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
   const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
   const [selectedTheme, setSelectedTheme] = React.useState("system");
   const [workspaceType, setWorkspaceType] = React.useState("");
-
-  // const {data: user } = useMe();
-
-  // console.log(user);
-
-  const goToCard = () => {
-    if (user?.user_name) {
-      navigate(`/u/${user?.user_name}/cards`);
-    }
-  };
 
   const open = Boolean(anchorEl);
   const themeOpen = Boolean(themeAnchorEl);
@@ -100,8 +89,11 @@ export default function ProfileMenu({ email, user_name }) {
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
         <Tooltip title="Tài khoản">
           <IconButton onClick={handleClick} size="small">
-            <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
-              {email?.charAt(0)?.toUpperCase() || ""}
+            <Avatar
+              sx={{ width: 40, height: 40, margin: "auto", bgcolor: "#00A3BF" }}
+              src={user?.image || undefined} // Nếu có ảnh thì hiển thị ảnh
+            >
+              {user?.image}
             </Avatar>
           </IconButton>
         </Tooltip>
@@ -110,8 +102,9 @@ export default function ProfileMenu({ email, user_name }) {
         <Box sx={{ p: 2, textAlign: "center" }}>
           <Avatar
             sx={{ width: 40, height: 40, margin: "auto", bgcolor: "#00A3BF" }}
+            src={user?.image || undefined} // Nếu có ảnh thì hiển thị ảnh
           >
-            {email?.charAt(0)?.toUpperCase() || ""}
+            {user?.image}
           </Avatar>
           <Typography
             variant="subtitle1"
@@ -134,15 +127,11 @@ export default function ProfileMenu({ email, user_name }) {
         >
           ProManage
         </Typography>
-        <MenuItem component={Link} to={`/u/${user_name}`}>
+        <MenuItem onClick={() => navigate("/profile-display")}>
           Hồ sơ và Hiển thị
         </MenuItem>
-        <MenuItem component={Link} to={`/u/${user_name}/activity`}>
-          Hoạt động
-        </MenuItem>
-        <MenuItem component={Link} to={`/u/${user_name}/cards`}>
-          Thẻ
-        </MenuItem>
+        <MenuItem>Hoạt động</MenuItem>
+        <MenuItem>Thẻ</MenuItem>
         <MenuItem>Cài đặt</MenuItem>
         <MenuItem onClick={handleThemeClick}>
           Chủ đề <ArrowRightIcon fontSize="small" sx={{ ml: "auto" }} />

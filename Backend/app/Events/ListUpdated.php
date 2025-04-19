@@ -4,12 +4,12 @@ namespace App\Events;
 
 use App\Models\ListBoard;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class ListUpdated implements ShouldBroadcastNow
+class ListUpdated implements ShouldBroadcast
 {
     use Dispatchable, SerializesModels;
 
@@ -18,14 +18,7 @@ class ListUpdated implements ShouldBroadcastNow
     public function __construct(ListBoard $list)
     {
         $this->list = $list;
-        Log::info('ListUpdated event created', [
-            'list_id'  => $list->id,
-            'board_id' => $list->board_id,
-            'title'    => $list->name,
-            'position' => (int)$list->position,
-        ]);
     }
-
     /**
      * Define the channels the event should broadcast on.
      *
@@ -55,15 +48,12 @@ class ListUpdated implements ShouldBroadcastNow
     public function broadcastWith()
     {
         $data = [
-            'updatedList' => [
-                'id'       => $this->list->id,
-                'boardId'  => $this->list->board_id,
-                'title'    => $this->list->name,
-                'position' => (int)$this->list->position,
-            ]
+            'id'       => $this->list->id,
+            'boardId'  => $this->list->board_id,
+            'name'    => $this->list->name,
+            'position' => $this->list->position,
+            'closed'   => $this->list->closed
         ];
-
-        Log::info('Broadcasting list.updated event', $data);
         return $data;
     }
 }

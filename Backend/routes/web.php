@@ -3,8 +3,8 @@
 // use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ColorController;
-use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
+    $userId = '18016799-2e6c-45cc-9f14-06e64cf424f4';
+    $user = User::find($userId);
+
     return view('welcome');
 });
 
@@ -66,15 +69,4 @@ Route::prefix('admin')->as('admin.')->group(function(){
             Route::put('{color}/update', [ColorController::class, 'update'])->name('update');
             Route::delete('{color}/destroy', [ColorController::class, 'destroy'])->name('destroy');
         });
-        Route::prefix('settings')
-        ->as('settings.')
-        ->group(function () {
-            Route::get('/', [SettingsController::class, 'index'])->name('index');
-            Route::get('{setting}/edit', [SettingsController::class, 'edit'])->name('edit');
-            Route::put('{setting}/update', [SettingsController::class, 'update'])->name('update');
-        });
 });
-
-
-
-

@@ -38,7 +38,6 @@ class User extends Authenticatable
         'id',  // Đảm bảo có thể tạo ID UUID thủ công
         'user_name',
         'full_name',
-        'biography',
         'initials',
         'image',
         'email',
@@ -112,6 +111,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(Board::class, 'created_by');
     }
+
+    public function boardStars()
+    {
+        return $this->hasMany(BoardStar::class, 'user_id');
+    }
     public function workspaceMember()
     {
         return $this->hasMany(WorkspaceMembers::class, 'user_id', 'id');
@@ -144,13 +148,6 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Workspace::class, 'workspace_members', 'user_id', 'workspace_id')
             ->withPivot('member_type'); // Nếu có cột role
-    }
-
-    public function guestWorkspaces()
-    {
-        return Workspace::whereHas('boards.boardMembers', function ($query) {
-            $query->where('user_id', $this->id);
-        })->where('id_member_creator', '!=', $this->id);
     }
 
 
