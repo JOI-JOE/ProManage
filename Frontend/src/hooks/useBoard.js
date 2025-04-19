@@ -284,12 +284,14 @@ export const useToggleBoardClosed = () => {
       console.log("✅ Đã cập nhật trạng thái board:", data);
 
       // Cập nhật lại cache cho danh sách board
+
       queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
 
 
       // queryClient.invalidateQueries(["board", boardId]);
+
 
     },
 
@@ -347,6 +349,25 @@ export const useCopyBoard = () => {
     onError: (error) => {
       const errorMessage = error.response?.data?.message || error.message;
       toast.error(`Lỗi sao chép bảng: ${errorMessage}`);
+    },
+  });
+};
+
+
+export const useForceDestroyBoard = (boardId) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (boardId) => forceDestroyBoard(boardId),
+    onSuccess: (_, boardId) => {
+      // Invalidate duy nhất query của danh sách closedBoards
+      queryClient.invalidateQueries({
+        queryKey: ['closedBoards'],
+        exact: true,
+      });
+
+      // (Optional) Invalidate workspace nếu bạn cần cập nhật số lượng board chẳng hạn:
+      // queryClient.invalidateQueries({ queryKey: ['workspaces'], exact: true });
     },
   });
 };

@@ -161,6 +161,7 @@ export const fetchBoardDetails = async (boardId) => {
   return response.data;
 };
 
+
 export const copyBoard = async (data) => {
   try {
     const response = await authClient.post(`/boards/copy`, data);
@@ -170,6 +171,7 @@ export const copyBoard = async (data) => {
     throw new Error(error.response?.data?.message || "Không thể sao chép bảng");
   }
 };
+
 
 
 export const forceDestroyBoard = async (boardId) => {
