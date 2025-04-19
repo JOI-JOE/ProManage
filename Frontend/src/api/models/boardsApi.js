@@ -161,6 +161,17 @@ export const fetchBoardDetails = async (boardId) => {
   return response.data;
 };
 
+export const copyBoard = async (data) => {
+  try {
+    const response = await authClient.post(`/boards/copy`, data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi sao chép bảng:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Không thể sao chép bảng");
+  }
+};
+
+
 
 
 

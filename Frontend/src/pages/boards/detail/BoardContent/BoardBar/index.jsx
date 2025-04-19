@@ -141,7 +141,7 @@ const BoardBar = () => {
     }
 
     updateBoardName.mutate(
-      { boardId: boardId, name: boardName, workspaceId: board.workspaceId },
+      { boardId: boardId, name: teamName, workspaceId: board.workspaceId },
       {
         onSuccess: () => {
           setEditTitle(false);
@@ -202,7 +202,7 @@ const BoardBar = () => {
         {/*Chỉnh sửa tiêu đề  */}
         {editTitle ? (
           <TextField
-            value={teamName ?? boardName}
+            value={teamName}
             onChange={handleTitleChange}
             onBlur={handleTitleBlur}
             onKeyPress={handleTitleKeyPress}

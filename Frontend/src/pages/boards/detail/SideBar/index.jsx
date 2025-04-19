@@ -222,7 +222,9 @@ const SideBar = () => {
       </Typography>
 
       <List sx={{ p: 0.5 }}>
-        {(isGuest ? foundWorkspace : currentWorkspace)?.boards?.map((board) => (
+        {(isGuest ? foundWorkspace : currentWorkspace)?.boards
+          .filter((board) => board.closed === 0)
+          .map((board) => (
           <ListItem
             key={board.id}
             disablePadding
@@ -339,7 +341,7 @@ const SideBar = () => {
 
             </Menu>
           </ListItem>
-        ))}
+          ))}
       </List>
     </Drawer>
   );

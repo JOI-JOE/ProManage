@@ -90,12 +90,12 @@ export const useCreateComment = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ card_id, user_id, content }) => createComment({ card_id, user_id, content }),
-        
+        mutationFn: ({ card_id, content, mentioned_usernames }) =>
+            createComment({ card_id, content, mentioned_usernames }),
+
         onSuccess: (newComment, { card_id }) => {
-            // Sau khi comment thành công, tự động invalidate để lấy danh sách comments mới và cập nhật lists
+            // Làm mới danh sách bình luận sau khi thêm
             queryClient.invalidateQueries({ queryKey: ["comments", card_id], exact: true });
-            // queryClient.invalidateQueries({ queryKey: ["lists"] });
         },
 
         onError: (error) => {
@@ -103,6 +103,7 @@ export const useCreateComment = () => {
         },
     });
 };
+
 
 
 

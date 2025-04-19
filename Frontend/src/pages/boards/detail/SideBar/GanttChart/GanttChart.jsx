@@ -4,6 +4,11 @@ import Gantt from 'frappe-gantt';
 import './GanttChart.css';
 import { useParams, useNavigate } from 'react-router-dom';
 import authClient from '../../../../../api/authClient';
+import MoveUpIcon from "@mui/icons-material/MoveUp";
+
+import { ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import MoveCardModal from '../../BoardContent/ListColumns/Column/ListCards/Card/CardDetail/childComponent_CardDetail/Move';
+import AddCardModal from './AddCardModal';
 
 const GanttChart = () => {
     const { boardId } = useParams();
@@ -15,6 +20,8 @@ const GanttChart = () => {
     const [viewMode, setViewMode] = useState('Day');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isMoveCardModalOpen, setIsMoveCardModalOpen] = useState(false); // State để mở/đóng modal di chuyển
+
 
     useEffect(() => {
         fetchGanttData();
@@ -40,7 +47,7 @@ const GanttChart = () => {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
-            
+
             setTasks(response.data);
             setLoading(false);
         } catch (err) {
@@ -124,10 +131,10 @@ const GanttChart = () => {
     // Helper function to navigate to card detail
     const navigateToCard = (cardId) => {
         if (!cardId) return;
-        
+
         // Find the task that matches this cardId
         const task = tasks.find(t => t.id === cardId);
-        
+
         if (task && task.boardName) {
             // Use the boardName directly from the task data
             const cardUrl = `/b/${boardId}/${task.boardName}/c/${cardId}`;
@@ -137,28 +144,28 @@ const GanttChart = () => {
             // Fallback to the current implementation for cases where we can't find the task or it doesn't have boardName
             const pathSegments = window.location.pathname.split('/');
             let boardName = 'board1'; // Default fallback
-            
+
             for (let i = 0; i < pathSegments.length; i++) {
-                if (pathSegments[i] === 'b' && pathSegments[i+1] === boardId && pathSegments[i+2]) {
-                    boardName = pathSegments[i+2];
+                if (pathSegments[i] === 'b' && pathSegments[i + 1] === boardId && pathSegments[i + 2]) {
+                    boardName = pathSegments[i + 2];
                     break;
                 }
             }
-            
+
             const cardUrl = `/b/${boardId}/${boardName}/c/${cardId}`;
             console.log(`Navigating to: ${cardUrl}`);
             navigate(cardUrl);
         }
     };
-   
-    
+
+
 
     const updateTaskDates = async (taskId, start, end) => {
         try {
             // Format dates consistently to prevent timezone issues
             const formattedStart = formatDateForServer(start);
             const formattedEnd = formatDateForServer(end);
-            
+
             await authClient.post('/gantt/update-task', {
                 id: taskId,
                 start: formattedStart,
@@ -168,7 +175,7 @@ const GanttChart = () => {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
-            
+
             // Update the local state with the same formatted dates
             setTasks(prevTasks =>
                 prevTasks.map(task =>
@@ -188,7 +195,7 @@ const GanttChart = () => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
-        
+
         return `${year}-${month}-${day}`;
     };
 
@@ -237,7 +244,26 @@ const GanttChart = () => {
                 </div>
             </div>
             <div className="gantt-container" ref={ganttContainer}></div>
+
+            <ListItem disablePadding>
+                <ListItemButton
+                    onClick={() => setIsMoveCardModalOpen(true)}
+                >
+                    <ListItemIcon>
+                        <MoveUpIcon
+                            sx={{ color: "black", fontSize: "0.8rem" }}
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Di chuyển" />
+                </ListItemButton>
+            </ListItem>
+            <AddCardModal
+                open={isMoveCardModalOpen}
+                onClose={() => setIsMoveCardModalOpen(false)}
+            />
         </div>
+
+
     );
 };
 
