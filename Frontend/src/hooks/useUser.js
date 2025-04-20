@@ -3,43 +3,26 @@ import { useMutation } from "@tanstack/react-query";
 import {
   checkCode,
   fetchUserBoardsWithWorkspaces,
-  fetchUserDashboardData,
-  fetchUserProfile,
   forgotPassword,
   getUser,
   updatePass,
   getUserById,
   updateUserProfile,
   userRegister,
+  fetchUserData,
 } from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
 import { logoutUser } from "../api/models/userApi";
 
 export const useUserData = () => {
-  const {
-    data: userProfile,
-    isLoading: loadingProfile,
-    error: errorProfile,
-  } = useQuery({
-    queryKey: ["userProfile"],
-    queryFn: fetchUserProfile,
+  return useQuery({
+    queryKey: ["userInfo"],
+    queryFn: fetchUserData,
+    staleTime: 10 * 60 * 1000,
+    cacheTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
-
-  const {
-    data: userDashboard,
-    isLoading: loadingDashboard,
-    error: errorDashboard,
-  } = useQuery({
-    queryKey: ["userDashboard"],
-    queryFn: fetchUserDashboardData,
-  });
-
-  return {
-    userProfile,
-    userDashboard,
-    isLoading: loadingProfile || loadingDashboard,
-    error: errorProfile || errorDashboard,
-  };
 };
 
 export const useFetchUserBoardsWithWorkspaces = (userId) => {
@@ -107,31 +90,18 @@ export const useLogout = () => {
  */
 export const useForgotPassword = () => {
   return useMutation({
-    mutationFn:({email})=> forgotPassword(email), // Gọi API quên mật khẩu
+    mutationFn: ({ email }) => forgotPassword(email), // Gọi API quên mật khẩu
   });
 };
 
 export const useCheckCode = () => {
-
-    
-
-    return useMutation({
-      
-        mutationFn: ({ email,code }) => checkCode(email,code),
-        
-        
-
-    });
+  return useMutation({
+    mutationFn: ({ email, code }) => checkCode(email, code),
+  });
 };
 export const useUpdatePass = () => {
-
-    
-
   return useMutation({
-    
-      mutationFn: ({ email,password }) => updatePass(email,password),
-      
-
+    mutationFn: ({ email, password }) => updatePass(email, password),
   });
 };
 
@@ -141,8 +111,6 @@ export const useUserById = () => {
     queryFn: () => getUserById(),
   });
 };
-
-
 
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();

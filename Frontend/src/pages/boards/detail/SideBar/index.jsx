@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -25,7 +25,7 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import WorkspaceContext from "../../../../contexts/WorkspaceContext";
+// import WorkspaceContext from "../../../../contexts/WorkspaceContext";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
@@ -33,15 +33,28 @@ import { useToggleBoardClosed } from "../../../../hooks/useBoard";
 import { useGetBoardMembers, useGuestBoards } from "../../../../hooks/useInviteBoard";
 import { useGetWorkspaces } from "../../../../hooks/useWorkspace";
 import { useUser } from "../../../../hooks/useUser";
+import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 
 const SideBar = () => {
-  const { boardId } = useParams();
+  const { boardId, workspaceId } = useParams();  // Lấy boardId và workspaceId từ URL
+  const { data } = useWorkspace();  // Dữ liệu workspace từ Context hoặc API
+  const [currentWorkspace, setCurrentWorkspace] = useState(null);  // Lưu currentWorkspace vào state
+  useEffect(() => {
+    const workspace = data?.find((workspace) => {
+      if (boardId) {
+        return workspace.boards.some((board) => board.id === boardId); // Tìm workspace có chứa boardId
+      }
+      return workspace.id === workspaceId; // Tìm workspace có id trùng workspaceId
+    });
+    setCurrentWorkspace(workspace);
+  }, [boardId, workspaceId, data]);
+
+
   const { data: user } = useUser();
+
   // console.log(boardId);
   const { data: guestBoards } = useGuestBoards();
   // console.log(guestBoards);
-
-  const { currentWorkspace } = useContext(WorkspaceContext);
   const { data: boardMembers = [] } = useGetBoardMembers(boardId);
 
   const currentUserId = user?.id;
@@ -53,6 +66,8 @@ const SideBar = () => {
     : false;
 
   const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
+  // console.log(adminCount);
+
 
   const foundWorkspace = guestBoards?.find((workspace) =>
     workspace.boards.some((board) => board.id === boardId)
@@ -144,7 +159,7 @@ const SideBar = () => {
           <ListItem disablePadding>
             <ListItemButton
               component={Link}
-              to={`/w/${currentWorkspace?.name}`}
+              to={`/w/${currentWorkspace?.id}`}
             >
               <ListItemIcon sx={{ color: "white" }}>
                 <DashboardIcon />
@@ -182,7 +197,7 @@ const SideBar = () => {
                 </ListItemIcon>
                 <ListItemText
                   component={Link}
-                  to={`/w/${currentWorkspace?.name}/account`}
+                  to={`/w/${currentWorkspace?.id}/account`}
                   primary="Cài đặt không gian làm việc"
                 />
               </ListItemButton>
@@ -200,10 +215,7 @@ const SideBar = () => {
       {!isGuest && (
         <Box>
           <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to={`/w/${currentWorkspace?.name}/calendar`}
-            >
+            <ListItemButton component={Link} to={`/w/${currentWorkspace?.id}/calendar`}>
               <ListItemIcon sx={{ color: "white" }}>
                 <CalendarMonthIcon />
               </ListItemIcon>

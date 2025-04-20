@@ -119,10 +119,6 @@ class WorkspaceController extends Controller
                 'logo_hash' => $workspace->logo_hash,
                 'logo_url' => $workspace->logo_url,
                 'permission_level' => $workspace->permission_level,
-                'board_invite_restrict' => $workspace->board_invite_restrict,
-                'org_invite_restrict' => json_decode($workspace->org_invite_restrict, true),
-                'board_delete_restrict' => json_decode($workspace->board_delete_restrict, true),
-                'board_visibility_restrict' => json_decode($workspace->board_visibility_restrict, true),
                 'team_type' => $workspace->team_type,
                 'created_at' => (new \DateTime($workspace->created_at))->format(\DateTime::ISO8601),
                 'updated_at' => (new \DateTime($workspace->updated_at))->format(\DateTime::ISO8601),
@@ -223,18 +219,6 @@ class WorkspaceController extends Controller
             $workspace = Workspace::create([
                 'name' => Workspace::generateUniqueName($validatedData['display_name']),
                 'id_member_creator' => $user->id,
-                'board_delete_restrict' => json_encode([
-                    'private' => 'org',
-                    'org' => 'org',
-                    'enterprise' => 'org',
-                    'public' => 'org',
-                ]),
-                'board_visibility_restrict' => json_encode([
-                    'private' => 'org',
-                    'org' => 'org',
-                    'enterprise' => 'org',
-                    'public' => 'org',
-                ]),
                 'display_name' => $validatedData['display_name'],
                 ...Arr::except($validatedData, ['display_name']),
             ]);

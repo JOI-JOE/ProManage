@@ -13,10 +13,12 @@ import {
     Menu,
 } from "@mui/material";
 import { Close } from '@mui/icons-material';
+import { useMe } from '../../../../../../contexts/MeContext';
 
-const MemberContent = () => {
+const MemberContent = ({ workspace }) => {
+    const { user } = useMe()
 
-
+    console.log("Dữ liệu ", user)
     // Quản lý trạng thái menu ngữ cảnh
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedMember, setSelectedMember] = useState(null);
@@ -31,28 +33,34 @@ const MemberContent = () => {
         setSelectedMember(null);
     };
 
-    const members = [
-        {
-            id: 1,
-            name: 'Ngô Hậu',
-            email: 'ngohu3',
-            avatarInitials: 'NH',
-            lastActive: 'April 2025',
-            notifications: 3,
-            role: 'Quản trị viên',
-            actionText: 'Loại bỏ...'
-        },
-        {
-            id: 2,
-            name: 'haungodang2003',
-            email: 'hau194',
-            avatarInitials: 'H',
-            lastActive: 'April 2025',
-            notifications: 3,
-            role: 'Quản trị viên',
-            actionText: 'Rời khỏi...'
-        }
-    ];
+    console.log(workspace)
+
+
+
+
+
+    // const members = [
+    //     {
+    //         id: 1,
+    //         name: 'Ngô Hậu',
+    //         email: 'ngohu3',
+    //         avatarInitials: 'NH',
+    //         lastActive: 'April 2025',
+    //         notifications: 3,
+    //         role: 'Quản trị viên',
+    //         actionText: 'Loại bỏ...'
+    //     },
+    //     {
+    //         id: 2,
+    //         name: 'haungodang2003',
+    //         email: 'hau194',
+    //         avatarInitials: 'H',
+    //         lastActive: 'April 2025',
+    //         notifications: 3,
+    //         role: 'Quản trị viên',
+    //         actionText: 'Rời khỏi...'
+    //     }
+    // ];
 
     return (
         <Box id="members">
@@ -111,7 +119,7 @@ const MemberContent = () => {
                         />
 
                         {/* Danh sách thành viên */}
-                        {members.map((member, index) => (
+                        {workspace?.members.map((member, index) => (
                             <Box
                                 key={index}
                                 display="flex"
@@ -134,7 +142,7 @@ const MemberContent = () => {
                                     <Box>
                                         <Typography variant="body1">{member.name}</Typography>
                                         <Typography variant="body2" color="textSecondary">
-                                            {member.email} • {member.lastActive}
+                                            {member.full_name} • {member.email}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -144,14 +152,7 @@ const MemberContent = () => {
                                         size="small"
                                         sx={{ mr: 1, textTransform: 'none' }}
                                     >
-                                        Xem bảng thông tin ({member.notifications})
-                                    </Button>
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        sx={{ mr: 1, textTransform: 'none' }}
-                                    >
-                                        {member.role}
+                                        {member.member_type === 'admin' ? 'Quản trị viên' : 'Thành viên'}
                                     </Button>
                                     <IconButton size="small" sx={{ mr: 1 }}>
                                         <Close fontSize="small" />

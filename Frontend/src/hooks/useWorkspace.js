@@ -98,12 +98,7 @@ export const useUpdateInforWorkspace = () => {
   return useMutation({
     mutationFn: ({ id, data }) => updateWorkspaceInfo(id, data),
     onSuccess: (updatedWorkspace) => {
-      queryClient.setQueryData(
-        ["workspace", updatedWorkspace.id],
-        updatedWorkspace
-      );
-      // Invalidate query để refetch nếu dữ liệu cũ không còn hợp lệ
-      queryClient.invalidateQueries(["workspace", updatedWorkspace.id]);
+      queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật workspace:", error);

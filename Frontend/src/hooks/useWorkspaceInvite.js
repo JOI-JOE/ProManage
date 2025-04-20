@@ -110,12 +110,9 @@ export const useConfirmWorkspaceMember = () => {
     mutationFn: ({ workspaceId, memberId, invitationMessage }) =>
       confirmWorkspaceMembers(workspaceId, memberId, invitationMessage),
     onSuccess: (data, variables) => {
-      console.log("✅ Thành viên đã được xác nhận:", data);
-      // Cập nhật lại dữ liệu nếu cần
-      queryClient.invalidateQueries([
-        "workspaceMembers",
-        variables.workspaceId,
-      ]);
+      queryClient.invalidateQueries({
+        queryKey: ["workspaces", variables.workspaceId],
+      });
     },
     onError: (error) => {
       console.error("❌ Lỗi khi xác nhận thành viên vào workspace:", error);

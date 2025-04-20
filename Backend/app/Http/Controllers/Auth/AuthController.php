@@ -11,6 +11,7 @@ use App\Models\Workspace;
 use App\Models\WorkspaceMembers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +24,61 @@ use Laravel\Socialite\Facades\Socialite;
 class AuthController extends Controller
 {
     private const FRONTEND_URL = 'http://localhost:5173';
+
+    public function index()
+    {
+        // Xác thực người dùng
+        $userId = Auth::id();
+        if (!$userId) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Lấy thông tin cơ bản của người dùng
+        $user = DB::table('users')
+            ->where('id', $userId)
+            ->select([
+                'id',
+                'user_name',
+                'email',
+                'full_name',
+                'image',
+                'initials',
+                'activity_block'
+            ])
+            ->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        // Lấy danh sách workspace ID mà người dùng có quyền truy cập (KHÔNG CACHE)
+        $workspaceIds = DB::table('workspaces')
+            ->whereIn('id', function ($query) use ($userId) {
+                $query->select('workspace_id')
+                    ->from('workspace_members')
+                    ->where('user_id', $userId);
+            })
+            ->orWhere('id_member_creator', $userId)
+            ->pluck('id')
+            ->toArray();
+
+        // Lấy danh sách board ID mà người dùng có quyền truy cập (KHÔNG CACHE)
+        $boardIds = DB::table('boards')
+            ->whereIn('id', function ($query) use ($userId) {
+                $query->select('board_id')
+                    ->from('board_members')
+                    ->where('user_id', $userId);
+            })
+            ->orWhere('created_by', $userId)
+            ->pluck('id')
+            ->toArray();
+
+        return response()->json([
+            'user' => $user,
+            'workspaceIds' => $workspaceIds,
+            'boardIds' => $boardIds,
+        ]);
+    }
 
     public function getUserData(Request $request, $id = null)
     {

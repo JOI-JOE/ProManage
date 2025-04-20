@@ -77,7 +77,7 @@ Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getW
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("users/me", [AuthController::class, 'getUser']);
-    // Route::get('member/me', [AuthController::class, 'getUserData']);
+    Route::get('member/me', [AuthController::class, 'index']);
     Route::get('member/{id?}', [AuthController::class, 'getUserData']);
 
     Route::controller(WorkspaceController::class)->group(function () {
@@ -104,7 +104,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
-        Route::post('/workspace/{workspaceId}/addMembers', action: 'addMembersToWorkspace');
         Route::post('/workspace/{workspaceId}/member/{memberId}',  'addMemberToWorkspaceDirection');
     });
 
@@ -289,10 +288,8 @@ Route::patch('/labels/{labelId}/update-name', [LabelController::class, 'updateLa
 Route::middleware(['auth:sanctum'])->group(function () {
     // Lấy tất cả bình luận của card
     Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']);
-
     // Thêm bình luận vào card
     Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']);
-
     // Xóa bình luận
     Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']);
 

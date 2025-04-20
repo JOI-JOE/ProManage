@@ -99,8 +99,8 @@ export const confirmWorkspaceMembers = async (
   invitationMessage
 ) => {
   try {
-    const response = await authClient.put(
-      `/workspaces/${workspaceId}/members/${memberId}`,
+    const response = await authClient.post(
+      `/workspace/${workspaceId}/member/${memberId}`,
       { invitationMessage } // Gửi dữ liệu lời mời trong body
     );
     return response.data;

@@ -96,11 +96,10 @@ const router = createBrowserRouter([
           },
           { path: "w/:workspaceId", element: <Board /> },
           { path: "w/:workspaceId/members", element: <Member /> },
+          { path: "w/:workspaceId/calendar", element: <Calendar /> },
+          { path: "w/:workspaceId/calendar/c/:cardId", element: <CardModal /> },
           { path: "w/:workspaceId/account", element: <Account /> },
           { path: "b/:boardId/gantt-chart", element: <GanttChart /> },
-          { path: "w/:workspaceName/calendar", element: <Calendar /> },
-          { path: "w/:workspaceName/calendar/c/:cardId", element: <CardModal /> },
-
         ],
       },
       {

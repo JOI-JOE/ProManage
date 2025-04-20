@@ -1,31 +1,59 @@
-import { createContext, useContext } from 'react'
-import { useGetWorkspaces } from '../hooks/useWorkspace';
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { useGetWorkspaces } from "../hooks/useWorkspace";
+import { useParams } from "react-router-dom";
 
-const WorkspaceContext = createContext();
+const WorkspaceContext = createContext({
+  data: null,
+  isLoading: true,
+  error: null,
+  updateWorkspaceInfo: () => { }, // Add update function in context
+});
+
+export const useWorkspace = () => {
+  const context = useContext(WorkspaceContext);
+  if (!context) {
+    throw new Error("useWorkspace must be used within a WorkspaceProvider");
+  }
+  return context;
+};
 
 export const WorkspaceProvider = ({ children }) => {
-  const [currentWorkspace, setCurrentWorkspace] = useState(null);
+  const { boardId, workspaceId } = useParams();
+  const { data, isLoading, error } = useGetWorkspaces();
+  const [workspaces, setWorkspaces] = useState([]); // Initialize as empty array
 
-  // Gọi API lấy danh sách workspace mà user tham gia
-  const { data: workspaces, isLoading, isError } = useGetWorkspaces();
-
-  // Mặc định chọn workspace đầu tiên nếu chưa có workspace nào được chọn
+  // Update workspace data when `workspaceId` changes
   useEffect(() => {
-    if (workspaces && workspaces.length > 0 && !currentWorkspace) {
-      setCurrentWorkspace(workspaces[0]);
+    if (data && data.length > 0) {
+      const currentWorkspace = data.find(workspace => workspace?.id === workspaceId);
+      if (currentWorkspace) {
+        setWorkspaces(prevWorkspaces => {
+          // If prevWorkspaces is empty, initialize with the current workspace
+          if (!prevWorkspaces.length) {
+            return [currentWorkspace];
+          }
+          // Otherwise, update the matching workspace
+          return prevWorkspaces.map(workspace =>
+            workspace?.id === currentWorkspace.id ? currentWorkspace : workspace
+          );
+        });
+      }
     }
-  }, [workspaces]);
+  }, [workspaceId, data]);
+
+
+  const contextValue = useMemo(
+    () => ({
+      data,
+      isLoading,
+      error,
+    }),
+    [data, isLoading, error]
+  );
 
   return (
-    <WorkspaceContext.Provider value={{ currentWorkspace, setCurrentWorkspace }}>
+    <WorkspaceContext.Provider value={contextValue}>
       {children}
     </WorkspaceContext.Provider>
   );
 };
-
-export default WorkspaceContext;
-
-// // Custom hook để sử dụng context dễ dàng hơn
-// export const useWorkspace = () => {
-//   return useContext(WorkspaceContext);
-// };

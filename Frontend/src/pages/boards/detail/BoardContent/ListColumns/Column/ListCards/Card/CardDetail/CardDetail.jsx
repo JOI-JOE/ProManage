@@ -274,7 +274,7 @@ const CardModal = ({ }) => {
   // console.log(activities);
 
   const { user } = useMe();
-
+  
   const userId = user?.id;
 
 
