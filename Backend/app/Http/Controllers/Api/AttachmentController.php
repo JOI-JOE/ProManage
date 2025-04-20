@@ -247,13 +247,14 @@ class AttachmentController extends Controller
                 'data' => $attachments,
             ], 200);
         } catch (\Exception $e) {
+            // Trả về mảng rỗng thay vì lỗi khi không tìm thấy dữ liệu
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'error' => app()->environment('production') ? null : $e->getMessage(),
-            ], $e->getCode() ?: 500);
+                'success' => true,
+                'data' => [],  // Dữ liệu rỗng nếu không có attachments
+            ], 200);  // Trả về status 200 cho dù có dữ liệu hay không
         }
     }
+
 
     public function delete($attachmentId)
     {
