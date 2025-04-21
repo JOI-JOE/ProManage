@@ -41,6 +41,7 @@ import GanttChart from "../pages/boards/detail/SideBar/GanttChart/GanttChart";
 import TagCard from "../components/Navigation/Menus/Profile and display/TagCard";
 import ProfileNDisplay from "../components/Navigation/Menus/Profile and display/ProfileNDisplay";
 import ProfileInfo from "../components/Navigation/Menus/Profile and display/ProfileInfo";
+import TableView from "../pages/boards/detail/SideBar/TableView/TableView";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -101,6 +102,8 @@ const router = createBrowserRouter([
           { path: "b/:boardId/gantt-chart", element: <GanttChart /> },
           { path: "w/:workspaceName/calendar", element: <Calendar /> },
           { path: "w/:workspaceName/calendar/c/:cardId", element: <CardModal /> },
+          { path: "w/:workspaceName/table-view", element: <TableView /> },
+
          
 
 

@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\DragDropController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\RequestInvitationController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\TableViewController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -143,11 +144,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     //user profile
     Route::get('/user', [ApiUserController::class, 'getUserById']);
-    
+
     Route::put('/user/update-profile', [ApiUserController::class, 'updateProfile']);
 
     Route::get('/user/activities', [ActivityLogController::class, 'getMyActivities']);
-    
+
     Route::get('/user/workspaces', [WorkspaceMembersController::class, 'getUserWorkspaces']);
 
     Route::get('/user/{id}/cards', [CardController::class, 'getCardsByUserBoards']);
@@ -344,3 +345,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/boards/{boardId}/gantt', [GanttController::class, 'getGanttData']);
     Route::post('/gantt/update-task', [GanttController::class, 'updateTask']);
 });
+Route::post('/table-view', [TableViewController::class, 'tableView'])->middleware('auth:sanctum');
+Route::post('/lists/by-boards', [TableViewController::class, 'getListsByBoards']);
+Route::put('/cards/{id}/list', [TableViewController::class, 'updateList']);
+Route::post('/table-view/board-members', [TableViewController::class, 'getMembersByBoards']);
+Route::post('/cards/{card}/table-view-member', [TableViewController::class, 'addMember']);
+Route::delete('/cards/{card}/table-view-member/{member}', [TableViewController::class, 'removeMember']);
+Route::put('/cards/{cardId}/table-view-date', [TableViewController::class, 'updateDueDate']);
+
+
