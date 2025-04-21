@@ -17,15 +17,29 @@ import { useParams } from "react-router-dom";
 import LockIcon from "@mui/icons-material/Lock"; // Icon cho Riêng tư
 import GroupIcon from "@mui/icons-material/Group"; // Icon cho Không gian làm việc
 import PublicIcon from "@mui/icons-material/Public"; // Icon cho Công khai
+import { useGetBoardMembers } from "../../../../../../../hooks/useInviteBoard";
+import { useUser } from "../../../../../../../hooks/useUser";
 
 const ViewPermissionsDialog = ({ open, onClose }) => {
   const { boardId } = useParams(); // Lấy boardId từ URL
+
 
   // Sử dụng hook useGetBoardByID để lấy thông tin bảng
   const { data: board, isLoading, error } = useGetBoardByID(boardId);
 
   // Khởi tạo selectedVisibility với giá trị mặc định là "private"
   const [selectedVisibility, setSelectedVisibility] = useState("private");
+  const { data: boardMembers = [] } = useGetBoardMembers(boardId);
+  const { data: user } = useUser();
+
+  const currentUserId = user?.id;
+
+  const isAdmin = Array.isArray(boardMembers?.data)
+  ? boardMembers.data.some(member =>
+    member.id === currentUserId && member.pivot.role === "admin"
+  )
+  : false;
+
 
   // Cập nhật selectedVisibility khi dữ liệu bảng được tải
   useEffect(() => {
@@ -69,6 +83,7 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
               <FormControlLabel
                 value="private"
                 control={<Radio />}
+                disabled={!isAdmin}
                 label={
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <LockIcon sx={{ mr: 1, color: "red" }} />
@@ -90,6 +105,7 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
               <FormControlLabel
                 value="workspace"
                 control={<Radio />}
+                disabled={!isAdmin}
                 label={
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <GroupIcon sx={{ mr: 1, color: "blue" }} />
@@ -110,6 +126,7 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
               <FormControlLabel
                 value="public"
                 control={<Radio />}
+                disabled={!isAdmin}
                 label={
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <PublicIcon sx={{ mr: 1, color: "green" }} />
@@ -129,7 +146,7 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Hủy</Button>
-        <Button onClick={handleApply} disabled={updateVisibilityMutation.isLoading || isLoading}>
+        <Button onClick={handleApply} disabled={!isAdmin || updateVisibilityMutation.isLoading || isLoading}>
           {updateVisibilityMutation.isLoading ? "Đang cập nhật..." : "Áp dụng"}
         </Button>
       </DialogActions>

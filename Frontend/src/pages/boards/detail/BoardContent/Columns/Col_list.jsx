@@ -10,7 +10,9 @@ import { SPACING } from "../../../../../../utils/position.constant";
 const Col_list = ({ columns = [], boardId }) => {
     const [openColumn, setOpenColumn] = useState(false);
     const [localColumns, setLocalColumns] = useState(columns);
-    const { createList, isSaving } = useCreateList(boardId);
+    const { createList1, isSaving } = useCreateList(boardId);
+    const createList = useCreateList(boardId);
+
 
     useEffect(() => {
         if (JSON.stringify(localColumns) !== JSON.stringify(columns)) {
@@ -22,20 +24,21 @@ const Col_list = ({ columns = [], boardId }) => {
         if (!name || isSaving) return;
 
         const optimisticId = optimisticIdManager.generateOptimisticId("list"); // Định nghĩa bên ngoài
-        let pos = 0;
+        
+        let maxPosition = localColumns.length > 0 ? Math.max(...localColumns.map(col => col.position)) : 0;
+        let pos = maxPosition + SPACING;
+        // setLocalColumns((prev) => {
+        //     const maxPosition = prev.length > 0 ? Math.max(...prev.map(col => col.position)) : 0;
+        //     pos = maxPosition + SPACING; // Cập nhật giá trị pos
 
-        setLocalColumns((prev) => {
-            const maxPosition = prev.length > 0 ? Math.max(...prev.map(col => col.position)) : 0;
-            pos = maxPosition + SPACING; // Cập nhật giá trị pos
-
-            return [
-                ...prev,
-                { id: optimisticId, board_id: boardId, title: name, position: pos },
-            ];
-        });
+        //     return [
+        //         ...prev,
+        //         { id: optimisticId, board_id: boardId, title: name, position: pos },
+        //     ];
+        // });
 
         try {
-            await createList({ boardId, name, pos });
+            await createList.mutateAsync({ boardId, name, pos });
         } catch (error) {
             console.error("❌ Lỗi khi tạo danh sách:", error);
             setLocalColumns((prev) => prev.filter((col) => col.id !== optimisticId));

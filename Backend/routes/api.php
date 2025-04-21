@@ -167,6 +167,7 @@ Route::prefix('lists')->group(function () {
     Route::patch('/{id}/closed', [ListController::class, 'updateClosed']);
     Route::put('/{id}/updateColor', [ListController::class, 'updateColor']);
     Route::get('/{id}/detail', [ListController::class, 'getListById']);
+    Route::post('/{id}/duplicate', [ListController::class, 'duplicate']);
 });
 
 Route::get('/colors', [ColorController::class, 'index']);

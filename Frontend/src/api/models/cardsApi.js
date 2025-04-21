@@ -40,6 +40,22 @@ export const getCardById = async (cardId) => {
   }
 };
 
+export const getCardByListId = async (listId) => {
+  try {
+    const response = await authClient.get(`/cards/list/${listId}`);
+    // console.log("API response:", response); // Kiểm tra toàn bộ response
+    if (response.data) {
+      return response.data;
+    } else {
+      console.error("No data returned from API.");
+      throw new Error("No data from API.");
+    }
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error;
+  }
+};
+
 export const updateDescription = async (cardId, description) => {
   try {
     const response = await authClient.patch(`/cards/${cardId}/description`, {
