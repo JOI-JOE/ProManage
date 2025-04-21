@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { fetchMemberCardsAndItems } from "../api/models/memberApi";
 import { toggleCardMember } from "../api/models/cardsApi";
 import { useToggleCheckListItemMember } from "./useCheckListItem";
+import { getLinkInviteBoard } from "../api/models/boardsApi";
 
 
 export const useGetBoardMembers = (boardId) => {
@@ -36,12 +37,7 @@ export const useGetBoardMembers = (boardId) => {
 
       // queryClient.invalidateQueries( ["boardMembers", boardId]);
       queryClient.invalidateQueries({ queryKey: ["boardMembers", boardId], exact: true });
-      
-
-      queryClient.invalidateQueries({ queryKey: ["guestBoards"], exact: true });
-      // queryClient.invalidateQueries({ queryKey: ["membersInCard", event.card.id] });
-
-
+      queryClient.invalidateQueries({ queryKey: ["user"], exact: true });
     });
 
     return () => {
@@ -108,7 +104,7 @@ export const useUpdateRoleMemberInBoards = () => {
 };
 
 
-export const useRemoveMemberFromBoard = (currentUserId) => {
+export const useRemoveMemberFromBoard = (currentUserId,boardId) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -162,26 +158,35 @@ export const useRemoveMemberFromBoard = (currentUserId) => {
     const channel = echoInstance.private(`App.Models.User.${currentUserId}`);
   
     channel.listen("MemberRemovedFromBoard", (data) => {
-      console.log("MemberRemovedFromBoard", data);
+      // console.log("MemberRemovedFromBoard", data);
   
       // Lấy thông tin bảng từ cache
       const boardData = queryClient.getQueryData(["boards", data.board_id]);
       console.log("Board data:", boardData);
-  
       const isCreator = boardData?.created_by === currentUserId;
       const isSelfRemoved = data.user_id === currentUserId;
+
+      if(data.board_id === boardId) {
+       
+        // Chỉ điều hướng nếu là người rời bảng
+        if (isSelfRemoved && !isCreator) {
+          // toast.info(`${data.user_name} đã rời khỏi bảng.`);
+          navigate(`/request-join/${data.board_id}`);
+        } else if (isSelfRemoved && isCreator) {
+          toast.info("Bạn đã rời khỏi bảng, có thể tham gia lại bất cứ lúc nào.");
+        } else {
+          // Thông báo cho các thành viên khác (bao gồm creator) mà không điều hướng
+          toast.info(`${data.user_name} đã rời khỏi bảng.`);
+        }
+
+        console.log("Thông báo đúng bảng ");
+        
+    
+      }else{
+        console.log("Thông báo không đúng bảng ");
+      };
   
-      // Chỉ điều hướng nếu là người rời bảng
-      if (isSelfRemoved && !isCreator) {
-        // toast.info(`${data.user_name} đã rời khỏi bảng.`);
-        navigate(`/request-join/${data.board_id}`);
-      } else if (isSelfRemoved && isCreator) {
-        toast.info("Bạn đã rời khỏi bảng, có thể tham gia lại bất cứ lúc nào.");
-      } else {
-        // Thông báo cho các thành viên khác (bao gồm creator) mà không điều hướng
-        toast.info(`${data.user_name} đã rời khỏi bảng.`);
-      }
-  
+     
       // Cập nhật cache cho tất cả user
       queryClient.setQueryData(["boardMembers", data.board_id], (oldData) => {
         if (!oldData || !oldData.data) return oldData;
@@ -209,15 +214,24 @@ export const useRemoveMemberFromBoard = (currentUserId) => {
 };
 
 
-export const useMemberJoinedListener = (currentUserId) => {
+export const useMemberJoinedListener = (currentUserId,boardId) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+
+    if (!currentUserId || !boardId) return;
     const channel = echoInstance.private(`user.${currentUserId}`);
 
     channel.listen('MemberJoinedBoard', (data) => {
       // Hiển thị toast
-      toast.success(data.message);
+      if (data.board_id === boardId) {
+        console.log("Thông báo đúng bảng ");
+        
+        toast.success(data.message);
+      }else{
+        console.log("Thông báo không đúng bảng ");
+      }
+    
       console.log("MemberJoinedBoard", data.message); // Hiển thị thông báo
       
       // console.log('helloo')
@@ -230,7 +244,7 @@ export const useMemberJoinedListener = (currentUserId) => {
       channel.stopListening('MemberJoinedBoard');
       echoInstance.leave(`user.${currentUserId}`);
     };
-  }, [currentUserId, queryClient]);
+  }, [currentUserId,boardId, queryClient]);
 };
 
 export const useGuestBoards = () => {
@@ -303,8 +317,6 @@ export const useAcceptRequestJoinBoard = () => {
     onSuccess: (data, variables) => {
       toast.success("Chấp nhận yêu cầu tham gia bảng thành công!")
       console.log(data);
-      // console.log(variables);
-      
      
       queryClient.invalidateQueries({ queryKey: ['boardMembers', data.board_id], exact: true });
       queryClient.invalidateQueries({ queryKey: ['request-board', data.board_id], exact: true });
@@ -322,19 +334,30 @@ export const useAcceptRequestJoinBoard = () => {
       }
     },
   });
+
+  
+
 };
 
-export const useJoinBoardRequestListener = (userId) => {
+export const useJoinBoardRequestListener = (userId ,boardId) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !boardId) return;
 
     const channel = echoInstance.private(`App.Models.User.${userId}`);
 
     channel.listen("RequestJoinBoard", (data) => {
       console.log("New join request:", data);
-      toast.info(data.message); // Hiển thị thông báo giống Trello
+      if (data.board_id === boardId) {
+        console.log("Thông báo đúng bảng ");
+        
+        toast.info(data.message); // Hiển thị thông báo giống Trello
+        
+      }else{
+        console.log("Thông báo không đúng bảng ");
+      }
+      // toast.info(data.message); // Hiển thị thông báo giống Trello
 
      // Invalidate cache để gọi lại API lấy danh sách mới
      queryClient.invalidateQueries({ queryKey: ["request-board", data.board_id], exact: true });
@@ -369,6 +392,42 @@ export const useRejectRequestJoinBoard = () => {
   });
 };
 
+export const useCreatorComeBackBoard = (currentUserId, boardId) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!currentUserId || !boardId) return;
+
+    const channel = echoInstance.private(`App.Models.User.${currentUserId}`);
+
+    channel.listen("CreatorComeBackBoard", (data) => {
+      console.log("CreatorComeBackBoard", data);
+      // toast.info(data.message); // Hiển thị thông báo giống Trello
+
+      // Invalidate cache để gọi lại API lấy danh sách mới
+      queryClient.invalidateQueries({ queryKey: ["boardMembers",data.board_id], exact: true });
+    });
+
+    return () => {
+      channel.stopListening("CreatorComeBackBoard");
+      echoInstance.leave(`App.Models.User.${currentUserId}`);
+    };
+  }, [currentUserId,boardId, queryClient]);
+}
+
+
+export const useGetLinkInviteBoard = (boardId) => {
+  return useQuery({
+    queryKey: ["linkInvite", boardId],
+    queryFn: () => getLinkInviteBoard(boardId),
+    enabled: !!boardId, // Chỉ gọi nếu boardId và enabled được bật
+    staleTime: 0,
+    cacheTime: 5 * 60 * 1000,
+    retry: 2,
+    refetchOnWindowFocus: false,
+    // ...options, // Gộp các options được truyền vào sau cùng
+  });
+};
 
 
 

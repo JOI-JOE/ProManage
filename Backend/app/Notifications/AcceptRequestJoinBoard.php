@@ -4,8 +4,10 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\HtmlString;
 
 class AcceptRequestJoinBoard extends Notification implements ShouldQueue
 {
@@ -22,7 +24,7 @@ class AcceptRequestJoinBoard extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'database']; // Gửi qua email và lưu vào database
+        return ['mail', 'database', 'broadcast']; // Gửi qua email và lưu vào database
     }
 
     public function toMail($notifiable)
@@ -35,12 +37,33 @@ class AcceptRequestJoinBoard extends Notification implements ShouldQueue
             ->line('Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!');
     }
 
+    public function toDatabase($notifiable)
+    {
+        return [
+            'board_id' => $this->board_id,
+            'board_name' => $this->board_name,
+            'message' => "Bạn đã được thêm vào bảng <a href=\"/b/{$this->board_id}/{$this->board_name}\">{$this->board_name}</a>",
+
+        ];
+    }
+
     public function toArray($notifiable)
     {
         return [
             'board_id' => $this->board_id,
             'board_name' => $this->board_name,
-            'message' => "Yêu cầu tham gia bảng '{$this->board_name}' của bạn đã được duyệt.",
+            'message' => "Yêu cầu tham gia bảng <a href=\"/b/{$this->board_id}/\"{$this->board_name} của bạn đã được duyệt.</a>",
         ];
+    }
+
+    public function toBroadcast($notifiable)
+    {
+        return new BroadcastMessage([
+            'board_id' => $this->board_id,
+            'board_name' => $this->board_name,
+            'message' => new HtmlString(
+                "Bạn đã được thêm vào bảng <a href=\"/b/{$this->board_id}/" . urlencode($this->board_name) . "\">{$this->board_name}</a>"
+            ),
+        ]);
     }
 }
