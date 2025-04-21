@@ -28,19 +28,22 @@ import {
   useAcceptRequestJoinBoard,
   useJoinBoardRequestListener,
   useRejectRequestJoinBoard,
+  useGetLinkInviteBoard,
 } from "../../../../../../../hooks/useInviteBoard";
 // import { useRemoveMemberFromBoard } from "../../../../../../../hooks/useRemoveMemberFromBoard"; // Import hook đã chỉnh sửa
 import { toast } from "react-toastify";
 import { inviteMemberIntoBoardByEmail } from "../../../../../../../api/models/inviteBoardApi";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   const { boardId } = useParams();
   const currentBoardId = boardId;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // console.log(currentUser);
 
-  // console.log('Current board:',boardMembers);
+  // console.log("Current board:", boardMembers?.data);
   // States
 
   const [tabIndex, setTabIndex] = useState(0);
@@ -62,14 +65,20 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   const { mutate: acceptRequestJoinBoard } = useAcceptRequestJoinBoard();
   const { mutate: rejectRequestJoinBoard } = useRejectRequestJoinBoard();
   const { mutate: updateRoleMemberInBoard } = useUpdateRoleMemberInBoards();
-  const removeMember = useRemoveMemberFromBoard(currentUser?.id,boardId); // Sử dụng hook với currentUserId
-  useJoinBoardRequestListener(currentUser?.id,boardId);
+  const removeMember = useRemoveMemberFromBoard(currentUser?.id, boardId); // Sử dụng hook với currentUserId
+  useJoinBoardRequestListener(currentUser?.id, boardId);
+  // useAcceptRequestListener(currentUser?.id,boardId);
+  const { data: linkdata } = useGetLinkInviteBoard(boardId);
+  // console.log("Link invite:", linkdata);
+  // Đồng bộ state `link` với `linkdata` khi `linkdata` thay đổi
+  useEffect(() => {
+    if (linkdata?.link) {
+      setLink(linkdata.link); // Lưu link vào state khi có dữ liệu
+    } else {
+      setLink(null); // Đặt lại state khi không có link
+    }
+  }, [linkdata]);
 
-  // useEffect(() => {
-  //   if (tabIndex === 1 && !hasFetchedRequest) {
-  //     setHasFetchedRequest(true);
-  //   }
-  // }, [tabIndex]);
   const [requestList, setRequestList] = useState([]);
   const { data: requests } = useGetRequestBoard(boardId);
 
@@ -140,6 +149,13 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
 
       if (emailList.includes(email)) {
         toast.error("Email đã tồn tại trong danh sách!");
+        return;
+      }
+      // ✅ Kiểm tra nếu đã là thành viên của bảng
+      const existingEmails =
+        boardMembers?.data?.map((member) => member.email) || [];
+      if (existingEmails.includes(email)) {
+        toast.error("Email này đã là thành viên của bảng!");
         return;
       }
 
@@ -256,22 +272,16 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   };
 
   const handleCreateLink = () => {
-    generateLink(currentBoardId,
-      {
+    generateLink(currentBoardId, {
       onSuccess: (data) => {
-        // console.log("Liên kết mời thành công:", data.invite_link);
-        setLink(data.invite_link); // Lưu liên kết vào state
-        // setLink(data.invite_link);
-        // localStorage.setItem("InviteLink", data.invite_link); // Lưu vào localStorage
-        // toast.success("Đã tạo liên kết mời thành viên!");
-      }
-    }
-    )
-   
-       // Lưu liên kết vào state
-    // setLink(localStorage.getItem("InviteLink"));
-    // console.log("Link mời:",  inviteLink);
-    
+        queryClient.invalidateQueries({
+          queryKey: ["linkInvite", boardId],
+          exact: true,
+        });
+
+        // console.log("Liên kết mời thành công:", linkdata);
+      },
+    });
   };
 
   const handleDeleteLink = () => {
@@ -279,8 +289,15 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
     removeInvite(inviteCode, {
       onSuccess: () => {
         toast.success("Đã xóa liên kết mời!");
-        localStorage.removeItem("InviteLink"); // Xóa khỏi localStorage
-        setLink(null);
+        // localStorage.removeItem("InviteLink"); // Xóa khỏi localStorage
+        queryClient.invalidateQueries({
+          queryKey: ["linkInvite", boardId],
+          exact: true,
+        });
+        setLink(null); // Xóa state link ngay lập tức
+        console.log("Xóa liên kết mời thành công:", linkdata);
+
+        // setLink(null);
       },
     });
   };

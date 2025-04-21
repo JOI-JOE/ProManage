@@ -167,13 +167,15 @@ class RequestInvitationController extends Controller
             $user->notify(new AcceptRequestJoinBoard($board->id, $board->name));
             
             // Phát event thời gian thực để thông báo cho người dùng
-            event(new AcceptRequest($user->id, $board->id, $board->name));
+            // broadcast(new AcceptRequest($user->id, $board->id, $board->name));
+            // Log::info("Broadcasting to member accepted request", ['user_id' => $user->id]);
             // Xóa bản ghi yêu cầu tham gia sau khi xử lý thành công
             $requestInvitation->delete();
 
             return response()->json([
                 'success' => true,
                 'board_id' => $board->id,
+                'user_id' => $user->id,
                 'message' => 'Yêu cầu đã được duyệt và thành viên đã được thêm vào bảng.',
             ], 200);
         } catch (\Exception $e) {

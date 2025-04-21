@@ -178,6 +178,15 @@ export const forceDestroyBoard = async (boardId) => {
   const response = await authClient.delete(`/boards/${boardId}/fDestroy`);
   return response.data;
 };
+export const getLinkInviteBoard = async (boardId) => {
+  try {
+    const response = await authClient.get(`/${boardId}/invitation`);
+    return response.data;
+  } catch (error) {
+    console.error("False get board closed:", error);
+    throw error;
+  }
+};
 
 
 

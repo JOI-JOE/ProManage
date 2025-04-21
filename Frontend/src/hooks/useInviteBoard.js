@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { fetchMemberCardsAndItems } from "../api/models/memberApi";
 import { toggleCardMember } from "../api/models/cardsApi";
 import { useToggleCheckListItemMember } from "./useCheckListItem";
+import { getLinkInviteBoard } from "../api/models/boardsApi";
 
 
 export const useGetBoardMembers = (boardId) => {
@@ -316,27 +317,6 @@ export const useAcceptRequestJoinBoard = () => {
     onSuccess: (data, variables) => {
       toast.success("Chấp nhận yêu cầu tham gia bảng thành công!")
       console.log(data);
-      useEffect(() => {
-        // if (!data.user_id || !echoInstance) return;
-      
-        const channel = echoInstance.private(`user.${data.user_id}`);
-        
-        // channel.notification((notification) => {
-        //   // if (notification.type === "App\\Notifications\\MemberRemovedNotification") {
-        //   //   navigate("/home");
-        //   // }
-    
-        //   // queryClient.invalidateQueries({ queryKey: ['notifications', userId] ,exact:true});
-        //   // queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
-        // });
-      
-        return () => {
-          echoInstance.leave(`user.${data.user_id}`);
-        };
-      }, [data.user_id, queryClient]);
-    
-      // console.log(variables);
-      
      
       queryClient.invalidateQueries({ queryKey: ['boardMembers', data.board_id], exact: true });
       queryClient.invalidateQueries({ queryKey: ['request-board', data.board_id], exact: true });
@@ -435,6 +415,19 @@ export const useCreatorComeBackBoard = (currentUserId, boardId) => {
   }, [currentUserId,boardId, queryClient]);
 }
 
+
+export const useGetLinkInviteBoard = (boardId) => {
+  return useQuery({
+    queryKey: ["linkInvite", boardId],
+    queryFn: () => getLinkInviteBoard(boardId),
+    enabled: !!boardId, // Chỉ gọi nếu boardId và enabled được bật
+    staleTime: 0,
+    cacheTime: 5 * 60 * 1000,
+    retry: 2,
+    refetchOnWindowFocus: false,
+    // ...options, // Gộp các options được truyền vào sau cùng
+  });
+};
 
 
 
