@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createCard,
   getCardById,
+  getCardByListId,
   updateDescription,
   updateCardTitle,
   updateArchivedCard,
@@ -25,6 +26,8 @@ import { toast } from "react-toastify";
 import echoInstance from "./realtime/useRealtime";
 
 export const useCreateCard = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: createCard,
     onError: (error) => {
@@ -44,6 +47,19 @@ export const useUpdateCardPosition = () => {
     retryDelay: 1000, // Thử lại sau 1 giây nếu lỗi
   });
 };
+export const useCardByListId = (listId) => {
+  const queryClient = useQueryClient();
+  const cardByList = useQuery({
+    queryKey: ["cards", listId],
+    queryFn: () => getCardByListId(listId),
+    enabled: !!listId, // chỉ gọi khi có itemId
+    staleTime: 1000 * 60 * 5, // 5 phút.
+    cacheTime: 1000 * 60 * 30, // 30 phút.
+    
+  });
+
+  return cardByList;
+}
 
 export const useCardById = (cardId) => {
   const queryClient = useQueryClient();

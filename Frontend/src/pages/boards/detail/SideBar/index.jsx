@@ -15,6 +15,7 @@ import {
   Menu,
   MenuItem,
   Button,
+  ListSubheader,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
@@ -30,8 +31,6 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
-import { useGetBoardMembers, useGuestBoards } from "../../../../hooks/useInviteBoard";
-import { useGetWorkspaces } from "../../../../hooks/useWorkspace";
 import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 import { useMe } from "../../../../contexts/MeContext";
 
@@ -57,53 +56,17 @@ const SideBar = ({ board }) => {
     }
     return null;
   }, [workspaces, guestWorkspaces, board?.workspace_id, workspaceName]);
+
   // Là admin board?
+  const isAdminBoard = useMemo(() => {
+    const boardInfo = boardIds?.find((b) => b.id === board?.id);
+    return boardInfo?.is_admin || boardInfo?.role === 'admin';
+  }, [boardIds, boardId]);
 
   // Là thành viên workspace?
   const isMemberWorkspace = useMemo(() => {
     return currentWorkspace?.joined === 1;
   }, [currentWorkspace?.joined]);
-
-  // console.log({ isMemberBoard, isAdminBoard, isMemberWorkspace });
-
-
-  // console.log(boardId);
-  // const { data: guestBoards } = useGuestBoards();
-  // console.log(guestBoards);
-  // const { currentWorkspace } = useContext(WorkspaceContext);
-  // const { data: boardMembers = [] } = useGetBoardMembers(boardId);
-
-  // const currentUserId = user?.id;
-
-  // const isMember = Array.isArray(boardMembers?.data)
-  //   ? boardMembers.data.some(member =>
-  //     member.id === currentUserId && member.pivot.role === "member"
-  //   )
-  //   : false;
-
-  // const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
-  // console.log(adminCount);
-
-  // useMemberJoinedListener(user?.id)
-
-
-
-  // const foundWorkspace = guestBoards?.find((workspace) =>
-  //   workspace.boards.some((board) => board.id === boardId)
-  // );
-  // console.log(foundWorkspace);
-  // const { data: checkMember } = useCheckMemberInWorkspace(foundWorkspace?.workspace_id, user?.id);
-
-  // let isGuest = false;
-  // if (foundWorkspace) {
-  //   isGuest = true;
-  // }
-  // console.log(isGuest);
-
-  // const activeData = foundWorkspace || currentWorkspace;
-
-  // const invitedWorkspace = currentWorkspace?.boards?.some(board => board.id == boardId) ? currentWorkspace : null;
-  // console.log(invitedWorkspace);
 
   const [openSettings, setOpenSettings] = useState(false);
 
@@ -210,11 +173,15 @@ const SideBar = ({ board }) => {
 
           <Collapse in={openSettings} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
-              <ListItemButton sx={{ pl: 4 }} component={Link} to={`/w/${currentWorkspace?.name}/account`}>
+              <ListItemButton sx={{ pl: 4 }}>
                 <ListItemIcon sx={{ color: "white" }}>
                   <ViewKanbanIcon />
                 </ListItemIcon>
-                <ListItemText primary="Cài đặt không gian làm việc" />
+                <ListItemText
+                  component={Link}
+                  to={`/w/${currentWorkspace?.name}/account`}
+                  primary="Cài đặt không gian làm việc"
+                />
               </ListItemButton>
               <ListItemButton sx={{ pl: 4 }}>
                 <ListItemIcon sx={{ color: "white" }}>
@@ -226,28 +193,69 @@ const SideBar = ({ board }) => {
           </Collapse>
         </List>
       )}
-      {isMemberWorkspace && (
-        <Box>
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to={`/w/${currentWorkspace?.name}/calendar`}
+
+      <List>
+        {/* Các mục khác trong sidebar (nếu có) */}
+        {/* Nhóm "Xem không gian làm việc" */}
+        {isMemberWorkspace && (
+          <Box>
+            <ListSubheader
+              sx={{
+                bgcolor: "black",
+                color: "white",
+                fontSize: "0.9rem",
+                fontWeight: "bold",
+                pt: 2, // Khoảng cách phía trên
+              }}
             >
-              <ListItemIcon sx={{ color: "white" }}>
-                <CalendarMonthIcon />
-              </ListItemIcon>
-              <ListItemText primary="Calendar" />
-            </ListItemButton>
-          </ListItem>
-        </Box>
-      )}
-      <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
-        Các bảng của bạn
-      </Typography>
+              Xem không gian làm việc
+            </ListSubheader>
+
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to={`/w/${currentWorkspace?.name}/table-view`}
+              >
+                <ListItemIcon sx={{ color: "white" }}>
+                  <DashboardIcon />
+                </ListItemIcon>
+                <ListItemText primary="Bảng" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to={`/w/${currentWorkspace?.name}/calendar`}
+              >
+                <ListItemIcon sx={{ color: "white" }}>
+                  <CalendarMonthIcon />
+                </ListItemIcon>
+                <ListItemText primary="Calendar" />
+              </ListItemButton>
+            </ListItem>
+          </Box>
+        )}
+      </List>
+
+      <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ px: 2, mt: 2 }}>
+        <Typography sx={{ fontWeight: 600, fontSize: '15px' }}>
+          Các bảng của bạn
+        </Typography>
+        {/* <Box display="flex" alignItems="center" gap={1}>
+          {!isMemberWorkspace && (
+            <IconButton size="small" onClick={handleOpen}>
+              <AddIcon fontSize="small" sx={{ color: '#fff' }} />
+            </IconButton>
+          )}
+        </Box> */}
+      </Box>
+
       <List sx={{ p: 0.5 }}>
-        {currentWorkspace?.boards.map((board) => {
-          // const isCurrent = board.id === Number(board.id); // Cần kiểm tra lại điều kiện này
-          const isSelected = selectedBoardId === board.id;
+        {currentWorkspace?.boards?.map((board) => {
+          const isCurrent = board.id === boardId;
+          const isBoardAdmin = board.role === "admin";
+          const isBoardMember = !!board.role;
 
           return (
             <ListItem
@@ -260,7 +268,7 @@ const SideBar = ({ board }) => {
                 to={`/b/${board.id}/${board.name}`}
                 sx={{
                   flexGrow: 1,
-                  // backgroundColor: isCurrent ? "#ffffff33" : "transparent",
+                  backgroundColor: isCurrent ? "#ffffff33" : "transparent",
                   "&:hover": { backgroundColor: "#ffffff22" },
                   borderRadius: "6px",
                 }}
@@ -287,7 +295,7 @@ const SideBar = ({ board }) => {
 
               <Menu
                 anchorEl={menuAnchor}
-                open={isSelected}
+                open={selectedBoardId === board.id}
                 onClose={handleMenuClose}
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                 transformOrigin={{ vertical: "top", horizontal: "left" }}
@@ -300,6 +308,7 @@ const SideBar = ({ board }) => {
                   },
                 }}
               >
+                {/* Tên board */}
                 <MenuItem
                   disabled
                   sx={{
@@ -315,9 +324,10 @@ const SideBar = ({ board }) => {
                   {board.name}
                 </MenuItem>
 
-                {/* {isMemberBoard && (
+                {/* Rời khỏi bảng */}
+                {/* {(adminCount >= 2 && isBoardMember) && (
                   <MenuItem
-                    onClick={() => console.log("Rời khỏi bảng")}
+                    onClick={() => handleLeaveBoard(board.id)}
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -330,7 +340,8 @@ const SideBar = ({ board }) => {
                   </MenuItem>
                 )} */}
 
-                {board?.role === 'admin' && (
+                {/* Đóng bảng - chỉ admin mới được */}
+                {isBoardAdmin && (
                   <MenuItem
                     onClick={() => handleCloseBoard(board.id)}
                     sx={{
@@ -349,8 +360,8 @@ const SideBar = ({ board }) => {
           );
         })}
       </List>
-      {/* 👇 Nút yêu cầu tham gia đặt cuối cùng, luôn nằm dưới */}
-      {/* {isGuest && checkMember?.is_member === false && (
+
+      {!isMemberWorkspace && (
         <Box sx={{ p: 2, bgcolor: "#292929", mt: 9.5, borderRadius: "8px" }}>
           <Typography variant="body2" sx={{ fontSize: "13px", color: "#ccc" }}>
             Bạn đang là Khách của không gian làm việc này, muốn xem thêm bảng và thành viên khác hãy gửi yêu cầu cho quản trị viên không gian làm việc này.
@@ -376,9 +387,184 @@ const SideBar = ({ board }) => {
             Yêu cầu tham gia không gian làm việc
           </Button>
         </Box>
-      )} */}
+      )}
 
-    </Drawer>
+      {/* <Popover
+        open={openPopover}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Box
+          sx={{
+            width: 350,
+            p: 2,
+            borderRadius: "8px",
+            bgcolor: "white",
+            boxShadow: 3,
+          }}
+        >
+          <Typography variant="h6" fontWeight="bold" textAlign="center">
+            Tạo bảng
+          </Typography>
+          {selectedBg && (
+            <Box
+              sx={{
+                width: "100%",
+                height: "100px",
+                background: selectedBg.startsWith("#")
+                  ? selectedBg
+                  : `url(${selectedBg}) center/cover no-repeat`,
+                borderRadius: "8px",
+              }}
+            />
+          )}
+
+          <Typography variant="subtitle1" mt={2} fontWeight="bold">
+            Phông nền
+          </Typography>
+
+
+
+          {colors?.length > 0 ? (
+            <Grid container spacing={1} mt={1}>
+              {colors.map((color) => (
+                <Grid item key={color.id}>
+                  <Box
+                    sx={{
+                      width: "50px",
+                      height: "35px",
+                      backgroundColor: color.hex_code,
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      border:
+                        selectedBg === color.hex_code ? "2px solid #007BFF" : "none",
+                    }}
+                    onClick={() => handleSelectBg(color.hex_code)}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Typography>Không có màu nào khả dụng</Typography>
+          )}
+
+          <Typography variant="subtitle1" mt={2} fontWeight="bold">
+            Ảnh từ Unsplash
+          </Typography>
+
+          <Grid container spacing={1} mt={1}>
+            {unsplashImages?.map((image, index) => (
+              <Grid item key={index}>
+                <Box
+                  component="img"
+                  src={image.urls.small}
+                  sx={{
+                    width: "50px",
+                    height: "35px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    border:
+                      selectedBg === image.urls.small
+                        ? "2px solid #007BFF"
+                        : "none",
+                  }}
+                  onClick={() => handleSelectBg(image.urls.small)}
+                />
+              </Grid>
+            ))}
+          </Grid>
+
+          <IconButton
+            onClick={handleClose}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          <Typography variant="h6" mt={2} fontWeight="bold">
+            Tiêu đề bảng <span style={{ color: "red" }}>*</span>
+          </Typography>
+
+          <TextField
+            fullWidth
+            label="Tiêu đề bảng"
+            variant="outlined"
+            value={boardTitle}
+            onChange={(e) => setBoardTitle(e.target.value)}
+            error={boardTitle.trim() === ""}
+            helperText={
+              boardTitle.trim() === "" ? "👋 Tiêu đề bảng là bắt buộc" : ""
+            }
+            sx={{ marginBottom: 2 }}
+          />
+
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
+            Không gian làm việc
+          </Typography>
+
+          {isLoadingWorkspaces ? (
+            <Typography>Đang tải...</Typography>
+          ) : error ? (
+            <Typography color="error">Lỗi tải workspace</Typography>
+          ) : (
+            <Select
+              fullWidth
+              value={workspace}
+              onChange={(e) => setWorkspace(e.target.value)}
+              sx={{ marginBottom: 2 }}
+            >
+              {(memoizedWorkspaces ?? []).map((ws) => (
+                <MenuItem key={ws.id} value={ws.id}>
+                  {ws.name}
+                </MenuItem>
+              ))}
+            </Select>
+          )}
+
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
+            Quyền xem
+          </Typography>
+          <Select
+            fullWidth
+            value={viewPermission}
+            onChange={(e) => setViewPermission(e.target.value)}
+            sx={{ marginBottom: 2 }}
+          >
+            <MenuItem value="private">
+              <LockIcon fontSize="small" />
+              Riêng tư
+            </MenuItem>
+            <MenuItem value="workspace">
+              <GroupsIcon fontSize="small" />
+              Không gian làm việc
+            </MenuItem>
+            <MenuItem value="public">
+              <PublicIcon fontSize="small" />
+              Công khai
+            </MenuItem>
+          </Select>
+
+          <Box sx={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreateBoard}
+              disabled={isCreatingBoard || boardTitle.trim() === ""}
+            >
+              {isCreatingBoard ? "Đang tạo..." : "Tạo bảng"}
+            </Button>
+          </Box>
+        </Box>
+      </Popover > */}
+    </Drawer >
   );
 };
 
