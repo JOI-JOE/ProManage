@@ -14,7 +14,11 @@ import {
   IconButton,
   Menu,
   MenuItem,
+
+  ListSubheader,
+
   Button,
+
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
@@ -203,22 +207,52 @@ const SideBar = () => {
           </Collapse>
         </List>
       )}
+    <Box sx={{ width: 250,  height: "100vh" }}>
+            <List>
+                {/* Các mục khác trong sidebar (nếu có) */}
+                
+                {/* Nhóm "Xem không gian làm việc" */}
+                {!isGuest && (
+                    <Box>
+                        <ListSubheader
+                            sx={{
+                                bgcolor: "black",
+                                color: "white",
+                                fontSize: "0.9rem",
+                                fontWeight: "bold",
+                                pt: 2, // Khoảng cách phía trên
+                            }}
+                        >
+                            Xem không gian làm việc
+                        </ListSubheader>
 
-      {!isGuest && (
-        <Box>
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to={`/w/${currentWorkspace?.name}/calendar`}
-            >
-              <ListItemIcon sx={{ color: "white" }}>
-                <CalendarMonthIcon />
-              </ListItemIcon>
-              <ListItemText primary="Calendar" />
-            </ListItemButton>
-          </ListItem>
+                        <ListItem disablePadding>
+                            <ListItemButton
+                                component={Link}
+                                to={`/w/${currentWorkspace?.name}/table-view`}
+                            >
+                                <ListItemIcon sx={{ color: "white" }}>
+                                    <DashboardIcon />
+                                </ListItemIcon>
+                                <ListItemText primary="Bảng" />
+                            </ListItemButton>
+                        </ListItem>
+
+                        <ListItem disablePadding>
+                            <ListItemButton
+                                component={Link}
+                                to={`/w/${currentWorkspace?.name}/calendar`}
+                            >
+                                <ListItemIcon sx={{ color: "white" }}>
+                                    <CalendarMonthIcon />
+                                </ListItemIcon>
+                                <ListItemText primary="Calendar" />
+                            </ListItemButton>
+                        </ListItem>
+                    </Box>
+                )}
+            </List>
         </Box>
-      )}
       <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
         Các bảng của bạn
       </Typography>

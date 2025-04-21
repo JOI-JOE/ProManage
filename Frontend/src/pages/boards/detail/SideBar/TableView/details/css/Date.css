@@ -1,0 +1,85 @@
+.trello-calendar .react-datepicker {
+    border: none;
+    font-family: "Roboto", sans-serif;
+    font-size: 0.875rem;
+}
+
+.trello-calendar .react-datepicker__header {
+    background-color: #f5f5f5;
+    border-bottom: none;
+    padding: 8px 0;
+}
+
+.trello-calendar .react-datepicker__current-month {
+    font-size: 0.875rem;
+    color: #172b4d;
+    font-weight: 500;
+}
+
+.trello-calendar .react-datepicker__day-name,
+.trello-calendar .react-datepicker__day {
+    width: 32px;
+    line-height: 32px;
+    margin: 2px;
+    color: #172b4d;
+}
+
+.trello-calendar .react-datepicker__day-name {
+    color: #5e6c84;
+    font-size: 0.75rem;
+}
+
+.trello-calendar .react-datepicker__day:hover {
+    background-color: #e4f0f6;
+    border-radius: 4px;
+}
+
+.trello-calendar .react-datepicker__day--selected {
+    background-color: #5aac44;
+    color: #fff;
+    border-radius: 4px;
+}
+
+.trello-calendar .react-datepicker__day--outside-month {
+    color: #d6d6d6;
+}
+
+.trello-calendar .react-datepicker__navigation {
+    top: 10px;
+}
+
+.trello-calendar .react-datepicker__navigation--previous {
+    left: 10px;
+}
+
+.trello-calendar .react-datepicker__navigation--next {
+    right: 10px;
+}
+
+.trello-calendar .react-datepicker__time-container {
+    border-left: 1px solid #e0e0e0;
+    width: 80px;
+}
+
+.trello-calendar .react-datepicker__time-box {
+    width: 100% !important;
+}
+
+.trello-calendar .react-datepicker__time-list {
+    padding: 0;
+}
+
+.trello-calendar .react-datepicker__time-list-item {
+    font-size: 0.875rem;
+    padding: 4px 8px;
+    color: #172b4d;
+}
+
+.trello-calendar .react-datepicker__time-list-item:hover {
+    background-color: #e4f0f6;
+}
+
+.trello-calendar .react-datepicker__time-list-item--selected {
+    background-color: #5aac44 !important;
+    color: #fff !important;
+}

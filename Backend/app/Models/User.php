@@ -159,19 +159,19 @@ class User extends Authenticatable
     // public function guestWorkspaces()
     // {
     //     $userId = $this->id;
-    
+
     //     // Lấy danh sách ID các board mà user tham gia (thành viên hoặc quản trị)
     //     $boardIds = $this->boardsMember->pluck('id')->toArray();
-    
+
     //     Log::info('User ID: ' . $userId);
     //     Log::info('Board IDs: ' . json_encode($boardIds));
-    
+
     //     // Nếu không có board nào thì trả về collection rỗng
     //     if (empty($boardIds)) {
     //         Log::info('User has no boards, returning empty collection.');
     //         return collect([]);
     //     }
-    
+
     //     // Truy vấn lấy danh sách các workspace có chứa các board này (loại bỏ trùng)
     //     $workspaces = Workspace::whereHas('boards', function ($query) use ($boardIds) {
     //             $query->whereIn('boards.id', $boardIds);
@@ -179,9 +179,9 @@ class User extends Authenticatable
     //         ->select('id', 'name')  // Lấy cả id và name của workspace
     //         ->distinct()            // Loại bỏ trùng lặp
     //         ->get();                // Trả về collection thay vì chỉ danh sách tên
-    
+
     //     Log::info('Workspaces: ' . json_encode($workspaces));
-    
+
     //     return $workspaces;
     // }
 }
