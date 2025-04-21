@@ -216,6 +216,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/guest-boards', [BoardMemberController::class, 'getGuestBoards']);
 
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
+    Route::get('/{boardId}/invitation', [BoardMemberController::class, 'getLinkInviteByBoard']);
+
     Route::delete('/remove-invite/{token}', [BoardMemberController::class, 'removeInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
@@ -232,6 +234,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-requests/{boardId}', [RequestInvitationController::class, 'getRequestsForBoard']);
     Route::post('/accept-request/{request_id}', [RequestInvitationController::class, 'acceptRequest']);
     Route::post('/reject-request/{request_id}', [RequestInvitationController::class, 'rejectRequest']);
+
+    Route::post('/reject-invite/{token}', [BoardMemberController::class, 'rejectInvite']);
+    Route::get('/workspace/{workspaceId}/check-member/{userId}', [BoardMemberController::class, 'checkMemberInWorkspace']);
 
     Broadcast::routes();
 });

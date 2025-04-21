@@ -115,3 +115,15 @@ export const removeMemberWorkspace = async (workspaceId, userId) => {
     throw error;
   }
 };
+////// Viết luôn vào đây luôn cho tiện (quoc)
+export const checkMemberInWorkspace = async (workspaceId, userId) => {
+  try {
+    const response = await authClient.get(
+      `workspace/${workspaceId}/check-member/${userId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("False get board closed:", error);
+    throw error;
+  }
+};

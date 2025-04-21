@@ -36,6 +36,9 @@ return new class extends Migration
             // Người gửi lời mời (UUID)
             $table->uuid('invited_by')->nullable();
             $table->foreign('invited_by')->references('id')->on('users')->onUpdate('cascade')->onDelete('set null');
+
+            $table->json('rejected_by')->nullable();
+            // Lưu ID người từ chối lời mời, có thể là nhiều người 
         
             // Cho phép chấp nhận mà không cần xác nhận email
             $table->boolean('accept_unconfirmed')->default(false);

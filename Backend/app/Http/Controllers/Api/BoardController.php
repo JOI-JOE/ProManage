@@ -226,8 +226,7 @@ class BoardController extends Controller
         try {
             // Tìm board theo ID
             $board = Board::with('creator')->findOrFail($boardId);
-            // $creator = $board->creator()->first(); // Lấy thông tin người tạo
-
+            
             // Trả về kết quả nếu tìm thấy
             return response()->json([
                 'result' => true,

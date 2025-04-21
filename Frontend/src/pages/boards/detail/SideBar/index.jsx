@@ -14,6 +14,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Button,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
@@ -37,37 +38,33 @@ import { useMe } from "../../../../contexts/MeContext";
 const SideBar = ({ board }) => {
   const { boardId, workspaceName } = useParams();
   const { boardIds, workspaceIds } = useMe();
-  const { workspaces } = useWorkspace();
+  const { workspaces, guestWorkspaces } = useWorkspace();
 
   // Workspace hiện tại
   const currentWorkspace = useMemo(() => {
     if (board?.workspace_id) {
-      return workspaces.find((ws) => ws.id === board.workspace_id);
+      // Ưu tiên tìm trong workspaces
+      const ws = workspaces.find((ws) => ws.id === board.workspace_id);
+      if (ws) return ws;
+      // Nếu không có, tìm trong guestWorkspaces
+      return guestWorkspaces.find((ws) => ws.id === board.workspace_id);
     }
     if (workspaceName) {
-      return workspaces.find((ws) => ws.name === workspaceName);
+      const ws = workspaces.find((ws) => ws.name === workspaceName);
+      if (ws) return ws;
+
+      return guestWorkspaces.find((ws) => ws.name === workspaceName);
     }
     return null;
-  }, [workspaces, board?.workspace_id, workspaceName]);
-
-  // Là thành viên board?
-  const isMemberBoard = useMemo(() => {
-    return boardIds?.some((b) => b.id === boardId);
-  }, [boardIds, boardId]);
-
+  }, [workspaces, guestWorkspaces, board?.workspace_id, workspaceName]);
   // Là admin board?
-  const isAdminBoard = useMemo(() => {
-    const boardInfo = boardIds?.find((b) => b.id === boardId);
-    return boardInfo?.is_admin || boardInfo?.role === 'admin';
-  }, [boardIds, boardId]);
 
   // Là thành viên workspace?
   const isMemberWorkspace = useMemo(() => {
     return currentWorkspace?.joined === 1;
   }, [currentWorkspace?.joined]);
 
-  console.log({ isMemberBoard, isAdminBoard, isMemberWorkspace });
-
+  // console.log({ isMemberBoard, isAdminBoard, isMemberWorkspace });
 
 
   // console.log(boardId);
@@ -95,6 +92,7 @@ const SideBar = ({ board }) => {
   //   workspace.boards.some((board) => board.id === boardId)
   // );
   // console.log(foundWorkspace);
+  // const { data: checkMember } = useCheckMemberInWorkspace(foundWorkspace?.workspace_id, user?.id);
 
   // let isGuest = false;
   // if (foundWorkspace) {
@@ -317,7 +315,7 @@ const SideBar = ({ board }) => {
                   {board.name}
                 </MenuItem>
 
-                {isMemberBoard && isAdminBoard && (
+                {/* {isMemberBoard && (
                   <MenuItem
                     onClick={() => console.log("Rời khỏi bảng")}
                     sx={{
@@ -330,9 +328,9 @@ const SideBar = ({ board }) => {
                     Rời khỏi bảng
                     <ExitToAppIcon />
                   </MenuItem>
-                )}
+                )} */}
 
-                {isAdminBoard && (
+                {board?.role === 'admin' && (
                   <MenuItem
                     onClick={() => handleCloseBoard(board.id)}
                     sx={{
@@ -351,6 +349,35 @@ const SideBar = ({ board }) => {
           );
         })}
       </List>
+      {/* 👇 Nút yêu cầu tham gia đặt cuối cùng, luôn nằm dưới */}
+      {/* {isGuest && checkMember?.is_member === false && (
+        <Box sx={{ p: 2, bgcolor: "#292929", mt: 9.5, borderRadius: "8px" }}>
+          <Typography variant="body2" sx={{ fontSize: "13px", color: "#ccc" }}>
+            Bạn đang là Khách của không gian làm việc này, muốn xem thêm bảng và thành viên khác hãy gửi yêu cầu cho quản trị viên không gian làm việc này.
+          </Typography>
+          <Button
+            fullWidth
+            variant="contained"
+            sx={{
+              mt: 1,
+              bgcolor: "#1976d2",
+              color: "white",
+              textTransform: "none",
+              fontWeight: "bold",
+              "&:hover": {
+                bgcolor: "#1565c0",
+              },
+            }}
+            onClick={() => {
+              // Gọi API yêu cầu tham gia không gian làm việc ở đây
+              console.log("Yêu cầu tham gia không gian làm việc");
+            }}
+          >
+            Yêu cầu tham gia không gian làm việc
+          </Button>
+        </Box>
+      )} */}
+
     </Drawer>
   );
 };
