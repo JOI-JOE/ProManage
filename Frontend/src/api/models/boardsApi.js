@@ -162,6 +162,33 @@ export const fetchBoardDetails = async (boardId) => {
 };
 
 
+export const copyBoard = async (data) => {
+  try {
+    const response = await authClient.post(`/boards/copy`, data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi sao chép bảng:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Không thể sao chép bảng");
+  }
+};
+
+
+
+export const forceDestroyBoard = async (boardId) => {
+  const response = await authClient.delete(`/boards/${boardId}/fDestroy`);
+  return response.data;
+};
+export const getLinkInviteBoard = async (boardId) => {
+  try {
+    const response = await authClient.get(`/${boardId}/invitation`);
+    return response.data;
+  } catch (error) {
+    console.error("False get board closed:", error);
+    throw error;
+  }
+};
+
+
 
 
 

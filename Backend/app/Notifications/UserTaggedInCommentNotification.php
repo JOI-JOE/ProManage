@@ -10,7 +10,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use App\Models\CommentCard;
 use Carbon\Carbon;
 
-class CardCommentNotification extends Notification implements ShouldQueue
+class UserTaggedInCommentNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

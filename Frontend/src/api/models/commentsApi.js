@@ -11,13 +11,12 @@ export const getCommentsByCardId = async (cardId) => {
     }
 };
 
-export const createComment = async ({ card_id, user_id, content }) => {
+export const createComment = async ({ card_id, content, mentioned_usernames = [] }) => {
     try {
-        // Gửi request tạo comment lên API
         const response = await authClient.post(`/comments`, {
             card_id,
-            user_id,
             content,
+            mentioned_usernames, // Gửi danh sách username được tag
         });
 
         return response.data;

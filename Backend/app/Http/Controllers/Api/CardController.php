@@ -783,13 +783,15 @@ class CardController extends Controller
 
         $boards = $user->boards()->with([
             'workspace',
-            'lists' => function ($q) {
-                $q->with([
-                    'cards' => function ($q) {
-                        $q->where('is_archived', false)->with('labels');
-                    }
-                ]);
-            }
+            'lists' => function ($q) use ($id) {
+            $q->with([
+                'cards' => function ($q) use ($id) {
+                    $q->where('is_archived', false)
+                      ->whereHas('users', fn($q) => $q->where('user_id', $id)) // <-- Chỉ card user có tham gia
+                      ->with('labels');
+                }
+            ]);
+        }
         ])->get();
 
         // Format lại dữ liệu để trả về danh sách thẻ với đầy đủ thông tin
@@ -805,6 +807,7 @@ class CardController extends Controller
                         'list_name' => $list->name,
                         'is_completed' => $card->is_completed,
                         'labels' => $card->labels->map(fn($label) => ['name' => $label->name, 'color' => $label->color]),
+                        'board_id' => $board->id,
                         'board_name' => $board->name,
                         'board_thumbnail' => $board->thumbnail,
                         'workspace_name' => $board->workspace->name ?? '',

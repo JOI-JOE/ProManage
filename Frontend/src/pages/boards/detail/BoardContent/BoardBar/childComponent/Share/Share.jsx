@@ -28,19 +28,22 @@ import {
   useAcceptRequestJoinBoard,
   useJoinBoardRequestListener,
   useRejectRequestJoinBoard,
+  useGetLinkInviteBoard,
 } from "../../../../../../../hooks/useInviteBoard";
 // import { useRemoveMemberFromBoard } from "../../../../../../../hooks/useRemoveMemberFromBoard"; // Import hook đã chỉnh sửa
 import { toast } from "react-toastify";
 import { inviteMemberIntoBoardByEmail } from "../../../../../../../api/models/inviteBoardApi";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   const { boardId } = useParams();
   const currentBoardId = boardId;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // console.log(currentUser);
 
-  // console.log('Current board:',boardMembers);
+  // console.log("Current board:", boardMembers?.data);
   // States
 
   const [tabIndex, setTabIndex] = useState(0);
@@ -62,55 +65,54 @@ const ShareBoardDialog = ({ currentUser, boardMembers, open, onClose }) => {
   const { mutate: acceptRequestJoinBoard } = useAcceptRequestJoinBoard();
   const { mutate: rejectRequestJoinBoard } = useRejectRequestJoinBoard();
   const { mutate: updateRoleMemberInBoard } = useUpdateRoleMemberInBoards();
-  const removeMember = useRemoveMemberFromBoard(currentUser?.id); // Sử dụng hook với currentUserId
-  useJoinBoardRequestListener(currentUser?.id);
+  const removeMember = useRemoveMemberFromBoard(currentUser?.id, boardId); // Sử dụng hook với currentUserId
+  useJoinBoardRequestListener(currentUser?.id, boardId);
+  // useAcceptRequestListener(currentUser?.id,boardId);
+  const { data: linkdata } = useGetLinkInviteBoard(boardId);
+  // console.log("Link invite:", linkdata);
+  // Đồng bộ state `link` với `linkdata` khi `linkdata` thay đổi
+  useEffect(() => {
+    if (linkdata?.link) {
+      setLink(linkdata.link); // Lưu link vào state khi có dữ liệu
+    } else {
+      setLink(null); // Đặt lại state khi không có link
+    }
+  }, [linkdata]);
 
-  
+  const [requestList, setRequestList] = useState([]);
+  const { data: requests } = useGetRequestBoard(boardId);
 
-// useEffect(() => {
-//   if (tabIndex === 1 && !hasFetchedRequest) {
-//     setHasFetchedRequest(true);
-//   }
-// }, [tabIndex]);
-const [requestList, setRequestList] = useState([]);
-const { data: requests } = useGetRequestBoard(boardId);
+  useEffect(() => {
+    if (requests?.data) {
+      setRequestList(requests.data);
+    }
+  }, [requests]);
+  // console.log(requestList);
 
-useEffect(() => {
-  if (requests?.data) {
-    setRequestList(requests.data);
-  
-  }
-  
-}, [requests]);
-// console.log(requestList);
+  const handleAcceptRequest = (requestId) => {
+    try {
+      acceptRequestJoinBoard(requestId);
 
-const handleAcceptRequest = (requestId) => {
-  try {
-    acceptRequestJoinBoard(requestId)
-  
       setRequestList((prevList) =>
         prevList.filter((request) => request.id !== requestId)
       );
       // toast.success("Chấp nhận yêu cầu tham gia thành công!");
-  } catch (error) {
-     console.error('Lỗi khi chấp nhận yêu cầu:', error);
-  }
-  
-}
-const handleRejectRequest = (requestId) => {
-  try {
-    rejectRequestJoinBoard(requestId)
-  
-    setRequestList((prevList) =>
-      prevList.filter((request) => request.id !== requestId)
-    );
-      // toast.success("Chấp nhận yêu cầu tham gia thành công!");
-  } catch (error) {
-     console.error('Lỗi khi xóa yêu cầu:', error);
-  }
-}
+    } catch (error) {
+      console.error("Lỗi khi chấp nhận yêu cầu:", error);
+    }
+  };
+  const handleRejectRequest = (requestId) => {
+    try {
+      rejectRequestJoinBoard(requestId);
 
-  
+      setRequestList((prevList) =>
+        prevList.filter((request) => request.id !== requestId)
+      );
+      // toast.success("Chấp nhận yêu cầu tham gia thành công!");
+    } catch (error) {
+      console.error("Lỗi khi xóa yêu cầu:", error);
+    }
+  };
 
   // Handlers
   const handleOpenRoleMenu = (event, memberId) => {
@@ -147,6 +149,13 @@ const handleRejectRequest = (requestId) => {
 
       if (emailList.includes(email)) {
         toast.error("Email đã tồn tại trong danh sách!");
+        return;
+      }
+      // ✅ Kiểm tra nếu đã là thành viên của bảng
+      const existingEmails =
+        boardMembers?.data?.map((member) => member.email) || [];
+      if (existingEmails.includes(email)) {
+        toast.error("Email này đã là thành viên của bảng!");
         return;
       }
 
@@ -263,8 +272,16 @@ const handleRejectRequest = (requestId) => {
   };
 
   const handleCreateLink = () => {
-    generateLink(currentBoardId);
-    setLink(localStorage.getItem("InviteLink"));
+    generateLink(currentBoardId, {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({
+          queryKey: ["linkInvite", boardId],
+          exact: true,
+        });
+
+        // console.log("Liên kết mời thành công:", linkdata);
+      },
+    });
   };
 
   const handleDeleteLink = () => {
@@ -272,8 +289,15 @@ const handleRejectRequest = (requestId) => {
     removeInvite(inviteCode, {
       onSuccess: () => {
         toast.success("Đã xóa liên kết mời!");
-        localStorage.removeItem("InviteLink"); // Xóa khỏi localStorage
-        setLink(null);
+        // localStorage.removeItem("InviteLink"); // Xóa khỏi localStorage
+        queryClient.invalidateQueries({
+          queryKey: ["linkInvite", boardId],
+          exact: true,
+        });
+        setLink(null); // Xóa state link ngay lập tức
+        console.log("Xóa liên kết mời thành công:", linkdata);
+
+        // setLink(null);
       },
     });
   };
@@ -412,10 +436,9 @@ const handleRejectRequest = (requestId) => {
                 (board) => board.board_id === currentBoardId
               );
               const isAdmin = currentUserBoard?.role === "admin";
-              const canEdit = isAdmin;
+              const canEdit = isAdmin; // Quyền chỉnh sửa vai trò (chỉ Admin)
               const isSelectedAdmin = member?.pivot.role === "admin";
-              // Kiểm tra xem người dùng hiện tại có phải là người tạo bảng không
-              const isCreator = currentUser?.id === member?.creator_id; // Giả sử member có thuộc tính creator_id
+              const isCreator = currentUser?.id === member?.creator_id; // Giả sử member có creator_id
 
               const removeOptionText =
                 isCurrentUser && adminCount > 1 && isCreator
@@ -425,6 +448,9 @@ const handleRejectRequest = (requestId) => {
                     : isSelectedAdmin && !isCreator
                       ? "Xóa khỏi bảng" // Quản trị viên được ủy quyền xóa thành viên khác
                       : "Xóa khỏi bảng"; // Mặc định cho thành viên thường
+
+              // Thành viên thường luôn có nút để mở Menu, nhưng chỉ "Rời bảng" khả dụng
+              const showButton = isAdmin || isCurrentUser; // Admin hoặc chính mình
 
               return (
                 <Box
@@ -460,7 +486,7 @@ const handleRejectRequest = (requestId) => {
                     </Typography>
                   </Box>
 
-                  {canEdit ? (
+                  {showButton ? (
                     <>
                       <Button
                         variant="outlined"
@@ -486,6 +512,7 @@ const handleRejectRequest = (requestId) => {
                           onClick={() =>
                             handleCloseRoleMenu("Quản trị viên", member.id)
                           }
+                          disabled={!canEdit} // Disable nếu không phải Admin
                         >
                           Quản trị viên
                         </MenuItem>
@@ -493,6 +520,7 @@ const handleRejectRequest = (requestId) => {
                           onClick={() =>
                             handleCloseRoleMenu("Thành viên", member.id)
                           }
+                          disabled={!canEdit} // Disable nếu không phải Admin
                         >
                           Thành viên
                         </MenuItem>
@@ -500,8 +528,11 @@ const handleRejectRequest = (requestId) => {
                           onClick={() =>
                             handleCloseRoleMenu(removeOptionText, member.id)
                           }
+                          disabled={
+                            !isCurrentUser && !canEdit // Chỉ khả dụng nếu là chính mình hoặc Admin
+                          }
                         >
-                          {removeOptionText}
+                          {isCurrentUser ? "Rời bảng" : removeOptionText}
                         </MenuItem>
                       </Menu>
                     </>
@@ -542,7 +573,7 @@ const handleRejectRequest = (requestId) => {
                   </Avatar>
                   <Box flexGrow={1}>
                     <Typography fontWeight="bold">
-                      {request.full_name} 
+                      {request.full_name}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       {request.email}

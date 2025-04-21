@@ -13,6 +13,8 @@ import ColorList from "./ChildComponent_ChangeBackground/ColorList"; // Import C
 const ChangeBackground = ({ open, onClose }) => {
   const [imageDrawerOpen, setImageDrawerOpen] = useState(false); // State điều khiển việc mở/đóng drawer cho danh sách ảnh
   const [colorDrawerOpen, setColorDrawerOpen] = useState(false); // State điều khiển việc mở/đóng drawer cho danh sách màu
+  // const [backgroundImage, setBackgroundImage] = useState("");
+  const [backgroundImage, setBackgroundImage] = useState(null); // State lưu URL hình nền
 
   const fileInputRef = useRef(null);
 

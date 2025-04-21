@@ -50,7 +50,7 @@ class BoardMemberController extends Controller
     {
 
         try {
-            $board = Board::with('members:id,full_name,email')->find($boardId);
+            $board = Board::with('members:id,full_name,email,user_name')->find($boardId);
             return response()->json([
                 'success' => true,
                 'message' => 'lấy thành viên của bảng thành công',
@@ -71,13 +71,13 @@ class BoardMemberController extends Controller
         $user = auth()->user(); // Lấy user hiện tại
         $board = Board::findOrFail($boardId); // Lấy thông tin bảng
 
-        // Kiểm tra quyền: chỉ Admin hoặc thành viên có quyền mời mới được tạo link
-        if (!$board->members()->where('user_id', $user->id)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bạn không có quyền tạo liên kết mời vào bảng này.'
-            ], 403);
-        }
+        // // Kiểm tra quyền: chỉ Admin hoặc thành viên có quyền mời mới được tạo link
+        // if (!$board->members()->where('user_id', $user->id)->exists()) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'Bạn không có quyền tạo liên kết mời vào bảng này.'
+        //     ], 403);
+        // }
 
         // Tạo mã token duy nhất
         $inviteToken = Str::random(16); // Chỉ chứa chữ và số
@@ -101,6 +101,28 @@ class BoardMemberController extends Controller
         ]);
     }
 
+    public function getLinkInviteByBoard($board_id)
+    {
+        $invite = BoardInvitation::where('board_id', $board_id)->where('invited_member_id', null)->first();
+
+        if (!$invite) {
+            return response()->json(
+                ['message' => 'Liên kết không còn'],
+                200
+            );
+        }
+
+        return response()->json([
+            'message' => 'Lấy link thành công',
+
+            // 'invite_link' => $invite,
+            // 'invite_token' => $invite->invite_token,
+            'link' => "http://localhost:5173/invite-board/{$invite->invite_token}",
+            // 'board_id' => $invite->board_id,
+            // 'email' => $invite->email,
+        ]);
+    }
+
     public function removeInviteLink($token)
     {
         $invitation = BoardInvitation::where('invite_token', $token)->first();
@@ -115,30 +137,92 @@ class BoardMemberController extends Controller
     }
 
     // 📍 Khi user click vào link mời
-    public function handleInvite($token)
+    public function handleInvite(Request $request,$token)
     {
-        $invite = BoardInvitation::where('invite_token', $token)->first();
-
-        if (!$invite) {
-            return response()->json(['message' => 'Invalid or expired invite link'], 404);
+        try {
+            return DB::transaction(function () use ($request, $token) {
+                $invite = BoardInvitation::where('invite_token', $token)
+                    ->lockForUpdate()
+                    ->first();
+    
+                if (!$invite) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid or expired invite link',
+                    ], 404);
+                }
+    
+                $board = Board::find($invite->board_id);
+               // Lấy thông tin người mời
+                $inviter = User::find($invite->invited_by);
+                $inviterName = $inviter ? $inviter->full_name : null; 
+                $userExists = $invite->email ? User::where('email', $invite->email)->exists() : false;
+    
+                // Lấy user từ header Authorization (nếu có)
+                $user = null;
+                $isMember = false;
+                $hasRejected = false;
+                $authHeader = $request->header('Authorization');
+    
+                if ($authHeader && preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+                    $accessToken = $matches[1];
+                    $token = PersonalAccessToken::findToken($accessToken);
+                    if ($token) {
+                        $user = $token->tokenable; // Lấy user từ token
+                    }
+                }
+    
+                if ($user) {
+                    $rejectedBy = $invite->rejected_by;
+                    if (is_string($rejectedBy)) {
+                        $rejectedBy = json_decode($rejectedBy, true) ?? [];
+                    } elseif (!is_array($rejectedBy)) {
+                        $rejectedBy = [];
+                    }
+    
+                    if (in_array($user->id, $rejectedBy)) {
+                        return response()->json([
+                            'success' => false,
+                            'user_id' => $user->id,
+                            'board_id'=> $board->id,
+                            'message' => 'Bạn đã từ chối lời mời này trước đó.',
+                            'has_rejected' => true,
+                        ], 403);
+                    }
+    
+                    // Kiểm tra trong board_members
+                    $isMember = $board->members()->where('user_id', $user->id)->exists();
+    
+                }
+    
+                return response()->json([
+                    'success' => true,
+                    'board' => [
+                        'id' => $board->id,
+                        'name' => $board->name,
+                    ],
+                    'token' => $token,
+                    'email' => $invite->email,
+                    'user_exists' => $userExists,
+                    'is_member' => $isMember,
+                    'inviter_name' => $inviterName,
+                    'has_rejected' => $hasRejected,
+                ], 200);
+            });
+        } catch (\Exception $e) {
+            Log::error('Error in handleInvite method: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $board = Board::find($invite->board_id);
-        $userExists = $invite->email ? User::where('email', $invite->email)->exists() : false;
-
-        return response()->json([
-            'board' => $board,
-            'token' => $token,
-            'email' => $invite->email,
-            'user_exists' => $userExists,
-        ]);
     }
 
 
     public function join(Request $request, $token)
     {
         $invite = BoardInvitation::where('invite_token', $token)
-            ->where('status', 'pending')
+            // ->where('status', 'pending')
             ->first();
 
         if (!$invite) {
@@ -160,7 +244,11 @@ class BoardMemberController extends Controller
             'role' => 'member',
 
         ]);
-        $invite->update(['status' => 'accepted']);
+        $invite->update([
+            'status' => 'accepted',
+            'invited_member_id' => $user->id, // Cập nhật ID người đã chấp nhận
+            'accept_unconfirmed' => false, // Đánh dấu là đã xác nhận
+        ]);
 
         $user->notify(new BoardInvitationReceivedNotification($board, $inviter));
         // Gửi event tới chủ bảng
@@ -176,6 +264,57 @@ class BoardMemberController extends Controller
         ]);
     }
 
+    public function rejectInvite($token)
+    {
+        try {
+            // Bắt đầu transaction
+            return DB::transaction(function () use ($token) {
+                // Tìm và khóa bản ghi invitation
+                $invitation = BoardInvitation::where('invite_token', $token)
+                    ->lockForUpdate()
+                    ->first();
+    
+                if (!$invitation) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Lời mời không tồn tại hoặc đã hết hạn.',
+                    ], 404);
+                }
+    
+                $user = Auth::user();
+    
+                // Đảm bảo rejected_by là mảng
+                $rejectedBy = $invitation->rejected_by;
+                if (is_string($rejectedBy)) {
+                    $rejectedBy = json_decode($rejectedBy, true) ?? [];
+                } elseif (!is_array($rejectedBy)) {
+                    $rejectedBy = [];
+                }
+    
+                if (in_array($user->id, $rejectedBy)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Bạn đã từ chối lời mời này trước đó.',
+                    ], 400);
+                }
+    
+                // Thêm user_id vào rejected_by
+                $rejectedBy[] = $user->id;
+                $invitation->rejected_by = $rejectedBy;
+                $invitation->save();
+    
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Bạn đã từ chối lời mời tham gia bảng.',
+                ], 200);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
     public function updateRoleMemberInBoard(Request $request)
     {
         $request->validate([
@@ -248,11 +387,17 @@ class BoardMemberController extends Controller
             $removeUser = User::findOrFail($request->user_id);
             Log::info("Current User ID: " . $currentUser->id . " | Remove User ID: " . $removeUser->id);
             // Kiểm tra quyền admin
-            if (
-                !$board->members()->where('board_members.user_id', $currentUser->id)
-                    ->where('board_members.role', 'admin')
-                    ->exists()
-            ) {
+            // Kiểm tra quyền: Phải là Admin hoặc tự rời (và là thành viên)
+            $isAdmin = $board->members()
+                ->where('board_members.user_id', $currentUser->id)
+                ->where('board_members.role', 'admin')
+                ->exists();
+            $isSelfRemoval = $currentUser->id === $request->user_id;
+            $isMember = $board->members()
+                ->where('board_members.user_id', $currentUser->id)
+                ->exists();
+
+            if (!($isAdmin || ($isSelfRemoval && $isMember))) {
                 return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
             }
 
@@ -305,7 +450,7 @@ class BoardMemberController extends Controller
             }
             // Lấy danh sách tất cả member_ids SAu khi xóa
             // Lấy danh sách thành viên còn lại sau khi xóa
-         
+
 
             // Chỉ gửi event tới các thành viên còn lại, không gửi tới người bị xóa
             broadcast(new MemberRemovedFromBoard($board->id, $request->user_id, $removeUser->full_name, $memberIds));
@@ -344,6 +489,7 @@ class BoardMemberController extends Controller
                 'boards.id',
                 'boards.name',
                 'boards.workspace_id',
+                'boards.closed', // 👈 Thêm dòng này
                 'workspaces.name as workspace_name',
                 'board_members.role' // Lấy quyền của user (admin/member)
             )
@@ -359,6 +505,7 @@ class BoardMemberController extends Controller
                         'id' => $board->id,
                         'name' => $board->name,
                         'role' => $board->role,
+                        'closed' => $board->closed, // 👈 Thêm dòng này
                     ];
                 })->values(),
             ];
@@ -473,5 +620,26 @@ class BoardMemberController extends Controller
             'message' => 'Invitations have been sent successfully!',
             'data' => $invitations
         ], 200);
+    }
+   
+    ///// Hàm này để kiểm tra xem user đã ở trong workspace chưa để còn hiển thị chỗ "Yêu cầu tham gia " bên SideBar , viết luôn vào đây cho tiện luôn, đỡ sửa nhiều file (quoc)
+    public function checkMemberInWorkspace($workspaceId, $userId)
+    {
+        try {
+            $isMember = DB::table('workspace_members')
+                ->where('workspace_id', $workspaceId)
+                ->where('user_id', $userId)
+                ->exists();
+    
+            return response()->json([
+                'is_member' => $isMember,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Đã xảy ra lỗi khi kiểm tra thành viên.',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    
     }
 }

@@ -24,8 +24,11 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import "quill-mention"; // Plugin
+import "quill-mention/dist/quill.mention.css";
 import MemberList from "./childComponent_CardDetail/member.jsx";
 import TaskModal from "./childComponent_CardDetail/Task.jsx";
+import 'quill-mention/dist/quill.mention.css';
 import LabelList from "./childComponent_CardDetail/Label.jsx";
 import AttachmentModal from "./childComponent_CardDetail/Attached.jsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -110,6 +113,8 @@ import "react-lazy-load-image-component/src/effects/blur.css";
 import InputAdornment from "@mui/material/InputAdornment";
 import { useGetBoardByID } from "../../../../../../../../../hooks/useBoard.js";
 
+import { useGetBoardMembers } from "../../../../../../../../../hooks/useInviteBoard.js";
+
 const CardModal = ({ }) => {
   const { cardId, boardId } = useParams();
   const { data: schedule } = useCardSchedule(cardId);
@@ -137,6 +142,20 @@ const CardModal = ({ }) => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [replyingCommentId, setReplyingCommentId] = useState(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [replyingTo, setReplyingTo] = useState(null); // user_name hoặc full_name
+
+
+
+  const handleReplyComment = (commentId, username) => {
+    setReplyingCommentId(commentId);
+    setReplyingTo(`@${username} `); // Gợi ý phản hồi tới người đó
+
+  };
+
+  // const { data: user } = useUser();
+
 
   const queryClient = useQueryClient();
   const [isFollowing, setIsFollowing] = useState(true);
@@ -190,6 +209,17 @@ const CardModal = ({ }) => {
   //   localStorage.setItem(`coverColor-${cardId}`, newColor);
   //   localStorage.removeItem(`coverImage-${cardId}`);
   // };
+
+  
+  // const { data: boardMembers = [] } = useGetBoardMembers(boardId);
+
+  // const mentionData = boardMembers.map((member) => ({
+  //   id: member.id,
+  //   value: member.user_name,
+  // }));
+
+  
+// console.log(boardMembers);
 
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing);
@@ -247,6 +277,8 @@ const CardModal = ({ }) => {
 
   const userId = user?.id;
 
+
+
   const combinedData = [
     ...comments.map((comment) => ({ ...comment, type: "comment" })),
     ...activities.map((activity) => ({ ...activity, type: "activity" })),
@@ -287,11 +319,25 @@ const CardModal = ({ }) => {
   // });
 
   const isEmptyHTML = (html) => {
-    if (!html || html.trim() === "") return true;
-    // Kiểm tra nếu HTML chỉ chứa <p><br></p> hoặc các thẻ rỗng
-    const stripped = html.replace(/<[^>]*>/g, "").trim(); // Loại bỏ tất cả thẻ HTML
-    return stripped === "" || stripped === "<br>";
+    if (typeof html !== "string") return true; // Nếu không phải string thì coi như rỗng
+  
+    const div = document.createElement("div");
+    div.innerHTML = html;
+  
+    const text = div.textContent || div.innerText || "";
+    return text.trim() === "";
   };
+
+  const extractMentionedUsernames = (html) => {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    const text = div.textContent || div.innerText || "";
+  
+    // Regex tìm các @username
+    const matches = text.match(/@[\w_.-]+/g);
+    return matches ? matches.map(name => name.slice(1)) : [];
+  };
+  
 
   useEffect(() => {
     if (cardDetail?.description) {
@@ -357,10 +403,13 @@ const CardModal = ({ }) => {
       return;
     }
 
+    const mentionedUsernames = extractMentionedUsernames(comment);
+
+
     const newComment = {
       card_id: cardId,
-      user_id: user.id,
-      content: comment.trim(), // Có thể giữ hoặc xử lý thêm để loại bỏ thẻ rỗng
+      content: comment.trim(),
+      mentioned_usernames: mentionedUsernames, // 💡 Gửi kèm danh sách @tag
     };
 
     addComment(newComment, {
@@ -681,7 +730,8 @@ const CardModal = ({ }) => {
     return dayjs(dateInfo.endDate).isBefore(now);
   };
 
-  const handleCommentClick = () => {
+  const handleCommentClick = (initial = "") => {
+    setComment(initial);
     setIsEditingComment(true);
   };
 
@@ -944,7 +994,9 @@ const CardModal = ({ }) => {
           )}
           <Typography variant="body2" color="text.secondary">
             trong danh sách{" "}
-            <span style={{ color: "#0079bf", fontWeight: "bold" }}>
+            <span style={{
+              color: "#0079bf", fontWeight: "bold", cursor: "pointer",
+            }} onClick={() => setIsMoveCardModalOpen(true)}>
               {cardDetail?.listName || "Doing"}
             </span>
           </Typography>
@@ -971,8 +1023,8 @@ const CardModal = ({ }) => {
                 ))}
 
                 {/* Nút thêm thành viên */}
-                {members?.data?.length > 0  && (
-                  
+                {members?.data?.length > 0 && (
+
                   <AddIcon
                     sx={{
                       fontSize: 14,
@@ -980,7 +1032,7 @@ const CardModal = ({ }) => {
                       cursor: "pointer",
                       mr: 1,
                       "&:hover": { color: "black" },
-                      pointerEvents: isBoardClosed ? "none" : "auto" 
+                      pointerEvents: isBoardClosed ? "none" : "auto"
                     }}
                     onClick={() =>
                       setMemberListConfig({
@@ -990,7 +1042,7 @@ const CardModal = ({ }) => {
                       })
                     }
                     disabled={isBoardClosed}
-                   
+
                   />
                 )}
 
@@ -1008,8 +1060,8 @@ const CardModal = ({ }) => {
                       width: "fit-content",
                       maxWidth: "100%",
                     }}
-                    // onClick={() => setIsLabelListOpen(true)}
-                    
+                  // onClick={() => setIsLabelListOpen(true)}
+
                   >
                     {label.title}
                   </Button>
@@ -1024,7 +1076,7 @@ const CardModal = ({ }) => {
                       cursor: "pointer",
                       mr: 1,
                       "&:hover": { color: "black" },
-                      pointerEvents: isBoardClosed ? "none" : "auto" 
+                      pointerEvents: isBoardClosed ? "none" : "auto"
                     }}
                     onClick={() => setIsLabelListOpen(true)}
                     disabled={isBoardClosed}
@@ -2138,10 +2190,10 @@ const CardModal = ({ }) => {
                               variant="body2"
                               sx={{ fontWeight: "bold", fontSize: "14px" }}
                             >
-                              {item.user?.full_name || "Người dùng"}{" "}
-                              <span style={{ fontWeight: "normal" }}>
+                              {item.user?.full_name}{" "}
+                              {/* <span style={{ fontWeight: "normal" }}>
                                 {item.user?.username}
-                              </span>
+                              </span> */}
                               <Typography
                                 variant="body2"
                                 component="span"
@@ -2267,23 +2319,29 @@ const CardModal = ({ }) => {
                               </Typography>
                               {!isBoardClosed && (
 
-                                <Box sx={{ display: "flex", mt: "-4px" }}>
+                                <Box sx={{ display: "flex", mt: "1px" }}>
                                   <Button
                                     size="small"
-                                    onClick={() =>
-                                      handleEditComment(item.id, item.content)
-                                    }
+                                    onClick={() => {
+                                      if (item.user_id === userId) {
+                                        handleEditComment(item.id, item.content);
+                                      } else {
+                                        const mention = `@${item.user.user_name} `;
+                                        handleCommentClick(mention); // Mở form viết bình luận
+                                      }
+                                    }}
                                     sx={{
-                                      width: "20px",
+                                      width: "40px",
                                       minWidth: "20px",
                                       ml: "4px",
                                       mr: "-8px",
+
                                       fontSize: "0.4rem", // Smaller font size
                                       textTransform: "none",
                                       padding: "2px 4px", // Smaller padding
                                     }}
                                   >
-                                    Sửa
+                                    {item.user_id === userId ? "Sửa" : "Trả lời"}
                                   </Button>
                                   <Button
                                     size="small"
@@ -2297,10 +2355,61 @@ const CardModal = ({ }) => {
                                       padding: "2px 4px", // Smaller padding
                                     }}
                                   >
-                                    Xóa
+                                    {item.user_id === userId ? "Xoá" : ""}
                                   </Button>
                                 </Box>
                               )}
+
+                              {/* {replyingCommentId === item.id && !isBoardClosed && (
+                                <>
+                                  <ReactQuill
+                                    value={replyContent}
+                                    onChange={setReplyContent}
+                                    placeholder={`Phản hồi @${item.user.user_name}`}
+                                    style={{ marginTop: "8px" }}
+                                    theme="snow"
+                                    modules={{
+                                      toolbar: [
+                                        [{ header: [1, 2, false] }],
+                                        ["bold", "italic", "underline", "strike"],
+                                        [{ list: "ordered" }, { list: "bullet" }],
+                                        ["link"],
+                                        ["image"],
+                                        ["clean"],
+                                      ],
+                                    }}
+                                    formats={[
+                                      "header",
+                                      "bold",
+                                      "italic",
+                                      "underline",
+                                      "strike",
+                                      "list",
+                                      "bullet",
+                                      "link",
+                                      "image",
+                                    ]}
+                                  />
+                                  <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 1 }}>
+                                    <Button
+                                      variant="contained"
+                                      size="small"
+                                      sx={{
+                                        backgroundColor: "teal",
+                                        color: "#FFF",
+                                        fontSize: "0.7rem",
+                                        height: "25px",
+                                        minWidth: "50px",
+                                      }}
+                                      onClick={() => handleSubmitReply(item.id)}
+                                      disabled={isEmptyHTML(replyContent)}
+                                    >
+                                      Gửi
+                                    </Button>
+                                  </Box>
+                                </>
+                              )} */}
+
                             </>
                           )}
                         </Box>
@@ -2614,7 +2723,7 @@ const CardModal = ({ }) => {
                       <ListItemText primary="Di chuyển" />
                     </ListItemButton>
                   </ListItem>
-                  
+
                   <ListItem disablePadding>
                     <ListItemButton
                       onClick={() => setIsCopyCardModalOpen(true)}
