@@ -170,6 +170,17 @@ export const updateCardDate = async (
     );
   }
 };
+export const removeDates = async (targetId) => {
+  console.log(targetId)
+  try {
+    const response = await authClient.delete(`/cards/${targetId}/dates`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting card:", error);
+    throw new Error(error.response?.data?.message || "Failed to delete card.");
+  }
+};
+
 export const addMemberToCard = async (cardId, email) => {
   console.log(cardId, email);
   try {
@@ -251,6 +262,19 @@ export const moveCard = async ({
     members,
   });
 };
+
+export const getCardsByUserBoards = async (userId) => {
+  try {
+    const response = await authClient.get(`/user/${userId}/cards`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy các card của user từ board:", error);
+    throw error;
+  }
+};
+
+
+
 
 
 

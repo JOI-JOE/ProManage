@@ -69,3 +69,14 @@ export const getUserWorkspaces = async () => {
   const response = await authClient.get('/workspaces/all');
   return response.data;
 };
+
+export const getUserWorkspaces2 = async () => {
+  try {
+    const response = await authClient.get("user/workspaces");
+    
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy workspace của người dùng:", error);
+    throw error;
+  }
+};

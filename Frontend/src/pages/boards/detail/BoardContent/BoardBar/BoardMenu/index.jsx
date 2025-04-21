@@ -164,6 +164,7 @@ const BoardMenu = React.memo(({board}) => {
         open={copyOpen}
         onClose={() => setCopyOpen(false)}
         anchorEl={copyAnchorEl}
+        currentWorkspaceId={board?.workspaceId}
       />
       <Print
         open={printOpen}

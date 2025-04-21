@@ -50,7 +50,7 @@ class BoardMemberController extends Controller
     {
 
         try {
-            $board = Board::with('members:id,full_name,email')->find($boardId);
+            $board = Board::with('members:id,full_name,email,user_name')->find($boardId);
             return response()->json([
                 'success' => true,
                 'message' => 'lấy thành viên của bảng thành công',
@@ -354,6 +354,7 @@ class BoardMemberController extends Controller
                 'boards.id',
                 'boards.name',
                 'boards.workspace_id',
+                'boards.closed', // 👈 Thêm dòng này
                 'workspaces.name as workspace_name',
                 'board_members.role' // Lấy quyền của user (admin/member)
             )
@@ -369,6 +370,8 @@ class BoardMemberController extends Controller
                         'id' => $board->id,
                         'name' => $board->name,
                         'role' => $board->role,
+                        'closed' => $board->closed, // 👈 Thêm dòng này
+
                     ];
                 })->values(),
             ];

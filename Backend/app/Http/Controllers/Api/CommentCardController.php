@@ -6,9 +6,10 @@ use App\Events\CardCommentAdded;
 use App\Events\CommentDeleted;
 use App\Events\CommentUpdated;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\Card;
 use App\Models\CommentCard;
-use App\Notifications\CardCommentNotification;
+use App\Notifications\UserTaggedInCommentNotification;
 use App\Notifications\CardNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,7 @@ class CommentCardController extends Controller
         }
 
         $comments = CommentCard::where('card_id', $cardId)
-            ->with('user:id,full_name')
+            ->with('user:id,user_name,full_name')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -38,6 +39,8 @@ class CommentCardController extends Controller
         $rules = [
             'card_id' => 'required|exists:cards,id',
             'content' => 'required|string',
+            'mentioned_usernames' => 'nullable|array', // Thêm dòng này
+            'mentioned_usernames.*' => 'string'
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -65,12 +68,24 @@ class CommentCardController extends Controller
         // $comment = CommentCard::with('user')->find($newComment->id);
         broadcast(new CardCommentAdded($comment))->toOthers();
 
-        $users = $card->members; // Lấy danh sách thành viên liên quan trong card
+        // $users = $card->members; // Lấy danh sách thành viên liên quan trong card
 
-        foreach ($users as $user) {
-            // Không gửi cho người vừa comment
-            if ($user->id !== Auth::id()) {
-                $user->notify(new CardCommentNotification($comment));
+        // foreach ($users as $user) {
+        //     // Không gửi cho người vừa comment
+        //     if ($user->id !== Auth::id()) {
+        //         $user->notify(new CardCommentNotification($comment));
+        //     }
+        // }
+
+        if ($request->has('mentioned_usernames')) {
+            $mentionedUsernames = $request->mentioned_usernames;
+    
+            $mentionedUsers = User::whereIn('user_name', $mentionedUsernames)
+                ->where('id', '!=', Auth::id()) // Không gửi cho chính mình
+                ->get();
+    
+            foreach ($mentionedUsers as $user) {
+                $user->notify(new UserTaggedInCommentNotification($comment));
             }
         }
 
@@ -133,6 +148,8 @@ class CommentCardController extends Controller
         $comment->update([
             'content' => $request->content,
         ]);
+
+        $comment->load('user'); // 👈 Thêm dòng này để trả về luôn quan hệ user
 
         broadcast(new CommentUpdated($comment))->toOthers();
 

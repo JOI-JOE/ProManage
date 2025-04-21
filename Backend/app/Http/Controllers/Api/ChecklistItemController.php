@@ -138,7 +138,11 @@ class ChecklistItemController extends Controller
                     'checklist_id' => $item->checklist_id,
                     'item_title' => $item->name,
                     'status' => $statusText,
-                ])
+                    'card_id' => $card->id,
+                    'card_title' => $card->title, // thêm dòng này
+                    'board_id' => $card->list->board->id, // thêm dòng này
+                    'board_name' => $card->list->board->name,
+                    ])
                 ->log("{$user_name} đã đánh dấu {$item->name} là {$statusText} ở thẻ này");
 
             // Tính phần trăm hoàn thành của checklist chứa item này
@@ -182,6 +186,7 @@ class ChecklistItemController extends Controller
             'message' => 'Xóa ChecklistItem thành công!',
         ], 200);
     }
+
     public function updateDate(Request $request, $id)
     {
         $request->validate([
@@ -223,6 +228,20 @@ class ChecklistItemController extends Controller
             'item' => $item
         ], 200);
 
+    }
+    public function removeDates($itemId)
+    {
+        $item = ChecklistItem::findOrFail($itemId);
+        $item->end_date = null;
+        $item->end_time = null;
+        $item->reminder = null;
+        $item->save();
+
+        return response()->json([
+            'message' => 'Đã xóa ngày bắt đầu & ngày kết thúc khỏi thẻ!',
+            'data' => $item,
+
+        ]);
     }
     public function getChecklistItemDate($id)
     {

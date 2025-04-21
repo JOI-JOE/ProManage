@@ -32,7 +32,7 @@ const MenuCalendar = ({ open, onClose }) => {
   const [selectedMembers, setSelectedMembers] = useState([]);
 
   const { data: data, isLoading, error } = useGetWorkspaceByName(workspaceName);
-  console.log(data);
+  // console.log(data);
 
   const members = [
     { id: "1", name: "Hồng Ngát", username: "hongngat161102" },

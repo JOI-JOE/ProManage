@@ -35,7 +35,7 @@ class AttachmentController extends Controller
     // Upload file đính kèm
     public function uploadAttachment(Request $request, $cardId)
     {
-        Log::info('📥 Dữ liệu nhận từ frontend:', $request->all());
+        // Log::info('📥 Dữ liệu nhận từ frontend:', $request->all());
 
         // Validate dữ liệu nhận từ frontend
         $request->validate([
@@ -81,8 +81,12 @@ class AttachmentController extends Controller
             ->performedOn($card)
             ->event('uploaded_attachment')
             ->withProperties([
+                'card_id' => $card->id,
                 'file_name' => $attachment->file_name_defaut,
                 'file_path' => $attachment->path_url,
+                'card_title' => $card->title, // thêm dòng này
+                'board_id' => $card->list->board->id, // thêm dòng này
+                'board_name' => $card->list->board->name, // thêm dòng này
             ])
             ->log("{$user_name} đã đính kèm tập tin {$attachment->file_name_defaut} vào thẻ này");
 
@@ -125,9 +129,12 @@ class AttachmentController extends Controller
             ->performedOn($card)
             ->event('deleted_attachment')
             ->withProperties([
-                'card_id' => $cardId,
+                'card_id' => $card->id,
                 'attachment_id' => $attachmentId,
                 'file_name' => $fileNameDefault,
+                'card_title' => $card->title, // thêm dòng này
+                'board_id' => $card->list->board->id, // thêm dòng này
+                'board_name' => $card->list->board->name,
             ])
             ->log("{$user_name} đã xoá tập tin đính kèm {$fileNameDefault} khỏi thẻ này ");
 

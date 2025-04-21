@@ -18,7 +18,7 @@ const fetchUserDataWithParams = async (params, userId = "me") => {
 
 export const fetchUserProfile = () => {
   return fetchUserDataWithParams({
-    fields: "id,user_name,full_name,email,image",
+    fields: "id,user_name,biography,full_name,email,image",
     workspaces: "all",
     workspace_fields: "id,name,display_name",
   });
@@ -136,10 +136,41 @@ export const logoutUser = async () => {
  */
 export const forgotPassword = async (email) => {
   try {
-    const response = await authClient.post("/forgot-password", { email });
+    const response = await authClient.post("password/email", { email });
     return response.data; // Trả về dữ liệu từ server
   } catch (error) {
     console.error("Lỗi khi yêu cầu quên mật khẩu:", error);
+    throw error;
+  }
+};
+/**
+ * Hàm này chịu trách nhiệm gửi yêu cầu quên mật khẩu.
+ * @param {string} email - Email của người dùng cần đặt lại mật khẩu.
+ * @returns {Promise<object>} - Promise chứa phản hồi từ server.
+ */
+
+export const checkCode = async (email,code) => {
+  // console.log(email);
+  // console.log(code);
+  try {
+    const response = await authClient.post("password/code", { email,code });
+    return response.data; // Trả về dữ liệu từ server
+  } catch (error) {
+    console.error("Lỗi khi check code", error);
+    throw error;
+  }
+};
+/**
+ * Hàm này chịu trách nhiệm gửi yêu cầu quên mật khẩu.
+ * @param {string} email - Email của người dùng cần đặt lại mật khẩu.
+ * @returns {Promise<object>} - Promise chứa phản hồi từ server.
+ */
+export const updatePass = async (email,password) => {
+  try {
+    const response = await authClient.put("password/update", { email,password });
+    return response.data; // Trả về dữ liệu từ server
+  } catch (error) {
+    console.error("Lỗi khi cập nhật mật khẩu", error);
     throw error;
   }
 };
@@ -158,3 +189,28 @@ export const userRegister = async (userData) => {
     throw error;
   }
 };
+
+
+export const getUserById = async () => {
+  try {
+    const response = await authClient.get(`/user`);
+    return response.data.user; // do API trả về { user: ... }
+  } catch (error) {
+    console.error("Lỗi khi lấy người dùng theo ID:", error);
+    throw error;
+  }
+};
+
+
+
+
+export const updateUserProfile = async (data) => {
+  try {
+    const response = await authClient.put(`/user/update-profile`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật hồ sơ người dùng:", error);
+    throw error;
+  }
+};
+
