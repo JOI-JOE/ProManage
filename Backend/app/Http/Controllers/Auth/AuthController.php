@@ -49,32 +49,95 @@ class AuthController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
-        // Lấy danh sách workspace ID mà người dùng có quyền truy cập (KHÔNG CACHE)
-        $workspaceIds = DB::table('workspaces')
-            ->whereIn('id', function ($query) use ($userId) {
-                $query->select('workspace_id')
-                    ->from('workspace_members')
-                    ->where('user_id', $userId);
+        // Lấy danh sách workspaces với thông tin chi tiết và trạng thái admin
+        $workspaces = DB::table('workspaces')
+            ->leftJoin('workspace_members', function ($join) use ($userId) {
+                $join->on('workspace_members.workspace_id', '=', 'workspaces.id')
+                    ->where('workspace_members.user_id', $userId);
             })
-            ->orWhere('id_member_creator', $userId)
-            ->pluck('id')
-            ->toArray();
+            ->select(
+                'workspaces.id',
+                'workspaces.name',
+                'workspaces.display_name',
+                'workspaces.logo_url as logo',
+                'workspaces.logo_hash',
+                'workspaces.permission_level',
+                'workspaces.id_member_creator',
+                'workspace_members.member_type',
+                DB::raw('IF(workspaces.id_member_creator = ? OR workspace_members.member_type = "admin", TRUE, FALSE) AS is_admin')
+            )
+            ->addBinding($userId, 'select')
+            ->where(function ($query) use ($userId) {
+                $query->whereIn('workspaces.id', function ($subQuery) use ($userId) {
+                    $subQuery->select('workspace_id')
+                        ->from('workspace_members')
+                        ->where('user_id', $userId);
+                })
+                    ->orWhere('workspaces.id_member_creator', $userId);
+            })
+            ->distinct()
+            ->get()
+            ->map(function ($workspace) {
+                return [
+                    'id' => $workspace->id,
+                    'name' => $workspace->name,
+                    'display_name' => $workspace->display_name,
+                    'permission_level' => $workspace->permission_level,
+                    'id_member_creator' => $workspace->id_member_creator,
+                    'is_admin' => (bool) $workspace->is_admin,
+                    'member_type' => $workspace->member_type
+                ];
+            })
+            ->values()
+            ->all();
 
         // Lấy danh sách board ID mà người dùng có quyền truy cập (KHÔNG CACHE)
-        $boardIds = DB::table('boards')
-            ->whereIn('id', function ($query) use ($userId) {
-                $query->select('board_id')
-                    ->from('board_members')
-                    ->where('user_id', $userId);
+        // Lấy danh sách boards với thông tin chi tiết và trạng thái admin
+        $boards = DB::table('boards')
+            ->leftJoin('board_members', function ($join) use ($userId) {
+                $join->on('board_members.board_id', '=', 'boards.id')
+                    ->where('board_members.user_id', $userId);
             })
-            ->orWhere('created_by', $userId)
-            ->pluck('id')
-            ->toArray();
+            ->select(
+                'boards.id',
+                'boards.name',
+                'boards.thumbnail',
+                'boards.visibility',
+                'boards.workspace_id',
+                'boards.created_by',
+                'boards.created_at',
+                'board_members.role',
+                DB::raw('IF(boards.created_by = ? OR board_members.role = "admin", TRUE, FALSE) AS is_admin')
+            )
+            ->addBinding($userId, 'select')
+            ->where(function ($query) use ($userId) {
+                $query->whereIn('boards.id', function ($subQuery) use ($userId) {
+                    $subQuery->select('board_id')
+                        ->from('board_members')
+                        ->where('user_id', $userId);
+                })
+                    ->orWhere('boards.created_by', $userId);
+            })
+            ->where('boards.closed', 0)
+            ->distinct()
+            ->get()
+            ->map(function ($board) {
+                return [
+                    'id' => $board->id,
+                    'name' => $board->name,
+                    'visibility' => $board->visibility,
+                    'workspace_id' => $board->workspace_id,
+                    'is_admin' => (bool) $board->is_admin,
+                    'role' => $board->role
+                ];
+            })
+            ->values()
+            ->all();
 
         return response()->json([
             'user' => $user,
-            'workspaceIds' => $workspaceIds,
-            'boardIds' => $boardIds,
+            'workspaces' => $workspaces,
+            'boards' => $boards,
         ]);
     }
 

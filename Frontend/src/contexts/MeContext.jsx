@@ -28,8 +28,8 @@ export const MeProvider = ({ children }) => {
     const { data, userLoading, userError } = useUserData()
 
     const user = data?.user || null;
-    const workspaceIds = data?.workspaceIds || null;
-    const boardIds = data?.workspaceIds || null;
+    const workspaceIds = data?.workspaces || null;
+    const boardIds = data?.boards || null;
 
     console.log(data)
     const contextValue = useMemo(

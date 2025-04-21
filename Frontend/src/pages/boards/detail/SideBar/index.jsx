@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -35,17 +35,40 @@ import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 import { useMe } from "../../../../contexts/MeContext";
 
 const SideBar = ({ board }) => {
-  const { boardIds } = useMe();
   const { boardId, workspaceName } = useParams();
+  const { boardIds, workspaceIds } = useMe();
   const { workspaces } = useWorkspace();
 
-  const workspace = workspaces.find((ws) => ws.id === board?.workspace_id)
-  const boards = workspace?.boards || [];
-  const isMemberWorkspace = workspace?.joined === 1;
-  const isMemberBoard = boardIds.includes(Number(boardId));
+  // Workspace hiện tại
+  const currentWorkspace = useMemo(() => {
+    if (board?.workspace_id) {
+      return workspaces.find((ws) => ws.id === board.workspace_id);
+    }
+    if (workspaceName) {
+      return workspaces.find((ws) => ws.name === workspaceName);
+    }
+    return null;
+  }, [workspaces, board?.workspace_id, workspaceName]);
 
-  console.log(isMemberWorkspace, 'thành viên không gina')
-  console.log(isMemberBoard, 'thành viên bảng')
+  // Là thành viên board?
+  const isMemberBoard = useMemo(() => {
+    return boardIds?.some((b) => b.id === boardId);
+  }, [boardIds, boardId]);
+
+  // Là admin board?
+  const isAdminBoard = useMemo(() => {
+    const boardInfo = boardIds?.find((b) => b.id === boardId);
+    return boardInfo?.is_admin || boardInfo?.role === 'admin';
+  }, [boardIds, boardId]);
+
+  // Là thành viên workspace?
+  const isMemberWorkspace = useMemo(() => {
+    return currentWorkspace?.joined === 1;
+  }, [currentWorkspace?.joined]);
+
+  console.log({ isMemberBoard, isAdminBoard, isMemberWorkspace });
+
+
 
   // console.log(boardId);
   // const { data: guestBoards } = useGuestBoards();
@@ -81,9 +104,10 @@ const SideBar = ({ board }) => {
 
   // const activeData = foundWorkspace || currentWorkspace;
 
-  // const [openSettings, setOpenSettings] = useState(false);
   // const invitedWorkspace = currentWorkspace?.boards?.some(board => board.id == boardId) ? currentWorkspace : null;
   // console.log(invitedWorkspace);
+
+  const [openSettings, setOpenSettings] = useState(false);
 
   // console.log(currentWorkspace);
   const toggleSettings = () => {
@@ -110,6 +134,7 @@ const SideBar = ({ board }) => {
   };
 
   return (
+
     <Drawer
       variant="permanent"
       sx={{
@@ -145,74 +170,70 @@ const SideBar = ({ board }) => {
         <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
         <Box>
           <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-            {/* {isGuest
-              ? foundWorkspace?.workspace_name
-              : currentWorkspace?.display_name} */}
-            {workspace?.display_name}
+            {currentWorkspace?.display_name}
           </Typography>
         </Box>
       </Box>
 
-      {isMember && (
-        <></>
-        // <List>
-        //   <ListItem disablePadding>
-        //     <ListItemButton
-        //       component={Link}
-        //       to={`/w/${selectedWorkspace?.name}`}
-        //     >
-        //       <ListItemIcon sx={{ color: "white" }}>
-        //         <DashboardIcon />
-        //       </ListItemIcon>
-        //       <ListItemText primary="Bảng" />
-        //     </ListItemButton>
-        //   </ListItem>
+      {isMemberWorkspace && (
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to={`/w/${currentWorkspace?.name}`}
+            >
+              <ListItemIcon sx={{ color: "white" }}>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText primary="Bảng" />
+            </ListItemButton>
+          </ListItem>
 
-        //   <ListItem disablePadding>
-        //     <ListItemButton
-        //       component={Link}
-        //       to={`/w/${selectedWorkspace?.name}/members`}
-        //     >
-        //       <ListItemIcon sx={{ color: "white" }}>
-        //         <PeopleIcon />
-        //       </ListItemIcon>
-        //       <ListItemText primary="Thành viên" />
-        //       <AddIcon sx={{ color: "gray" }} />
-        //     </ListItemButton>
-        //   </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to={`/w/${currentWorkspace?.name}/members`}
+            >
+              <ListItemIcon sx={{ color: "white" }}>
+                <PeopleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Thành viên" />
+              <AddIcon sx={{ color: "gray" }} />
+            </ListItemButton>
+          </ListItem>
 
-        //   <ListItemButton onClick={toggleSettings}>
-        //     <ListItemIcon sx={{ color: "white" }}>
-        //       <SettingsIcon />
-        //     </ListItemIcon>
-        //     <ListItemText primary="Cài đặt Không gian làm việc" />
-        //     {openSettings ? <ExpandLess /> : <ExpandMore />}
-        //   </ListItemButton>
+          <ListItemButton onClick={toggleSettings}>
+            <ListItemIcon sx={{ color: "white" }}>
+              <SettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Cài đặt Không gian làm việc" />
+            {openSettings ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
 
-        //   <Collapse in={openSettings} timeout="auto" unmountOnExit>
-        //     <List component="div" disablePadding>
-        //       <ListItemButton sx={{ pl: 4 }} component={Link} to={`/w/${selectedWorkspace?.name}/account`}>
-        //         <ListItemIcon sx={{ color: "white" }}>
-        //           <ViewKanbanIcon />
-        //         </ListItemIcon>
-        //         <ListItemText primary="Cài đặt không gian làm việc" />
-        //       </ListItemButton>
-        //       <ListItemButton sx={{ pl: 4 }}>
-        //         <ListItemIcon sx={{ color: "white" }}>
-        //           <UpgradeIcon />
-        //         </ListItemIcon>
-        //         <ListItemText primary="Nâng cấp không gian làm việc" />
-        //       </ListItemButton>
-        //     </List>
-        //   </Collapse>
-        // </List>
+          <Collapse in={openSettings} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding>
+              <ListItemButton sx={{ pl: 4 }} component={Link} to={`/w/${currentWorkspace?.name}/account`}>
+                <ListItemIcon sx={{ color: "white" }}>
+                  <ViewKanbanIcon />
+                </ListItemIcon>
+                <ListItemText primary="Cài đặt không gian làm việc" />
+              </ListItemButton>
+              <ListItemButton sx={{ pl: 4 }}>
+                <ListItemIcon sx={{ color: "white" }}>
+                  <UpgradeIcon />
+                </ListItemIcon>
+                <ListItemText primary="Nâng cấp không gian làm việc" />
+              </ListItemButton>
+            </List>
+          </Collapse>
+        </List>
       )}
-      {isMember && (
+      {isMemberWorkspace && (
         <Box>
           <ListItem disablePadding>
             <ListItemButton
               component={Link}
-              to={`/w/${workspace?.name}/calendar`}
+              to={`/w/${currentWorkspace?.name}/calendar`}
             >
               <ListItemIcon sx={{ color: "white" }}>
                 <CalendarMonthIcon />
@@ -226,8 +247,8 @@ const SideBar = ({ board }) => {
         Các bảng của bạn
       </Typography>
       <List sx={{ p: 0.5 }}>
-        {workspace?.boards.map((board) => {
-          const isCurrent = board.id === Number(board.id); // Cần kiểm tra lại điều kiện này
+        {currentWorkspace?.boards.map((board) => {
+          // const isCurrent = board.id === Number(board.id); // Cần kiểm tra lại điều kiện này
           const isSelected = selectedBoardId === board.id;
 
           return (
@@ -241,7 +262,7 @@ const SideBar = ({ board }) => {
                 to={`/b/${board.id}/${board.name}`}
                 sx={{
                   flexGrow: 1,
-                  backgroundColor: isCurrent ? "#ffffff33" : "transparent",
+                  // backgroundColor: isCurrent ? "#ffffff33" : "transparent",
                   "&:hover": { backgroundColor: "#ffffff22" },
                   borderRadius: "6px",
                 }}
@@ -296,7 +317,7 @@ const SideBar = ({ board }) => {
                   {board.name}
                 </MenuItem>
 
-                {(adminCount >= 2 || isMember) && (
+                {isMemberBoard && isAdminBoard && (
                   <MenuItem
                     onClick={() => console.log("Rời khỏi bảng")}
                     sx={{
@@ -311,7 +332,7 @@ const SideBar = ({ board }) => {
                   </MenuItem>
                 )}
 
-                {!isMember && (
+                {isAdminBoard && (
                   <MenuItem
                     onClick={() => handleCloseBoard(board.id)}
                     sx={{
