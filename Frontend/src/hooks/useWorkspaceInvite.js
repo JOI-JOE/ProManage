@@ -4,16 +4,35 @@ import {
   createInviteWorkspace,
   cancelInviteWorkspace,
   getSearchMembers,
-  addMemberToWorkspace,
-  confirmWorkspaceMembers,
+  // confirmWorkspaceMembers,
   getInvitationSecretByReferrer,
   addMemberToWorkspaceDirection,
+  sendInviteWorkspace,
 } from "../api/models/inviteWorkspaceApi";
 
 // Hook mutation
 export const useAddMemberToWorkspaceDirection = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: addMemberToWorkspaceDirection, // Đảm bảo có mutationFn
+    mutationFn: async ({ workspaceId, memberId }) => {
+      if (!workspaceId || !memberId) {
+        throw new Error("workspaceId hoặc memberId không hợp lệ");
+      }
+      return await addMemberToWorkspaceDirection({ workspaceId, memberId });
+    },
+    onSuccess: (data, { workspaceId }) => {
+      // Cập nhật lại danh sách thành viên của workspace
+      queryClient.invalidateQueries({
+        queryKey: ["workspaceMembers", workspaceId],
+      });
+    },
+    onError: (error) => {
+      console.error(
+        "Lỗi khi thêm thành viên vào workspace:",
+        error.response?.data?.message || error.message
+      );
+    },
   });
 };
 
@@ -86,39 +105,34 @@ export const useSearchMembers = (query, idWorkspace) => {
   });
 };
 
-// function khi chọn một người dùng vào hàng chờ
-export const useAddMemberToWorkspace = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ workspaceId, userIds }) =>
-      addMemberToWorkspace(workspaceId, userIds),
-    onSuccess: (data, variables) => {
-      console.log("✅ Thành viên đã được thêm:", data);
-    },
-    onError: (error) => {
-      console.error("❌ Lỗi khi thêm thành viên vào workspace:", error);
-    },
-  });
-};
-
 // function sau khi bấm gửi lời mời thêm vào trong trang thành viên
-export const useConfirmWorkspaceMember = () => {
+export const useSendInviteWorkspace = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ workspaceId, memberId, invitationMessage }) =>
-      confirmWorkspaceMembers(workspaceId, memberId, invitationMessage),
-    onSuccess: (data, variables) => {
-      console.log("✅ Thành viên đã được xác nhận:", data);
-      // Cập nhật lại dữ liệu nếu cần
-      queryClient.invalidateQueries([
-        "workspaceMembers",
-        variables.workspaceId,
-      ]);
+    mutationFn: ({ workspaceId, email, memberId, message }) => {
+      return sendInviteWorkspace(workspaceId, { email, memberId, message });
+    },
+    onSuccess: (data) => {
+      // queryClient.invalidateQueries(["workspace", workspaceId]);
     },
     onError: (error) => {
-      console.error("❌ Lỗi khi xác nhận thành viên vào workspace:", error);
+      console.error("❌ Lỗi khi gửi lời mời:", error);
     },
   });
 };
+// // function khi chọn một người dùng vào hàng chờ
+// export const useAddMemberToWorkspace = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: ({ workspaceId, userIds }) =>
+//       addMemberToWorkspace(workspaceId, userIds),
+//     onSuccess: (data, variables) => {
+//       console.log("✅ Thành viên đã được thêm:", data);
+//     },
+//     onError: (error) => {
+//       console.error("❌ Lỗi khi thêm thành viên vào workspace:", error);
+//     },
+//   });
+// };

@@ -16,24 +16,17 @@ const fetchUserDataWithParams = async (params, userId = "me") => {
   }
 };
 
-export const fetchUserProfile = () => {
-  return fetchUserDataWithParams({
-    fields: "id,user_name,biography,full_name,email,image",
-    workspaces: "all",
-    workspace_fields: "id,name,display_name",
-  });
+// Phần để tối ưu gọi api
+export const fetchUserData = async () => {
+  try {
+    const response = await authClient.get(`/member/me`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+    throw error;
+  }
 };
-
-export const fetchUserDashboardData = () => {
-  return fetchUserDataWithParams({
-    // fields: "id,user_name,full_name,email,image,url",
-    boards: "open,starred",
-    board_memberships: "me",
-    board_stars: "true",
-    workspaces: "all",
-    workspace_fields: "id,name,display_name",
-  });
-};
+// END
 
 // Để làm gì -> Lấy danh sách Boards và nhóm theo Workspaces
 // Nơi dùng  -> Hiển thị danh sách bảng trong từng Workspace để so sách
@@ -89,15 +82,15 @@ export const fetchUserBoards = async () => {
 
 // END
 
-export const getUser = async () => {
-  try {
-    const response = await authClient.get("/users/me");
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy dữ liệu người dùng:", error);
-    throw error;
-  }
-};
+// export const getUser = async () => {
+//   try {
+//     const response = await authClient.get("/users/me");
+//     return response.data;
+//   } catch (error) {
+//     console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+//     throw error;
+//   }
+// };
 
 /**
  * Hàm này chịu trách nhiệm đăng nhập người dùng.
@@ -149,11 +142,11 @@ export const forgotPassword = async (email) => {
  * @returns {Promise<object>} - Promise chứa phản hồi từ server.
  */
 
-export const checkCode = async (email,code) => {
+export const checkCode = async (email, code) => {
   // console.log(email);
   // console.log(code);
   try {
-    const response = await authClient.post("password/code", { email,code });
+    const response = await authClient.post("password/code", { email, code });
     return response.data; // Trả về dữ liệu từ server
   } catch (error) {
     console.error("Lỗi khi check code", error);
@@ -165,9 +158,12 @@ export const checkCode = async (email,code) => {
  * @param {string} email - Email của người dùng cần đặt lại mật khẩu.
  * @returns {Promise<object>} - Promise chứa phản hồi từ server.
  */
-export const updatePass = async (email,password) => {
+export const updatePass = async (email, password) => {
   try {
-    const response = await authClient.put("password/update", { email,password });
+    const response = await authClient.put("password/update", {
+      email,
+      password,
+    });
     return response.data; // Trả về dữ liệu từ server
   } catch (error) {
     console.error("Lỗi khi cập nhật mật khẩu", error);
@@ -190,7 +186,6 @@ export const userRegister = async (userData) => {
   }
 };
 
-
 export const getUserById = async () => {
   try {
     const response = await authClient.get(`/user`);
@@ -201,9 +196,6 @@ export const getUserById = async () => {
   }
 };
 
-
-
-
 export const updateUserProfile = async (data) => {
   try {
     const response = await authClient.put(`/user/update-profile`, data);
@@ -213,4 +205,3 @@ export const updateUserProfile = async (data) => {
     throw error;
   }
 };
-

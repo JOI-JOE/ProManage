@@ -77,15 +77,18 @@ Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [Workspac
 Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getWorkspaceById']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get("users/me", [AuthController::class, 'getUser']);
-    // Route::get('member/me', [AuthController::class, 'getUserData']);
+    Route::get('member/me', [AuthController::class, 'index']);
     Route::get('member/{id?}', [AuthController::class, 'getUserData']);
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
+        Route::get('workspaces/user/all', 'getAllWorksapces');
+
+        Route::get('workspaces/{workspaceId}', 'show');
+        // Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
+
         Route::get('guestWorkspace', 'getGuestWorkspaces');
 
-        Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
         Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::post('workspaces', 'store');
@@ -97,14 +100,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
         Route::get('/workspaces/{workspaceId}/invitationSecret', 'getInvitationSecret');
         Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
-        // Route::post("/workspaces/{workspaceId}/invitationSecret/{inviteToken}", 'acceptInvitation');
         Route::get('search/members', 'searchMembers');
-        Route::put('workspaces/{workspaceId}/members/{memberId}', 'confirmWorkspaceMembers');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
-        Route::post('/workspace/{workspaceId}/addMembers', action: 'addMembersToWorkspace');
-        Route::post('/workspace/{workspaceId}/member/{memberId}',  'addMemberToWorkspaceDirection');
+        Route::post('/workspace/{workspaceId}/members',  'sendMemberWorkspace');
+        Route::delete('workspace/{workspaceId}/members/{userId}',  'removeMember');
+        Route::put('workspace/{workspaceId}/members/{userId}/type',  'changeType');
     });
 
     // Route::post('/send-mail', [EmailController::class, 'sendEmail']);
@@ -174,7 +176,7 @@ Route::get('/colors', [ColorController::class, 'index']);
 
 Route::prefix('workspaces/{workspaceId}/boards')->group(function () {
     Route::get('/', [BoardController::class, 'show']);
-    Route::get('{boardId}', [BoardController::class, 'show']);
+    // Route::get('{boardId}', [BoardController::class, 'show']);
     Route::put('{boardId}', [BoardController::class, 'update']);
     Route::delete('{boardId}', [BoardController::class, 'closeBoard']);
 });
@@ -294,10 +296,8 @@ Route::patch('/labels/{labelId}/update-name', [LabelController::class, 'updateLa
 Route::middleware(['auth:sanctum'])->group(function () {
     // Lấy tất cả bình luận của card
     Route::get('/cards/{cardId}/comments', [CommentCardController::class, 'index']);
-
     // Thêm bình luận vào card
     Route::post('/comments', [CommentCardController::class, 'addCommentIntoCard']);
-
     // Xóa bình luận
     Route::delete('/comments/{id}', [CommentCardController::class, 'destroy']);
 

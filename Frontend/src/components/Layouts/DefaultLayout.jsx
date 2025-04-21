@@ -3,12 +3,15 @@ import { Outlet } from "react-router-dom";
 import AppBar from "../Navigation/AppBar";
 // import { useStateContext } from "../../contexts/ContextProvider";
 import { MeProvider } from "../../contexts/MeContext";
+import { WorkspaceProvider } from "../../contexts/WorkspaceContext";
 
 const DefaultLayout = () => {
   return (
     <MeProvider>
-      <AppBar />
-      <Outlet />
+      <WorkspaceProvider>
+        <AppBar />
+        <Outlet />
+      </WorkspaceProvider>
     </MeProvider>
   );
 };

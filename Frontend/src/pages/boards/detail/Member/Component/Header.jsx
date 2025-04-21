@@ -11,19 +11,20 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Link,
     Autocomplete
 } from '@mui/material';
 import {
     Edit,
     Public,
     PersonAdd,
-    Link as LinkIcon
+    Link as LinkIcon,
+    Lock
 } from '@mui/icons-material';
 import WorkspaceAvatar from '../../../../../components/Common/WorkspaceAvatar';
 import { useDebouncedMemberSearch } from './Search';
 import { useConfirmWorkspaceMember, useCreateInviteWorkspace, useCancelInvitationWorkspace } from '../../../../../hooks/useWorkspaceInvite';
-import { Box as LogoBox, SvgIcon } from "@mui/material";
+import { useUpdateInforWorkspace } from '../../../../../hooks/useWorkspace';
+import LogoLoading from '../../../../../components/Common/LogoLoading';
 
 const Header = ({ workspace }) => {
     const [open, setOpen] = useState(false);
@@ -34,14 +35,13 @@ const Header = ({ workspace }) => {
         shortName: '',
         description: ''
     });
-    const [selectedMembers, setSelectedMembers] = useState([]); // State for selected members (can include emails)
-    const [inviteMessage, setInviteMessage] = useState(''); // State for invite message
-    const [isProcessing, setIsProcessing] = useState(false); // State for loading during invitation
-    const [linkCopied, setLinkCopied] = useState(false); // State for invite link copy status
-    const [inviteLink, setInviteLink] = useState(''); // State for the generated invite link
-    const [inputError, setInputError] = useState(''); // State for input validation error
+    const [selectedMembers, setSelectedMembers] = useState([]);
+    const [inviteMessage, setInviteMessage] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [inviteLink, setInviteLink] = useState('');
+    const [inputError, setInputError] = useState('');
 
-    // Initialize hooks
     const {
         inputValue,
         handleInputChange,
@@ -51,42 +51,29 @@ const Header = ({ workspace }) => {
     } = useDebouncedMemberSearch(workspace?.id);
 
     const { mutate: confirmMember } = useConfirmWorkspaceMember();
-    const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
-    const { mutate: cancelInviteLink, isLoading: isCancelingInvite } = useCancelInvitationWorkspace();
+
 
     useEffect(() => {
         if (workspace) {
             setFormData({
                 name: workspace.display_name || '',
                 shortName: workspace.name || '',
-                description: workspace.description || ''
+                description: workspace.desc || ''
             });
             setIsPublic(workspace.permission_level === 'public');
         }
     }, [workspace]);
 
-    const handleOpen = () => setOpen(true);
-    const handleClose = () => {
-        setOpen(false);
-        // Reset formData về giá trị ban đầu của workspace khi đóng dialog
-        setFormData({
-            name: workspace.display_name || '',
-            shortName: workspace.name || '',
-            description: workspace.description || ''
-        });
-    };
-
+    // Mời người dung ---------------------------------------------------------------------
     const handleInviteDialogOpen = () => setInviteDialogOpen(true);
     const handleInviteDialogClose = () => {
-        if (isProcessing) return; // Prevent closing while processing
+        if (isProcessing) return;
         setInviteDialogOpen(false);
-        // Reset tất cả các state liên quan khi đóng dialog
         setSelectedMembers([]);
         setInviteMessage('');
         setInviteLink('');
         setLinkCopied(false);
         setInputError('');
-        // Reset inputValue của Autocomplete
         handleInputChange(null, '', 'reset');
     };
 
@@ -95,31 +82,34 @@ const Header = ({ workspace }) => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSave = () => {
-        console.log('Saving:', formData);
-        handleClose();
-    };
-
-    // Simple email validation
     const isValidEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     };
 
     const handleMemberSelect = (event, newValue) => {
-        setInputError(''); // Clear any previous error
-
-        // If newValue is a string (custom input), validate it as an email
+        setInputError('');
         if (typeof newValue === 'string') {
             const trimmedValue = newValue.trim();
+            // Check if the email already exists in the options and the user is a member
+            const existingMember = options.find(
+                (option) => option.email === trimmedValue && option.joined === true
+            );
+            if (existingMember) {
+                setInputError('Email này đã là thành viên của Không gian làm việc.');
+                return;
+            }
+            // Check if the email is valid and not already selected
             if (isValidEmail(trimmedValue) && !selectedMembers.some((member) => member.email === trimmedValue)) {
                 setSelectedMembers([...selectedMembers, { email: trimmedValue, isCustom: true }]);
             } else {
-                setInputError('Vui lòng nhập email hợp lệ (ví dụ: example@domain.com).');
+                setInputError(
+                    isValidEmail(trimmedValue)
+                        ? 'Email này đã được chọn.'
+                        : 'Vui lòng nhập email hợp lệ.'
+                );
             }
-        }
-        // If newValue is an object (selected from search results), check if not already selected and not joined
-        else if (newValue && !selectedMembers.some((member) => member.id === newValue.id) && !newValue.joined) {
+        } else if (newValue && !selectedMembers.some((member) => member.id === newValue.id) && !newValue.joined) {
             setSelectedMembers([...selectedMembers, newValue]);
         }
     };
@@ -134,18 +124,13 @@ const Header = ({ workspace }) => {
         setInviteMessage(e.target.value);
     };
 
-    // Function to send invitations
     const handleSendInvitations = async () => {
         if (!selectedMembers.length) return;
-
-        setIsProcessing(true); // Start loading
-
+        setIsProcessing(true);
         try {
             for (const member of selectedMembers) {
                 if (member.isCustom) {
                     console.log(`Inviting via email: ${member.email}`);
-                    // Replace with actual API call to invite by email
-                    // await inviteByEmail({ workspaceId: workspace.id, email: member.email, invitationMessage: inviteMessage });
                 } else {
                     await confirmMember({
                         workspaceId: workspace.id,
@@ -154,59 +139,85 @@ const Header = ({ workspace }) => {
                     });
                 }
             }
-            await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
-            handleInviteDialogClose(); // Close dialog after success
+            handleInviteDialogClose();
         } catch (error) {
             console.error("❌ Error sending invitations:", error);
         } finally {
-            setIsProcessing(false); // Stop loading
+            setIsProcessing(false);
         }
     };
+    // Mời người dung ---------------------------------------------------------------------
 
-    // Function to copy the invite link to clipboard
-    const handleCopyLink = () => {
-        if (inviteLink) {
-            navigator.clipboard.writeText(inviteLink);
-            setLinkCopied(true);
+    const handleOpen = () => setOpen(true);
+    const handleClose = () => {
+        setOpen(false);
+    };
+
+    const { mutateAsync: updateWorkspace } = useUpdateInforWorkspace();
+    const [updateLoading, setUpdateLoading] = useState(false);
+    const handleSave = async () => {
+        setUpdateLoading(true); // 👈 Bắt đầu loading
+        try {
+            await updateWorkspace({
+                id: workspace.id,
+                data: {
+                    display_name: formData.name,
+                    name: formData.shortName,
+                    description: formData.description,
+                },
+            });
+            handleClose();
+            console.log('✅ Cập nhật thông tin thành công');
+        } catch (error) {
+            console.error('❌ Lỗi cập nhật thông tin:', error);
+        } finally {
+            setUpdateLoading(false); // 👈 Kết thúc loading dù thành công hay lỗi
         }
     };
 
     return (
         <Box sx={{ mb: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <WorkspaceAvatar sx={{ m: 1 }} size={60} workspace={workspace} />
-                <Box sx={{ flexGrow: 1 }}>
+                <WorkspaceAvatar size={60} workspace={workspace} />
+                <Box sx={{ flexGrow: 1, ml: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="h5" fontWeight="500">
-                            {formData.name}
+                        <Typography variant="h5" fontWeight="500" fontSize={30}>
+                            {formData.name.length > 30
+                                ? `${formData.name.slice(0, 30)}...`
+                                : formData.name}
                         </Typography>
                         <IconButton size="small" sx={{ ml: 1 }} onClick={handleOpen}>
                             <Edit fontSize="small" />
                         </IconButton>
+
                     </Box>
+
                     <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                        {isPublic && (
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {isPublic ? (
+                            <>
                                 <Public fontSize="small" sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
                                 <Typography variant="body2" color="text.secondary">
                                     Công khai
                                 </Typography>
-                            </Box>
+                            </>
+                        ) : (
+                            <>
+                                <Lock fontSize="small" sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
+                                <Typography variant="body2" color="text.secondary">
+                                    Riêng tư
+                                </Typography>
+                            </>
                         )}
                     </Box>
                 </Box>
+
                 <Button
                     variant="contained"
                     startIcon={<PersonAdd />}
-                    sx={{
-                        borderRadius: 2,
-                        textTransform: 'none',
-                        bgcolor: '#1976d2',
-                        px: 2
-                    }}
+                    sx={{ borderRadius: 2, textTransform: 'none', bgcolor: '#1976d2', px: 2 }}
                     onClick={handleInviteDialogOpen}
                 >
-                    Mời các thành viên Không gian làm việc
+                    Mời các thành viên
                 </Button>
             </Box>
             {formData.description && (
@@ -214,22 +225,15 @@ const Header = ({ workspace }) => {
                     {formData.description}
                 </Typography>
             )}
-            <Box
-                sx={{
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    mt: 3
-                }}
-            />
+            <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', mt: 3 }} />
 
-            {/* Edit Form Dialog */}
             <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
                 <DialogTitle>Cập nhật thông tin</DialogTitle>
                 <DialogContent>
                     <TextField
                         autoFocus
                         margin="dense"
-                        label="Tên *"
+                        placeholder="Tên Không gian làm việc *"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
@@ -238,7 +242,7 @@ const Header = ({ workspace }) => {
                     />
                     <TextField
                         margin="dense"
-                        label="Tên ngắn gọn *"
+                        placeholder="Tên ngắn gọn *"
                         name="shortName"
                         value={formData.shortName}
                         onChange={handleChange}
@@ -247,27 +251,38 @@ const Header = ({ workspace }) => {
                     />
                     <TextField
                         margin="dense"
-                        label="Mô tả (tùy chọn)"
+                        placeholder="Mô tả"
+                        variant="outlined"
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
                         fullWidth
-                        variant="outlined"
                         multiline
                         rows={4}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleClose} variant="outlined">
-                        Hủy
-                    </Button>
-                    <Button onClick={handleSave} variant="contained" color="primary">
-                        Lưu
-                    </Button>
+                    {updateLoading ? (
+                        <LogoLoading />
+                    ) : (
+                        <>
+                            <Button onClick={handleClose} variant="outlined">
+                                Hủy
+                            </Button>
+
+                            <Button
+                                onClick={handleSave}
+                                variant="contained"
+                                color="primary"
+                                disabled={!formData.name.trim() || !formData.shortName.trim()}
+                            >
+                                Lưu
+                            </Button>
+                        </>
+                    )}
                 </DialogActions>
             </Dialog>
 
-            {/* Invite Members Dialog */}
             <Dialog open={inviteDialogOpen} onClose={handleInviteDialogClose} maxWidth="sm" fullWidth>
                 <DialogTitle>
                     Mời vào Không gian làm việc
@@ -282,7 +297,6 @@ const Header = ({ workspace }) => {
                     </IconButton>
                 </DialogTitle>
                 <DialogContent>
-                    {/* Selected Members as Chips */}
                     {selectedMembers.length > 0 && (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                             {selectedMembers.map((member) => (
@@ -296,74 +310,58 @@ const Header = ({ workspace }) => {
                             ))}
                         </Box>
                     )}
-
-                    {/* Autocomplete for Member Search */}
                     <Autocomplete
                         open={autocompleteOpen}
-                        options={options.filter(
-                            (option) => !selectedMembers.some((member) => member.id === option.id || member.email === option.email)
-                        )} // Exclude already selected members or emails
+                        options={options}
                         loading={isLoading}
-                        freeSolo={true} // Allow custom email input
+                        freeSolo
                         inputValue={inputValue}
-                        onInputChange={(event, newValue, reason) => {
-                            handleInputChange(event, newValue, reason);
-                            setInputError(''); // Clear error on input change
-                        }}
-                        onChange={handleMemberSelect} // Handle member selection or custom input
+                        onInputChange={handleInputChange}
+                        onChange={handleMemberSelect}
                         getOptionLabel={(option) => (typeof option === 'string' ? option : option.full_name || option.email || '')}
-                        isOptionDisabled={(option) => typeof option !== 'string' && option.joined === true} // Disable options that are already joined
                         renderInput={(params) => (
                             <TextField
                                 {...params}
                                 margin="dense"
-                                label="Lọc theo tên hoặc email"
-                                placeholder="Nhập email hoặc chọn thành viên từ danh sách..."
+                                // label="Lọc theo tên hoặc email"
+                                placeholder="Nhập email hoặc chọn thành viên..."
                                 fullWidth
                                 variant="outlined"
                                 error={!!inputError}
                                 helperText={inputError}
-                                onKeyDown={(e) => {
-                                    if (e.key === ' ') {
-                                        e.stopPropagation(); // Ngăn sự kiện lan truyền lên component cha
-                                    }
-                                }}
-                                InputProps={{
-                                    ...params.InputProps,
-                                    endAdornment: (
-                                        <>
-                                            {isLoading ? 'Loading' : null}
-                                            {params.InputProps.endAdornment}
-                                        </>
-                                    ),
-                                }}
                             />
                         )}
                         renderOption={(props, option) => (
                             <li {...props}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Avatar sx={{ width: 24, height: 24 }} src={option.image || ''} />
+                                    <Avatar
+                                        sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}
+                                        src={typeof option === 'string' ? '' : option.image || ''}
+                                    >
+                                        {typeof option === 'string' ? option.charAt(0) : option.initials || option.full_name?.charAt(0)}
+                                    </Avatar>
                                     <Box>
-                                        <Typography>
-                                            {option.full_name || option.email}
+                                        <Typography variant="body1">
+                                            {typeof option === 'string' ? option : option.full_name || option.email}
                                         </Typography>
-                                        {option.memberType && (
+                                        {typeof option !== 'string' && (
                                             <Typography variant="caption" color="text.secondary">
-                                                {option.memberType === 'admin' ? 'Quản trị viên' : 'Thành viên'} Không gian làm việc
+                                                {option.joined
+                                                    ? `${option.memberType === 'admin' ? 'Quản trị viên' : 'Thành viên'} Không gian làm việc`
+                                                    : 'Không phải thành viên'}
                                             </Typography>
                                         )}
                                     </Box>
                                 </Box>
                             </li>
                         )}
+                        isOptionDisabled={(option) => typeof option !== 'string' && option.joined === true}
                         disabled={isProcessing}
                     />
-
-                    {/* Invite Message TextField */}
                     <TextField
                         margin="dense"
-                        label="Thêm một tin nhắn (tùy chọn)"
-                        placeholder="Tham gia Không gian làm việc Trello này để bắt đầu cộng tác vui tói!"
+                        // label="Thêm một tin nhắn (tùy chọn)"
+                        placeholder="Tham gia Không gian làm việc này để cộng tác!"
                         fullWidth
                         variant="outlined"
                         multiline
@@ -375,11 +373,7 @@ const Header = ({ workspace }) => {
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button
-                        onClick={handleInviteDialogClose}
-                        variant="outlined"
-                        disabled={isProcessing}
-                    >
+                    <Button onClick={handleInviteDialogClose} variant="outlined" disabled={isProcessing}>
                         Hủy
                     </Button>
                     <Button

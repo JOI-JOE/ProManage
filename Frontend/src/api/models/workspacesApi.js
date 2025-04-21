@@ -1,10 +1,8 @@
 import authClient from "../authClient";
 
-export const getWorkspacesAll = async () => {
+export const fetchWorkspacesAll = async () => {
   try {
-    const response = await authClient.get("/workspaces");
-    // console.log(response.data);
-    
+    const response = await authClient.get("/workspaces/user/all");
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy workspace của người dùng:", error);
@@ -12,6 +10,17 @@ export const getWorkspacesAll = async () => {
   }
 };
 
+export const getWorkspacesAll = async () => {
+  try {
+    const response = await authClient.get("/workspaces");
+    // console.log(response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy workspace của người dùng:", error);
+    throw error;
+  }
+};
 
 export const getGuestWorkspace = async () => {
   try {
@@ -23,16 +32,16 @@ export const getGuestWorkspace = async () => {
   }
 };
 
-
 export const getWorkspaceByName = async (workspaceName) => {
   const response = await authClient.get(`/workspaces/name/${workspaceName}`);
   return response.data;
 };
 export const getBoardMarkedByWorkspace = async (workspaceName) => {
-  const response = await authClient.get(`/workspaces/boardMarked/${workspaceName}`);
+  const response = await authClient.get(
+    `/workspaces/boardMarked/${workspaceName}`
+  );
   return response.data;
 };
-
 
 export const getWorkspaceById = async (workspaceId) => {
   const response = await authClient.get(`/workspaces/${workspaceId}`);
@@ -66,14 +75,14 @@ export const updateWorkspaceInfo = async (id, data) => {
 };
 
 export const getUserWorkspaces = async () => {
-  const response = await authClient.get('/workspaces/all');
+  const response = await authClient.get("/workspaces/all");
   return response.data;
 };
 
 export const getUserWorkspaces2 = async () => {
   try {
     const response = await authClient.get("user/workspaces");
-    
+
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy workspace của người dùng:", error);
@@ -81,6 +90,31 @@ export const getUserWorkspaces2 = async () => {
   }
 };
 
+export const changeType = async (workspaceId, userId, memberType) => {
+  try {
+    const response = await authClient.put(
+      `/workspace/${workspaceId}/members/${userId}/type`,
+      { member_type: memberType }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error changing member type:", error);
+    throw error;
+  }
+};
+
+// Remove member
+export const removeMemberWorkspace = async (workspaceId, userId) => {
+  try {
+    const response = await authClient.delete(
+      `/workspace/${workspaceId}/members/${userId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error removing member:", error);
+    throw error;
+  }
+};
 ////// Viết luôn vào đây luôn cho tiện (quoc)
 export const checkMemberInWorkspace = async (workspaceId, userId) => {
   try {

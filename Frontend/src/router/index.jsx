@@ -15,7 +15,6 @@ import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 
 // import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
-import GoogleAuth from "../pages/Auth/GoogleAuth";
 import GitHubAuth from "../pages/Auth/GitHubAuth";
 import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import InviteHandling from "../pages/workspace/invite/InviteHandling";
@@ -30,8 +29,8 @@ import Board from "../pages/boards/detail/Board";
 import Calendar from "../pages/Boards/detail/SideBar/Calendar/Calendar";
 import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileInfo";
 import Activity from "../components/Navigation/Menus/Profile and display/Activity";
-// import GoogleAuth from "../pages/auth/GoogleAuth";
 // import GitHubAuth from "../pages/auth/GitHubAuth";
+import GoogleAuth from "../pages/Auth/GoogleAuth";
 import RequestJoinBoard from "../pages/boards/invite/RequestJoinBoard";
 import VerifyCodePage from "../pages/auth/VerifyCodePage";
 import UpdatePass from "../pages/auth/UpdatePass";
@@ -69,7 +68,7 @@ const router = createBrowserRouter([
       { path: "/forgort-password", element: <ForgotPassword /> },
       { path: "/verify-code", element: <VerifyCodePage /> },
       { path: "/update-password", element: <UpdatePass /> },
-     
+
 
 
 
@@ -103,11 +102,6 @@ const router = createBrowserRouter([
           { path: "w/:workspaceName/calendar", element: <Calendar /> },
           { path: "w/:workspaceName/calendar/c/:cardId", element: <CardModal /> },
           { path: "w/:workspaceName/table-view", element: <TableView /> },
-
-         
-
-
-
         ],
       },
       {

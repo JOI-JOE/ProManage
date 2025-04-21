@@ -18,11 +18,10 @@ import LockIcon from "@mui/icons-material/Lock"; // Icon cho Riêng tư
 import GroupIcon from "@mui/icons-material/Group"; // Icon cho Không gian làm việc
 import PublicIcon from "@mui/icons-material/Public"; // Icon cho Công khai
 import { useGetBoardMembers } from "../../../../../../../hooks/useInviteBoard";
-import { useUser } from "../../../../../../../hooks/useUser";
+import { useMe } from "../../../../../../../contexts/MeContext";
 
 const ViewPermissionsDialog = ({ open, onClose }) => {
   const { boardId } = useParams(); // Lấy boardId từ URL
-
 
   // Sử dụng hook useGetBoardByID để lấy thông tin bảng
   const { data: board, isLoading, error } = useGetBoardByID(boardId);
@@ -30,15 +29,15 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
   // Khởi tạo selectedVisibility với giá trị mặc định là "private"
   const [selectedVisibility, setSelectedVisibility] = useState("private");
   const { data: boardMembers = [] } = useGetBoardMembers(boardId);
-  const { data: user } = useUser();
+  const { data: user } = useMe();
 
   const currentUserId = user?.id;
 
   const isAdmin = Array.isArray(boardMembers?.data)
-  ? boardMembers.data.some(member =>
-    member.id === currentUserId && member.pivot.role === "admin"
-  )
-  : false;
+    ? boardMembers.data.some(member =>
+      member.id === currentUserId && member.pivot.role === "admin"
+    )
+    : false;
 
 
   // Cập nhật selectedVisibility khi dữ liệu bảng được tải

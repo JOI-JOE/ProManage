@@ -4,214 +4,207 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\WorkspaceMembersResource;
+use App\Mail\WorkspaceInvitation;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Models\WorkspaceInvitations;
 use App\Models\WorkspaceMembers;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class WorkspaceMembersController extends Controller
 {
-    public function addMembersToWorkspace(Request $request, $workspaceId)
+    public function sendMemberWorkspace($workspaceId, Request $request)
     {
-        $memberIds = $request->input('members', []); // Danh sách ID thành viên từ FE
+        $member = Auth::user();
 
-        if (empty($memberIds)) {
-            return response()->json(['message' => 'No members provided'], 400);
-        }
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'memberId' => 'nullable|uuid',
+            'message' => 'nullable|string',
+        ]);
 
-        // 🔍 Lấy danh sách thành viên đã có trong workspace
-        $existingMembers = WorkspaceMembers::where('workspace_id', $workspaceId)
-            ->whereIn('user_id', $memberIds)
-            ->pluck('user_id')
-            ->toArray();
-
-        // 🔥 Lọc ra những thành viên chưa có trong workspace
-        $newMembers = array_diff($memberIds, $existingMembers);
-
-        if (empty($newMembers)) {
-            return response()->json(['message' => 'No new members to add'], 200);
-        }
-
-        $insertData = array_map(fn($userId) => [
-            'id' => Str::uuid(), // Thêm UUID thủ công
-            'workspace_id' => $workspaceId,
-            'user_id' => $userId,
-            'member_type' => WorkspaceMembers::$PENDING, // Dùng hằng số trong model
-            'joined' => false,  // Chưa tham gia
-        ], $newMembers);
-
-        WorkspaceMembers::insert($insertData);
-
-        return response()->json(['message' => 'Members added successfully', 'new_members' => $newMembers], 201);
-    }
-
-    public function addMemberToWorkspaceDirection($workspaceId, $userId)
-    {
-        // Kiểm tra workspace có tồn tại không
         $workspace = Workspace::find($workspaceId);
         if (!$workspace) {
             return response()->json(['error' => 'Workspace not found'], 404);
         }
+        // Tìm user theo email
+        $user = User::where('email', $validated['email'])->first();
 
-        // Kiểm tra user có tồn tại không
-        $user = User::find($userId);
-        if (!$user) {
-            return response()->json(['error' => 'User not found'], 404);
+        if ($user) {
+            // Kiểm tra nếu đã là thành viên
+            $isAlreadyMember = DB::table('workspace_members')
+                ->where('workspace_id', $workspaceId)
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if ($isAlreadyMember) {
+                return response()->json(['message' => 'User is already a member of this workspace'], 200);
+            }
+
+            // Thêm vào workspace_members
+            DB::table('workspace_members')->insert([
+                'id' => Str::uuid(),
+                'workspace_id' => $workspaceId,
+                'user_id' => $user->id,
+                'member_type' => WorkspaceMembers::$NORMAL,
+                'joined' => true,
+            ]);
+
+            $link = env('FRONTEND_URL') . '/' . $workspace->name;
+
+            try {
+                Mail::to($user->email)->queue(
+                    new WorkspaceInvitation(
+                        $workspace->display_name,
+                        $member->full_name,
+                        $validated['message'] ?? null,
+                        $link // Đảm bảo link được truyền đúng vào mailable
+                    )
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to send invitation email: ' . $e->getMessage());
+            }
+
+            return response()->json(['message' => 'User added and invited successfully'], 201);
+        } else {
+            // Tạo invitation mới
+            $invitation = WorkspaceInvitations::create([
+                'id' => Str::uuid(),
+                'invited_member_id' => $member->id,
+                'email' => $validated['email'],
+                'accept_unconfirmed' => true,
+                'workspace_id'         => $workspaceId,
+                'invite_token'         => Str::uuid()->toString(),
+            ]);
+
+            // Tạo link mời với invite_token
+            $link = env('FRONTEND_URL') . '/' .  'invite' . '/' .  $workspaceId . '/' . $invitation->invite_token;
+
+            try {
+                Mail::to($validated['email'])->queue(
+                    new WorkspaceInvitation(
+                        $workspace->display_name,
+                        $member->full_name,
+                        $validated['message'] ?? null,
+                        $link // Thêm link với token vào mailing
+                    )
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to send invitation email: ' . $e->getMessage());
+            }
+
+            return response()->json(['message' => 'Invitation sent to new email'], 201);
         }
-
-        // Kiểm tra xem user đã là thành viên chưa
-        $isMember = DB::table('workspace_members')
-            ->where('workspace_id', $workspaceId)
-            ->where('user_id', $userId)
-            ->exists();
-
-        if ($isMember) {
-            return response()->json(['message' => 'User is already a member'], 200);
-        }
-
-        // Thêm user vào workspace
-        DB::table('workspace_members')->insert([
-            'id'            => Str::uuid(), // Thêm UUID thủ công
-            'workspace_id'  => $workspaceId,
-            'user_id'       => $userId,
-            'member_type'   => WorkspaceMembers::$NORMAL, // Dùng hằng số trong model
-            'joined'        => true
-        ]);
-
-        return response()->json(['message' => 'User added to workspace successfully'], 201);
     }
 
+    public function removeMember($workspaceId, $userId)
+    {
+        try {
+            // Validate workspace existence
+            $workspace = Workspace::find($workspaceId);
+            if (!$workspace) {
+                throw new Exception('Workspace not found.');
+            }
 
-    // // https://trello.com/1/organizations/678b57031faba8dd978f0dee/members/677ea51482b962a06bc469ac/deactivated
-    // public function deactivateMember(Request $request, $idOrganization, $idMember)
-    // {
-    //     // Deactivate a member in the organization
-    //     $org_membership = OrgMembership::where('id_organization', $idOrganization)
-    //         ->where('id_member', $idMember)
-    //         ->first();
+            // Validate user existence
+            $user = User::find($userId);
+            if (!$user) {
+                throw new Exception('User not found.');
+            }
 
-    //     $validated = $request->validate([
-    //         'value' => 'required|boolean',
-    //     ]);
+            // Check if the user is a member of the workspace
+            $workspaceMember = WorkspaceMembers::where('workspace_id', $workspaceId)
+                ->where('user_id', $userId)
+                ->first();
 
-    //     if ($validated['value']) {
-    //         $org_membership->update(['deactivated' => true]);
-    //         $message = 'Member deactivated successfully';
-    //     } else {
-    //         $org_membership->update(['deactivated' => false]);
-    //         $message = 'Member reactivated successfully';
-    //     }
+            if (!$workspaceMember) {
+                throw new Exception('User is not a member of this workspace.');
+            }
 
-    //     return response()->json([
-    //         'message' => $message,
-    //         'value'   => $validated['value']
-    //     ]);
-    // }
+            // Nếu là admin, kiểm tra xem có phải admin cuối cùng không
+            if ($workspaceMember->member_type === WorkspaceMembers::$ADMIN) {
+                $adminCount = WorkspaceMembers::where('workspace_id', $workspaceId)
+                    ->where('member_type', WorkspaceMembers::$ADMIN)
+                    ->count();
 
+                if ($adminCount <= 1) {
+                    throw new Exception('Cannot remove the last admin of the workspace.');
+                }
+            }
 
+            // Delete the workspace member record
+            $workspaceMember->delete();
 
-    // // https: //trello.com/1/organizations/678b57031faba8dd978f0dee/members/677ea51482b962a06bc469ac
-    //1 public function changeMemberType(Request $request, $idOrganization, $idMember)
-    // {
-    //     // Thay đổi loại thành viên trong tổ chức
-    //     // thay đổi admin và nornal 
-    //     // sử dụng path vì thay đổi một trường
-    //     $org_membership = OrgMembership::where('id_organization', $idOrganization)
-    //         ->where('id_member', $idMember)
-    //         ->first();
+            return true;
+        } catch (Exception $e) {
+            throw new Exception('Failed to remove member: ' . $e->getMessage());
+        }
+    }
 
-    //     $validated = $request->validate([
-    //         'member_type' => 'required|in:admin,normal',
-    //     ]);
+    public function changeType($workspaceId, $userId, $newType = 'normal')
+    {
+        try {
+            // Validate workspace existence
+            $workspace = Workspace::find($workspaceId);
+            if (!$workspace) {
+                throw new Exception('Workspace not found.');
+            }
 
-    //     $org_membership->update($validated);
-    //     $members = $org_membership->organization->memberships()->get();
+            // Validate user existence
+            $user = User::find($userId);
+            if (!$user) {
+                throw new Exception('User not found.');
+            }
 
-    //     return response()->json([
-    //         'message' => 'Member type updated successfully',
-    //         'members'      => MembersResource::collection($members),
-    //         'memberships'  => MemberShipsResource::collection($members),
-    //     ]);
-    // }
+            // Validate new member type
+            $validTypes = ['admin', 'normal', 'pending'];
+            if (!in_array($newType, $validTypes)) {
+                throw new Exception('Invalid member type. Must be one of: ' . implode(', ', $validTypes));
+            }
 
+            // Check if the user is a member of the workspace
+            $workspaceMember = WorkspaceMembers::where('workspace_id', $workspaceId)
+                ->where('user_id', $userId)
+                ->first();
 
+            if (!$workspaceMember) {
+                throw new Exception('User is not a member of this workspace.');
+            }
 
-    // //  PAGE : https://trello.com/w/lam9492/members/requests
-    // public function requestAccess(Request $request, $idOrganization)
-    // {
-    //     // Thêm yêu cầu tham gia tổ chức
-    //     // thêm một yêu cầu tham gia tổ chức
-    //     $validated = $request->validate([
-    //         'id_member' => 'required|exists:users,id',
-    //     ]);
+            // Prevent changing the type of the workspace creator
+            if ($workspace->id_member_creator === $userId && $newType !== 'admin') {
+                throw new Exception('Cannot change the type of the workspace creator to non-admin.');
+            }
 
-    //     $validated['id_organization'] = $idOrganization;
-    //     $validated['is_unconfirmed'] = true;
+            // Update the member type
+            $workspaceMember->member_type = $newType;
+            $workspaceMember->save();
 
-    //     $org_membership = OrgMembership::create($validated);
+            return true;
+        } catch (Exception $e) {
+            throw new Exception('Failed to change member type: ' . $e->getMessage());
+        }
+    }
 
-    //     return response()->json([
-    //         'message' => 'Member request added successfully',
-    //         'data' => new OrgMembershipResource($org_membership),
-    //     ]);
-    // }
-
-    // public function getMemberRequests($idOrganization)
-    // {
-    //     // Lấy ra danh sách các yêu cầu tham gia tổ chức
-    //     // Trả về danh sách các member mà unconfirmed : true
-    //     $members_requests = OrgMembership::where('id_organization', $idOrganization)
-    //         ->where('is_unconfirmed', true)
-    //         ->get();
-
-    //     return response()->json([
-    //         'message' => 'Member requests retrieved successfully',
-    //         'data' => OrgMembershipResource::collection($members_requests),
-    //     ]);
-    // }
-
-    // public function getAllWorkspaceMembersById($idWorkspace)
-    // {
-    //     // Lấy ra danh sách các thành viên của tổ chức có name là $displayName
-    //     // Trả về danh sách các thành viên đó
-    //     $wks_membership = WorkspaceMembers::where('id_workspace', $idWorkspace)->get();
-
-    //     if ($wks_membership->isEmpty()) {
-    //         return response()->json(['message' => 'Workspace not found'], 404);
-    //     }
-
-    //     $workspace = Workspace::find($idWorkspace);
-    //     // trường hợp có members
-    //     // có trường hợp không có members : điều này là không thể vì mỗi workspace được tạo ra thì nó sẽ có luôn một memeber là người tạo ra nó;
-    //     // trello có trường hợp phải có ít nhất một người trong workspace\
-
-    //     return response()->json([
-    //         'message' => 'Members retrieved successfully',
-    //         'data' => [
-    //             'desc'         => Str::limit($workspace->desc, 50),
-    //             'displayName'  => $workspace->display_name,
-    //             'id'           => $workspace->id,
-    //             // 'members'      => MembersResource::collection($members),
-    //             'memberships'  => WorkspaceMembersResource::collection($wks_membership)
-    //         ]
-    //     ]);
-    // }
-    public function getUserWorkspaces(){
+    public function getUserWorkspaces()
+    {
         $user = Auth::user();
 
-    // Lấy tất cả workspace_id mà user là thành viên
-    $workspaceIds = WorkspaceMembers::where('user_id', $user->id)
-        ->where('is_deactivated', false) // bỏ qua workspace đã deactivate nếu cần
-        ->where('member_type','!=','pending')
-        ->pluck('workspace_id');
+        // Lấy tất cả workspace_id mà user là thành viên
+        $workspaceIds = WorkspaceMembers::where('user_id', $user->id)
+            ->where('is_deactivated', false) // bỏ qua workspace đã deactivate nếu cần
+            ->where('member_type', '!=', 'pending')
+            ->pluck('workspace_id');
 
-    // Truy vấn danh sách workspace
-    $workspaces = Workspace::whereIn('id', $workspaceIds)->get();
+        // Truy vấn danh sách workspace
+        $workspaces = Workspace::whereIn('id', $workspaceIds)->get();
 
-    return response()->json($workspaces);
-        
+        return response()->json($workspaces);
     }
 }

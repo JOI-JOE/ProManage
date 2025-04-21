@@ -46,7 +46,7 @@ const BoardContent = () => {
   const [activeDragItemId, setActiveDragItemId] = useState(null); // ID của item đang kéo
   const [activeDragItemType, setActiveDragItemType] = useState(null); // Loại item đang kéo (CARD | COLUMN)
   const [activeDragItemData, setActiveDragItemData] = useState(null); // Dữ liệu của item đang kéo
-  const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null); // Column cũ khi kéo Card
+  const [oldColumnDraggingCard, setOldColumnDraggingCard] = useState(null); // Column cũ khi kéo Cardo
   const [initialColumns, setInitialColumns] = useState([]); // Lưu trạng thái ban đầu của column trước khi kéo
   const initialActiveRef = useRef(null);
   const initialOverRef = useRef(null); // Thêm ref để lưu trữ over mới nhất
