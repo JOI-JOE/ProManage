@@ -20,6 +20,8 @@ import Card_list from "../Cards/Card_list";
 import Card_new from "../Cards/Card_new";
 import { v4 as uuidv4 } from "uuid";
 import { useCreateCard } from "../../../../../hooks/useCard";
+import { useParams } from "react-router-dom";
+import { useDuplicateList, useListsClosed, useUpdateListName } from "../../../../../hooks/useList";
 
 const StyledMenu = styled((props) => (
     <Menu
@@ -60,6 +62,14 @@ const StyledMenu = styled((props) => (
 }));
 
 const Col = ({ column }) => {
+    const { boardId } = useParams();
+    // const { mutate: updateList } = useUpdateListName(boardId);
+    const updateListNameMutation = useUpdateListName(); // dùng custom hook bạn đã tạo
+
+    const { listsClosed, updateClosedMutation, deleteMutation } = useListsClosed(boardId);
+    const { mutate: duplicateListMutate, isPending } = useDuplicateList(boardId);
+
+
 
     const [openCopyDialog, setOpenCopyDialog] = useState(false);
 
@@ -84,17 +94,17 @@ const Col = ({ column }) => {
     const handleAddCard = async (cardName) => {
         if (!cardName.trim()) return;
 
-        const tempId = `temp-${uuidv4()}`;
         const newCard = {
-            id: tempId, // ID tạm thời
+            // id: tempId, // ID tạm thời
             title: cardName,
             columnId: column.id,
             position: localCards.length
                 ? Math.max(...localCards.map((ca) => ca.position)) + 1000
                 : 1000,
+            boardId: boardId,
         };
 
-        setLocalCards((prev = []) => [...prev, newCard]); // 🔥 Đảm bảo prev luôn là mảng
+        // setLocalCards((prev = []) => [...prev, newCard]); // 🔥 Đảm bảo prev luôn là mảng
         setCardName("");
 
         try {
@@ -128,9 +138,14 @@ const Col = ({ column }) => {
         setOpenCopyDialog(true);
         setAnchorEl(null);
     };
-
+    // duplicateMutation
     const handleCopyConfirm = (newTitle) => {
         console.log("Cột đã sao chép với tên mới:", newTitle);
+
+        // Gửi mutation để sao chép
+        duplicateListMutate({ listId: column.id, name: newTitle });
+
+        // Đóng dialog
         setOpenCopyDialog(false);
     };
 
@@ -141,24 +156,65 @@ const Col = ({ column }) => {
     };
 
     const handleDeleteConfirm = () => {
-        console.log("Cột đã bị xóa");
-        setOpenDeleteDialog(false);
+        deleteMutation.mutate(column.id, {
+            onSuccess: () => {
+                toast.success(`Cột "${column.title}" đã bị xoá.`);
+                setOpenArchiveDialog(false);
+            },
+            onError: () => {
+                toast.error("Có lỗi xảy ra khi lưu trữ cột.");
+            },
+        });
     };
 
+    const handleTitleUpdate = (e) => {
+        if (e.type === "blur" || (e.type === "keydown" && e.key === "Enter")) {
+          if (!title.trim()) {
+            setTitle(prevTitle);
+          } else {
+            // Gửi mutation để update tên list
+            updateListNameMutation.mutate({
+              listId: column.id,
+              newName: title,
+            });
+      
+            setPrevTitle(title);
+          }
+      
+          setIsEditing(false);
+        }
+      };
+      
+
+    // const handleDeleteConfirm = (id) => {
+    //     const confirmDelete = window.confirm("Bạn có chắc muốn xóa danh sách này?");
+    //     if (confirmDelete) {
+    //       deleteMutation.mutate(id, {
+    //         onSuccess: () => {
+    //           toast.success("Xóa danh sách thành công!");
+    //         },
+    //         onError: () => {
+    //           toast.error("Xóa danh sách thất bại!");
+    //         },
+    //       });
+    //     }
+    //   };
     //============================================================ ARCHIVE======================================================
     const handleArchiveClick = () => {
         setOpenArchiveDialog(true);
         setAnchorEl(null);
     };
 
-    const handleArchiveConfirm = async () => {
-        try {
-            await updateClosed(column.id);
-            toast.success(`Cột "${column.title}" đã được lưu trữ.`);
-        } catch (error) {
-            toast.error("Có lỗi xảy ra khi lưu trữ cột.");
-        }
-        setOpenArchiveDialog(false);
+    const handleArchiveConfirm = () => {
+        updateClosedMutation.mutate(column.id, {
+            onSuccess: () => {
+                toast.success(`Cột "${column.title}" đã được lưu trữ.`);
+                setOpenArchiveDialog(false);
+            },
+            onError: () => {
+                toast.error("Có lỗi xảy ra khi lưu trữ cột.");
+            },
+        });
     };
 
     //======================================== Sửa tiêu đề========================================
@@ -166,17 +222,8 @@ const Col = ({ column }) => {
         setIsEditing(true);
     };
 
-    const handleTitleUpdate = async (e) => {
-        if (e.type === "blur" || (e.type === "keydown" && e.key === "Enter")) {
-            if (!title.trim()) {
-                setTitle(prevTitle);
-            } else {
-                setPrevTitle(title);
-                await updateListName(column.id, { title });
-            }
-            setIsEditing(false);
-        }
-    };
+
+
 
     //======================================== Dropdown========================================
     const handleClick = (event) => {
@@ -340,8 +387,11 @@ const Col = ({ column }) => {
 
             <CopyColumn
                 open={openCopyDialog}
+                defaultTitle={column.title}
                 onClose={() => setOpenCopyDialog(false)}
                 onCopy={handleCopyConfirm}
+                isLoading={isPending}
+
             />
 
             <ConfirmDeleteDialog

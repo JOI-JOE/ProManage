@@ -56,7 +56,12 @@ const TaskModal = ({ open, onClose, onSave }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Hủy</Button>
-        <Button onClick={handleSave} color="primary">
+        <Button 
+        onClick={handleSave}
+         color="primary"
+         disabled={!taskName.trim()} // Vô hiệu hóa nếu chưa nhập
+
+          >
           Thêm
         </Button>
       </DialogActions>
