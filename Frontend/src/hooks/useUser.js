@@ -4,7 +4,7 @@ import {
   checkCode,
   fetchUserBoardsWithWorkspaces,
   forgotPassword,
-  getUser,
+  // getUser,
   updatePass,
   getUserById,
   updateUserProfile,
@@ -33,14 +33,14 @@ export const useFetchUserBoardsWithWorkspaces = (userId) => {
   });
 };
 
-export const useUser = () => {
-  return useQuery({
-    queryKey: ["user"],
-    queryFn: async () => await getUser(),
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 30,
-  });
-};
+// export const useUser = () => {
+//   return useQuery({
+//     queryKey: ["user"],
+//     queryFn: async () => await getUser(),
+//     staleTime: 1000 * 60 * 5,
+//     cacheTime: 1000 * 60 * 30,
+//   });
+// };
 
 export const useLogin = () => {
   const queryClient = useQueryClient();

@@ -12,30 +12,31 @@ class WorkspaceInvitation extends Mailable
 
     public $workspaceName;
     public $userName;
+    public $messageContent;
 
-    /**
-     * Create a new message instance.
-     *
-     * @return void
-     */
-    public function __construct($workspaceName, $userName)
+    public $link;
+
+    public function __construct($workspaceName, $userName, $messageContent = null, $link)
     {
         $this->workspaceName = $workspaceName;
         $this->userName = $userName;
+        $this->messageContent = $messageContent;
+        $this->link = $link;
     }
-
     /**
      * Build the message.
-     *
+    *
      * @return $this
      */
     public function build()
     {
-        return $this->subject('Bạn đã được thêm vào không gian làm việc')
-            ->view('emails.workspace_invitation')
+        return $this->subject(subject: 'Bạn đã được thêm vào không gian làm việc')
+            ->view('emails.invite')
             ->with([
                 'workspaceName' => $this->workspaceName,
                 'userName' => $this->userName,
+                'messageContent' => $this->messageContent,
+                'invite_link' => $this->link
             ]);
     }
 }

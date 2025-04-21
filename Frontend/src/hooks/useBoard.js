@@ -11,7 +11,7 @@ import {
   getRecentBoards,
   getUnsplashImages,
   logBoardAccess,
-  showBoardByWorkspaceId,
+showBoardByWorkspaceId,
   toggleBoardClosed,
   toggleBoardMarked,
   updateBoardName,

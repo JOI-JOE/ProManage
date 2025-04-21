@@ -9,6 +9,7 @@ import { Box, SvgIcon } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useGetInvitationSecretByReferrer } from "../../../hooks/useWorkspaceInvite";
 import { useFetchUserBoardsWithWorkspaces } from "../../../hooks/useUser";
+// import { useWorkspace } from "../../../contexts/WorkspaceContext";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -46,13 +47,15 @@ const AcceptTeam = () => {
         { enabled: !!invitation?.workspaceId && !!invitation?.inviteToken }
     );
 
+    console.log(inviteData)
+
     const { data: userWorkspaces, isLoading: isLoadingUser } = useFetchUserBoardsWithWorkspaces(idMember);
     useEffect(() => {
         if (!idMember || !inviteData) return;
 
         // 1️⃣ Nếu người gửi tự mời chính họ, điều hướng về workspace của họ
         if (idMember === inviteData?.memberInviter?.id) {
-            navigate(`/w/${inviteData?.workspace?.name}`);
+            navigate(`/w/${inviteData?.workspace?.id}`);
             return;
         }
 
@@ -62,7 +65,7 @@ const AcceptTeam = () => {
         );
 
         if (isAlreadyMember) {
-            navigate(`/w/${inviteData?.workspace?.name}`);
+            navigate(`/w/${inviteData?.workspace?.id}`);
         }
     }, [inviteData, idMember, userWorkspaces, navigate]);
 

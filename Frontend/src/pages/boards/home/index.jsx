@@ -19,20 +19,22 @@ import { Restore, Delete, Archive } from "@mui/icons-material";
 import MyWorkspace from "../../../components/MyWorkspace";
 import { useGetWorkspaces } from "../../../hooks/useWorkspace";
 import { useClosedBoards, useForceDestroyBoard, useToggleBoardClosed } from "../../../hooks/useBoard";
+import { useWorkspace } from "../../../contexts/WorkspaceContext";
 
-const HomeBoard = () => {
-  const { data: workspaces, isLoading, isError } = useGetWorkspaces();
+const HomeBoard = ({ workspaces }) => {
+  // const { data: workspaces, isLoading, isError } = useGetWorkspaces();
+  // const { guestWorkspaces } = useWorkspace()
 
   const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
-  
+
   const [openClosedBoards, setOpenClosedBoards] = useState(false);
 
   const { mutate: toggleBoardClosed } = useToggleBoardClosed();
 
   const { mutate: destroyBoard, isPending: isDeleting } = useForceDestroyBoard();
 
-  if (isLoading) return <p>Đang tải workspaces...</p>;
-  if (isError) return <p>Lỗi khi tải workspaces!</p>;
+  // if (isLoading) return <p>Đang tải workspaces...</p>;
+  // if (isError) return <p>Lỗi khi tải workspaces!</p>;
 
   const handleOpenClosedBoards = () => setOpenClosedBoards(true);
   const handleCloseClosedBoards = () => setOpenClosedBoards(false);
@@ -46,7 +48,7 @@ const HomeBoard = () => {
   const handleDeleteBoard = (boardId) => {
     const confirm = window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn bảng này không?");
     if (!confirm) return;
-  
+
     destroyBoard(boardId, {
       onSuccess: () => {
         alert("✅ Đã xóa bảng thành công!");
@@ -81,16 +83,20 @@ const HomeBoard = () => {
         CÁC KHÔNG GIAN LÀM VIỆC CỦA BẠN
       </Typography>
       <div id="myBoardInWorkspace">
-        {workspaces?.map((workspace) => (
-          <MyWorkspace
-            key={workspace.display_name}
-            workspace={workspace}
-            boards={workspace.boards}
-          />
-        ))}
+        {workspaces?.length > 0 ? (
+          workspaces.map((workspace) => (
+            <MyWorkspace
+              key={workspace.id} // Sử dụng id làm key để đảm bảo tính duy nhất
+              workspace={workspace}
+              boards={workspace.boards || []} // Đảm bảo boards luôn là mảng, tránh lỗi nếu boards là undefined
+            />
+          ))
+        ) : (
+          null
+        )}
       </div>
 
-        
+
       {/* Nút xem tất cả bảng đã đóng */}
       <Button
         variant="outlined"

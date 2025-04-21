@@ -6,8 +6,8 @@ import SideBar from "./SideBar";
 import BoardProvider from "../../../providers/BoardProvider";
 import { useGetBoardByID, useToggleBoardClosed } from "../../../hooks/useBoard";
 import { useGetBoardMembers } from "../../../hooks/useInviteBoard";
-import { useUser } from "../../../hooks/useUser";
-import { WorkspaceProvider } from "../../../contexts/WorkspaceContext";
+import { useMe } from "../../../contexts/MeContext";
+// import { useUser } from "../../../hooks/useUser";
 
 const BoardDetail = () => {
   const { boardId } = useParams();
@@ -15,7 +15,8 @@ const BoardDetail = () => {
   const { mutate: toggleBoardClosed } = useToggleBoardClosed(); // Use hook
 
   const { data: boardMembers = [] } = useGetBoardMembers(boardId);
-  const { data: user } = useUser();
+  // const { data: user } = useUser();
+  const { user } = useMe()
 
   const currentUserId = user?.id;
   // console.log(boardMembers);
@@ -38,7 +39,7 @@ const BoardDetail = () => {
     // <WorkspaceProvider board={board}>
     <Container disableGutters maxWidth={false}>
       <Box sx={{ display: "flex", position: "relative" }}>
-        <SideBar />
+        <SideBar board={board} />
         <Box sx={{ width: "81%", position: "relative" }}>
           <BoardProvider>
             {board?.closed == 1 && (

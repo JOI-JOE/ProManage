@@ -31,19 +31,20 @@ import Workspace from "./Menus/Workspace";
 import Recent from "./Menus/Recent";
 import Started from "./Menus/Started";
 import Template from "./Menus/Template";
-import { useUser } from "../../hooks/useUser";
+// import { useUser } from "../../hooks/useUser";
 import useNotifications from "../../hooks/useNotification";
 import useSearch from "../../hooks/useSearch";
 import { formatTime } from "../../../utils/dateUtils";
 import { useRecentBoards } from "../../hooks/useBoard";
 import { useSetting } from "../../hooks/useSetting";
+import { useMe } from "../../contexts/MeContext";
 
 const AppBar = ({ username, email }) => {
-  const { data: user } = useUser();
+  const { user } = useMe();
   const userId = user?.id;
   const { notifications } = useNotifications(userId);
 
-  const { data: settings  } = useSetting();// Chỉ gọi API khi type là "card" và có targetId hợp lệ;
+  const { data: settings } = useSetting();// Chỉ gọi API khi type là "card" và có targetId hợp lệ;
 
   const [query, setQuery] = useState("");
 
@@ -133,13 +134,13 @@ const AppBar = ({ username, email }) => {
     );
   });
 
-  
+
   // Lấy dữ liệu từ useRecentBoards hook
   const { data: recentBoards, isLoading: isLoadingRecent, error: errorRecent } = useRecentBoards();
 
 
   return (
-    <Box  
+    <Box
       px={2}
       sx={{
         width: "100%",
@@ -158,14 +159,14 @@ const AppBar = ({ username, email }) => {
           sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
         >
           {settings?.logo_url && (
-          <SvgIcon
-            component={trelloLogo}
-            inheritViewBox
-            src={settings?.logo_url}
-            fontSize="24px"
-            sx={{ color: "secondary.contrastText" }}
-          />
-        )}
+            <SvgIcon
+              component={trelloLogo}
+              inheritViewBox
+              src={settings?.logo_url}
+              fontSize="24px"
+              sx={{ color: "secondary.contrastText" }}
+            />
+          )}
           <Typography
             variant="span"
             sx={{
@@ -174,7 +175,7 @@ const AppBar = ({ username, email }) => {
               fontSize: "18px",
             }}
           >
-           {settings?.site_name || "Pro Manage"}
+            {settings?.site_name || "Pro Manage"}
           </Typography>
         </Box>
 
@@ -235,7 +236,7 @@ const AppBar = ({ username, email }) => {
               alignItems: "center",
               padding: "20px",
             }}
-            > 
+            >
               <CircularProgress
                 size={24}
                 sx={{ color: "white", marginTop: "10px", }}
@@ -267,7 +268,7 @@ const AppBar = ({ username, email }) => {
               {/* Hiển thị bảng gần đây nếu không có từ khóa tìm kiếm */}
               {!searchText && isFocused && (
                 <Box sx={{ marginBottom: "15px" }}>
-                  <Typography variant="h6" sx={{ color: "#00C2A0", mb: 1,ml:2 }}>
+                  <Typography variant="h6" sx={{ color: "#00C2A0", mb: 1, ml: 2 }}>
                     Các bảng thông tin gần đây
                   </Typography>
                   {isLoadingRecent ? (
@@ -277,7 +278,7 @@ const AppBar = ({ username, email }) => {
                       alignItems: "center",
                       padding: "20px",
                     }}
-                    > 
+                    >
                       <CircularProgress
                         size={24}
                         sx={{ color: "white", marginTop: "10px", }}
@@ -295,7 +296,7 @@ const AppBar = ({ username, email }) => {
                       Không có bảng gần đây nào.
                     </Typography>
                   ) : (
-                    <Box sx={{  borderRadius: "6px", p: 1 }}>
+                    <Box sx={{ borderRadius: "6px", p: 1 }}>
                       {recentBoards?.data?.map((board) => (
                         <Box
                           key={board.id}
@@ -349,7 +350,7 @@ const AppBar = ({ username, email }) => {
                       ))}
                     </Box>
                   )}
-                  
+
                 </Box>
               )}
 
@@ -358,9 +359,9 @@ const AppBar = ({ username, email }) => {
                 <>
                   {Array.isArray(searchResults.boards) && searchResults.boards.length > 0 && (
                     <Box >
-                      <h5 style={{ color: "#00C2A0",fontSize:"14px",marginLeft:"20px" }}>Bảng:</h5>
-                      <Box sx={{ marginBottom: "15px", marginTop:"20px", marginLeft:"20px" }} 
-                      style={{ listStyle: "none", paddingLeft: 0 }}>
+                      <h5 style={{ color: "#00C2A0", fontSize: "14px", marginLeft: "20px" }}>Bảng:</h5>
+                      <Box sx={{ marginBottom: "15px", marginTop: "20px", marginLeft: "20px" }}
+                        style={{ listStyle: "none", paddingLeft: 0 }}>
                         {searchResults.boards.map((board) => (
                           <li
                             key={board.id}
@@ -370,9 +371,9 @@ const AppBar = ({ username, email }) => {
                               borderBottom: "1px solid #444",
                               cursor: "pointer",
                               "&:hover": {
-                              backgroundColor: "#3A3E48",
-                            },
-                              
+                                backgroundColor: "#3A3E48",
+                              },
+
                             }}
                             onClick={() => {
                               setSearchText("");
@@ -388,8 +389,8 @@ const AppBar = ({ username, email }) => {
                                 color: "white",
                                 textDecoration: "none",
                                 "&:hover": {
-                              backgroundColor: "#3A3E48",
-                            },
+                                  backgroundColor: "#3A3E48",
+                                },
                               }}
                             >
                               {/* Thumbnail/Avatar cho Board */}
@@ -430,96 +431,96 @@ const AppBar = ({ username, email }) => {
 
                   {Array.isArray(searchResults.cards) && searchResults.cards.length > 0 && (
                     <Box>
-                      <h5 style={{ color: "#00C2A0",fontSize:"14px",marginLeft:"20px" }}>Thẻ:</h5>
-                      <Box sx={{ marginBottom: "15px", marginTop:"10px", marginLeft:"20px"  }} >
+                      <h5 style={{ color: "#00C2A0", fontSize: "14px", marginLeft: "20px" }}>Thẻ:</h5>
+                      <Box sx={{ marginBottom: "15px", marginTop: "10px", marginLeft: "20px" }} >
 
-                      <ul style={{ listStyle: "none", paddingLeft: 0 }}>
-                        {searchResults.cards.map((card) => (
-                          <li
-                            key={card.id}
-                            style={{
-                              color: "white",
-                              padding: "5px 0",
-                              borderBottom: "1px solid #444",
-                              cursor: "pointer",
-                              
-                              
-                            }}
-                            onClick={() => {
-                              setSearchText("");
-                              setIsFocused(false);
-                            }}
-                            >
-                            <Box
-                              component={Link}
-                              to={`/b/${card.board_id}/${card.board_name}/c/${card.id}/${card.title}`}
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
+                        <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                          {searchResults.cards.map((card) => (
+                            <li
+                              key={card.id}
+                              style={{
                                 color: "white",
-                                textDecoration: "none",
-                                "&:hover": {
-                                  backgroundColor: "#3A3E48",
-                                },
+                                padding: "5px 0",
+                                borderBottom: "1px solid #444",
+                                cursor: "pointer",
+
+
                               }}
-                              >
-                              {/* Icon hình card thay vì thumbnail */}
+                              onClick={() => {
+                                setSearchText("");
+                                setIsFocused(false);
+                              }}
+                            >
                               <Box
+                                component={Link}
+                                to={`/b/${card.board_id}/${card.board_name}/c/${card.id}/${card.title}`}
                                 sx={{
-                                  width: 40,
-                                  height: 40,
-                                  mr: 2,
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "center",
-                                  backgroundColor: "#1693E1",
-                                  borderRadius: "4px",
-                                  
+                                  color: "white",
+                                  textDecoration: "none",
+                                  "&:hover": {
+                                    backgroundColor: "#3A3E48",
+                                  },
                                 }}
                               >
-                                <svg
-                                  width="24"
-                                  height="24"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
+                                {/* Icon hình card thay vì thumbnail */}
+                                <Box
+                                  sx={{
+                                    width: 40,
+                                    height: 40,
+                                    mr: 2,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    backgroundColor: "#1693E1",
+                                    borderRadius: "4px",
+
+                                  }}
+                                >
+                                  <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
                                   >
-                                  <rect
-                                    x="4"
-                                    y="4"
-                                    width="16"
-                                    height="16"
-                                    rx="2"
-                                    fill="white"
+                                    <rect
+                                      x="4"
+                                      y="4"
+                                      width="16"
+                                      height="16"
+                                      rx="2"
+                                      fill="white"
                                     />
-                                  <path
-                                    d="M8 8H16V10H8V8ZM8 12H14V14H8V12Z"
-                                    fill="#1693E1"
+                                    <path
+                                      d="M8 8H16V10H8V8ZM8 12H14V14H8V12Z"
+                                      fill="#1693E1"
                                     />
-                                </svg>
-                              </Box>
-                              {/* <Typography variant="body1" sx={{ color: "white" }}>
+                                  </svg>
+                                </Box>
+                                {/* <Typography variant="body1" sx={{ color: "white" }}>
                                 {card.title}
                               </Typography> */}
-                              <Box>
-                                <Typography variant="body1" sx={{ color: "white", fontWeight: 500 }}>
-                                  {card.title}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: "gray" }}>
-                                  {card.board_name || "No workspace"} : {card.listboard_name || "No List Board"}
-                                </Typography>
+                                <Box>
+                                  <Typography variant="body1" sx={{ color: "white", fontWeight: 500 }}>
+                                    {card.title}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: "gray" }}>
+                                    {card.board_name || "No workspace"} : {card.listboard_name || "No List Board"}
+                                  </Typography>
+                                </Box>
                               </Box>
-                            </Box>
-                          </li>
-                        ))}
-                      </ul>
+                            </li>
+                          ))}
+                        </ul>
                       </Box>
                     </Box>
                   )}
 
                   {(!Array.isArray(searchResults.boards) || searchResults.boards.length === 0) &&
                     (!Array.isArray(searchResults.cards) || searchResults.cards.length === 0) && (
-                        <p style={{ color: "white" }}>Không tìm thấy kết quả nào.</p>
+                      <p style={{ color: "white" }}>Không tìm thấy kết quả nào.</p>
                     )}
                 </>
               )}
@@ -735,7 +736,7 @@ const AppBar = ({ username, email }) => {
                         ))}
                       </Collapse>
                     )}
-                  </Box>  
+                  </Box>
                 );
               })}
             </Box>

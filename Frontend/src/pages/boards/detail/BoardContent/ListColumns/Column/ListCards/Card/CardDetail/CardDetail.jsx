@@ -75,7 +75,7 @@ import {
   useDeleteComment,
   useUpdateComment,
 } from "../../../../../../../../../hooks/useComment";
-import { useUser } from "../../../../../../../../../hooks/useUser";
+// import { useUser } from "../../../../../../../../../hooks/useUser";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { toast, ToastContainer } from "react-toastify";
@@ -154,7 +154,6 @@ const CardModal = ({ }) => {
 
   };
 
-  // const { data: user } = useUser();
 
 
   const queryClient = useQueryClient();

@@ -79,29 +79,18 @@ export const getSearchMembers = async ({ query, idWorkspace }) => {
     throw error;
   }
 };
-
-export const addMemberToWorkspace = async (workspaceId, userIds) => {
-  try {
-    const response = await authClient.post(
-      `/workspace/${workspaceId}/addMembers`,
-      { members: userIds } // Gửi danh sách userIds
-    );
-    return response.data;
-  } catch (error) {
-    console.error("❌ Error adding members:", error);
-    throw error;
-  }
-};
-
-export const confirmWorkspaceMembers = async (
+export const sendInviteWorkspace = async (
   workspaceId,
-  memberId,
-  invitationMessage
+  { email, memberId, message }
 ) => {
   try {
     const response = await authClient.post(
-      `/workspace/${workspaceId}/member/${memberId}`,
-      { invitationMessage } // Gửi dữ liệu lời mời trong body
+      `/workspace/${workspaceId}/members`,
+      {
+        email,
+        memberId,
+        message,
+      }
     );
     return response.data;
   } catch (error) {

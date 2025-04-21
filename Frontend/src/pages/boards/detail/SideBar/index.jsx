@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -25,64 +25,63 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-// import WorkspaceContext from "../../../../contexts/WorkspaceContext";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
 import { useGetBoardMembers, useGuestBoards } from "../../../../hooks/useInviteBoard";
 import { useGetWorkspaces } from "../../../../hooks/useWorkspace";
-import { useUser } from "../../../../hooks/useUser";
 import { useWorkspace } from "../../../../contexts/WorkspaceContext";
+import { useMe } from "../../../../contexts/MeContext";
 
-const SideBar = () => {
-  const { boardId, workspaceId } = useParams();  // Lấy boardId và workspaceId từ URL
-  const { data } = useWorkspace();  // Dữ liệu workspace từ Context hoặc API
-  const [currentWorkspace, setCurrentWorkspace] = useState(null);  // Lưu currentWorkspace vào state
-  useEffect(() => {
-    const workspace = data?.find((workspace) => {
-      if (boardId) {
-        return workspace.boards.some((board) => board.id === boardId); // Tìm workspace có chứa boardId
-      }
-      return workspace.id === workspaceId; // Tìm workspace có id trùng workspaceId
-    });
-    setCurrentWorkspace(workspace);
-  }, [boardId, workspaceId, data]);
+const SideBar = ({ board }) => {
+  const { boardIds } = useMe();
+  const { boardId, workspaceName } = useParams();
+  const { workspaces } = useWorkspace();
 
+  const workspace = workspaces.find((ws) => ws.id === board?.workspace_id)
+  const boards = workspace?.boards || [];
+  const isMemberWorkspace = workspace?.joined === 1;
+  const isMemberBoard = boardIds.includes(Number(boardId));
 
-  const { data: user } = useUser();
+  console.log(isMemberWorkspace, 'thành viên không gina')
+  console.log(isMemberBoard, 'thành viên bảng')
 
   // console.log(boardId);
-  const { data: guestBoards } = useGuestBoards();
+  // const { data: guestBoards } = useGuestBoards();
   // console.log(guestBoards);
-  const { data: boardMembers = [] } = useGetBoardMembers(boardId);
+  // const { currentWorkspace } = useContext(WorkspaceContext);
+  // const { data: boardMembers = [] } = useGetBoardMembers(boardId);
 
-  const currentUserId = user?.id;
+  // const currentUserId = user?.id;
 
-  const isMember = Array.isArray(boardMembers?.data)
-    ? boardMembers.data.some(member =>
-      member.id === currentUserId && member.pivot.role === "member"
-    )
-    : false;
+  // const isMember = Array.isArray(boardMembers?.data)
+  //   ? boardMembers.data.some(member =>
+  //     member.id === currentUserId && member.pivot.role === "member"
+  //   )
+  //   : false;
 
-  const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
+  // const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
   // console.log(adminCount);
 
+  // useMemberJoinedListener(user?.id)
 
-  const foundWorkspace = guestBoards?.find((workspace) =>
-    workspace.boards.some((board) => board.id === boardId)
-  );
+
+
+  // const foundWorkspace = guestBoards?.find((workspace) =>
+  //   workspace.boards.some((board) => board.id === boardId)
+  // );
   // console.log(foundWorkspace);
 
-  let isGuest = false;
-  if (foundWorkspace) {
-    isGuest = true;
-  }
+  // let isGuest = false;
+  // if (foundWorkspace) {
+  //   isGuest = true;
+  // }
   // console.log(isGuest);
 
   // const activeData = foundWorkspace || currentWorkspace;
 
-  const [openSettings, setOpenSettings] = useState(false);
+  // const [openSettings, setOpenSettings] = useState(false);
   // const invitedWorkspace = currentWorkspace?.boards?.some(board => board.id == boardId) ? currentWorkspace : null;
   // console.log(invitedWorkspace);
 
@@ -104,10 +103,9 @@ const SideBar = () => {
     setSelectedBoardId(null);
   };
 
-  const { mutate: toggleBoardClosed } = useToggleBoardClosed(); // Use hook
-
+  const { mutate: toggleBoardClosed } = useToggleBoardClosed();
   const handleCloseBoard = (boardId) => {
-    toggleBoardClosed(boardId); // Gọi hook để thay đổi trạng thái đóng bảng
+    toggleBoardClosed(boardId);
     handleMenuClose();
   };
 
@@ -147,75 +145,75 @@ const SideBar = () => {
         <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
         <Box>
           <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-            {isGuest
+            {/* {isGuest
               ? foundWorkspace?.workspace_name
-              : currentWorkspace?.display_name}
+              : currentWorkspace?.display_name} */}
+            {workspace?.display_name}
           </Typography>
         </Box>
       </Box>
 
-      {!isGuest && (
-        <List>
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to={`/w/${currentWorkspace?.id}`}
-            >
-              <ListItemIcon sx={{ color: "white" }}>
-                <DashboardIcon />
-              </ListItemIcon>
-              <ListItemText primary="Bảng" />
-            </ListItemButton>
-          </ListItem>
+      {isMember && (
+        <></>
+        // <List>
+        //   <ListItem disablePadding>
+        //     <ListItemButton
+        //       component={Link}
+        //       to={`/w/${selectedWorkspace?.name}`}
+        //     >
+        //       <ListItemIcon sx={{ color: "white" }}>
+        //         <DashboardIcon />
+        //       </ListItemIcon>
+        //       <ListItemText primary="Bảng" />
+        //     </ListItemButton>
+        //   </ListItem>
 
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to={`/w/${currentWorkspace?.id}/members`}
-            >
-              <ListItemIcon sx={{ color: "white" }}>
-                <PeopleIcon />
-              </ListItemIcon>
-              <ListItemText primary="Thành viên" />
-              <AddIcon sx={{ color: "gray" }} />
-            </ListItemButton>
-          </ListItem>
+        //   <ListItem disablePadding>
+        //     <ListItemButton
+        //       component={Link}
+        //       to={`/w/${selectedWorkspace?.name}/members`}
+        //     >
+        //       <ListItemIcon sx={{ color: "white" }}>
+        //         <PeopleIcon />
+        //       </ListItemIcon>
+        //       <ListItemText primary="Thành viên" />
+        //       <AddIcon sx={{ color: "gray" }} />
+        //     </ListItemButton>
+        //   </ListItem>
 
-          <ListItemButton onClick={toggleSettings}>
-            <ListItemIcon sx={{ color: "white" }}>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Cài đặt Không gian làm việc" />
-            {openSettings ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
+        //   <ListItemButton onClick={toggleSettings}>
+        //     <ListItemIcon sx={{ color: "white" }}>
+        //       <SettingsIcon />
+        //     </ListItemIcon>
+        //     <ListItemText primary="Cài đặt Không gian làm việc" />
+        //     {openSettings ? <ExpandLess /> : <ExpandMore />}
+        //   </ListItemButton>
 
-          <Collapse in={openSettings} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              <ListItemButton sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: "white" }}>
-                  <ViewKanbanIcon />
-                </ListItemIcon>
-                <ListItemText
-                  component={Link}
-                  to={`/w/${currentWorkspace?.id}/account`}
-                  primary="Cài đặt không gian làm việc"
-                />
-              </ListItemButton>
-              <ListItemButton sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: "white" }}>
-                  <UpgradeIcon />
-                </ListItemIcon>
-                <ListItemText primary="Nâng cấp không gian làm việc" />
-              </ListItemButton>
-            </List>
-          </Collapse>
-        </List>
+        //   <Collapse in={openSettings} timeout="auto" unmountOnExit>
+        //     <List component="div" disablePadding>
+        //       <ListItemButton sx={{ pl: 4 }} component={Link} to={`/w/${selectedWorkspace?.name}/account`}>
+        //         <ListItemIcon sx={{ color: "white" }}>
+        //           <ViewKanbanIcon />
+        //         </ListItemIcon>
+        //         <ListItemText primary="Cài đặt không gian làm việc" />
+        //       </ListItemButton>
+        //       <ListItemButton sx={{ pl: 4 }}>
+        //         <ListItemIcon sx={{ color: "white" }}>
+        //           <UpgradeIcon />
+        //         </ListItemIcon>
+        //         <ListItemText primary="Nâng cấp không gian làm việc" />
+        //       </ListItemButton>
+        //     </List>
+        //   </Collapse>
+        // </List>
       )}
-
-      {!isGuest && (
+      {isMember && (
         <Box>
           <ListItem disablePadding>
-            <ListItemButton component={Link} to={`/w/${currentWorkspace?.id}/calendar`}>
+            <ListItemButton
+              component={Link}
+              to={`/w/${workspace?.name}/calendar`}
+            >
               <ListItemIcon sx={{ color: "white" }}>
                 <CalendarMonthIcon />
               </ListItemIcon>
@@ -227,24 +225,23 @@ const SideBar = () => {
       <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
         Các bảng của bạn
       </Typography>
-
       <List sx={{ p: 0.5 }}>
-        {(isGuest ? foundWorkspace : currentWorkspace)?.boards
-          .filter((board) => board.closed === 0)
-          .map((board) => (
+        {workspace?.boards.map((board) => {
+          const isCurrent = board.id === Number(board.id); // Cần kiểm tra lại điều kiện này
+          const isSelected = selectedBoardId === board.id;
+
+          return (
             <ListItem
               key={board.id}
               disablePadding
               sx={{ p: 1, display: "flex", alignItems: "center" }}
             >
-              {/* Phần tên bảng dẫn link */}
               <ListItemButton
                 component={Link}
                 to={`/b/${board.id}/${board.name}`}
                 sx={{
                   flexGrow: 1,
-                  backgroundColor:
-                    board.id === Number(board.id) ? "#ffffff33" : "transparent",
+                  backgroundColor: isCurrent ? "#ffffff33" : "transparent",
                   "&:hover": { backgroundColor: "#ffffff22" },
                   borderRadius: "6px",
                 }}
@@ -262,7 +259,6 @@ const SideBar = () => {
                 />
               </ListItemButton>
 
-              {/* Nút ... mở dropdown, tách riêng hoàn toàn */}
               <IconButton
                 onClick={(e) => handleMenuOpen(e, board.id)}
                 sx={{ color: "white", ml: "auto" }}
@@ -270,10 +266,9 @@ const SideBar = () => {
                 <MoreVertIcon />
               </IconButton>
 
-              {/* Dropdown menu của từng bảng */}
               <Menu
                 anchorEl={menuAnchor}
-                open={selectedBoardId === board.id}
+                open={isSelected}
                 onClose={handleMenuClose}
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                 transformOrigin={{ vertical: "top", horizontal: "left" }}
@@ -302,53 +297,38 @@ const SideBar = () => {
                 </MenuItem>
 
                 {(adminCount >= 2 || isMember) && (
-                  [
-                    {
-                      text: "Rời khỏi bảng",
-                      icon: <ExitToAppIcon />,
-                      color: "#ff4d4d",
-                    },
-                  ].map((item, index) => (
-                    <MenuItem
-                      key={index}
-                      onClick={() => console.log(item.text)}
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        padding: "10px 16px",
-                        "&:hover": { backgroundColor: item.color, color: "white" },
-                      }}
-                    >
-                      {item.text}
-                      {item.icon}
-                    </MenuItem>
-                  ))
+                  <MenuItem
+                    onClick={() => console.log("Rời khỏi bảng")}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "10px 16px",
+                      "&:hover": { backgroundColor: "#ff4d4d", color: "white" },
+                    }}
+                  >
+                    Rời khỏi bảng
+                    <ExitToAppIcon />
+                  </MenuItem>
                 )}
-
 
                 {!isMember && (
-                  [
-                    { text: "Đóng bảng", icon: <CloseIcon />, color: "#ff4d4d" },
-                  ].map((item, index) => (
-                    <MenuItem
-                      key={index}
-                      onClick={() => handleCloseBoard(board.id)}
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        padding: "10px 16px",
-                        "&:hover": { backgroundColor: item.color, color: "white" },
-                      }}
-                    >
-                      {item.text}
-                      {item.icon}
-                    </MenuItem>
-                  ))
+                  <MenuItem
+                    onClick={() => handleCloseBoard(board.id)}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "10px 16px",
+                      "&:hover": { backgroundColor: "#ff4d4d", color: "white" },
+                    }}
+                  >
+                    Đóng bảng
+                    <CloseIcon />
+                  </MenuItem>
                 )}
-
               </Menu>
             </ListItem>
-          ))}
+          );
+        })}
       </List>
     </Drawer>
   );

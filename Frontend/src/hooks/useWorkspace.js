@@ -9,12 +9,25 @@ import {
   getGuestWorkspace,
   getUserWorkspaces,
   getUserWorkspaces2,
+  fetchWorkspacesAll,
+  changeType,
+  removeMemberWorkspace,
 } from "../api/models/workspacesApi";
 
 /**
  * Custom hook để lấy danh sách workspaces mà user tham gia.
  * @returns {object} - Kết quả từ useQuery (data, isLoading, isError, ...)
  */
+export const usefetchWorkspaces = () => {
+  return useQuery({
+    queryKey: ["workspaces"],
+    queryFn: fetchWorkspacesAll,
+    staleTime: 5 * 60 * 1000, // 5 phút: dữ liệu "tươi" trong 5 phút
+    cacheTime: 10 * 60 * 1000, // 10 phút: giữ cache 10 phút sau khi không dùng
+    refetchOnWindowFocus: false, // Không refetch khi focus lại tab
+  });
+};
+
 export const useGetWorkspaces = () => {
   return useQuery({
     queryKey: ["workspaces"],
@@ -120,5 +133,45 @@ export const useUserWorkspaces = () => {
   return useQuery({
     queryKey: ["userWorkspaces2"],
     queryFn: getUserWorkspaces2,
+  });
+};
+
+// Hook to change a member's type in a workspace
+export const useChangeMemberType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, userId, memberType }) =>
+      changeType(workspaceId, userId, memberType),
+    onSuccess: (response, variables) => {
+      // Invalidate the workspace query to refresh workspace data
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", variables.workspaceId],
+        exact: true,
+      });
+    },
+    onError: (error) => {
+      console.error("Error when changing member type:", error);
+    },
+  });
+};
+
+// Hook to remove a member from a workspace
+export const useRemoveMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, userId }) =>
+      removeMemberWorkspace(workspaceId, userId),
+    onSuccess: (response, variables) => {
+      // Invalidate the workspace query to refresh workspace data
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", variables.workspaceId],
+        exact: true,
+      });
+    },
+    onError: (error) => {
+      console.error("Error when removing member:", error);
+    },
   });
 };

@@ -21,16 +21,19 @@ import GroupIcon from "@mui/icons-material/Group"; // Icon cho Không gian làm 
 import { useCopyBoard } from "../../../../../../../hooks/useBoard";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetWorkspaces } from "../../../../../../../hooks/useWorkspace";
-import { useUser } from "../../../../../../../hooks/useUser";
+// import { useUser } from "../../../../../../../hooks/useUser";
 import { useGetBoardMembers } from "../../../../../../../hooks/useInviteBoard";
+import { useWorkspace } from "../../../../../../../contexts/WorkspaceContext";
+import { useMe } from "../../../../../../../contexts/MeContext";
 
 
 const Copy = ({ open, onClose, anchorEl, currentWorkspaceId }) => {
   const { boardId, boardName } = useParams();
 
   const [title, setTitle] = useState("");
+  const { workspaces } = useWorkspace();
   // const { data: workspaces = [], isLoading, error } = useUserWorkspaces();
-  const { data: workspaces, isLoading: isLoadingWorkspaces, error } = useGetWorkspaces();
+  // const { data: workspaces, isLoading: isLoadingWorkspaces, error } = useGetWorkspaces();
   const memoizedWorkspaces = useMemo(() => workspaces ?? [], [workspaces]);
 
   const navigate = useNavigate()
@@ -39,7 +42,8 @@ const Copy = ({ open, onClose, anchorEl, currentWorkspaceId }) => {
   const [showChangePopover, setShowChangePopover] = useState(false);
   const [visibility, setVisibility] = useState("workspace"); // Mặc định là không gian làm việc
   const { mutate: copyBoard, isCopyLoading } = useCopyBoard();
-  const { data: user } = useUser();
+  // const { data: user } = useUser();
+  const { user } = useMe();
   const { data: boardMembers = [] } = useGetBoardMembers(boardId);
 
   const currentUserId = user?.id;
