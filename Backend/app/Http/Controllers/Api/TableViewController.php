@@ -65,10 +65,14 @@ class TableViewController extends Controller
                 'cards.id',
                 'cards.title',
                 'cards.end_date',
+                'cards.end_time',
+                'cards.reminder',
                 'cards.is_completed',
+                'list_boards.id',
                 'list_boards.name',
                 'boards.id',
-                'boards.name'
+                'boards.name',
+                'boards.thumbnail'
             )
             ->get();
 

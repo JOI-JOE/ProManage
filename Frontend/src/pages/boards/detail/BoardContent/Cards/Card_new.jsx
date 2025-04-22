@@ -45,9 +45,7 @@ const Card_new = ({ openCard, setOpenCard, addCard }) => {
                     >
                         Add new card
                     </Button>
-                    <Tooltip title="Kéo để di chuyển">
-                        <DragHandleIcon sx={{ cursor: "pointer" }} />
-                    </Tooltip>
+                   
                 </Box>
             ) : (
                 <Box

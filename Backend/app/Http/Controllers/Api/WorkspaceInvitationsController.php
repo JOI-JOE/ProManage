@@ -19,71 +19,6 @@ use Illuminate\Support\Facades\Log;
 class WorkspaceInvitationsController extends Controller
 {
 
-    protected $googleService;
-
-    public function __construct(GoogleService $googleService)
-    {
-        $this->googleService = $googleService;
-    }
-
-    // public function acceptInvitation($workspaceId, $inviteToken)
-    // {
-    //     try {
-    //         $user = Auth::user();
-    //         // Lấy thông tin workspace
-    //         $workspace = Workspace::find($workspaceId);
-    //         if (!$workspace) {
-    //             return response()->json([
-    //                 'status' => 'error',
-    //                 'message' => 'Workspace not found.',
-    //             ], 404);
-    //         }
-
-    //         $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
-    //             ->where('invite_token', $inviteToken)
-    //             ->first();
-
-    //         if (!$invitation) {
-    //             return response()->json([
-    //                 'status' => 'error',
-    //                 'message' => 'Invalid or expired invitation.',
-    //             ], 404);
-    //         }
-
-    //         // Kiểm tra user đã là thành viên chưa
-    //         $isMember = WorkspaceMembers::where('workspace_id', $workspaceId)
-    //             ->where('user_id', $user->id)
-    //             ->exists();
-
-    //         if ($isMember) {
-    //             return response()->json([
-    //                 'status' => 'success',
-    //                 'message' => 'User is already a member of this workspace.',
-    //             ], 200);
-    //         }
-
-    //         // Nếu user chưa là thành viên, thêm họ vào workspace
-    //         WorkspaceMembers::create([
-    //             'workspace_id' => $workspaceId,
-    //             'user_id' => $user->id,
-    //             'member_type' => 'normal', // Hoặc loại thành viên khác tùy thuộc vào logic của bạn
-    //             'is_unconfirmed' => false, // Đã xác nhận
-    //             'joined' => true, // Ngày tham gia
-    //             'is_deactivated' => false, // Không vô hiệu hóa
-    //             'last_active' => now(), // Lần hoạt động cuối cùng
-    //         ]);
-
-    //         return response()->json([
-    //             'status' => 'success',
-    //             'message' => 'User has been successfully added to the workspace.',
-    //         ], 200);
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'status' => 'error',
-    //             'message' => 'Failed to accept invitation: ' . $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
     public function getInvitationSecret($workspaceId)
     {
         try {
@@ -163,7 +98,6 @@ class WorkspaceInvitationsController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     // Sử lý function tìm kiếm - hậu làm
     public function searchMembers(Request $request)
     {
@@ -184,16 +118,14 @@ class WorkspaceInvitationsController extends Controller
             ->orderBy('id') // Tối ưu index
             ->limit(7) // 🔥 Giới hạn chỉ lấy 7 user
             ->get()
-            ->append('similarity'); // ✅ Chỉ thêm similarity khi gọi searchMembers
+            ->append('similarity');
 
-        // ✅ Xử lý dữ liệu
         $users = $users->map(function ($user) use ($queryText, $idWorkspace) {
             // Ép kiểu workspace ID thành chuỗi UTF-8
             $workspaceIds = $user->workspaceMember->pluck('workspace_id')
                 ->map(fn($id) => (string) $id)
                 ->toArray();
 
-            // 🔥 Lọc những workspace có ID gần giống với `$idWorkspace`
             $filteredWorkspaces = array_values(array_filter($workspaceIds, function ($workspaceId) use ($idWorkspace) {
                 $workspaceId = trim($workspaceId);
                 $idWorkspace = trim($idWorkspace);
@@ -232,7 +164,6 @@ class WorkspaceInvitationsController extends Controller
                 'joined'      => $user->workspaceMember->where('workspace_id', $idWorkspace)->where('joined', true)->isNotEmpty(),
             ];
 
-            // 🔥 Đảm bảo UTF-8 hợp lệ trước khi trả về JSON
             array_walk_recursive($data, function (&$value) {
                 if (is_string($value)) {
                     $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
@@ -244,7 +175,6 @@ class WorkspaceInvitationsController extends Controller
 
         return response()->json($users, 200, [], JSON_UNESCAPED_UNICODE);
     }
-
     public function calculateSimilarityScore(User $user, $queryText, $idWorkspace)
     {
         $score = 0;
@@ -298,129 +228,11 @@ class WorkspaceInvitationsController extends Controller
 
         return $score;
     }
-
     private function calculateSimilarity($query, $text)
     {
         if (!$text) return 0;
         similar_text(strtolower($query), strtolower($text), $percent);
         return $percent / 100;
-    }
-    // End
-
-    public function confirmWorkspaceMembers($workspaceId, $memberId, Request $request)
-    {
-        // Lấy thông tin workspace và thành viên
-        $workspace = Workspace::where('id', $workspaceId)->first(['display_name']);
-        $member = WorkspaceMembers::where('workspace_id', $workspaceId)
-            ->where('user_id', $memberId)
-            ->first();
-
-        if (!$member) {
-            return response()->json(['message' => 'Member not found in workspace'], 404);
-        }
-
-        if ($member->joined) {
-            return response()->json([
-                'message' => 'Member already confirmed',
-                'updated_member' => $member
-            ], 200);
-        }
-
-        WorkspaceMembers::where('user_id', $memberId) // Sử dụng $memberId
-            ->where('workspace_id', $workspaceId)
-            ->update([
-                'joined' => true,
-                'member_type' => $member->member_type === 'pending' ? 'normal' : $member->member_type
-            ]);
-        // Gửi email xác nhận nếu có thông tin email
-        $user = User::find($memberId);
-        if ($user && $user->email) {
-            $data = [
-                'inviter_name' => $user->full_name,
-                'workspace_name' => $workspace->display_name,
-                'invite_link' => 'test',
-                'invitationMessage' => $request->input('invitationMessage', '') ?? '' // Gộp message vào data
-            ];
-            $this->sendConfirmationEmail($user, $data);
-        }
-        return response()->json([
-            'message' => 'Member confirmed successfully',
-            'updated_member' => $member
-        ], 200);
-    }
-
-    /**
-     * Gửi email xác nhận cho thành viên mới
-     */
-    private function sendConfirmationEmail(User $user, array $data): void
-    {
-        try {
-            // Lấy user đang xác nhận (admin hoặc người mời)
-            /** @var \App\Models\User $adminUser */
-            $adminUser = Auth::user();
-
-            if (!$adminUser) {
-                throw new \Exception("Admin user not authenticated");
-            }
-
-            // Kiểm tra token Google của admin
-            if (!$adminUser->google_access_token) {
-                throw new \Exception("Admin Google Access Token not found");
-            }
-
-            // Kiểm tra & làm mới token nếu cần
-            $accessToken = $this->refreshTokenIfNeeded($adminUser);
-
-            $recipientEmails = $user->email ? [$user->email] : [];
-
-            // Gửi email bất đồng bộ thông qua queue
-            dispatch(new SendWorkspaceEmailJob(
-                $accessToken,
-                $adminUser->full_name, // Tên hiển thị của người gửi (Admin)
-                $adminUser->email,
-                $recipientEmails, // Danh sách email người nhận
-                "{$adminUser->full_name} đã mời bạn tham gia vào Không gian làm việc Promanage", // Tiêu đề email
-                $data,
-                'emails.invite' // Blade template của email
-            ));
-        } catch (\Exception $e) {
-            Log::error("Gửi email xác nhận thất bại: " . $e->getMessage(), [
-                'user_id' => $user->id,
-                'admin_user_id' => $adminUser->id ?? null,
-            ]);
-        }
-    }
-    /**
-     * Kiểm tra và làm mới access token nếu cần
-     */
-    private function refreshTokenIfNeeded(User $user): string
-    {
-        try {
-            // Kiểm tra xem token có hết hạn không
-            if ($this->googleService->isAccessTokenExpired($user->google_access_token)) {
-                if (!$user->google_refresh_token) {
-                    throw new \Exception('Access token expired and no refresh token available. Please re-authenticate.');
-                }
-
-                // Làm mới token
-                $newToken = $this->googleService->refreshAccessToken($user->google_refresh_token, $user);
-
-                // Cập nhật vào database
-                $user->update([
-                    'google_access_token' => $newToken['access_token'],
-                    'google_refresh_token' => $newToken['refresh_token'] ?? $user->google_refresh_token,
-                ]);
-
-                return $newToken['access_token'];
-            }
-
-            return $user->google_access_token;
-        } catch (\Exception $e) {
-            Log::error("Lỗi khi refresh token: " . $e->getMessage(), [
-                'user_id' => $user->id,
-            ]);
-            throw new \Exception("Không thể refresh token: " . $e->getMessage());
-        }
     }
     public function getInvitationSecretByReferrer($workspaceId, $inviteToken)
     {
@@ -450,112 +262,4 @@ class WorkspaceInvitationsController extends Controller
             ], 500);
         }
     }
-    // public function confirmWorkspaceMembers($workspaceId, $memberId, Request $request)
-    // {
-    //     // Tìm thành viên trong workspace
-    //     $member = WorkspaceMembers::where('workspace_id', $workspaceId)
-    //         ->where('user_id', $memberId)
-    //         ->first();
-
-    //     // Kiểm tra nếu không tìm thấy thành viên
-    //     if (!$member) {
-    //         return response()->json([
-    //             'message' => 'Member not found in workspace'
-    //         ], 404);
-    //     }
-
-    //     // Kiểm tra nếu thành viên đã xác nhận trước đó
-    //     if ($member->joined) {
-    //         return response()->json([
-    //             'message' => 'Member already confirmed',
-    //             'updated_member' => $member
-    //         ], 200);
-    //     }
-
-    //     // Cập nhật trạng thái của thành viên
-    //     WorkspaceMembers::where('workspace_id', $workspaceId)
-    //         ->where('user_id', $memberId)
-    //         ->update([
-    //             'joined' => true,
-    //             'member_type' => $member->member_type === 'pending' ? 'normal' : $member->member_type
-    //         ]);
-
-    //     // Gửi email xác nhận nếu có thông tin email
-    //     $user = User::find($memberId);
-    //     if ($user && $user->email) {
-    //         $invitationMessage = $request->input('invitationMessage', '') ?? ''; // Đảm bảo luôn là chuỗi
-    //         $this->sendConfirmationEmail($user, $invitationMessage);
-    //     }
-
-    //     return response()->json([
-    //         'message' => 'Member confirmed successfully',
-    //         'updated_member' => WorkspaceMembers::where('workspace_id', $workspaceId)
-    //             ->where('user_id', $memberId)
-    //             ->first()
-    //     ], 200);
-    // }
-
-    // /**
-    //  * Gửi email xác nhận cho thành viên mới
-    //  */
-    // private function sendConfirmationEmail(User $user, $invitationMessage = '')
-    // {
-    //     try {
-    //         // Lấy user đang xác nhận (admin hoặc người mời)
-    //         $adminUser = Auth::user();
-    //         if (!$adminUser) {
-    //             throw new \Exception("Admin user not authenticated");
-    //         }
-
-    //         // Kiểm tra token Google của admin
-    //         if (!$adminUser->google_access_token) {
-    //             throw new \Exception("Admin Google Access Token not found");
-    //         }
-
-    //         // Kiểm tra & làm mới token nếu cần
-    //         $accessToken = $this->refreshTokenIfNeeded($adminUser, $adminUser->google_access_token, $adminUser->google_refresh_token);
-
-    //         // Tạo nội dung email
-    //         $emailBody = "Chào {$user->full_name}, bạn đã được xác nhận tham gia vào workspace!";
-    //         if (!empty($invitationMessage)) {
-    //             $emailBody .= "\n\n📩 Lời nhắn từ người mời:\n\"$invitationMessage\"";
-    //         }
-
-    //         // Gửi email bất đồng bộ
-    //         dispatch(new SendWorkspaceEmailJob(
-    //             $accessToken,
-    //             $adminUser->full_name,
-    //             [$user->email],
-    //             "Xác nhận tham gia workspace",
-    //             $emailBody
-    //         ));
-    //     } catch (\Exception $e) {
-    //         Log::error("Gửi email xác nhận thất bại: " . $e->getMessage());
-    //     }
-    // }
-
-
-    // /**
-    //  * Kiểm tra và làm mới access token nếu cần
-    //  */
-    // private function refreshTokenIfNeeded($user, $accessToken, $refreshToken)
-    // {
-    //     if ($this->googleService->isAccessTokenExpired($accessToken)) {
-    //         if (!$refreshToken) {
-    //             throw new \Exception('Access token expired and no refresh token available. Please re-authenticate.');
-    //         }
-
-    //         // Làm mới token
-    //         $newToken = $this->googleService->refreshAccessToken($refreshToken, $user);
-    //         $accessToken = $newToken['access_token'];
-
-    //         // Cập nhật vào database
-    //         $user->update([
-    //             'google_access_token' => $accessToken,
-    //             'google_refresh_token' => $newToken['refresh_token'] ?? $user->google_refresh_token,
-    //         ]);
-    //     }
-
-    //     return $accessToken;
-    // }
 }

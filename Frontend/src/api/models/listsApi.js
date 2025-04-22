@@ -120,6 +120,18 @@ export const updateClosed = async (listId) => {
   }
 };
 
+export const duplicateList = async (listId, name = null) => {
+  try {
+    const response = await authClient.post(`/lists/${listId}/duplicate`, {
+      name, // optional, nếu không có sẽ tự thêm "(Copy)" trong backend
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi sao chép danh sách:", error);
+    throw error;
+  }
+};
+
 export const updatePositionList = async ({ listId, position }) => {
   try {
     const { data } = await authClient.put(`/lists/${listId}`, { position });

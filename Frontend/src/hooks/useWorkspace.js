@@ -9,13 +9,26 @@ import {
   getGuestWorkspace,
   getUserWorkspaces,
   getUserWorkspaces2,
-  checkMemberInWorkspace,
+  fetchWorkspacesAll,
+  changeType,
+  removeMemberWorkspace,
+  // checkMemberInWorkspace,
 } from "../api/models/workspacesApi";
 
 /**
  * Custom hook để lấy danh sách workspaces mà user tham gia.
  * @returns {object} - Kết quả từ useQuery (data, isLoading, isError, ...)
  */
+export const usefetchWorkspaces = () => {
+  return useQuery({
+    queryKey: ["workspaces"],
+    queryFn: fetchWorkspacesAll,
+    staleTime: 5 * 60 * 1000, // 5 phút: dữ liệu "tươi" trong 5 phút
+    cacheTime: 10 * 60 * 1000, // 10 phút: giữ cache 10 phút sau khi không dùng
+    refetchOnWindowFocus: false, // Không refetch khi focus lại tab
+  });
+};
+
 export const useGetWorkspaces = () => {
   return useQuery({
     queryKey: ["workspaces"],
@@ -33,6 +46,16 @@ export const useGetWorkspaces = () => {
   });
 };
 
+export const useGetWorkspaceById = (workspaceId) => {
+  return useQuery({
+    queryKey: ["workspace", workspaceId], // Key để cache dữ liệu
+    queryFn: () => getWorkspaceById(workspaceId),
+    enabled: !!workspaceId,
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
+  });
+};
+
 export const useGetGuestWorkspaces = () => {
   return useQuery({
     queryKey: ["guestWorkspaces"],
@@ -44,7 +67,6 @@ export const useGetGuestWorkspaces = () => {
     onError: (error) => {
       console.error("Lỗi khi lấy danh sách workspaces khách:", error);
     },
-
   });
 };
 
@@ -70,17 +92,6 @@ export const useGetBoardMarkedByWorkspace = (workspaceName) => {
   });
 };
 
-export const useGetWorkspaceById = (workspaceId) => {
-  return useQuery({
-    queryKey: ["workspace", workspaceId], // Key để cache dữ liệu
-    queryFn: () => getWorkspaceById(workspaceId),
-    enabled: !!workspaceId, // Chỉ gọi API nếu workspaceId tồn tại
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 30,
-    retry: 2,
-  });
-};
-
 export const useCreateWorkspace = () => {
   const queryClient = useQueryClient();
 
@@ -101,12 +112,7 @@ export const useUpdateInforWorkspace = () => {
   return useMutation({
     mutationFn: ({ id, data }) => updateWorkspaceInfo(id, data),
     onSuccess: (updatedWorkspace) => {
-      queryClient.setQueryData(
-        ["workspace", updatedWorkspace.id],
-        updatedWorkspace
-      );
-      // Invalidate query để refetch nếu dữ liệu cũ không còn hợp lệ
-      queryClient.invalidateQueries(["workspace", updatedWorkspace.id]);
+      queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
     },
     onError: (error) => {
       console.error("Lỗi khi cập nhật workspace:", error);
@@ -116,7 +122,7 @@ export const useUpdateInforWorkspace = () => {
 
 export const useGetUserWorkspaces = () => {
   return useQuery({
-    queryKey: ['userWorkspaces'], // Key để cache dữ liệu
+    queryKey: ["userWorkspaces"], // Key để cache dữ liệu
     queryFn: getUserWorkspaces,
     staleTime: 1000 * 60 * 5, // Dữ liệu sẽ hết hạn sau 5 phút
     cacheTime: 1000 * 60 * 30, // Dữ liệu sẽ được cache trong 30 phút
@@ -131,13 +137,53 @@ export const useUserWorkspaces = () => {
   });
 };
 
-export const useCheckMemberInWorkspace = (workspaceId, userId) => {
-  return useQuery({
-    queryKey: ["workspace-member-check", workspaceId, userId], // Unique key theo cả 2 giá trị
-    queryFn: () => checkMemberInWorkspace(workspaceId, userId),
-    enabled: !!workspaceId && !!userId, // Gọi API khi cả 2 đều tồn tại
-    staleTime: 1000 * 60 * 5, // 5 phút
-    cacheTime: 1000 * 60 * 30, // 30 phút
-    retry: 2,
+// Hook to change a member's type in a workspace
+export const useChangeMemberType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, userId, memberType }) =>
+      changeType(workspaceId, userId, memberType),
+    onSuccess: (response, variables) => {
+      // Invalidate the workspace query to refresh workspace data
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", variables.workspaceId],
+        exact: true,
+      });
+    },
+    onError: (error) => {
+      console.error("Error when changing member type:", error);
+    },
   });
 };
+
+// Hook to remove a member from a workspace
+export const useRemoveMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, userId }) =>
+      removeMemberWorkspace(workspaceId, userId),
+    onSuccess: (response, variables) => {
+      // Invalidate the workspace query to refresh workspace data
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", variables.workspaceId],
+        exact: true,
+      });
+    },
+    onError: (error) => {
+      console.error("Error when removing member:", error);
+    },
+  });
+};
+
+// export const useCheckMemberInWorkspace = (workspaceId, userId) => {
+//   return useQuery({
+//     queryKey: ["workspace-member-check", workspaceId, userId], // Unique key theo cả 2 giá trị
+//     queryFn: () => useCheckMemberInWorkspace(workspaceId, userId),
+//     enabled: !!workspaceId && !!userId, // Gọi API khi cả 2 đều tồn tại
+//     staleTime: 1000 * 60 * 5, // 5 phút
+//     cacheTime: 1000 * 60 * 30, // 30 phút
+//     retry: 2,
+//   });
+// };

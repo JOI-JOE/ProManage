@@ -18,6 +18,197 @@ use App\Events\BoardStatusChanged;
 
 class BoardController extends Controller
 {
+
+    /// ---------------------------------------------
+    // public function show($boardId)
+    // {
+    //     $userId = Auth::id();
+
+    //     // Bước 1: Lấy thông tin board
+    //     $board = DB::table('boards')
+    //         ->where('id', $boardId)
+    //         ->first();
+
+    //     if (!$board) {
+    //         return response()->json(['message' => 'Board not found.'], 404);
+    //     }
+
+    //     // Bước 2: Kiểm tra quyền truy cập và lấy dữ liệu
+    //     $boardAccess = $this->checkBoardAccess($board, $userId);
+
+    //     if (!$boardAccess['showBoardData']) {
+    //         return response()->json(['action' => 'request_access'], 403);
+    //     }
+
+    //     // Bước 3: Chuẩn bị dữ liệu trả về từ boardAccess
+    //     $response = array_filter([
+    //         'board' => [
+    //             'id' => $board->id,
+    //             'name' => $board->name,
+    //             'description' => $board->description,
+    //             'visibility' => $board->visibility,
+    //             'workspace_id' => $board->workspace_id,
+    //             'logo'  => $board->thumbnail,
+    //             'closed' => $board->closed,
+    //         ],
+    //         'members' => $boardAccess['members'],
+    //         'memberships' => $boardAccess['memberships'],
+    //         'workspace' => $boardAccess['workspace'] ?: null,
+    //         'isEditable' => $boardAccess['isEditable'],
+    //         'canJoinBoard' => !$boardAccess['isBoardMember'] && $boardAccess['canJoinBoard'],
+    //         'canJoinWorkspace' => $boardAccess['canJoinWorkspace'],
+    //     ], fn($value) => $value !== null);
+
+    //     return response()->json($response, 200);
+    // }
+
+    private function checkBoardAccess($board, $userId)
+    {
+        $access = [
+            'hasAccess' => false,
+            'showBoardData' => false,
+            'canJoinBoard' => false,
+            'canJoinWorkspace' => false,
+            'workspace' => null,
+            'isEditable' => false,
+            'isBoardMember' => false,
+            'isWorkspaceMember' => false,
+            'members' => null,
+            'memberships' => null,
+            'status' => 403,
+        ];
+
+        // Kiểm tra membership
+        $access['isBoardMember'] = DB::table('board_members')
+            ->where('board_id', $board->id)
+            ->where('user_id', $userId)
+            ->exists();
+
+        $access['isWorkspaceMember'] = $board->workspace_id
+            ? DB::table('workspace_members')
+            ->where('workspace_id', $board->workspace_id)
+            ->where('user_id', $userId)
+            ->exists()
+            : false;
+
+        // Lấy thông tin workspace
+        $workspace = $board->workspace_id
+            ? DB::table('workspaces')
+            ->where('id', $board->workspace_id)
+            ->select('id', 'name', 'display_name', 'permission_level', 'logo_url')
+            ->first()
+            : null;
+
+        // Xử lý các trường hợp
+        if ($access['isBoardMember'] && $access['isWorkspaceMember']) {
+            // Trường hợp 1: Thành viên cả board và workspace
+            $access['hasAccess'] = true;
+            $access['showBoardData'] = true;
+            $access['canJoinBoard'] = false;
+            $access['isEditable'] = true;
+            $access['status'] = 200;
+            if ($workspace) {
+                $access['workspace'] = [
+                    'id' => $workspace->id,
+                    'name' => $workspace->name,
+                    'display_name' => $workspace->display_name,
+                    'visibility' => $workspace->permission_level,
+                    'logo' => $workspace->logo_url,
+                    'memberships' => DB::table('workspace_members')
+                        ->where('workspace_id', $board->workspace_id)
+                        ->select('id', 'user_id', 'member_type', 'is_unconfirmed', 'is_deactivated', 'last_active')
+                        ->get(),
+                ];
+            }
+        } elseif ($access['isBoardMember']) {
+            // Trường hợp 2: Chỉ là thành viên board
+            $access['hasAccess'] = true;
+            $access['showBoardData'] = true;
+            $access['canJoinWorkspace'] = true;
+            $access['isEditable'] = true;
+            $access['canJoinBoard'] = false;
+            $access['status'] = 200;
+            if ($workspace) {
+                $access['workspace'] = [
+                    'id' => $workspace->id,
+                    'name' => $workspace->name,
+                    'display_name' => $workspace->display_name,
+                    'visibility' => $workspace->permission_level,
+                    'logo' => $workspace->logo_url,
+                ];
+            }
+        } elseif ($access['isWorkspaceMember']) {
+            // Trường hợp 3: Chỉ là thành viên workspace
+            $access['hasAccess'] = true;
+            $access['isEditable'] = true;
+            if ($workspace) {
+                $access['workspace'] = [
+                    'id' => $workspace->id,
+                    'name' => $workspace->name,
+                    'display_name' => $workspace->display_name,
+                    'visibility' => $workspace->permission_level,
+                    'logo' => $workspace->logo_url,
+                    'memberships' => DB::table('workspace_members')
+                        ->where('workspace_id', $board->workspace_id)
+                        ->select('id', 'user_id', 'member_type', 'is_unconfirmed', 'is_deactivated', 'last_active')
+                        ->get(),
+                ];
+            }
+            if ($board->visibility === 'public' || $board->visibility === 'workspace') {
+                $access['showBoardData'] = true;
+                $access['canJoinBoard'] = true;
+                $access['status'] = 200;
+            } else { // private
+                $access['showBoardData'] = false;
+                $access['status'] = 403;
+            }
+        } else {
+            // Trường hợp 4: Không là thành viên
+            if ($board->visibility === 'public') {
+                $access['hasAccess'] = true;
+                $access['showBoardData'] = true;
+                // $access['canJoinBoard'] = true;
+                $access['status'] = 200;
+                if ($workspace && $workspace->permission_level === 'public') {
+                    // $access['canJoinWorkspace'] = true;
+                    $access['workspace'] = [
+                        'id' => $workspace->id,
+                        'name' => $workspace->name,
+                        'display_name' => $workspace->display_name,
+                        'visibility' => $workspace->permission_level,
+                        'logo' => $workspace->logo_url,
+                    ];
+                }
+            } else { // board private
+                $access['showBoardData'] = false;
+                $access['status'] = 403;
+            }
+        }
+
+        // Lấy dữ liệu board members và memberships nếu có quyền xem
+        if ($access['showBoardData']) {
+            $access['members'] = DB::table('board_members')
+                ->join('users', 'board_members.user_id', '=', 'users.id')
+                ->where('board_members.board_id', $board->id)
+                ->select('users.id', 'users.user_name', 'users.initials', 'users.email', 'users.image', 'users.full_name')
+                ->get();
+
+            $access['memberships'] = DB::table('board_members')
+                ->where('board_members.board_id', $board->id)
+                ->select(
+                    'board_members.id',
+                    'board_members.is_unconfirmed',
+                    'board_members.user_id',
+                    'board_members.is_deactivated',
+                    'board_members.role',
+                    'board_members.last_active'
+                )
+                ->get();
+        }
+
+        return $access;
+    }
+    // Dữ liệu sửa lại 
     public function index()
     {
         $board = Board::where('closed', 0)->get();
@@ -35,8 +226,7 @@ class BoardController extends Controller
         try {
             // Tìm board theo ID
             $board = Board::with('creator')->findOrFail($boardId);
-            // $creator = $board->creator()->first(); // Lấy thông tin người tạo
-
+            
             // Trả về kết quả nếu tìm thấy
             return response()->json([
                 'result' => true,
@@ -254,7 +444,6 @@ class BoardController extends Controller
         }
     }
 
-
     /**
      * Update tên board
      */
@@ -284,7 +473,6 @@ class BoardController extends Controller
                 'result' => false,
                 'message' => 'No name provided.',
             ], 400);
-
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
@@ -529,7 +717,7 @@ class BoardController extends Controller
         $newBoard->name = $request->name;
         $newBoard->workspace_id = $request->workspace_id;
         $newBoard->visibility = $request->visibility;
-        $newBoard->is_marked = 0; 
+        $newBoard->is_marked = 0;
         $newBoard->save();
 
 
@@ -560,7 +748,4 @@ class BoardController extends Controller
             'board' => $newBoard,
         ], 201);
     }
-
-
-
 }

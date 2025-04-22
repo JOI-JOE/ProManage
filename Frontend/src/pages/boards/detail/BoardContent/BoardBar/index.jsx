@@ -26,11 +26,12 @@ import BoardContext from "../../../../../contexts/BoardContext";
 import { useCreatorComeBackBoard, useGetBoardMembers, useMemberJoinedListener, useRequestJoinBoard } from "../../../../../hooks/useInviteBoard";
 import { useParams } from "react-router-dom";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
-import { useUser } from "../../../../../hooks/useUser";
+// import { useUser } from "../../../../../hooks/useUser";
 
 import LockIcon from "@mui/icons-material/Lock"; // Icon cho Riêng tư
 import GroupIcon from "@mui/icons-material/Group"; // Icon cho Không gian làm việc
 import PublicIcon from "@mui/icons-material/Public";
+import { useMe } from "../../../../../contexts/MeContext";
 
 const style = {
   border: "none",
@@ -51,7 +52,9 @@ const BoardBar = () => {
   const { board, isLoading, error } = useContext(BoardContext);
   const { data: boardMembers = [] } = useGetBoardMembers(boardId);
   // console.log(board);
-  const { data: user } = useUser();
+  const { user } = useMe();
+
+  useMemberJoinedListener(user?.id)
   useMemberJoinedListener(user?.id,boardId);
   useCreatorComeBackBoard(user?.id,boardId); // Lắng nghe sự kiện người tạo quay lại bảng
 

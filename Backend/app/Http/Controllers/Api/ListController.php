@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Events\ListCreated;
+use App\Events\ListNameUpdated;
+// use App\Events\ListUpdated;
 use App\Http\Requests\ListUpdateNameRequest;
 use App\Jobs\BroadcastListCreated;
 use App\Models\Board;
+use App\Models\Card;
 use App\Models\ListBoard;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
@@ -13,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Pusher\Pusher;
 
 class ListController extends Controller
@@ -54,7 +58,7 @@ class ListController extends Controller
 
         if ($board->visibility === 'private' && $board->members->contains($user->id)) {
             $hasAccess = true;
-        } elseif ($board->visibility === 'workspace' && $board->workspace->users->contains($user->id) || $board->members->contains($user->id) ) {
+        } elseif ($board->visibility === 'workspace' && $board->workspace->users->contains($user->id) || $board->members->contains($user->id)) {
             $hasAccess = true;
         } elseif ($board->visibility === 'public') {
             $hasAccess = true;
@@ -169,7 +173,7 @@ class ListController extends Controller
         ]);
 
         $list = ListBoard::create([
-            'board_id' =>  $validated['boardId'],
+            'board_id' => $validated['boardId'],
             'name' => $validated['name'],
             'position' => $validated['pos'],
         ]);
@@ -198,6 +202,7 @@ class ListController extends Controller
         $list->name = $validated['name'];
         $list->save();
 
+        // broadcast(new ListNameUpdated($list))->toOthers(); // <- realtime
 
         return response()->json($list);
     }
@@ -276,4 +281,97 @@ class ListController extends Controller
 
         return response()->json($list);
     }
+
+    public function duplicate(Request $request, string $id)
+    {
+        $originalList = ListBoard::with('cards.checklists.items', 'cards.labels', 'cards.members', 'cards.attachments', 'cards.comments')
+            ->findOrFail($id);
+
+        DB::beginTransaction();
+
+        try {
+            // Tạo list mới
+            ListBoard::where('board_id', $originalList->board_id)
+            ->where('position', '>', $originalList->position)
+            ->increment('position');
+    
+            $newList = ListBoard::create([
+                'board_id' => $originalList->board_id,
+                'name' => $request->input('name', $originalList->name . ' (Copy)'),
+                'position' => $originalList->position + 1,
+            ]);
+
+            // Lấy danh sách thành viên trong board
+            $boardMemberIds = DB::table('board_members')
+                ->where('board_id', $originalList->board_id)
+                ->pluck('user_id');
+
+            foreach ($originalList->cards as $card) {
+                $newCard = Card::create([
+                    'title' => $card->title,
+                    'description' => $card->description,
+                    'position' => $card->position,
+                    'start_date' => $card->start_date,
+                    'end_date' => $card->end_date,
+                    'end_time' => $card->end_time,
+                    'is_completed' => true,
+                    'is_archived' => false,
+                    'board_id' => $originalList->board_id,
+                    'list_board_id' => $newList->id,
+                ]);
+
+                // Checklist & items
+                foreach ($card->checklists as $checklist) {
+                    $newChecklist = $checklist->replicate();
+                    $newChecklist->card_id = $newCard->id;
+                    $newChecklist->save();
+
+                    foreach ($checklist->items as $item) {
+                        $newItem = $item->replicate();
+                        $newItem->checklist_id = $newChecklist->id;
+                        $newItem->save();
+                    }
+                }
+
+                // Labels
+                $newCard->labels()->sync($card->labels->pluck('id'));
+
+                // Members (lọc theo board)
+                $memberIds = $card->members()->whereIn('id', $boardMemberIds)->pluck('id');
+                $newCard->members()->sync($memberIds);
+
+                // Attachments
+                foreach ($card->attachments as $attachment) {
+                    $newAttachment = $attachment->replicate();
+                    $newAttachment->card_id = $newCard->id;
+                    $newAttachment->file_name = Str::uuid() . '_' . $attachment->file_name;
+                    $newAttachment->file_name_defaut = $attachment->file_name_defaut;
+                    $newAttachment->save();
+                }
+
+                // Comments
+                foreach ($card->comments as $comment) {
+                    $newComment = $comment->replicate();
+                    $newComment->card_id = $newCard->id;
+                    $newComment->save();
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'List duplicated successfully',
+                // 'list' => $newList->load('cards'),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to duplicate list',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+    }
+
 }

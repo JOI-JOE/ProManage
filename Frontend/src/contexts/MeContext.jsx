@@ -1,21 +1,47 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
+// // import { useBoardStars } from "../hooks/useBoardStar";
+// import { useDispatch } from "react-redux";
+// import { setStarredBoards } from "../redux/slices/starredBoardsSlice";
 import { useUserData } from "../hooks/useUser";
 
-// Tạo Context
-const MeContext = createContext({ user: null, userProfile: null, userDashboard: null });
+const MeContext = createContext({
+    user: null,
+    workspaceId: null,
+    boardId: null,
+    boardStars: null,
+    isLoading: true,
+    isUserLoaded: false, // Thêm trạng thái này
+    error: null,
+});
 
-// Hook custom để dễ dàng sử dụng context
-export const useMe = () => useContext(MeContext);
+export const useMe = () => {
+    const context = useContext(MeContext);
+    if (context === undefined) {
+        throw new Error("useMe must be used within a MeProvider");
+    }
+    return context;
+};
 
-// Provider chính
 export const MeProvider = ({ children }) => {
+    // const dispatch = useDispatch();
 
-    const { userProfile, userDashboard, isLoading, error } = useUserData();
-    const user = userProfile?.user
-    const workspace = userDashboard
-    return (
-        <MeContext.Provider value={{ user, userProfile, userDashboard }}>
-            {children}
-        </MeContext.Provider>
+    const { data, userLoading, userError } = useUserData()
+
+    const user = data?.user || null;
+    const workspaceIds = data?.workspaces || null;
+    const boardIds = data?.boards || null;
+
+    console.log(data)
+    const contextValue = useMemo(
+        () => ({
+            boardIds,
+            workspaceIds,
+            user,
+            userLoading,
+            userError,
+        }),
+        [user, userLoading, userError]
     );
+
+    return <MeContext.Provider value={contextValue}>{children}</MeContext.Provider>;
 };

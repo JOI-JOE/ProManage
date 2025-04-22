@@ -26,61 +26,62 @@ import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
 import { useParams } from "react-router-dom";
 import loadingLogo from "~/assets/loading.svg?react";
+import { toast } from 'react-toastify';
 
 import MemberItem from "./MemberItem";
 import GenerateLink from "../../../../components/GenerateLink";
 import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
 import {
-  useAddMemberToWorkspace,
   useCancelInvitationWorkspace,
-  useConfirmWorkspaceMember,
   useCreateInviteWorkspace,
   useSearchMembers,
+  useSendInviteWorkspace,
 } from "../../../../hooks/useWorkspaceInvite";
 import WorkspaceInfo from "../../../../components/WorkspaceInfo";
 import { useGetInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
+import { useMe } from "../../../../contexts/MeContext";
 
 const Member = () => {
-  
   const { workspaceName } = useParams();
-
-  // Dữ liệu để lấy được workspace bằng tên
+  const { user } = useMe()
   const {
     data: workspace,
     isLoading: isLoadingWorkspace,
     isError: isWorkspaceError,
     error: workspaceError,
+    refetch: refetchWorkspace,
   } = useGetWorkspaceByName(workspaceName, {
-    enabled: !!workspaceName, // Chỉ fetch khi workspaceName tồn tại
+    enabled: !!workspaceName,
   });
 
-  // Dữ liệu để lấy được inviteToken
   const {
     data: inviteData,
     isLoading: isInviteLoading,
-    refetch,
+    refetch: refetchInvite,
   } = useGetInviteWorkspace(workspace?.id, {
     enabled: !!workspace?.id,
   });
 
-  const { mutate: addMember, isLoading, error } = useAddMemberToWorkspace();
-  const { mutate: confirmMember } = useConfirmWorkspaceMember();
+  const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
+  const { mutate: cancelInviteLink, isLoading: isCancelingInvite } = useCancelInvitationWorkspace();
 
   const [inputValue, setInputValue] = useState("");
   const [options, setOptions] = useState([]);
   const [debouncedValue, setDebouncedValue] = useState("");
   const [open, setOpen] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState([]); // Luôn là mảng rỗng ban đầu
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState(new Set());
   const [invitationMessage, setInvitationMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isFormVisible, setFormVisible] = useState(false);
+  const [isInviteOpen, setInviteOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: memberSearch, isLoading: isLoadingMember } = useSearchMembers(
     debouncedValue,
     workspace?.id
   );
 
-  // ✅ Tạo debounce bằng useRef -> Tránh spam API khi gõ nhanh
   const debounceTimeout = useRef(null);
 
   const handleInputChange = (event) => {
@@ -108,61 +109,64 @@ const Member = () => {
     const newIds = newValue.map((user) => user.id);
 
     setSelectedUsers(newValue);
-    setSelectedUserIds((prevIds) => [...new Set([...prevIds, ...newIds])]);
-
-    if (newIds.length > 0) {
-      console.log("📢 Sending API with userIds:", newIds);
-
-      addMember({ workspaceId: workspace.id, userIds: newIds });
-    }
+    setSelectedUserIds((prevIds) => new Set([...prevIds, ...newIds]));
     setInputValue("");
     setOptions([]);
   };
 
+  const { mutate: sendInvites } = useSendInviteWorkspace(workspace?.id);
+
   const handleSendInvitations = async () => {
     if (!selectedUsers.length) return;
 
-    const memberIds = selectedUsers.map((user) => user.id);
-    console.log("📩 Đang gửi lời mời:", memberIds);
+    // Kiểm tra email hợp lệ
+    const invalidEmails = selectedUsers
+      .filter((user) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email))
+      .map((user) => user.email);
 
-    setIsProcessing(true); // Bắt đầu hiển thị loading
+    // Nếu có email không hợp lệ, thông báo lỗi và dừng lại
+    if (invalidEmails.length > 0) {
+      toast.error(`Email không hợp lệ: ${invalidEmails.join(", ")}`);
+      return;
+    }
+
+
+    setIsProcessing(true);
 
     try {
-      // Duyệt qua từng memberId và gửi yêu cầu mời
-      for (const memberId of memberIds) {
-        await confirmMember({
+      // Tiến hành gửi lời mời
+      for (const user of selectedUsers) {
+        const memberPayload = {
           workspaceId: workspace.id,
-          memberId,
-          invitationMessage,
+          email: user.email,
+          memberId: user.id?.startsWith("new-") ? null : user.id,
+          message: invitationMessage,
+        };
+
+        // Gửi lời mời
+        await new Promise((resolve, reject) => {
+          sendInvites(memberPayload, {
+            onSuccess: resolve,
+            onError: reject,
+          });
         });
       }
 
-      console.log("✅ Tất cả lời mời đã gửi!");
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Giữ loading một lúc trước khi đóng
-
-      handleCloseInvite(); // Đóng modal sau khi hoàn tất
+      toast.success("Đã gửi tất cả lời mời!");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      refetchWorkspace();
+      handleCloseInvite();
     } catch (error) {
-      console.error("❌ Lỗi khi gửi lời mời:", error);
+      toast.error("Không thể gửi lời mời. Vui lòng thử lại.");
+      console.error("Lỗi khi gửi lời mời:", error);
     } finally {
-      setIsProcessing(false); // Mở lại nút sau khi hoàn thành
+      setIsProcessing(false);
     }
   };
 
-  const { mutate: createInviteLink, isLoading: isCreatingInvite } =
-    useCreateInviteWorkspace();
-  const { mutate: cancelInviteLink, isLoading: isCancelingInvite } =
-    useCancelInvitationWorkspace();
-
-  const [isFormVisible, setFormVisible] = useState(false);
-  const [isInviteOpen, setInviteOpen] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
-  const [isLinkActive, setIsLinkActive] = useState(false);
-  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
 
   const handleOpenInvite = () => {
     setInviteOpen(true);
-    setLinkCopied(false);
-    setIsLinkActive(false);
   };
 
   const toggleFormVisibility = () => {
@@ -170,53 +174,99 @@ const Member = () => {
   };
 
   const handleCloseInvite = () => {
-    if (isProcessing) return; // Nếu đang xử lý, không cho đóng bảng
-
+    if (isProcessing) return;
     setInviteOpen(false);
     setInputValue("");
     setSelectedUsers([]);
     setOptions([]);
+    setInvitationMessage("");
   };
-
-  const members = workspace?.members || [];
 
   const handleGenerateLink = async () => {
     if (!workspace?.id) {
-      throw new Error("Không tìm thấy ID của workspace");
+      toast.error("Không tìm thấy ID của workspace");
+      return;
     }
-    return new Promise((resolve, reject) => {
-      createInviteLink(
-        { workspaceId: workspace.id },
-        {
-          onSuccess: (data) => {
-            resolve(data.secret); // Trả về liên kết mới
-          },
-          onError: (error) => {
-            console.error("Lỗi khi tạo link mời:", error);
-            reject(error); // Trả về lỗi
-          },
-        }
-      );
-    });
+
+    try {
+      await new Promise((resolve, reject) => {
+        createInviteLink(
+          { workspaceId: workspace.id },
+          {
+            onSuccess: (data) => {
+              refetchInvite();
+              toast.success("Đã tạo liên kết mời!");
+              resolve(data.secret);
+            },
+            onError: (error) => {
+              toast.error("Không thể tạo liên kết mời. Vui lòng thử lại.");
+              console.error("Lỗi khi tạo link mời:", error);
+              reject(error);
+            },
+          }
+        );
+      });
+    } catch (error) {
+      // Lỗi đã được xử lý trong onError
+    }
   };
 
   const handleDeleteLink = async () => {
     if (!workspace?.id) {
-      throw new Error("Không tìm thấy ID của workspace");
+      toast.error("Không tìm thấy ID của workspace");
+      return;
     }
-    return cancelInviteLink({ workspaceId: workspace.id });
+
+    try {
+      await new Promise((resolve, reject) => {
+        cancelInviteLink(
+          { workspaceId: workspace.id },
+          {
+            onSuccess: () => {
+              refetchInvite();
+              toast.success("Đã hủy liên kết mời!");
+              resolve();
+            },
+            onError: (error) => {
+              toast.error("Không thể hủy liên kết mời. Vui lòng thử lại.");
+              console.error("Lỗi khi hủy link mời:", error);
+              reject(error);
+            },
+          }
+        );
+      });
+    } catch (error) {
+    }
   };
+
+  const members = workspace?.members || [];
+
+  const filteredMembers = members?.filter((member) =>
+    member.user?.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (isLoadingWorkspace) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+        <SvgIcon
+          component={loadingLogo}
+          sx={{ width: 50, height: 50, transform: "scale(0.5)" }}
+          viewBox="0 0 24 24"
+          inheritViewBox
+        />
+      </Box>
+    );
+  }
 
   return (
     <Box
       sx={{
         width: "100%",
         maxWidth: "1200px",
+        height: "100vh",
         padding: "32px 20px 20px 20px",
-        // margin: "30px auto",
-
         overflow: "auto",
-        maxHeight: "579px", // Giới hạn chiều cao để kích hoạt scroll
+        maxHeight: "100vh",
         "&::-webkit-scrollbar": {
           width: "8px",
           height: "8px",
@@ -234,7 +284,6 @@ const Member = () => {
         },
       }}
     >
-      {/* Header chứa Tiêu đề và Nút Mời Thành Viên */}
       <Box
         sx={{
           display: "flex",
@@ -262,44 +311,28 @@ const Member = () => {
               </span>
             </Avatar>
             <Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                }}
-              >
+              <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <Typography fontWeight="bold" sx={{ fontSize: "1.2rem" }}>
                   {workspace?.display_name}
                 </Typography>
                 <IconButton
                   onClick={toggleFormVisibility}
-                  sx={{
-                    color: "gray",
-                    "&:hover": { backgroundColor: "transparent" },
-                  }}
+                  sx={{ color: "gray", "&:hover": { backgroundColor: "transparent" } }}
                 >
                   <EditIcon sx={{ fontSize: 24 }} />
                 </IconButton>
               </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  color: "gray",
-                }}
-              >
+              <Box sx={{ display: "flex", alignItems: "center", gap: "5px", color: "gray" }}>
                 <LockIcon sx={{ fontSize: 14 }} />
                 <Typography sx={{ fontSize: 14 }}>Riêng tư</Typography>
               </Box>
+              <Typography fontWeight="bold" sx={{ fontSize: "1.2rem", mt: 2 }}>
+                {workspace?.desc}
+              </Typography>
             </Box>
           </Box>
         ) : (
-          <WorkspaceInfo
-            workspaceInfo={workspace}
-            onCancel={toggleFormVisibility} // Đóng form khi hủy
-          />
+          <WorkspaceInfo workspaceInfo={workspace} onCancel={toggleFormVisibility} refetchWorkspace={refetchWorkspace} />
         )}
 
         <Button
@@ -320,42 +353,22 @@ const Member = () => {
         </Button>
       </Box>
 
-      {/* Nội dung */}
-      <Grid
-        container
-        spacing={2}
-        sx={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}
-      >
-        {/* Cột trái:  */}
+      <Grid container spacing={2} sx={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}>
         <Grid item xs={12} sm={3} md={2}>
           <Box sx={{ padding: "0px", width: "100%" }}>
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              sx={{ fontSize: "0.9rem" }}
-            >
+            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "0.9rem" }}>
               Người cộng tác
             </Typography>
             <Chip
-              label="1 / 10"
+              label={`${members.length} / 10`}
               size="small"
               sx={{ fontSize: "12px", backgroundColor: "#F4F5F7" }}
             />
-
-            <Paper
-              elevation={0}
-              sx={{
-                backgroundColor: "#E8F0FE",
-                padding: 1,
-                borderRadius: 2,
-                mt: 2,
-              }}
-            >
+            <Paper elevation={0} sx={{ backgroundColor: "#E8F0FE", padding: 1, borderRadius: 2, mt: 2 }}>
               <Typography variant="body2" color="primary" fontWeight="bold">
-                Thành viên không gian làm việc (1)
+                Thành viên không gian làm việc ({members.length})
               </Typography>
             </Paper>
-
             <List sx={{ padding: 0, marginTop: 2 }}>
               <ListItem divider>
                 <ListItemText primary="Khách (0)" />
@@ -367,97 +380,38 @@ const Member = () => {
           </Box>
         </Grid>
 
-        {/* Cột phải:  */}
         <Grid item xs={12} sm={9} md={10}>
-          <Box
-            sx={{
-              padding: "20px",
-              width: "100%",
-              borderBottom: "1px solid #D3D3D3",
-            }}
-          >
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              sx={{ fontSize: "0.9rem" }}
-            >
-              Thành viên không gian làm việc (1)
+          <Box sx={{ padding: "20px", width: "100%", borderBottom: "1px solid #D3D3D3" }}>
+            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "0.9rem" }}>
+              Thành viên không gian làm việc ({members.length})
             </Typography>
             <Box sx={{ borderBottom: "1px solid #D3D3D3", pb: 2, mb: 2 }}>
-              <Typography
-                variant="body2"
-                sx={{ color: "gray", fontSize: "0.7rem" }}
-              >
-                Các thành viên trong Không gian làm việc có thể xem và tham gia
-                tất cả các bảng Không gian làm việc hiển thị và tạo ra các bảng
-                mới trong Không gian làm việc.
+              <Typography variant="body2" sx={{ color: "gray", fontSize: "0.7rem" }}>
+                Các thành viên trong Không gian làm việc có thể xem và tham gia tất cả các bảng Không gian làm việc hiển thị và tạo ra các bảng mới trong Không gian làm việc.
               </Typography>
             </Box>
 
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              sx={{ mt: 2, fontSize: "0.9rem" }}
-            >
+            <Typography variant="h6" fontWeight="bold" sx={{ mt: 2, fontSize: "0.9rem" }}>
               Mời các thành viên tham gia cùng bạn
             </Typography>
-
-            <Box
-              sx={{
-                borderBottom: "1px solid #D3D3D3",
-                pb: 2,
-                mb: 2,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{ color: "gray", flex: 1, fontSize: "0.7rem" }}
-              >
-                Bất kỳ ai có liên kết mời đều có thể tham gia Không gian làm
-                việc miễn phí này. Bạn cũng có thể tắt và tạo liên kết mới cho
-                Không gian làm việc này bất cứ lúc nào. Số lời mời đang chờ xử
-                lý được tính vào giới hạn 10 người cộng tác.
-              </Typography>
-
-              {/* <Button variant="outlined" startIcon={<LinkIcon />}>
-                Mời bằng liên kết
-              </Button> */}
-            </Box>
-
-            {/* Lọc thành viên */}
             <Box sx={{ borderBottom: "1px solid #D3D3D3", pb: 2, mb: 2 }}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Lọc theo tên"
-                sx={{
-                  mb: 2,
-                  width: "200px",
-                  "& .MuiInputBase-input": { fontSize: "0.6rem" },
-                }}
-              />
+              <Typography variant="body2" sx={{ color: "gray", fontSize: "0.7rem" }}>
+                Bất kỳ ai có liên kết mời đều có thể tham gia Không gian làm việc miễn phí này. Bạn cũng có thể tắt và tạo liên kết mới cho Không gian làm việc này bất cứ lúc nào. Số lời mời đang chờ xử lý được tính vào giới hạn 10 người cộng tác.
+              </Typography>
             </Box>
 
-            {/* Danh sách thành viên */}
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column", // Hiển thị theo hàng dọc
-                alignItems: "flex-start", // Căn lề trái cho các thành viên
-                gap: 2, // Khoảng cách giữa các thành viên
-              }}
-            >
-              {/* Thông tin thành viên */}
-              {members?.map((member, index) => (
-                <Box
-                  key={`${member.id}-${index}`} // Kết hợp member.id và index để tạo key duy nhất
-                  id="workspace-member-list"
-                >
-                  <MemberItem member={member} />{" "}
-                  {/* Truyền dữ liệu member vào MemberItem */}
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Lọc theo tên"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {filteredMembers?.map((member, index) => (
+                <Box key={`${member.id}-${index}`} id="workspace-member-list">
+                  <MemberItem member={member} workspace={workspace} boards={workspace?.boards} width={100} />
                 </Box>
               ))}
             </Box>
@@ -465,33 +419,15 @@ const Member = () => {
         </Grid>
       </Grid>
 
-      {/* Modal Mời Thành Viên */}
-      <Dialog
-        open={isInviteOpen}
-        onClose={handleCloseInvite}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={isInviteOpen} onClose={handleCloseInvite} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontSize: "20px" }}>
           Mời vào Không gian làm việc
-          <IconButton
-            sx={{ position: "absolute", right: 8, top: 8 }}
-            onClick={handleCloseInvite}
-          >
+          <IconButton sx={{ position: "absolute", right: 8, top: 8 }} onClick={handleCloseInvite}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ padding: 0 }}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              width: "100%",
-              padding: "16px 24px", // Tự quản lý padding
-            }}
-          >
-            {/* Phần Autocomplete và TextField */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%", padding: "16px 24px" }}>
             <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
               <Paper
                 elevation={0}
@@ -501,7 +437,6 @@ const Member = () => {
                   flex: 1,
                   borderRadius: "3px",
                   boxShadow: "inset 0 0 0 1px rgba(9, 30, 66, 0.15)",
-                  transition: "background-color 85ms ease, border-color 85ms ease, box-shadow 85ms ease",
                   backgroundColor: "#ffffff",
                   padding: "5px 10px",
                 }}
@@ -509,25 +444,38 @@ const Member = () => {
                 <Autocomplete
                   multiple
                   id="custom-autocomplete"
-                  options={options.filter(
-                    (option) => !selectedUsers.some((user) => user.id === option.id)
-                  )}
-                  getOptionLabel={(option) => option.full_name}
+                  options={options.filter((option) => !selectedUsers.some((user) => user.id === option.id))}
+                  getOptionLabel={(option) => option.full_name || option.email || ""}
                   getOptionDisabled={(option) => option.joined}
-                  filterOptions={(options, state) =>
-                    options.filter(
+                  filterOptions={(options, state) => {
+                    const trimmedInput = state.inputValue.trim().toLowerCase();
+                    const isEmailInput = /^[^\s@]+@[^\s@]+/.test(trimmedInput);
+
+                    const filteredOptions = options.filter(
                       (option) =>
-                        option.full_name
-                          ?.toLowerCase()
-                          .includes(state.inputValue.toLowerCase()) ||
-                        option.user_name
-                          ?.toLowerCase()
-                          .includes(state.inputValue.toLowerCase()) ||
-                        option.email
-                          ?.toLowerCase()
-                          .includes(state.inputValue.toLowerCase())
-                    )
-                  }
+                        option.full_name?.toLowerCase().includes(trimmedInput) ||
+                        option.user_name?.toLowerCase().includes(trimmedInput) ||
+                        option.email?.toLowerCase().includes(trimmedInput)
+                    );
+
+                    if (
+                      isEmailInput &&
+                      trimmedInput.length > 0 &&
+                      !filteredOptions.some((option) => option.email?.toLowerCase() === trimmedInput) &&
+                      !selectedUsers.some((u) => u.email?.toLowerCase() === trimmedInput)
+                    ) {
+                      return [
+                        ...filteredOptions,
+                        {
+                          full_name: `Thêm "${state.inputValue}"`,
+                          email: state.inputValue,
+                          isNewEmail: true,
+                        },
+                      ];
+                    }
+
+                    return filteredOptions;
+                  }}
                   disableClearable
                   popupIcon={null}
                   loading={isLoadingMember}
@@ -545,13 +493,39 @@ const Member = () => {
                     isLoadingMember
                       ? "Đang tìm kiếm..."
                       : inputValue.length >= 3
-                      ? "Không tìm thấy thành viên nào."
-                      : ""
+                        ? "Không tìm thấy thành viên nào."
+                        : ""
                   }
                   open={open}
+                  onOpen={() => setOpen(true)}
+                  onClose={() => setOpen(false)}
                   value={selectedUsers}
                   onChange={handleOptionSelect}
+                  onInputChange={(event, newValue, reason) => {
+                    if (reason === 'input') {
+                      setInputValue(newValue);
+                      handleInputChange({ target: { value: newValue } });
+                    }
+                  }}
                   fullWidth
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => (
+                      <Chip
+                        key={option.id}
+                        label={option.email || option.full_name}
+                        {...getTagProps({ index })}
+                        onDelete={() => {
+                          const newSelectedUsers = selectedUsers.filter((user) => user.id !== option.id);
+                          setSelectedUsers(newSelectedUsers);
+                          setSelectedUserIds((prevIds) => {
+                            const newIds = new Set(prevIds);
+                            newIds.delete(option.id);
+                            return newIds;
+                          });
+                        }}
+                      />
+                    ))
+                  }
                   renderOption={(props, option) => (
                     <ListItem {...props} alignItems="flex-start" disabled={option.joined}>
                       <ListItemAvatar>
@@ -561,7 +535,7 @@ const Member = () => {
                         />
                       </ListItemAvatar>
                       <ListItemText
-                        primary={option.full_name}
+                        primary={option.isNewEmail ? option.full_name : option.full_name}
                         secondary={
                           <Fragment>
                             <Typography
@@ -569,11 +543,13 @@ const Member = () => {
                               variant="body2"
                               sx={{ color: "text.primary", display: "inline" }}
                             >
-                              {option.joined
-                                ? option.memberType === "admin"
-                                  ? " (Quản trị viên của không gian làm việc)"
-                                  : " (Thành viên không gian làm việc)"
-                                : ""}
+                              {option.isNewEmail
+                                ? option.email
+                                : option.joined
+                                  ? option.memberType === "admin"
+                                    ? " (Quản trị viên của không gian làm việc)"
+                                    : " (Thành viên không gian làm việc)"
+                                  : option.email || ""}
                             </Typography>
                           </Fragment>
                         }
@@ -585,61 +561,66 @@ const Member = () => {
                       {...params}
                       variant="standard"
                       placeholder="Nhập tên hoặc email..."
-                      InputProps={{
-                        ...params.InputProps,
-                        disableUnderline: true,
+                      InputProps={{ ...params.InputProps, disableUnderline: true }}
+                      onChange={(e) => {
+                        setInputValue(e.target.value);
+                        handleInputChange(e);
                       }}
-                      onChange={handleInputChange}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && inputValue.trim()) {
+                          e.preventDefault();
+                          const trimmedInput = inputValue.trim();
+                          const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedInput);
+                          const emailExists =
+                            selectedUsers.some((u) => u.email?.toLowerCase() === trimmedInput.toLowerCase()) ||
+                            options.some((o) => o.email?.toLowerCase() === trimmedInput.toLowerCase());
+
+                          if (emailExists) {
+                            toast.error("Email này đã được thêm hoặc đã tồn tại!");
+                            return;
+                          }
+
+                          const newUser = {
+                            id: `new-${Date.now()}`,
+                            full_name: trimmedInput,
+                            email: trimmedInput,
+                            image: null,
+                            joined: false,
+                            isNewEmail: true,
+                          };
+                          handleOptionSelect(null, [...selectedUsers, newUser]);
+                          setInputValue("");
+                          setOpen(false);
+                        }
+                      }}
+                      value={inputValue}
                       sx={{ width: "100%", padding: "5px 5px" }}
                     />
                   )}
                   PopperComponent={(props) => (
-                    <Popper
-                      {...props}
-                      modifiers={[{ name: "offset", options: { offset: [0, 15] } }]}
-                    />
+                    <Popper {...props} modifiers={[{ name: "offset", options: { offset: [0, 15] } }]} />
                   )}
                   sx={{
                     flex: 1,
-                    "& .MuiAutocomplete-tag": {
-                      maxWidth: "150px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    },
+                    "& .MuiAutocomplete-tag": { maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" },
                     "& .MuiAutocomplete-inputRoot": {
                       maxHeight: "100px",
                       overflowY: "auto",
                       overflowX: "hidden",
                       scrollbarWidth: "thin",
                       "&::-webkit-scrollbar": { width: "5px" },
-                      "&::-webkit-scrollbar-thumb": {
-                        backgroundColor: "#aaa",
-                        borderRadius: "10px",
-                      },
-                      "&::-webkit-scrollbar-thumb:hover": {
-                        backgroundColor: "#888",
-                      },
+                      "&::-webkit-scrollbar-thumb": { backgroundColor: "#aaa", borderRadius: "10px" },
+                      "&::-webkit-scrollbar-thumb:hover": { backgroundColor: "#888" },
                     },
                   }}
                 />
               </Paper>
-              {selectedUsers.length > 0 &&
-                (isProcessing ? (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      height: "100%",
-                    }}
-                  >
+              {selectedUsers.length > 0 && (
+                isProcessing ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
                     <SvgIcon
                       component={loadingLogo}
-                      sx={{
-                        width: 50,
-                        height: 50,
-                        transform: "scale(0.5)",
-                      }}
+                      sx={{ width: 50, height: 50, transform: "scale(0.5)" }}
                       viewBox="0 0 24 24"
                       inheritViewBox
                     />
@@ -653,7 +634,8 @@ const Member = () => {
                   >
                     Gửi lời mời
                   </Button>
-                ))}
+                )
+              )}
             </Box>
             {selectedUsers.length > 0 && (
               <TextField
@@ -673,23 +655,11 @@ const Member = () => {
               />
             )}
 
-            {/* Phần GenerateLink hoặc Loading */}
             {isInviteLoading || isLoadingWorkspace ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: "60px", // Đặt chiều cao cố định để tránh khoảng trắng
-                }}
-              >
+              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60px" }}>
                 <SvgIcon
                   component={loadingLogo}
-                  sx={{
-                    width: 50,
-                    height: 50,
-                    transform: "scale(0.5)",
-                  }}
+                  sx={{ width: 50, height: 50, transform: "scale(0.5)" }}
                   viewBox="0 0 24 24"
                   inheritViewBox
                 />
@@ -701,6 +671,8 @@ const Member = () => {
                   onDeleteLink={handleDeleteLink}
                   secret={inviteData?.invitationSecret}
                   workspaceId={workspace?.id}
+                  isCreatingInvite={isCreatingInvite}
+                  isCancelingInvite={isCancelingInvite}
                 />
               </Box>
             )}
@@ -710,4 +682,5 @@ const Member = () => {
     </Box>
   );
 };
+
 export default Member;

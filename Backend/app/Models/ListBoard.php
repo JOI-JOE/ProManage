@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Events\ListCreated;
 use App\Events\ListUpdated;
+use App\Events\ListNameUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -27,6 +28,7 @@ class ListBoard extends Model
     protected $dispatchesEvents = [
         'created' => ListCreated::class, // Khi tạo mới, phát sự kiện ListCreated
         'updated' => ListUpdated::class, // Khi cập nhật, phát sự kiện ListUpdated
+        'updatedName' => ListNameUpdated::class, // Khi cập nhật, phát sự kiện ListUpdated
     ];
 
     protected static function boot()
