@@ -77,6 +77,7 @@ const AppBar = ({ username, email }) => {
     if (searchRef.current && !searchRef.current.contains(e.target)) {
       setSearchText("");
       setIsFocused(false); // Đóng dropdown khi click ngoài
+      setIsExpanded(false); // Thu gọn khung search khi click ra ngoài
     }
   };
 
@@ -84,6 +85,10 @@ const AppBar = ({ username, email }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleLinkClick = (e) => {
+    e.stopPropagation(); // Ngăn sự kiện lan truyền để không kích hoạt handleClickOutside
+  };
 
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
@@ -137,6 +142,7 @@ const AppBar = ({ username, email }) => {
   // Lấy dữ liệu từ useRecentBoards hook
   const { data: recentBoards, isLoading: isLoadingRecent, error: errorRecent } = useRecentBoards();
 
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <Box  
@@ -195,7 +201,12 @@ const AppBar = ({ username, email }) => {
         }}
       >
         {/* Bọc ô tìm kiếm và kết quả trong một box có position: relative */}
-        <Box sx={{ position: "relative", width: "480px" }} ref={searchRef}>
+        <Box sx={{
+                position: "relative", 
+                width: isExpanded ? "500px" : "300px", // Thay đổi width khi mở rộng
+                transition: "width 0.3s ease-in-out" // Thêm hiệu ứng chuyển động
+              }}
+            ref={searchRef}>
           <TextField
             autoComplete="off"
             id="outlined-search"
@@ -204,13 +215,16 @@ const AppBar = ({ username, email }) => {
             size="small"
             value={searchText}
             onChange={handleSearchChange}
-            onFocus={() => setIsFocused(true)} // Khi focus vào input
-            onBlur={() => setIsFocused(false)} // Khi rời focus
+            onFocus={() => {
+              setIsFocused(true);
+              setIsExpanded(true); // Mở rộng khi focus
+            }} // Khi focus vào input
             InputLabelProps={{ sx: { fontSize: "14px", color: "white" } }}
             InputProps={{
               sx: {
                 height: 40,
-                width: 480,
+                width: isExpanded ? "500px" : "300px",
+                transition: "width 0.3s ease-in-out", 
                 backgroundColor: "#1a1a1a",
                 borderRadius: "30px",
                 color: "white",
@@ -300,7 +314,7 @@ const AppBar = ({ username, email }) => {
                         <Box
                           key={board.id}
                           component={Link}
-                          to={`/b/${board.id}/${board.name}`} // Adjust based on your data
+                          to={`/b/${board.board_id}/${board.board_name}`}  // Adjust based on your data
                           sx={{
                             display: "flex",
                             alignItems: "center",
@@ -312,10 +326,11 @@ const AppBar = ({ username, email }) => {
                               backgroundColor: "#3A3E48",
                             },
                           }}
-                          onClick={() => {
-                            setSearchText("");
-                            setIsFocused(false); // Close dropdown after selection
-                          }}
+                          // onClick={() => {
+                          //   setSearchText("");
+                          //   setIsFocused(false); // Close dropdown after selection
+                          // }}
+                          onMouseDown={handleLinkClick} // Ngăn lan truyền sự kiện
                         >
                           {/* Thumbnail/Avatar */}
                           <Avatar
@@ -377,6 +392,7 @@ const AppBar = ({ username, email }) => {
                             onClick={() => {
                               setSearchText("");
                               setIsFocused(false); // Đóng dropdown sau khi chọn
+                              setIsExpanded(false);
                             }}
                           >
                             <Box
@@ -452,7 +468,7 @@ const AppBar = ({ username, email }) => {
                             >
                             <Box
                               component={Link}
-                              to={`/b/${card.board_id}/${card.board_name}/c/${card.id}/${card.title}`}
+                              to={`/b/${card.board_id}/${card.board_name}/c/${card.id}`}
                               sx={{
                                 display: "flex",
                                 alignItems: "center",

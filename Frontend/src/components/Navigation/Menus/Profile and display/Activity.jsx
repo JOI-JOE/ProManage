@@ -24,7 +24,6 @@ const Activity = () => {
 
   const { data: workspaces = [], isLoading, error } = useUserWorkspaces();
   const { data: activities = [] } = useActivitiesByUser();
-  // console.log(workspaces);
 
   const [open, setOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -40,46 +39,6 @@ const Activity = () => {
   };
 
   const navigate = useNavigate();
-
-  // const activities = [
-  //   {
-  //     user: "Chu Van Thai (FPL HN)",
-  //     action: "đã xoá tập tin đính kèm image.png khỏi",
-  //     target: "adsasd",
-  //     timestamp: "20 phút trước",
-  //     workspace: "trong bảng đã",
-  //     avatar: "CH"
-  //   },
-  //   {
-  //     user: "Chu Van Thai (FPL HN)",
-  //     action: "đã đính kèm tập tin image.png vào thẻ",
-  //     target: "adsasd",
-  //     timestamp: "1 giờ trước",
-  //     workspace: "trong bảng đã",
-  //     avatar: "CH"
-  //   },
-  //   {
-  //     user: "thương thương",
-  //     action: "đã thêm",
-  //     target2: "Chu Van Thai (FPL HN)",
-  //     action2: "vào thẻ",
-  //     target: "adsasd",
-  //     timestamp: "21:31 9 thg 4, 2023",
-  //     workspace: "trong bảng đã",
-  //     avatar: "TT"
-  //   },
-  //   {
-  //     user: "Chu Van Thai (FPL HN)",
-  //     action: "đã thêm",
-  //     target2: "Thái Chu Văn",
-  //     action2: "vào thẻ",
-  //     target: "asdasd",
-  //     timestamp: "22:46 8 thg 4, 2023",
-  //     workspace: "trong bảng workspace",
-  //     avatar: "CH"
-  //   },
-  // ];
-
 
   return (
     <Box sx={{
@@ -133,7 +92,6 @@ const Activity = () => {
                         {workspace.permission_level === "public" && (
                           <PublicIcon sx={{ fontSize: 14, color: '#33cc33', ml: 0.5 }} />
                         )}
-                        {/* Nếu cần thêm icon khác cho "normal" hay role khác */}
                       </Box>
                     </Typography>
                   </ListItem>
@@ -165,10 +123,9 @@ const Activity = () => {
               const userName = description.substring(0, keywordIndex).trim();
               const actionText = description.substring(keywordIndex).trim();
               const affectedUser = item.properties?.full_name;
-              const cardName = item.properties?.card_title; // lấy tên thẻ
-              const cardId = item.properties?.card_id; // Thêm card_id từ properties
+              const cardName = item.properties?.card_title;
+              const cardId = item.properties?.card_id;
 
-              // Xử lý mô tả: thay "vào thẻ này" bằng "vào thẻ [CardName]"
               let finalActionText = actionText;
 
               if (cardName && finalActionText.includes(" này")) {
@@ -179,7 +136,6 @@ const Activity = () => {
                 finalActionText += ` thẻ ${cardName}`;
               }
 
-              // Hàm tạo mô tả với liên kết
               const renderDescriptionWithLink = (description, filePath, fileName) => {
                 const fileIndex = description.indexOf(fileName);
                 if (fileIndex === -1) return description;
@@ -212,11 +168,9 @@ const Activity = () => {
                 );
               };
 
-              // Xử lý hiển thị tên thẻ với link
               const renderCardNameWithLink = (text) => {
                 if (!cardName || !cardId) return text;
 
-                // Tìm vị trí của tên thẻ trong văn bản
                 const cardNameIndex = text.indexOf(cardName);
                 if (cardNameIndex === -1) return text;
 
@@ -232,7 +186,7 @@ const Activity = () => {
                         textDecoration: "none",
                         cursor: "pointer",
                       }}
-                      onClick={() => navigateToCard(cardId)}
+                      onClick={() => navigateToCard(item.properties?.board_id, item.properties?.board_name, cardId)}
                     >
                       {cardName}
                     </span>
@@ -241,15 +195,10 @@ const Activity = () => {
                 );
               };
 
-              // Hàm điều hướng đến card
-              const navigateToCard = (id) => {
-                // Thay đổi đường dẫn tùy theo cấu trúc ứng dụng của bạn
-                window.open(`/cards/${id}`, "_blank");
-                // Hoặc nếu trong cùng ứng dụng, có thể dùng:
-                // navigate(`/cards/${id}`);
+              const navigateToCard = (boardId, boardName, cardId) => {
+                window.open(`/b/${boardId}/${boardName}/c/${cardId}`, "_blank");
               };
 
-              // JSX trả về
               return (
                 <Box key={index} display="flex" alignItems="flex-start" mb={1} mt={2} >
                   <Avatar
@@ -258,9 +207,7 @@ const Activity = () => {
                       width: 28,
                       height: 28,
                       mt: 2,
-                      // fontSize: "0.6rem",
                       fontSize: '0.8rem',
-
                       mr: 1.2,
                     }}
                   >
@@ -293,7 +240,6 @@ const Activity = () => {
                             const boardName = item.properties?.board_name;
                             const isImage = fileName && /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(fileName);
 
-                            // Danh sách các từ cần thay thế bằng link
                             const linkTargets = [];
 
                             if (cardName && cardId) {
@@ -302,7 +248,9 @@ const Activity = () => {
                                 render: () => (
                                   <span
                                     style={{ color: "blue", textDecoration: "none", cursor: "pointer" }}
-                                    onClick={() => navigate(`/b/${boardId}/${boardName}/c/${cardId}`, "_blank")}
+                                    onClick={() =>
+                                      window.open(`/b/${boardId}/${boardName}/c/${cardId}`, "_blank")
+                                    }
                                   >
                                     {cardName}
                                   </span>
@@ -327,7 +275,6 @@ const Activity = () => {
                               });
                             }
 
-                            // Hàm xử lý gắn link vào finalActionText
                             const renderWithLinks = (text) => {
                               if (!linkTargets.length) return text;
 
@@ -368,57 +315,40 @@ const Activity = () => {
                             return renderWithLinks(finalActionText);
                           })()}
                         </Typography>
-
-
                       )}
                     </Typography>
                     <Typography fontSize="0.5rem" color="gray">
                       {formatTime(item.created_at)}
                     </Typography>
 
-                    {/* Nếu là ảnh thì hiển thị ảnh */}
+                    {/* Smaller image display - Modified for Trello-like appearance */}
                     {item.properties?.file_path &&
                       /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(item.properties.file_name) && (
-                        <Box mt={1}>
+                        <Box 
+                          mt={1} 
+                          sx={{
+                            display: "inline-block",
+                            border: "1px solid #dfe1e6",
+                            borderRadius: "3px",
+                            overflow: "hidden",
+                            maxWidth: "300px",
+                            height: "260px",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleOpen(item.properties.file_path)}
+                        >
                           <img
                             src={item.properties.file_path}
                             alt="Attachment"
                             style={{
-                              maxWidth: "100%",
-                              borderRadius: "8px",
-                              cursor: "pointer",
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
                             }}
-                            onClick={() => handleOpen(item.properties.file_path)}
                           />
                         </Box>
                       )}
                   </Box>
-
-                  {/* Modal hiển thị ảnh */}
-                  {/* <Modal open={open} onClose={handleClose}>
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        bgcolor: "background.paper",
-                        boxShadow: 24,
-                        p: 2,
-                        outline: "none",
-                      }}
-                    >
-                      <img
-                        src={selectedImage}
-                        alt="Selected Attachment"
-                        style={{
-                          maxWidth: "90vw",
-                          maxHeight: "90vh",
-                          borderRadius: "8px",
-                        }}
-                      />
-                    </Box>
-                  </Modal> */}
                 </Box>
               );
             })}
@@ -447,7 +377,6 @@ const Activity = () => {
                 />
               </Box>
             </Modal>
-
           </List>
         </Box>
       </Box>
