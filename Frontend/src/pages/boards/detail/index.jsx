@@ -39,7 +39,7 @@ const BoardDetail = () => {
     // <WorkspaceProvider board={board}>
     <Container disableGutters maxWidth={false}>
       <Box sx={{ display: "flex", position: "relative" }}>
-        <SideBar board={board} />
+        <SideBar board={board} isLoadingBoard={isLoading} />
         <Box sx={{ width: "81%", position: "relative" }}>
           <BoardProvider>
             {board?.closed == 1 && (

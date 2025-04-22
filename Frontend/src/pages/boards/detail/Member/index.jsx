@@ -30,7 +30,7 @@ import { toast } from 'react-toastify';
 
 import MemberItem from "./MemberItem";
 import GenerateLink from "../../../../components/GenerateLink";
-import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
+import { useGetWorkspaceById } from "../../../../hooks/useWorkspace";
 import {
   useCancelInvitationWorkspace,
   useCreateInviteWorkspace,
@@ -40,19 +40,33 @@ import {
 import WorkspaceInfo from "../../../../components/WorkspaceInfo";
 import { useGetInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 import { useMe } from "../../../../contexts/MeContext";
+import Request from "./Component/Request";
+import Guest from "./Component/Guest";
 
 const Member = () => {
-  const { workspaceName } = useParams();
-  const { user } = useMe()
+  const { workspaceId } = useParams();
+  const { user, workspaceIds } = useMe()
+
   const {
     data: workspace,
     isLoading: isLoadingWorkspace,
     isError: isWorkspaceError,
     error: workspaceError,
     refetch: refetchWorkspace,
-  } = useGetWorkspaceByName(workspaceName, {
-    enabled: !!workspaceName,
+  } = useGetWorkspaceById(workspaceId, {
+    enabled: !!workspaceId,
   });
+
+  const isAdminWorkspace = workspace?.isCurrentUserAdmin;
+  // Optional: If you need to manage isAdminWorkspace in local state
+  const [isAdmin, setIsAdmin] = useState(isAdminWorkspace);
+  useEffect(() => {
+    if (isAdminWorkspace !== undefined) {
+      setIsAdmin(isAdminWorkspace); // Update local state if needed
+    }
+  }, [isAdminWorkspace]);
+
+
 
   const {
     data: inviteData,
@@ -172,6 +186,10 @@ const Member = () => {
   const toggleFormVisibility = () => {
     setFormVisible((prev) => !prev);
   };
+  const [activeTab, setActiveTab] = useState('members');
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+  };
 
   const handleCloseInvite = () => {
     if (isProcessing) return;
@@ -240,6 +258,8 @@ const Member = () => {
   };
 
   const members = workspace?.members || [];
+  const requests = workspace?.requests || []
+  const guests = workspace?.guests || []
 
   const filteredMembers = members?.filter((member) =>
     member.user?.full_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -260,29 +280,7 @@ const Member = () => {
 
   return (
     <Box
-      sx={{
-        width: "100%",
-        maxWidth: "1200px",
-        height: "100vh",
-        padding: "32px 20px 20px 20px",
-        overflow: "auto",
-        maxHeight: "100vh",
-        "&::-webkit-scrollbar": {
-          width: "8px",
-          height: "8px",
-        },
-        "&::-webkit-scrollbar-track": {
-          background: "#f1f1f1",
-          borderRadius: "4px",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          background: "#888",
-          borderRadius: "4px",
-        },
-        "&::-webkit-scrollbar-thumb:hover": {
-          background: "#555",
-        },
-      }}
+
     >
       <Box
         sx={{
@@ -335,87 +333,184 @@ const Member = () => {
           <WorkspaceInfo workspaceInfo={workspace} onCancel={toggleFormVisibility} refetchWorkspace={refetchWorkspace} />
         )}
 
-        <Button
-          variant="contained"
-          sx={{
-            bgcolor: "#026AA7",
-            textTransform: "none",
-            fontSize: "14px",
-            fontWeight: "bold",
-            padding: "8px 12px",
-            boxShadow: "none",
-            marginRight: "60px",
-            "&:hover": { bgcolor: "#005A96" },
-          }}
-          onClick={handleOpenInvite}
-        >
-          Mời các thành viên Không gian làm việc
-        </Button>
+        {isAdmin && (
+          <Button
+            variant="contained"
+            sx={{
+              bgcolor: "#026AA7",
+              textTransform: "none",
+              fontSize: "14px",
+              fontWeight: "bold",
+              padding: "8px 12px",
+              boxShadow: "none",
+              marginRight: "60px",
+              "&:hover": { bgcolor: "#005A96" },
+            }}
+            onClick={handleOpenInvite}
+          >
+            Mời các thành viên Không gian làm việc
+          </Button>
+        )}
+
       </Box>
 
       <Grid container spacing={2} sx={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}>
-        <Grid item xs={12} sm={3} md={2}>
-          <Box sx={{ padding: "0px", width: "100%" }}>
-            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "0.9rem" }}>
+        <Grid item xs={12} sm={4} md={2}>
+          <Box sx={{ padding: '0px', width: '100%' }}>
+            <Box>
+
+            </Box>
+            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: '0.9rem' }}>
               Người cộng tác
             </Typography>
             <Chip
               label={`${members.length} / 10`}
               size="small"
-              sx={{ fontSize: "12px", backgroundColor: "#F4F5F7" }}
+              sx={{ fontSize: '12px', backgroundColor: '#F4F5F7' }}
             />
-            <Paper elevation={0} sx={{ backgroundColor: "#E8F0FE", padding: 1, borderRadius: 2, mt: 2 }}>
-              <Typography variant="body2" color="primary" fontWeight="bold">
-                Thành viên không gian làm việc ({members.length})
-              </Typography>
-            </Paper>
-            <List sx={{ padding: 0, marginTop: 2 }}>
-              <ListItem divider>
-                <ListItemText primary="Khách (0)" />
+
+            <List sx={{ padding: 0, marginTop: 2, display: "grid", gap: 2 }}>
+              <ListItem
+                // button={true}
+                selected={activeTab === 'members'}
+                onClick={() => handleTabChange('members')}
+                sx={{
+                  cursor: "pointer",
+                  backgroundColor: activeTab === 'members' ? '#E8F0FE' : 'transparent',
+                  borderRadius: 1,
+                  padding: '8px 16px',
+                  '&:hover': { backgroundColor: '#E8F0FE' },
+                  '& .MuiListItemText-primary': {
+                    color: activeTab === 'members' ? 'primary.main' : 'text.primary',
+                    fontWeight: activeTab === 'members' ? 'bold' : 'normal',
+                  },
+                }}
+              >
+                <ListItemText primary={`Thành viên không gian làm việc (${members.length})`} />
               </ListItem>
-              <ListItem>
-                <ListItemText primary="Yêu cầu tham gia (0)" />
+
+              <ListItem
+                // button={true}
+                onClick={() => handleTabChange('guests')}
+                sx={{
+                  cursor: "pointer",
+                  backgroundColor: activeTab === 'guests' ? '#E8F0FE' : 'transparent',
+                  borderRadius: 1,
+                  padding: '8px 16px',
+                  '&:hover': { backgroundColor: '#E8F0FE' },
+                  '& .MuiListItemText-primary': {
+                    color: activeTab === 'guests' ? 'primary.main' : 'text.primary',
+                    fontWeight: activeTab === 'guests' ? 'bold' : 'normal',
+                  },
+                }}
+              >
+                <ListItemText primary={`Khách (${guests.length})`} />
               </ListItem>
+
+              {isAdmin && (
+                <ListItem
+                  // button={true}
+                  onClick={() => handleTabChange('requests')}
+                  sx={{
+                    cursor: "pointer",
+                    backgroundColor: activeTab === 'requests' ? '#E8F0FE' : 'transparent',
+                    borderRadius: 1,
+                    padding: '8px 16px',
+                    '&:hover': { backgroundColor: '#E8F0FE' },
+                    '& .MuiListItemText-primary': {
+                      color: activeTab === 'requests' ? 'primary.main' : 'text.primary',
+                      fontWeight: activeTab === 'requests' ? 'bold' : 'normal',
+                    },
+                  }}
+                >
+                  <ListItemText primary={`Yêu cầu tham gia (${requests.length})`} />
+                </ListItem>
+              )}
             </List>
           </Box>
         </Grid>
 
-        <Grid item xs={12} sm={9} md={10}>
-          <Box sx={{ padding: "20px", width: "100%", borderBottom: "1px solid #D3D3D3" }}>
-            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "0.9rem" }}>
-              Thành viên không gian làm việc ({members.length})
-            </Typography>
-            <Box sx={{ borderBottom: "1px solid #D3D3D3", pb: 2, mb: 2 }}>
-              <Typography variant="body2" sx={{ color: "gray", fontSize: "0.7rem" }}>
-                Các thành viên trong Không gian làm việc có thể xem và tham gia tất cả các bảng Không gian làm việc hiển thị và tạo ra các bảng mới trong Không gian làm việc.
-              </Typography>
-            </Box>
-
-            <Typography variant="h6" fontWeight="bold" sx={{ mt: 2, fontSize: "0.9rem" }}>
-              Mời các thành viên tham gia cùng bạn
-            </Typography>
-            <Box sx={{ borderBottom: "1px solid #D3D3D3", pb: 2, mb: 2 }}>
-              <Typography variant="body2" sx={{ color: "gray", fontSize: "0.7rem" }}>
-                Bất kỳ ai có liên kết mời đều có thể tham gia Không gian làm việc miễn phí này. Bạn cũng có thể tắt và tạo liên kết mới cho Không gian làm việc này bất cứ lúc nào. Số lời mời đang chờ xử lý được tính vào giới hạn 10 người cộng tác.
-              </Typography>
-            </Box>
-
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="Lọc theo tên"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {filteredMembers?.map((member, index) => (
-                <Box key={`${member.id}-${index}`} id="workspace-member-list">
-                  <MemberItem member={member} workspace={workspace} boards={workspace?.boards} width={100} />
+        <Grid item xs={12} sm={8} md={10}>
+          {/* Member list section with proper scrolling */}
+          <Box sx={{ padding: '20px', width: '100%', borderBottom: '1px solid #D3D3D3' }}>
+            {activeTab === 'members' && (
+              <>
+                <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 'bold', mb: 2 }}>
+                  Thành viên không gian làm việc ({members.length})
+                </Typography>
+                <Box sx={{ borderBottom: '1px solid #D3D3D3', pb: 2, mb: 2 }}>
+                  <Typography variant="body2" sx={{ color: 'gray', fontSize: '0.7rem' }}>
+                    Các thành viên trong Không gian làm việc có thể xem và tham gia tất cả các bảng Không gian làm việc hiển thị và tạo ra các bảng mới trong Không gian làm việc.
+                  </Typography>
                 </Box>
-              ))}
-            </Box>
+
+                <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 'bold', mb: 2 }}>
+                  Mời các thành viên tham gia cùng bạn
+                </Typography>
+                <Box sx={{ borderBottom: '1px solid #D3D3D3', pb: 2, mb: 2 }}>
+                  <Typography variant="body2" sx={{ color: 'gray', fontSize: '0.7rem' }}>
+                    Bất kỳ ai có liên kết mời đều có thể tham gia Không gian làm việc miễn phí này. Bạn cũng có thể tắt và tạo liên kết mới cho Không gian làm việc này bất cứ lúc nào. Số lời mời đang chờ xử lý được tính vào giới hạn 10 người cộng tác.
+                  </Typography>
+                </Box>
+
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Lọc theo tên"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+
+                {/* Fixed container with proper scrolling */}
+                <Box
+                  sx={{
+                    maxHeight: 3 * 72, // Tối đa hiển thị 4 item (tùy chiều cao thực tế của mỗi item)
+                    overflowY: 'auto',
+                    pr: 1, // tránh đè lên scroll bar
+                    "&::-webkit-scrollbar": {
+                      width: "6px",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      backgroundColor: "#B6BBBF",
+                      borderRadius: "6px",
+                    },
+                    "&::-webkit-scrollbar-thumb:hover": {
+                      backgroundColor: "#ECF0F1",
+                    },
+                  }}
+                >
+                  {filteredMembers?.map((member, index) => (
+                    <Box
+                      key={`member-${member.id}-${index}`}
+                      sx={{
+                        mb: 1,
+                        "&:last-child": {
+                          mb: 0,
+                        }
+                      }}
+                    >
+                      <MemberItem
+                        member={member}
+                        workspace={workspace}
+                        boards={workspace?.boards}
+                        isAdmin={isAdmin}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </>
+            )}
+
+            {activeTab === 'guests' && (
+              <Guest isAdmin={isAdmin} guests={guests} />
+            )}
+
+            {activeTab === 'requests' && (
+              <Request isAdmin={isAdmin} requests={requests} />
+            )}
           </Box>
+
         </Grid>
       </Grid>
 

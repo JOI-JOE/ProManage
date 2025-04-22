@@ -82,15 +82,15 @@ export const fetchUserBoards = async () => {
 
 // END
 
-// export const getUser = async () => {
-//   try {
-//     const response = await authClient.get("/users/me");
-//     return response.data;
-//   } catch (error) {
-//     console.error("Lỗi khi lấy dữ liệu người dùng:", error);
-//     throw error;
-//   }
-// };
+export const getUser = async () => {
+  try {
+    const response = await authClient.get("/users/me");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+    throw error;
+  }
+};
 
 /**
  * Hàm này chịu trách nhiệm đăng nhập người dùng.

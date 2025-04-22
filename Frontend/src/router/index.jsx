@@ -95,8 +95,8 @@ const router = createBrowserRouter([
             element: <BoardContent />,
             children: [{ path: "c/:cardId", element: <CardModal /> }],
           },
-          { path: "w/:workspaceName", element: <Board /> },
-          { path: "w/:workspaceName/members", element: <Member /> },
+          { path: "w/:workspaceId", element: <Board /> },
+          { path: "w/:workspaceId/members", element: <Member /> },
           { path: "w/:workspaceName/account", element: <Account /> },
           { path: "b/:boardId/gantt-chart", element: <GanttChart /> },
           { path: "w/:workspaceName/calendar", element: <Calendar /> },
@@ -137,7 +137,7 @@ const router = createBrowserRouter([
 
       {
         path: "invite/accept-team",
-        element: <AcceptTeam />,
+        element: <AcceptTeam />, // của workspace
       },
     ],
   },

@@ -24,7 +24,9 @@ class WorkspaceResource extends JsonResource
             'updated_at' => $this->resource['updated_at'],
             'members' => $this->resource['members'],
             'boards' => $this->resource['boards'],
-            'markedBoards' => $this->resource['markedBoards'],
+            'guests' => $this->resource['guests'],
+            'requests' => $this->resource['requests'],
+            'isCurrentUserAdmin' => $this->resource['isCurrentUserAdmin']
         ];
     }
 }

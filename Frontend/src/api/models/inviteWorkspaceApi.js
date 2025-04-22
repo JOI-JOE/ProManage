@@ -79,6 +79,7 @@ export const getSearchMembers = async ({ query, idWorkspace }) => {
     throw error;
   }
 };
+
 export const sendInviteWorkspace = async (
   workspaceId,
   { email, memberId, message }
@@ -96,5 +97,18 @@ export const sendInviteWorkspace = async (
   } catch (error) {
     console.error("❌ Error confirming workspace member:", error);
     throw error;
+  }
+};
+
+export const joinWorkspace = async ({ workspaceId, token }) => {
+  try {
+    const response = await authClient.post(
+      `/workspace/${workspaceId}/invitationSecret/${token}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error joining workspace:", error);
+    // Ném ra lỗi chuẩn hoá để mutation xử lý
+    throw error.response?.data || { message: "Failed to join workspace" };
   }
 };

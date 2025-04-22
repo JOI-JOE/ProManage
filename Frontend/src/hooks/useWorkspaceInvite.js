@@ -8,6 +8,7 @@ import {
   getInvitationSecretByReferrer,
   addMemberToWorkspaceDirection,
   sendInviteWorkspace,
+  joinWorkspace,
 } from "../api/models/inviteWorkspaceApi";
 
 // Hook mutation
@@ -121,6 +122,31 @@ export const useSendInviteWorkspace = () => {
     },
   });
 };
+
+export const useJoinWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, token }) =>
+      joinWorkspace({ workspaceId, token }),
+
+    onSuccess: (data) => {
+      // Invalidate danh sách workspace chung và workspace cụ thể
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", data.workspace_id],
+      });
+
+      console.log("✅ Tham gia workspace thành công:", data);
+    },
+
+    onError: (error) => {
+      const errorMessage = error?.message || "Đã xảy ra lỗi không xác định";
+      console.error("❌ Lỗi khi tham gia workspace:", errorMessage);
+    },
+  });
+};
+
 // // function khi chọn một người dùng vào hàng chờ
 // export const useAddMemberToWorkspace = () => {
 //   const queryClient = useQueryClient();

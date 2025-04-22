@@ -138,14 +138,13 @@ export const useUserWorkspaces = () => {
 };
 
 // Hook to change a member's type in a workspace
-export const useChangeMemberType = () => {
+export const useChangeMemberType = (workspaceId) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ workspaceId, userId, memberType }) =>
       changeType(workspaceId, userId, memberType),
     onSuccess: (response, variables) => {
-      // Invalidate the workspace query to refresh workspace data
       queryClient.invalidateQueries({
         queryKey: ["workspace", variables.workspaceId],
         exact: true,

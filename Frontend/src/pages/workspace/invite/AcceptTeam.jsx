@@ -9,7 +9,7 @@ import { Box, SvgIcon } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useGetInvitationSecretByReferrer } from "../../../hooks/useWorkspaceInvite";
 import { useFetchUserBoardsWithWorkspaces } from "../../../hooks/useUser";
-// import { useWorkspace } from "../../../contexts/WorkspaceContext";
+import { useMe } from "../../../contexts/MeContext";
 
 const isAuthenticated = () => !!localStorage.getItem("token");
 
@@ -17,29 +17,66 @@ const AcceptTeam = () => {
     const navigate = useNavigate();
     const [invitation, setInvitation] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [idMember, setIdMember] = useState(null);
+    const { workspaceIds } = useMe();
 
-    useEffect(() => {
-        const storedInvitation = Cookies.get("invitation");
-
-        if (storedInvitation) {
-            const decodedInvitation = decodeURIComponent(storedInvitation);
+    // Hàm xử lý invitation từ cookie
+    const processInvitationFromCookie = (cookieValue) => {
+        if (cookieValue) {
+            const decodedInvitation = decodeURIComponent(cookieValue);
             const parts = decodedInvitation.split(":");
 
             if (parts.length === 3 && parts[0] === "workspace") {
-                setInvitation({
-                    workspaceId: parts[1].trim(),
-                    inviteToken: parts[2].trim(),
-                });
+                const workspaceId = parts[1].trim();
+                const inviteToken = parts[2].trim();
+                setInvitation({ workspaceId, inviteToken });
+
+                // Kiểm tra xem user đã tham gia workspace chưa
+                const hasJoined = workspaceIds?.some((ws) => ws.id === workspaceId);
+                if (hasJoined) {
+                    Cookies.remove("invitation"); // Xóa cookie invitation
+                    Cookies.remove("pending-invitation"); // Xóa cookie pending-invitation
+                    navigate(`/w/${workspaceId}`);
+                }
             }
         }
-        setLoading(false);
-    }, []);
+    };
 
+    // Kiểm tra invitation từ cookie hoặc pending-invitation
     useEffect(() => {
-        const memberId = Cookies.get("idMember");
-        setIdMember(memberId);
-    }, []);
+        const storedInvitation = Cookies.get("invitation");
+        const pendingInvitation = Cookies.get("pending-invitation");
+
+        if (storedInvitation) {
+            processInvitationFromCookie(storedInvitation);
+        } else if (pendingInvitation && pendingInvitation.startsWith("pending-")) {
+            // Xử lý pending-invitation nếu người dùng vừa đăng nhập
+            const cleanedPending = pendingInvitation.replace("pending-", "");
+            processInvitationFromCookie(cleanedPending);
+        }
+
+        setLoading(false);
+    }, [workspaceIds, navigate]);
+
+    // Xử lý khi người dùng chưa đăng nhập
+    useEffect(() => {
+        if (!loading && !isAuthenticated()) {
+            if (invitation?.inviteToken && invitation?.workspaceId) {
+                // Tạo dữ liệu invitation dạng "workspace:{id}:{token}"
+                const invitationValue = `workspace:${invitation.workspaceId}:${invitation.inviteToken}`;
+                const encoded = encodeURIComponent(invitationValue);
+
+                Cookies.set("pending-invitation", `pending-${encoded}`, {
+                    expires: 1 / 24, // 1 tiếng
+                    path: "/",
+                });
+                // Điều hướng đến login
+                navigate("/login");
+            } else {
+                // Nếu không có invitation hợp lệ, hiển thị MissingInvitation
+                setLoading(false);
+            }
+        }
+    }, [loading, invitation, navigate]);
 
     const { data: inviteData, isLoading, isError } = useGetInvitationSecretByReferrer(
         invitation?.workspaceId,
@@ -47,30 +84,7 @@ const AcceptTeam = () => {
         { enabled: !!invitation?.workspaceId && !!invitation?.inviteToken }
     );
 
-    console.log(inviteData)
-
-    const { data: userWorkspaces, isLoading: isLoadingUser } = useFetchUserBoardsWithWorkspaces(idMember);
-    useEffect(() => {
-        if (!idMember || !inviteData) return;
-
-        // 1️⃣ Nếu người gửi tự mời chính họ, điều hướng về workspace của họ
-        if (idMember === inviteData?.memberInviter?.id) {
-            navigate(`/w/${inviteData?.workspace?.id}`);
-            return;
-        }
-
-        // 2️⃣ Nếu người nhận đã là thành viên của workspace, điều hướng về workspace
-        const isAlreadyMember = userWorkspaces?.workspaces?.some(
-            (workspace) => workspace.id === inviteData?.workspace?.id
-        );
-
-        if (isAlreadyMember) {
-            navigate(`/w/${inviteData?.workspace?.id}`);
-        }
-    }, [inviteData, idMember, userWorkspaces, navigate]);
-
-    // Nếu đang load từ cookies hoặc API, hiển thị loading
-    if (loading || isLoading || isLoadingUser) {
+    if (loading || isLoading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
                 <SvgIcon
@@ -94,7 +108,9 @@ const AcceptTeam = () => {
     }
 
     // Nếu có dữ liệu hợp lệ, hiển thị giao diện phù hợp
-    return isAuthenticated() ? <InviteWithToken inviteData={inviteData} /> : <InviteWithoutToken inviteData={inviteData} />;
+    return <InviteWithToken inviteData={inviteData} invitation={invitation} />;
 };
 
 export default AcceptTeam;
+
+

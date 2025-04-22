@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { FcGoogle } from "react-icons/fc";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const GoogleAuth = () => {
   const navigate = useNavigate();
@@ -13,9 +14,30 @@ const GoogleAuth = () => {
   // Kiểm tra token và chuyển hướng nếu đã đăng nhập
   useEffect(() => {
     if (token) {
-      navigate("/home");
+      // Nếu đã có token => kiểm tra xem có pending invite không
+      const pendingInvite = Cookies.get("pending-invitation");
+
+      if (pendingInvite?.startsWith("pending-")) {
+        const encoded = pendingInvite.replace("pending-", "");
+        const decoded = decodeURIComponent(encoded); // workspace:xxx:yyy
+        const [prefix, workspaceId, inviteToken] = decoded.split(":");
+
+        if (prefix === "workspace" && workspaceId && inviteToken) {
+          navigate(`/invite/${workspaceId}/${inviteToken}`);
+          Cookies.remove("pending-invitation");
+          return;
+        }
+      }
+
+      if (pendingInvite) {
+        navigate(`/invite/accept-team`);
+      } else {
+        navigate("/home");
+      }
     }
   }, [token, navigate]);
+
+
 
   // Xử lý callback từ Google OAuth (khi backend redirect về)
   useEffect(() => {
@@ -42,7 +64,6 @@ const GoogleAuth = () => {
         if (idMember) {
           localStorage.setItem("idMember", idMember);
         }
-
         // Xóa query parameters khỏi URL
         window.history.replaceState({}, document.title, window.location.pathname);
 
@@ -58,6 +79,10 @@ const GoogleAuth = () => {
   }, [navigate, setToken]);
 
   // Xử lý đăng nhập với Google
+
+  const pendingInvite = Cookies.get("pending-invitation");
+
+
   const handleLogin = async () => {
     setIsLoading(true);
     setError(null);
@@ -78,6 +103,8 @@ const GoogleAuth = () => {
       setIsLoading(false);
     }
   };
+
+  if (token) return null;
 
   return (
     <div className="flex flex-col items-center w-full max-w-md">

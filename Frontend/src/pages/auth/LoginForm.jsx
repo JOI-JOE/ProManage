@@ -4,12 +4,17 @@ import { useLogin } from "../../hooks/useUser";
 import GitHubAuth from "./GitHubAuth";
 import GoogleAuth from "./GoogleAuth";
 import anh4 from "../../assets/anh4.jpg";
+import Cookies from "js-cookie";
 
 const LoginForm = () => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const location = useLocation();
   const inviteToken = location.state?.inviteToken;
+  const pendingInvite = Cookies.get("pending-invitation");
+
+
   const [errors, setErrors] = useState({
     email: "",
     password: "",
@@ -51,8 +56,8 @@ const LoginForm = () => {
     // Longer duration for password and authentication errors (15 seconds)
     const errorDuration =
       fieldName === "password" ||
-      fieldName === "general" ||
-      fieldName === "email"
+        fieldName === "general" ||
+        fieldName === "email"
         ? 15000
         : duration;
 
@@ -98,9 +103,22 @@ const LoginForm = () => {
         localStorage.setItem("token", data.token);
         if (inviteToken) {
           navigate(`/accept-invite/${inviteToken}`);
+        } else if (pendingInvite) {
+          if (pendingInvite?.startsWith("pending-")) {
+            const encoded = pendingInvite.replace("pending-", "");
+            const decoded = decodeURIComponent(encoded); // workspace:xxx:yyy
+            const [prefix, workspaceId, inviteToken] = decoded.split(":");
+            if (prefix === "workspace" && workspaceId && inviteToken) {
+              navigate(`/invite/${workspaceId}/${inviteToken}`);
+              Cookies.remove("pending-invitation");
+              return;
+            }
+          }
+          navigate(`/invite/accept-team`);
         } else {
           navigate("/home");
         }
+
       },
       onError: (err) => {
         console.error("Lỗi đăng nhập:", err);
@@ -175,9 +193,8 @@ const LoginForm = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Nhập email"
-              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.email ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.email && (
               <p className="text-red-500 text-xs mt-1 ml-1">{errors.email}</p>
@@ -207,9 +224,8 @@ const LoginForm = () => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Nhập mật khẩu"
-              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
-                errors.password ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.password ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.password && (
               <p className="text-red-500 text-xs mt-1 ml-1">

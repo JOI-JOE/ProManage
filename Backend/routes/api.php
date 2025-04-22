@@ -77,18 +77,15 @@ Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [Workspac
 Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getWorkspaceById']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('users/me', [AuthController::class, 'getUser']);
     Route::get('member/me', [AuthController::class, 'index']);
     Route::get('member/{id?}', [AuthController::class, 'getUserData']);
 
     Route::controller(WorkspaceController::class)->group(function () {
         Route::get('workspaces', 'index');
         Route::get('workspaces/user/all', 'getAllWorksapces');
-
         Route::get('workspaces/{workspaceId}', 'show');
-        // Route::get('workspaces/{workspaceId}', 'showWorkspaceById'); // Lấy theo ID
-
         Route::get('guestWorkspace', 'getGuestWorkspaces');
-
         Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::post('workspaces', 'store');
@@ -97,14 +94,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::controller(WorkspaceInvitationsController::class)->group(callback: function () {
+        Route::get('search/members', 'searchMembers');
         Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
         Route::get('/workspaces/{workspaceId}/invitationSecret', 'getInvitationSecret');
         Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
-        Route::get('search/members', 'searchMembers');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {
         Route::post('/workspace/{workspaceId}/members',  'sendMemberWorkspace');
+        Route::post('workspace/{workspaceId}/invitationSecret/{token}', 'joinWorkspace');
         Route::delete('workspace/{workspaceId}/members/{userId}',  'removeMember');
         Route::put('workspace/{workspaceId}/members/{userId}/type',  'changeType');
     });
@@ -360,5 +358,3 @@ Route::post('/table-view/board-members', [TableViewController::class, 'getMember
 Route::post('/cards/{card}/table-view-member', [TableViewController::class, 'addMember']);
 Route::delete('/cards/{card}/table-view-member/{member}', [TableViewController::class, 'removeMember']);
 Route::put('/cards/{cardId}/table-view-date', [TableViewController::class, 'updateDueDate']);
-
-

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useRegister } from "../../hooks/useUser";
+import Cookies from "js-cookie";
 import anh4 from "../../assets/anh4.jpg";
 
 const Register = () => {
@@ -14,6 +15,8 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const location = useLocation();
+  // mời workspace
+  const pendingInvite = Cookies.get("pending-invitation");
 
   // Lấy email và token từ query string
   const query = new URLSearchParams(location.search);
@@ -21,7 +24,7 @@ const Register = () => {
   const inviteToken = query.get("token") || "";
   console.log("inviteEmail", inviteEmail);
   console.log("inviteToken", inviteToken);
-  
+
 
   // Cập nhật email từ query string khi component mount
   useEffect(() => {
@@ -108,26 +111,39 @@ const Register = () => {
   const handleRegister = (e) => {
     e.preventDefault();
     setErrors({});
- // Nếu có inviteToken mà email không khớp, bỏ qua inviteToken
- let effectiveInviteToken = inviteToken;
- if (inviteToken && formData.email !== inviteEmail) {
-   setErrors((prev) => ({
-     ...prev,
-     email: 'Email phải khớp với email trong lời mời.',
-   }));
-   effectiveInviteToken = null; // Bỏ inviteToken nếu email không khớp
- } else {
-   setErrors({});
- }
+    // Nếu có inviteToken mà email không khớp, bỏ qua inviteToken
+    let effectiveInviteToken = inviteToken;
+    if (inviteToken && formData.email !== inviteEmail) {
+      setErrors((prev) => ({
+        ...prev,
+        email: 'Email phải khớp với email trong lời mời.',
+      }));
+      effectiveInviteToken = null; // Bỏ inviteToken nếu email không khớp
+    } else {
+      setErrors({});
+    }
 
     mutate(formData, {
       onSuccess: (data) => {
         if (data.token) {
           localStorage.setItem("token", data.token);
-          if(effectiveInviteToken) {
+          if (effectiveInviteToken) {
             navigate(`/accept-invite/${effectiveInviteToken}`);
+          } else if (pendingInvite) {
+            // vào workspace
+            if (pendingInvite?.startsWith("pending-")) {
+              const encoded = pendingInvite.replace("pending-", "");
+              const decoded = decodeURIComponent(encoded); // workspace:xxx:yyy
+              const [prefix, workspaceId, inviteToken] = decoded.split(":");
+              if (prefix === "workspace" && workspaceId && inviteToken) {
+                navigate(`/invite/${workspaceId}/${inviteToken}`);
+                Cookies.remove("pending-invitation");
+                return;
+              }
+            }
+            navigate(`/invite/accept-team`);
           } else {
-          navigate("/home");
+            navigate("/home");
           }
         }
       },
@@ -167,13 +183,12 @@ const Register = () => {
             <input
               type="text"
               placeholder="Tên đăng nhập"
-            
+
               name="user_name"
               value={formData.user_name}
               onChange={handleChange}
-              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
-                errors.user_name ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.user_name ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.user_name && (
               <p className="text-red-500 text-xs mt-0.5 ml-1">
@@ -189,9 +204,8 @@ const Register = () => {
               name="full_name"
               value={formData.full_name}
               onChange={handleChange}
-              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
-                errors.full_name ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.full_name ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.full_name && (
               <p className="text-red-500 text-xs mt-0.5 ml-1">
@@ -207,10 +221,9 @@ const Register = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              disabled={!!inviteEmail} 
-              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              }`}
+              disabled={!!inviteEmail}
+              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.email ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.email && (
               <p className="text-red-500 text-xs mt-0.5 ml-1">
@@ -226,9 +239,8 @@ const Register = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
-                errors.password ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.password ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.password && (
               <p className="text-red-500 text-xs mt-0.5 ml-1">
@@ -244,11 +256,10 @@ const Register = () => {
               name="password_confirmation"
               value={formData.password_confirmation}
               onChange={handleChange}
-              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
-                errors.password_confirmation
-                  ? "border-red-500"
-                  : "border-gray-300"
-              }`}
+              className={`w-full rounded border bg-white h-9 px-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.password_confirmation
+                ? "border-red-500"
+                : "border-gray-300"
+                }`}
             />
             {errors.password_confirmation && (
               <p className="text-red-500 text-xs mt-0.5 ml-1">

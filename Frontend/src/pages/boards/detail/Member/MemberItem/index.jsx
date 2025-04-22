@@ -13,15 +13,16 @@ import {
   DialogActions,
 } from "@mui/material";
 import { useMe } from "../../../../../contexts/MeContext";
-// import { useChangeMemberType, useRemoveMember } from "../../../../../hooks/workspaceHooks";
 import { toast } from 'react-toastify';
 import { useChangeMemberType, useRemoveMember } from "../../../../../hooks/useWorkspace";
+import InitialsAvatar from "../../../../../components/Common/InitialsAvatar";
 
-const MemberItem = ({ member, boards = [], workspace }) => {
+const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
 
   const { user } = useMe();
+
   const { mutate: changeMemberType, isLoading: isChangingType } = useChangeMemberType();
   const { mutate: removeMember, isLoading: isRemovingMember } = useRemoveMember();
 
@@ -31,10 +32,9 @@ const MemberItem = ({ member, boards = [], workspace }) => {
   const id = open ? "simple-popover" : undefined;
 
   const isMe = user?.id === member?.user_id;
-  const currentMember = workspace?.members?.find((m) => m.user_id === user?.id);
-  const isCurrentUserAdmin = currentMember?.member_type === "admin";
-  const isMemberAdmin = member?.member_type === "admin";
-  const isCreator = workspace?.id_member_creator === member.user_id;
+
+  const adminCount = workspace?.members?.filter((m) => m.member_type === "admin").length || 0;
+  const isSoleAdmin = isMe && member.member_type === "admin" && adminCount <= 1;
 
   const memberBoards = Array.isArray(boards)
     ? boards.filter((board) =>
@@ -71,6 +71,13 @@ const MemberItem = ({ member, boards = [], workspace }) => {
   };
 
   const handleConfirmRemove = () => {
+    // Prevent the sole admin from leaving
+    if (isSoleAdmin) {
+      toast.error("Không thể rời khỏi! Không gian làm việc phải có ít nhất một quản trị viên.");
+      handleCloseRemoveDialog();
+      return;
+    }
+
     removeMember(
       {
         workspaceId: workspace.id,
@@ -89,6 +96,7 @@ const MemberItem = ({ member, boards = [], workspace }) => {
     );
   };
 
+
   return (
     <Box
       sx={{
@@ -103,36 +111,25 @@ const MemberItem = ({ member, boards = [], workspace }) => {
     >
       {/* Member info */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Avatar
-          src={member?.user?.image}
-          sx={{
-            bgcolor: "#0079BF",
-            width: 35,
-            height: 35,
-            fontSize: "0.9rem",
-            fontWeight: "bold",
-          }}
-        >
-          {member?.user?.initials || "?"}
-        </Avatar>
+        <InitialsAvatar
+          name={member?.user?.full_name}
+          avatarSrc={member?.user.image}
+          initials={member?.user?.initials}
+          size={32}
+        />
         <Box>
           <Typography fontWeight="bold" sx={{ color: "#172B4D" }}>
             {member?.user?.full_name || "Không xác định"}
-            {isCreator && (
-              <Typography component="span" sx={{ color: "#026AA7", fontSize: "0.8rem", ml: 1 }}>
-                (Người tạo)
-              </Typography>
-            )}
           </Typography>
           <Typography variant="body2" sx={{ color: "gray" }}>
-            @{member?.user?.email || "Không có email"}
+            @{member?.user?.user_name || "Không có email"}
           </Typography>
         </Box>
       </Box>
 
       {/* Action buttons */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        {/* Bảng thành viên */}
+        {/* View boards button */}
         <Button
           variant="contained"
           onClick={handleClick}
@@ -181,13 +178,13 @@ const MemberItem = ({ member, boards = [], workspace }) => {
           </Box>
         </Popover>
 
-        {/* Quyền */}
-        {isCurrentUserAdmin && !isCreator ? (
+        {/* Member type control */}
+        {isAdmin ? (
           <Select
             value={member.member_type}
             onChange={handleChangeMemberType}
             size="small"
-            disabled={isChangingType || isMe}
+            disabled={isChangingType || isSoleAdmin}
             sx={{
               fontSize: "0.7rem",
               borderRadius: "3px",
@@ -197,7 +194,6 @@ const MemberItem = ({ member, boards = [], workspace }) => {
           >
             <MenuItem value="admin">Quản trị viên</MenuItem>
             <MenuItem value="normal">Thành viên</MenuItem>
-            <MenuItem value="pending">Đang chờ</MenuItem>
           </Select>
         ) : (
           <Button
@@ -216,14 +212,14 @@ const MemberItem = ({ member, boards = [], workspace }) => {
           </Button>
         )}
 
-        {/* Hành động: Rời khỏi hoặc Loại bỏ */}
-        {(isMe || (isCurrentUserAdmin && !isCreator)) && (
+        {/* Remove/Leave button */}
+        {(isMe || (isAdmin)) && (
           <Button
             variant="outlined"
             color="error"
             size="small"
             onClick={handleOpenRemoveDialog}
-            disabled={isRemovingMember}
+            disabled={isRemovingMember || (!isMe && !isAdmin) || isSoleAdmin}
             sx={{
               fontSize: "0.7rem",
               padding: "2px 12px",
