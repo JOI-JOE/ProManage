@@ -72,7 +72,9 @@ class WorkspaceController extends Controller
                 'boards.visibility',
                 'boards.created_by',
                 'boards.created_at',
-                'boards.closed',
+                'boards.last_accessed',
+                'boards.is_marked',
+                'boards.closed', // 👉 THÊM DÒNG NÀY
                 'board_members.role',
                 DB::raw('(SELECT COUNT(*) FROM board_members bm WHERE bm.board_id = boards.id) AS member_count'),
                 'ws.id as workspace_id_ref',
@@ -130,10 +132,12 @@ class WorkspaceController extends Controller
                 'created_by' => $board->created_by,
                 'created_by_name' => $board->created_by_name,
                 'created_by_image' => $board->created_by_image,
+                'is_marked' => $board->is_marked,
                 'created_at' => $board->created_at,
                 'role' => $board->role,
-                'closed' => (bool) $board->closed,
-                'member_count' => $board->member_count
+                'member_count' => $board->member_count,
+                'closed' => $board->closed, // 👉 thêm dòng này
+                'last_accessed' => $board->last_accessed
             ];
 
             if ($board->workspace_id && in_array($board->workspace_id, $workspaceIds)) {
@@ -592,6 +596,7 @@ class WorkspaceController extends Controller
                         'archive' => (bool) $board->archive,
                         'closed' => (bool) $board->closed,
                         'created_by' => $board->created_by,
+                        'last_accessed' => $board->last_accessed,
                         'visibility' => $board->visibility,
                         'workspace_id' => $board->workspace_id,
                         'created_at' => $board->created_at,

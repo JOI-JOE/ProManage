@@ -17,7 +17,7 @@ import CreateBoard from "./CreateBoard";
 import WorkspaceAvatar from "./Common/WorkspaceAvatar";
 
 const MyWorkspace = ({ workspace, boards }) => {
-
+    // console.log(boards);
     const [showCreateBoard, setShowCreateBoard] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
 
@@ -154,12 +154,16 @@ const MyWorkspace = ({ workspace, boards }) => {
             {/* Danh sách bảng Trello */}
             <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {boards
-                    ?.filter((board) => !board.closed) // lọc board chưa đóng
-                    .map((board) => (
-                        <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-                            <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
-                        </ListItem>
-                    ))}
+                ?.sort((a, b) => {
+                    const dateA = a.last_accessed ? new Date(a.last_accessed) : new Date(0);
+                    const dateB = b.last_accessed ? new Date(b.last_accessed) : new Date(0);
+                    return dateB - dateA;
+                  })
+                ?.map((board) => (
+                    <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                        <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
+                    </ListItem>
+                ))}
                 <ListItem sx={{ width: "auto", padding: 0 }}>
                     <Box
                         onClick={handleOpenCreateBoard}

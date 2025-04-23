@@ -748,4 +748,41 @@ class BoardController extends Controller
             'board' => $newBoard,
         ], 201);
     }
+
+    public function updateLastAccessed(Request $request, $boardId)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Kiểm tra board có tồn tại không
+        $board = Board::find($boardId);
+        if (!$board) {
+            return response()->json(['error' => 'Board not found'], 404);
+        }
+
+        // Kiểm tra quyền truy cập (nếu cần)
+        // Ví dụ: Kiểm tra xem user có phải là thành viên của workspace chứa board không
+        $hasAccess = $board->workspace()->where(function ($query) use ($user) {
+            $query->where('id_member_creator', $user->id)
+                  ->orWhereHas('members', function ($query) use ($user) {
+                      $query->where('user_id', $user->id);
+                  });
+        })->exists();
+
+        if (!$hasAccess) {
+            return response()->json(['error' => 'You do not have access to this board'], 403);
+        }
+
+        // Cập nhật last_accessed
+        $board->last_accessed = now();
+        $board->save();
+
+        return response()->json([
+            'result' => true,
+            'message' => 'Last accessed time updated',
+        ]);
+    }
 }

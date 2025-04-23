@@ -281,7 +281,6 @@ const Member = () => {
 
   return (
     <Box
-
     >
       <Box
         sx={{
@@ -293,6 +292,7 @@ const Member = () => {
           width: "100%",
           maxWidth: "1100px",
           margin: "0 auto",
+          minHeight: "80px",
         }}
       >
         {!isFormVisible ? (

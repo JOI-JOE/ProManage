@@ -194,7 +194,7 @@ Route::get('/boards/{board}/details', [BoardController::class, 'getBoardDetails'
 Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
 Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
-
+Route::post('/boards/{boardId}/update-last-accessed', [BoardController::class, 'updateLastAccessed'])->middleware('auth:sanctum');
 Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth:sanctum');
 
 
@@ -251,6 +251,7 @@ Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('recent-boards', [RecentBoardController::class, 'index']);
     Route::post('recent-boards', [RecentBoardController::class, 'store']);
+    Route::post('recent-boards/{boardId}', [RecentBoardController::class, 'storeOrUpdate'])->middleware('auth:sanctum');
 
     // Route cho bảng đã xóa
     Route::get('closed', [BoardController::class, 'closed']);

@@ -18,10 +18,14 @@ import {
 import { Restore, Delete, Archive } from "@mui/icons-material";
 import MyWorkspace from "../../../components/MyWorkspace";
 import { useGetWorkspaces } from "../../../hooks/useWorkspace";
-import { useClosedBoards, useForceDestroyBoard, useToggleBoardClosed } from "../../../hooks/useBoard";
+import { useClosedBoards, useForceDestroyBoard, useRecentBoardAccess, useRecentBoards, useToggleBoardClosed, useToggleBoardMarked, useUpdateBoardLastAccessed } from "../../../hooks/useBoard";
 import { useWorkspace } from "../../../contexts/WorkspaceContext";
 import MyBoard from "../../../components/MyBoard";
 import WorkspaceAvatar from "../../../components/Common/WorkspaceAvatar";
+import { Link } from "react-router-dom";
+import { StarIcon as StarOutlineIcon } from "@heroicons/react/24/outline"; // Outline
+import { StarIcon } from "@heroicons/react/24/solid"; // Solid
+
 
 const HomeBoard = ({ workspaces }) => {
   // const { data: workspaces, isLoading, isError } = useGetWorkspaces();
@@ -32,8 +36,12 @@ const HomeBoard = ({ workspaces }) => {
   const [openClosedBoards, setOpenClosedBoards] = useState(false);
 
   const { mutate: toggleBoardClosed } = useToggleBoardClosed();
-
+  const { data: recentBoards, isLoading, error } = useRecentBoards();
+  const saveRecentBoard = useRecentBoardAccess();
+  const updateAccessTime = useUpdateBoardLastAccessed();
+  // console.log(recentBoards);
   const { mutate: destroyBoard, isPending: isDeleting } = useForceDestroyBoard();
+  const toggleBoardMarked = useToggleBoardMarked();
 
 
   console.log(guestWorkspaces)
@@ -66,6 +74,23 @@ const HomeBoard = ({ workspaces }) => {
     });
   };
 
+  const handleClickBoard = (boardId) => {
+    saveRecentBoard.mutate(boardId);
+    updateAccessTime.mutate(boardId);
+  };
+
+  const handleToggleMarked = (e, boardId) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    toggleBoardMarked.mutate(boardId, {
+      onError: () => {
+        setIsMarked((prev) => !prev);
+      },
+    });
+  };
+
+
   return (
     <Box
       sx={{
@@ -75,6 +100,70 @@ const HomeBoard = ({ workspaces }) => {
         marginTop: "25px",
       }}
     >
+      {/* da xem gan day */}
+      <Typography
+        variant="h6"
+        sx={{
+          marginTop: "50px",
+          marginBottom: "10px",
+          fontWeight: "bold",
+          textTransform: "uppercase",
+        }}
+      >
+        Đã xem gần đây
+      </Typography>
+      <List sx={{ display: "flex", flexDirection: "row", gap: 2, overflowX: "auto", padding: 0 }}>
+        {recentBoards?.data?.slice(0, 3)?.map((board) => (
+          <ListItem key={board.board_id} sx={{ width: "auto", padding: 0 }}>
+            <Link
+              to={`/b/${board.board_id}/${board.board_name}`}
+              style={{ textDecoration: "none" }}
+              onClick={() => handleClickBoard(board.board_id)}
+            >
+              <Box
+                sx={{
+                  width: "180px",
+                  height: "100px",
+                  background: board.thumbnail
+                    ? board.thumbnail.startsWith("#")
+                      ? board.thumbnail
+                      : `url(${board.thumbnail}) center/cover no-repeat`
+                    : "#1693E1",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  "&:hover": { opacity: 0.8 },
+                  position: "relative",
+                }}
+              >
+                <Typography sx={{ color: "white", fontWeight: "bold", textAlign: "center" }}>
+                  {board.board_name}
+                </Typography>
+
+                <IconButton
+                  sx={{
+                    position: "absolute",
+                    right: "6px",
+                    top: "80%",
+                    transform: "translateY(-50%)",
+                  }}
+                  onClick={(e) => handleToggleMarked(e, board.board_id)}
+
+                >
+                  {board.is_marked ? (
+                    <StarIcon className="h-4 w-6 text-yellow-500" />
+                  ) : (
+                    <StarOutlineIcon className="h-4 w-6 text-gray-500" />
+                  )}
+                </IconButton>
+              </Box>
+            </Link>
+          </ListItem>
+        ))}
+      </List>
+
       {/* Workspaces của bạn */}
       <Typography
         variant="h6"
