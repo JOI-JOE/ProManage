@@ -203,11 +203,11 @@ const AppBar = ({ username, email }) => {
       >
         {/* Bọc ô tìm kiếm và kết quả trong một box có position: relative */}
         <Box sx={{
-                position: "relative", 
-                width: isExpanded ? "500px" : "300px", // Thay đổi width khi mở rộng
-                transition: "width 0.3s ease-in-out" // Thêm hiệu ứng chuyển động
-              }}
-            ref={searchRef}>
+          position: "relative",
+          width: isExpanded ? "500px" : "300px", // Thay đổi width khi mở rộng
+          transition: "width 0.3s ease-in-out" // Thêm hiệu ứng chuyển động
+        }}
+          ref={searchRef}>
           <TextField
             autoComplete="off"
             id="outlined-search"
@@ -225,7 +225,7 @@ const AppBar = ({ username, email }) => {
               sx: {
                 height: 40,
                 width: isExpanded ? "500px" : "300px",
-                transition: "width 0.3s ease-in-out", 
+                transition: "width 0.3s ease-in-out",
                 backgroundColor: "#1a1a1a",
                 borderRadius: "30px",
                 color: "white",
@@ -447,33 +447,14 @@ const AppBar = ({ username, email }) => {
 
                   {Array.isArray(searchResults.cards) && searchResults.cards.length > 0 && (
                     <Box>
-                      <h5 style={{ color: "#00C2A0",fontSize:"14px",marginLeft:"20px" }}>Thẻ:</h5>
-                      <Box sx={{ marginBottom: "15px", marginTop:"10px", marginLeft:"20px"  }} >
+                      <h5 style={{ color: "#00C2A0", fontSize: "14px", marginLeft: "20px" }}>Thẻ:</h5>
+                      <Box sx={{ marginBottom: "15px", marginTop: "10px", marginLeft: "20px" }} >
 
-                      <ul style={{ listStyle: "none", paddingLeft: 0 }}>
-                        {searchResults.cards.map((card) => (
-                          <li
-                            key={card.id}
-                            style={{
-                              color: "white",
-                              padding: "5px 0",
-                              borderBottom: "1px solid #444",
-                              cursor: "pointer",
-                              
-                              
-                            }}
-                            onClick={() => {
-                              setSearchText("");
-                              setIsFocused(false);
-                            }}
-                            >
-                            <Box
-                              component={Link}
-                              to={`/b/${card.board_id}/${card.board_name}/c/${card.id}`}
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-
+                        <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                          {searchResults.cards.map((card) => (
+                            <li
+                              key={card.id}
+                              style={{
                                 color: "white",
                                 padding: "5px 0",
                                 borderBottom: "1px solid #444",
@@ -488,64 +469,85 @@ const AppBar = ({ username, email }) => {
                             >
                               <Box
                                 component={Link}
-                                to={`/b/${card.board_id}/${card.board_name}/c/${card.id}/${card.title}`}
+                                to={`/b/${card.board_id}/${card.board_name}/c/${card.id}`}
                                 sx={{
                                   display: "flex",
                                   alignItems: "center",
+
                                   color: "white",
-                                  textDecoration: "none",
-                                  "&:hover": {
-                                    backgroundColor: "#3A3E48",
-                                  },
+                                  padding: "5px 0",
+                                  borderBottom: "1px solid #444",
+                                  cursor: "pointer",
+
+
+                                }}
+                                onClick={() => {
+                                  setSearchText("");
+                                  setIsFocused(false);
                                 }}
                               >
-                                {/* Icon hình card thay vì thumbnail */}
                                 <Box
+                                  component={Link}
+                                  to={`/b/${card.board_id}/${card.board_name}/c/${card.id}/${card.title}`}
                                   sx={{
-                                    width: 40,
-                                    height: 40,
-                                    mr: 2,
                                     display: "flex",
                                     alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: "#1693E1",
-                                    borderRadius: "4px",
-
+                                    color: "white",
+                                    textDecoration: "none",
+                                    "&:hover": {
+                                      backgroundColor: "#3A3E48",
+                                    },
                                   }}
                                 >
-                                  <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
+                                  {/* Icon hình card thay vì thumbnail */}
+                                  <Box
+                                    sx={{
+                                      width: 40,
+                                      height: 40,
+                                      mr: 2,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      backgroundColor: "#1693E1",
+                                      borderRadius: "4px",
+
+                                    }}
                                   >
-                                    <rect
-                                      x="4"
-                                      y="4"
-                                      width="16"
-                                      height="16"
-                                      rx="2"
-                                      fill="white"
-                                    />
-                                    <path
-                                      d="M8 8H16V10H8V8ZM8 12H14V14H8V12Z"
-                                      fill="#1693E1"
-                                    />
-                                  </svg>
-                                </Box>
-                                {/* <Typography variant="body1" sx={{ color: "white" }}>
+                                    <svg
+                                      width="24"
+                                      height="24"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <rect
+                                        x="4"
+                                        y="4"
+                                        width="16"
+                                        height="16"
+                                        rx="2"
+                                        fill="white"
+                                      />
+                                      <path
+                                        d="M8 8H16V10H8V8ZM8 12H14V14H8V12Z"
+                                        fill="#1693E1"
+                                      />
+                                    </svg>
+                                  </Box>
+                                  {/* <Typography variant="body1" sx={{ color: "white" }}>
                                 {card.title}
-                              </Typography> */}
-                                <Box>
-                                  <Typography variant="body1" sx={{ color: "white", fontWeight: 500 }}>
-                                    {card.title}
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ color: "gray" }}>
-                                    {card.board_name || "No workspace"} : {card.listboard_name || "No List Board"}
-                                  </Typography>
                                 </Box>
-                              </Box>
+                              </Typography> */}
+                                  <Box>
+                                    <Typography variant="body1" sx={{ color: "white", fontWeight: 500 }}>
+                                      {card.title}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "gray" }}>
+                                      {card.board_name || "No workspace"} : {card.listboard_name || "No List Board"}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                                </Box>
                             </li>
                           ))}
                         </ul>

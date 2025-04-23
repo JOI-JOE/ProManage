@@ -314,7 +314,7 @@ class ListController extends Controller
                     'start_date' => $card->start_date,
                     'end_date' => $card->end_date,
                     'end_time' => $card->end_time,
-                    'is_completed' => true,
+                    'is_completed' => $card->is_completed, // ✅ giữ nguyên trạng thái hoàn thành
                     'is_archived' => false,
                     'board_id' => $originalList->board_id,
                     'list_board_id' => $newList->id,

@@ -3,7 +3,7 @@ import { Box, IconButton, Typography } from "@mui/material";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import PeopleIcon from "@mui/icons-material/People";
 import { Link } from "react-router-dom";
-import { useRecentBoardAccess, useToggleBoardMarked } from "../hooks/useBoard";
+import { useRecentBoardAccess, useToggleBoardMarked, useUpdateBoardLastAccessed } from "../hooks/useBoard";
 
 import { StarIcon } from "@heroicons/react/24/solid"; // Solid
 import { StarIcon as StarOutlineIcon } from "@heroicons/react/24/outline"; // Outline
@@ -15,10 +15,12 @@ const MyBoard = ({ board }) => {
   const [isMarked, setIsMarked] = useState(board.is_marked); // Trạng thái local
   const toggleBoardMarked = useToggleBoardMarked();
   const saveRecentBoard = useRecentBoardAccess();
+  const updateAccessTime = useUpdateBoardLastAccessed();
 
   // console.log(board);
   const handleToggleMarked = (e) => {
     e.preventDefault(); // Ngăn điều hướng khi click icon
+    e.stopPropagation(); // Ngăn sự kiện click lan truyền lên Link
     setIsMarked((prev) => !prev); // Cập nhật UI ngay lập tức
 
     toggleBoardMarked.mutate(board.id, {
@@ -31,6 +33,7 @@ const MyBoard = ({ board }) => {
 
   const handleClickBoard = () => {
     saveRecentBoard.mutate(board.id); // Lưu vào recent-board khi bấm vào
+    updateAccessTime.mutate(board.id);
   };
 
 

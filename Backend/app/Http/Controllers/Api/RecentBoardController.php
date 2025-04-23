@@ -38,10 +38,10 @@ class RecentBoardController extends Controller
 
         // Lấy dữ liệu từ bảng RecentBoard và eager load thông tin từ bảng Board và Workspace
         $recentBoards = RecentBoard::where('user_id', $user->id)
-                                    ->orderBy('last_accessed', 'desc')
-                                    ->with(['board.workspace'])  // Eager load mối quan hệ với bảng Board và Workspace
-                                    ->take(5)  // Lấy 5 bảng gần đây nhất
-                                    ->get();
+            ->orderBy('last_accessed', 'desc')
+            ->with(['board.workspace'])  // Eager load mối quan hệ với bảng Board và Workspace
+            ->take(5)  // Lấy 5 bảng gần đây nhất
+            ->get();
 
         // Lấy các thông tin cần thiết bao gồm tên từ bảng board và display_name từ bảng workspace
         $recentBoardsWithDetails = $recentBoards->map(function ($recentBoard) {
@@ -93,6 +93,17 @@ class RecentBoardController extends Controller
                     'last_accessed' => now(),
                 ]
             );
+
+            $excessBoards = RecentBoard::where('user_id', $user->id)
+                ->orderBy('last_accessed', 'desc')
+                ->skip(5)
+                ->take(PHP_INT_MAX) // lấy tất cả từ bản ghi thứ 6 trở đi
+                ->get();
+
+            foreach ($excessBoards as $board) {
+                $board->delete();
+            }
+
 
             return response()->json([
                 'result' => true,

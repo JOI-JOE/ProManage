@@ -13,6 +13,11 @@ import {
   Stack,
   InputAdornment,
   List,
+  ListItem,
+  CircularProgress,
+  DialogActions,
+  ListItemAvatar,
+  ListItemText,
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import CloseIcon from "@mui/icons-material/Close";
@@ -23,14 +28,41 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { Divider, MenuItem } from "@mui/material";
 import CreateBoard from "../../../../components/CreateBoard";
 import MyBoard from "../../../../components/MyBoard";
+import { useParams } from "react-router-dom";
+import { useGetWorkspaceByName } from "../../../../hooks/useWorkspace";
+import WorkspaceInfo from "../../../../components/WorkspaceInfo";
+import { Archive, Delete, Restore } from "@mui/icons-material";
+import { useClosedBoards, useForceDestroyBoard, useToggleBoardClosed } from "../../../../hooks/useBoard";
 
 const Board = () => {
+  const { workspaceName } = useParams();
+  const {
+    data: workspace,
+    isLoading: isLoadingWorkspace,
+    isError: isWorkspaceError,
+    error: workspaceError,
+    refetch: refetchWorkspace,
+  } = useGetWorkspaceByName(workspaceName, {
+    enabled: !!workspaceName,
+  });
+  const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
+  const { mutate: toggleBoardClosed } = useToggleBoardClosed(workspaceName);
+  // const { mutate: toggleClosed } = useToggleBoardClosed(workspaceName);
+
+  const { mutate: destroyBoard, isPending: isDeleting } = useForceDestroyBoard();
+
+  // console.log(workspace);
+
   const [isFormVisible, setFormVisible] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isInviteOpen, setInviteOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const [isLinkActive, setIsLinkActive] = useState(false);
+  const [openClosedBoards, setOpenClosedBoards] = useState(false);
+
+  const handleOpenClosedBoards = () => setOpenClosedBoards(true);
+  const handleCloseClosedBoards = () => setOpenClosedBoards(false);
   const handleOpenInvite = () => {
     setInviteOpen(true);
     setLinkCopied(false);
@@ -41,9 +73,6 @@ const Board = () => {
     setFormVisible(!isFormVisible);
   };
 
-  const workspace = {
-    name: "Tên Không Gian",
-  };
 
   const handleCopyLink = () => {
     setLinkCopied(true);
@@ -96,6 +125,41 @@ const Board = () => {
     }
   };
 
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [anchorElCreateBoard, setAnchorElCreateBoard] = useState(null);
+
+  const handleOpenCreateBoard = (event) => {
+    setAnchorElCreateBoard(event.currentTarget);
+    setShowCreateBoard(true);
+  };
+
+  const handleCloseCreateBoard = () => {
+    setShowCreateBoard(false);
+    setAnchorElCreateBoard(null);
+  };
+
+  const handleReopenBoard = (boardId) => {
+    toggleBoardClosed(boardId);
+  };
+
+  // Hàm xóa hoàn toàn board
+  const handleDeleteBoard = (boardId) => {
+    const confirm = window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn bảng này không?");
+    if (!confirm) return;
+
+    destroyBoard(boardId, {
+      onSuccess: () => {
+        // alert("✅ Đã xóa bảng thành công!");
+        // Gợi ý: bạn có thể gọi refetch hoặc invalidate query ở đây nếu cần cập nhật lại danh sách
+      },
+      onError: (error) => {
+        console.error("❌ Lỗi khi xóa bảng:", error);
+        alert("Xảy ra lỗi khi xóa bảng!");
+      },
+    });
+  };
+
+
   return (
     <Box
       sx={{
@@ -131,39 +195,32 @@ const Board = () => {
               }}
             >
               <span style={{ fontSize: "30px", fontWeight: "bold" }}>
-                {workspace.name.charAt(0).toUpperCase()}
+                {workspace?.display_name.charAt(0).toUpperCase()}
               </span>
             </Avatar>
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <Typography fontWeight="bold" sx={{ fontSize: 25 }}>
-                  {workspace.name}
+                  {workspace?.display_name}
                 </Typography>
                 <IconButton
                   onClick={toggleFormVisibility}
-                  sx={{
-                    color: "gray",
-                    "&:hover": { backgroundColor: "transparent" },
-                  }}
+                  sx={{ color: "gray", "&:hover": { backgroundColor: "transparent" } }}
                 >
                   <EditIcon sx={{ fontSize: 24 }} />
                 </IconButton>
               </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  color: "gray",
-                }}
-              >
+              <Box sx={{ display: "flex", alignItems: "center", gap: "5px", color: "gray" }}>
                 <LockIcon sx={{ fontSize: 14 }} />
                 <Typography sx={{ fontSize: 14 }}>Riêng tư</Typography>
               </Box>
+              <Typography fontWeight="bold" sx={{ fontSize: "1.2rem", mt: 2 }}>
+                {workspace?.desc}
+              </Typography>
             </Box>
           </Box>
         ) : (
-          <WorkspaceDetailForm />
+          <WorkspaceInfo workspaceInfo={workspace} onCancel={toggleFormVisibility} refetchWorkspace={refetchWorkspace} />
         )}
 
         <Button
@@ -469,26 +526,137 @@ const Board = () => {
           </Box>
         </Box>
         <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+
+          <ListItem sx={{ width: "auto", padding: 0 }}>
+            <Box
+              onClick={handleOpenCreateBoard}
+              sx={{
+                width: "180px",
+                height: "100px",
+                backgroundColor: '#091e420f',
+                borderRadius: "8px",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: "14px",
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: '#DCDFE4',
+                  transition: 'background-color 85ms ease-in', // Apply transition to background-color
+                },
+              }}
+            >
+              Tạo bảng mới
+            </Box>
+          </ListItem>
+
+
+          {/* Tạo bảng mới */}
+          <CreateBoard
+            workspaceId={workspace?.id} // Truyền workspaceId nếu cần
+            open={showCreateBoard}
+            anchorEl={anchorElCreateBoard}
+            onClose={handleCloseCreateBoard}
+
+          />
           {/* Bảng Trello của tôi */}
-          {workspace.boards && workspace.boards.length > 0 ? (
-            workspace.boards.map((board) => (
-              <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-                <MyBoard
-                  key={board.id}
-                  board={board}
-                  id={`recent-board-${board.id}`}
-                />
-              </ListItem>
-            ))
+          {workspace?.boards && workspace.boards.length > 0 ? (
+            workspace?.boards
+              ?.sort((a, b) => {
+                const dateA = a.last_accessed ? new Date(a.last_accessed) : new Date(0);
+                const dateB = b.last_accessed ? new Date(b.last_accessed) : new Date(0);
+                return dateB - dateA;
+              })
+              ?.map((board) => (
+                <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                  <MyBoard
+                    key={board.id}
+                    board={board}
+                    id={`recent-board-${board.id}`}
+                  />
+                </ListItem>
+              ))
           ) : (
             <Typography variant="body2" color="textSecondary">
               Không có bảng nào.
             </Typography>
           )}
 
-          {/* Tạo bảng mới */}
-          <CreateBoard />
+
         </List>
+
+        {closedBoards?.data?.length > 0 && (
+          <Button
+            variant="outlined"
+            sx={{
+              backgroundColor: "#EDEBFC",
+              height: "30px",
+              width: "250px",
+              marginTop: "40px",
+            }}
+            onClick={handleOpenClosedBoards}
+            startIcon={<Archive />}
+          >
+            Xem tất cả các bảng đã đóng
+          </Button>
+        )}
+
+
+        {/* Popup hiển thị danh sách bảng đã đóng */}
+        <Dialog open={openClosedBoards} onClose={handleCloseClosedBoards} fullWidth>
+          <DialogTitle fontWeight="bold">📌 Các bảng đã đóng</DialogTitle>
+          <DialogContent>
+            {loadingClosed ? (
+              <CircularProgress />
+            ) : closedBoards?.data?.length > 0 ? (
+              <List>
+                {closedBoards?.data?.map((board) => (
+                  <ListItem
+                    key={board.id}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "8px 0",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        backgroundColor: "#f4f4f4",
+                        borderRadius: "8px",
+                      },
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar src={board.thumbnail || "https://via.placeholder.com/150"} />
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={board.name}
+                      secondary={`Không gian làm việc: ${board.workspace?.display_name || "Không rõ"}`}
+                    />
+                    <IconButton onClick={() => handleReopenBoard(board.id)} color="primary">
+                      <Restore />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDeleteBoard(board.id)}
+                      color="error"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? <CircularProgress size={20} /> : <Delete />}
+                    </IconButton>
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography variant="body2" color="textSecondary" >
+                Không có bảng nào đã đóng!
+              </Typography>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseClosedBoards} color="primary">
+              Đóng
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );

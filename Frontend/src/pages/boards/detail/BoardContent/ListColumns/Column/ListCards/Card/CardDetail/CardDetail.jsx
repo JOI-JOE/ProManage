@@ -209,7 +209,7 @@ const CardModal = ({ }) => {
   //   localStorage.removeItem(`coverImage-${cardId}`);
   // };
 
-  
+
   // const { data: boardMembers = [] } = useGetBoardMembers(boardId);
 
   // const mentionData = boardMembers.map((member) => ({
@@ -217,8 +217,8 @@ const CardModal = ({ }) => {
   //   value: member.user_name,
   // }));
 
-  
-// console.log(boardMembers);
+
+  // console.log(boardMembers);
 
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing);
@@ -273,7 +273,7 @@ const CardModal = ({ }) => {
   // console.log(activities);
 
   const { user } = useMe();
-  
+
   const userId = user?.id;
 
 
@@ -319,10 +319,10 @@ const CardModal = ({ }) => {
 
   const isEmptyHTML = (html) => {
     if (typeof html !== "string") return true; // Nếu không phải string thì coi như rỗng
-  
+
     const div = document.createElement("div");
     div.innerHTML = html;
-  
+
     const text = div.textContent || div.innerText || "";
     return text.trim() === "";
   };
@@ -331,12 +331,12 @@ const CardModal = ({ }) => {
     const div = document.createElement("div");
     div.innerHTML = html;
     const text = div.textContent || div.innerText || "";
-  
+
     // Regex tìm các @username
     const matches = text.match(/@[\w_.-]+/g);
     return matches ? matches.map(name => name.slice(1)) : [];
   };
-  
+
 
   useEffect(() => {
     if (cardDetail?.description) {
@@ -962,6 +962,7 @@ const CardModal = ({ }) => {
               onChange={handleNameChange}
               onBlur={handleNameBlur}
               onKeyPress={handleNameKeyPress}
+              disabled={isBoardClosed} // Không cho gõ nếu board đã đóng
               autoFocus
               fullWidth
               InputProps={{
@@ -972,19 +973,19 @@ const CardModal = ({ }) => {
             <Box display="flex" alignItems="center" gap={1}>
               {cardDetail?.is_completed ? (
                 <CheckCircleIcon
-                  onClick={handleToggle}
-                  sx={{ cursor: "pointer", color: "green" }} // Màu xanh khi hoàn thành
+                  onClick={() => !isBoardClosed && handleToggle()}
+                  sx={{ cursor: isBoardClosed ? "default" : "pointer", color: "green" }}
                 />
               ) : (
                 <RadioButtonUncheckedIcon
-                  onClick={handleToggle}
-                  sx={{ cursor: "pointer" }} // Con trỏ chuột chỉ ra có thể click
+                  onClick={() => !isBoardClosed && handleToggle()}
+                  sx={{ cursor: isBoardClosed ? "default" : "pointer" }}
                 />
               )}
               <Typography
                 variant="h6"
                 fontWeight="bold"
-                onClick={handleNameClick}
+                onClick={() => !isBoardClosed && handleNameClick()}
               // sx={{ textDecoration: cardDetail?.is_completed ? "line-through" : "none" }}
               >
                 {cardDetail?.title}
@@ -993,9 +994,18 @@ const CardModal = ({ }) => {
           )}
           <Typography variant="body2" color="text.secondary">
             trong danh sách{" "}
-            <span style={{
-              color: "#0079bf", fontWeight: "bold", cursor: "pointer",
-            }} onClick={() => setIsMoveCardModalOpen(true)}>
+            <span
+              style={{
+                color: "#0079bf",
+                fontWeight: "bold",
+                cursor: isBoardClosed ? "default" : "pointer",
+              }}
+              onClick={() => {
+                if (!isBoardClosed) {
+                  setIsMoveCardModalOpen(true);
+                }
+              }}
+            >
               {cardDetail?.listName || "Doing"}
             </span>
           </Typography>
@@ -1213,7 +1223,7 @@ const CardModal = ({ }) => {
                       // marginBottom: "8px", // Khoảng cách giữa các mục danh sách
                     },
                   }}
-                  onClick={handleDescriptionClick}
+                  onClick={isBoardClosed ? undefined : handleDescriptionClick}
                   dangerouslySetInnerHTML={{
                     __html:
                       description ||
@@ -1222,7 +1232,7 @@ const CardModal = ({ }) => {
                   }}
                 />
               )}
-              {isEditingDescription && (
+              {isEditingDescription && !isBoardClosed && (
                 <>
                   <ReactQuill
                     value={description}
@@ -2079,6 +2089,7 @@ const CardModal = ({ }) => {
                     whiteSpace: "pre-wrap", // Giữ định dạng dòng
                     cursor: "pointer",
                     fontSize: "0.6rem",
+                   
                     // "&:hover": { backgroundColor: "#F5F6F8", borderRadius: 4 }
                   }}
                   onClick={handleCommentClick}
@@ -2311,11 +2322,29 @@ const CardModal = ({ }) => {
                                   whiteSpace: "pre-wrap",
                                   overflowWrap: "break-word",
                                   wordBreak: "break-word",
-                                  fontSize: "0.rem", // Change font size to 0.7rem
+                                  fontSize: "0.7rem",
                                 }}
-                              >
-                                {content.replace(/<\/?p>/g, "")}
-                              </Typography>
+
+                                sx={{
+                                
+                                  "& ol": {
+                                    // Đảm bảo định dạng danh sách có số
+                                    listStyleType: "decimal",
+                                    paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
+                                  },
+                                  "& ul": {
+                                    // Đảm bảo định dạng danh sách có số
+                                    listStyleType: "disc",
+                                    paddingLeft: "20px", // Khoảng cách hợp lý cho danh sách
+                                  },
+                                  "& li": {
+                                    // marginBottom: "8px", // Khoảng cách giữa các mục danh sách
+                                  },
+                                }}
+                                dangerouslySetInnerHTML={{
+                                  __html: content || "<span style='color: #a4b0be;'>Chưa có nội dung</span>",
+                                }}
+                              />
                               {!isBoardClosed && (
 
                                 <Box sx={{ display: "flex", mt: "1px" }}>
@@ -2712,6 +2741,7 @@ const CardModal = ({ }) => {
                 <List>
                   <ListItem disablePadding>
                     <ListItemButton
+                      disabled={isBoardClosed}
                       onClick={() => setIsMoveCardModalOpen(true)}
                     >
                       <ListItemIcon>
@@ -2725,6 +2755,7 @@ const CardModal = ({ }) => {
 
                   <ListItem disablePadding>
                     <ListItemButton
+                      disabled={isBoardClosed}
                       onClick={() => setIsCopyCardModalOpen(true)}
                     >
                       <ListItemIcon>

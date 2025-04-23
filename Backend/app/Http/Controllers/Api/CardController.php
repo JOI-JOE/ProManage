@@ -549,7 +549,7 @@ class CardController extends Controller
                 'start_date' => $originalCard->start_date,
                 'end_date' => $originalCard->end_date,
                 'end_time' => $originalCard->end_time,
-                'is_completed' => false,
+                'is_completed' => $originalCard->is_completed,
                 'is_archived' => false,
                 'board_id' => $request->board_id,
                 'list_board_id' => $request->list_board_id,
