@@ -92,7 +92,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
     setSelectedBoardId(null);
   };
 
-  const { mutate: toggleBoardClosed } = useToggleBoardClosed(workspaceName);
+  const { mutate: toggleBoardClosed } = useToggleBoardClosed();
   const handleCloseBoard = (boardId) => {
     toggleBoardClosed(boardId);
     handleMenuClose();
@@ -310,77 +310,75 @@ const SideBar = ({ board, isLoadingBoard }) => {
               .map((board) => {
                 const isCurrent = board.id === boardId;
                 const isBoardAdmin = board.role === "admin";
-                // const isBoardMember = !!board.role;
+                return (
+                  <ListItem
+                    key={board.id}
+                    disablePadding
+                    sx={{ p: 1, display: "flex", alignItems: "center" }}
+                  >
+                    <ListItemButton
+                      component={Link}
+                      to={`/b/${board.id}/${board.name}`}
+                      sx={{
+                        flexGrow: 1,
+                        backgroundColor: isCurrent ? "#ffffff33" : "transparent",
+                        "&:hover": { backgroundColor: "#ffffff22" },
+                        borderRadius: "6px",
+                      }}
+                    >
+                      <ListItemIcon sx={{ color: "white" }}>
+                        <FolderIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={board.name}
+                        sx={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      />
+                    </ListItemButton>
 
-          return (
-            <ListItem
-              key={board.id}
-              disablePadding
-              sx={{ p: 1, display: "flex", alignItems: "center" }}
-            >
-              <ListItemButton
-                component={Link}
-                to={`/b/${board.id}/${board.name}`}
-                sx={{
-                  flexGrow: 1,
-                  backgroundColor: isCurrent ? "#ffffff33" : "transparent",
-                  "&:hover": { backgroundColor: "#ffffff22" },
-                  borderRadius: "6px",
-                }}
-              >
-                <ListItemIcon sx={{ color: "white" }}>
-                  <FolderIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary={board.name}
-                  sx={{
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                />
-              </ListItemButton>
+                    <IconButton
+                      onClick={(e) => handleMenuOpen(e, board.id)}
+                      sx={{ color: "white", ml: "auto" }}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
 
-              <IconButton
-                onClick={(e) => handleMenuOpen(e, board.id)}
-                sx={{ color: "white", ml: "auto" }}
-              >
-                <MoreVertIcon />
-              </IconButton>
+                    <Menu
+                      anchorEl={menuAnchor}
+                      open={selectedBoardId === board.id}
+                      onClose={handleMenuClose}
+                      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                      transformOrigin={{ vertical: "top", horizontal: "left" }}
+                      sx={{
+                        "& .MuiPaper-root": {
+                          backgroundColor: "#2e2e2e",
+                          color: "white",
+                          borderRadius: "8px",
+                          minWidth: "300px",
+                        },
+                      }}
+                    >
+                      {/* Tên board */}
+                      <MenuItem
+                        disabled
+                        sx={{
+                          fontWeight: "bold",
+                          fontSize: "1rem",
+                          opacity: 1,
+                          textAlign: "center",
+                          justifyContent: "center",
+                          color: "#fff",
+                          padding: "12px 16px",
+                        }}
+                      >
+                        {board.name}
+                      </MenuItem>
 
-              <Menu
-                anchorEl={menuAnchor}
-                open={selectedBoardId === board.id}
-                onClose={handleMenuClose}
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                transformOrigin={{ vertical: "top", horizontal: "left" }}
-                sx={{
-                  "& .MuiPaper-root": {
-                    backgroundColor: "#2e2e2e",
-                    color: "white",
-                    borderRadius: "8px",
-                    minWidth: "300px",
-                  },
-                }}
-              >
-                {/* Tên board */}
-                <MenuItem
-                  disabled
-                  sx={{
-                    fontWeight: "bold",
-                    fontSize: "1rem",
-                    opacity: 1,
-                    textAlign: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                    padding: "12px 16px",
-                  }}
-                >
-                  {board.name}
-                </MenuItem>
-
-                {/* Rời khỏi bảng */}
-                {/* {(adminCount >= 2 && isBoardMember) && (
+                      {/* Rời khỏi bảng */}
+                      {/* {(adminCount >= 2 && isBoardMember) && (
                   <MenuItem
                     onClick={() => handleLeaveBoard(board.id)}
                     sx={{
@@ -395,26 +393,26 @@ const SideBar = ({ board, isLoadingBoard }) => {
                   </MenuItem>
                 )} */}
 
-                {/* Đóng bảng - chỉ admin mới được */}
-                {isBoardAdmin && (
-                  <MenuItem
-                    onClick={() => handleCloseBoard(board.id)}
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "10px 16px",
-                      "&:hover": { backgroundColor: "#ff4d4d", color: "white" },
-                    }}
-                  >
-                    Đóng bảng
-                    <CloseIcon />
-                  </MenuItem>
-                )}
-              </Menu>
-            </ListItem>
-          );
-        })}
-      </List>
+                      {/* Đóng bảng - chỉ admin mới được */}
+                      {isBoardAdmin && (
+                        <MenuItem
+                          onClick={() => handleCloseBoard(board.id)}
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            padding: "10px 16px",
+                            "&:hover": { backgroundColor: "#ff4d4d", color: "white" },
+                          }}
+                        >
+                          Đóng bảng
+                          <CloseIcon />
+                        </MenuItem>
+                      )}
+                    </Menu>
+                  </ListItem>
+                );
+              })}
+          </List>
 
           {!isMemberWorkspace && isBoardMember && (
             <Box

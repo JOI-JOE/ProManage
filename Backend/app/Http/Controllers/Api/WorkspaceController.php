@@ -136,7 +136,7 @@ class WorkspaceController extends Controller
                 'created_at' => $board->created_at,
                 'role' => $board->role,
                 'member_count' => $board->member_count,
-                'closed' => $board->closed, // 👉 thêm dòng này
+                'closed' => (bool) $board->closed, // 👉 thêm dòng này
                 'last_accessed' => $board->last_accessed
             ];
 
