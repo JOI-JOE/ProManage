@@ -40,7 +40,7 @@ export const MeProvider = ({ children }) => {
             userLoading,
             userError,
         }),
-        [user, userLoading, userError]
+        [boardIds, pendingIds, workspaceIds, user, userLoading, userError]
     );
 
     return <MeContext.Provider value={contextValue}>{children}</MeContext.Provider>;

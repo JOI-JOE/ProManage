@@ -20,7 +20,7 @@ const InviteWithToken = ({ inviteData, invitation }) => {
       {
         onSuccess: () => {
           alert("Bạn đã tham gia không gian làm việc thành công!");
-          window.location.reload(); // hoặc dùng useNavigate để redirect
+          window.location.reload();
         },
         onError: (error) => {
           alert(`Lỗi: ${error?.message || "Không thể tham gia workspace"}`);

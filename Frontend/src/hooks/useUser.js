@@ -16,7 +16,7 @@ import { logoutUser } from "../api/models/userApi";
 
 export const useUserData = () => {
   return useQuery({
-    queryKey: ["userInfo"],
+    queryKey: ["user_main"],
     queryFn: fetchUserData,
     staleTime: 10 * 60 * 1000,
     cacheTime: 60 * 60 * 1000,

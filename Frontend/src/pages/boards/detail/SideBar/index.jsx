@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -35,6 +35,8 @@ import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 import { useMe } from "../../../../contexts/MeContext";
 import LogoLoading from "../../../../components/Common/LogoLoading";
 import WorkspaceAvatar from "../../../../components/Common/WorkspaceAvatar";
+import { useSendJoinRequest } from "../../../../hooks/useWorkspaceInvite";
+import CreateBoard from "../../../../components/CreateBoard";
 
 const SideBar = ({ board, isLoadingBoard }) => {
   const { boardId, workspaceId } = useParams();
@@ -62,21 +64,8 @@ const SideBar = ({ board, isLoadingBoard }) => {
 
 
   // Là thành viên workspace?
-  const isMemberWorkspace = useMemo(() => {
-    return currentWorkspace?.joined === 1;
-  }, [currentWorkspace?.joined]);
-
-  // Là thành viên board?
-  const isBoardMember = useMemo(() => {
-    return boardIds?.some((b) => b.id === boardId);
-  }, [boardIds, boardId]);
-
-  const isPendingWorkspace = useMemo(() => {
-    if (!currentWorkspace?.id) return false;
-    return pendingIds?.some((ws) => ws.id === currentWorkspace.id);
-  }, [pendingIds, currentWorkspace?.id]);
-
-  console.log(isPendingWorkspace)
+  const isMemberWorkspace = currentWorkspace?.joined === 1;
+  const isBoardMember = boardIds?.some((b) => b.id === boardId);
 
 
   const [openSettings, setOpenSettings] = useState(false);
@@ -102,6 +91,38 @@ const SideBar = ({ board, isLoadingBoard }) => {
   const handleCloseBoard = (boardId) => {
     toggleBoardClosed(boardId);
     handleMenuClose();
+  };
+
+  const [isPendingWorkspace, setIsPendingWorkspace] = useState(false);
+
+  useEffect(() => {
+    setIsPendingWorkspace(pendingIds?.some((ws) => ws.id === board?.workspace_id));
+  }, [pendingIds, board?.workspace_id]); // Chạy lại mỗi khi pendingIds hoặc workspace_id thay đổi
+
+  const { mutate: sendRequestAttends, isLoading: loadingJoind, isError, error } = useSendJoinRequest();
+
+  const handleJoinRequest = async () => {
+    try {
+      await sendRequestAttends({ workspaceId: board.workspace_id });
+      // Cập nhật lại state khi yêu cầu tham gia đã được gửi
+      setIsPendingWorkspace(true);
+    } catch (error) {
+      console.error("Lỗi khi gửi yêu cầu tham gia bảng:", error);
+    }
+  };
+
+  // Function tạo board 
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleOpenCreateBoard = (event) => {
+    setAnchorEl(event.currentTarget);
+    setShowCreateBoard(true);
+  };
+
+  const handleCloseCreateBoard = () => {
+    setShowCreateBoard(false);
+    setAnchorEl(null);
   };
 
   return (
@@ -254,6 +275,28 @@ const SideBar = ({ board, isLoadingBoard }) => {
             <Typography sx={{ fontWeight: 600, fontSize: '15px' }}>
               Các bảng của bạn
             </Typography>
+            {isMemberWorkspace && (
+              <IconButton
+                onClick={handleOpenCreateBoard}
+                sx={{
+                  bgcolor: "#e0e0e0",
+                  borderRadius: "8px",
+                  p: "6px",
+                  ":hover": {
+                    bgcolor: "#bdbdbd",
+                  },
+                }}
+              >
+                <AddIcon sx={{ fontSize: 20, color: "#424242" }} />
+              </IconButton>
+            )}
+
+            <CreateBoard
+              workspaceId={currentWorkspace?.id} // Truyền workspaceId nếu cần
+              open={showCreateBoard}
+              anchorEl={anchorEl}
+              onClose={handleCloseCreateBoard}
+            />
           </Box>
 
           <List sx={{ p: 0.5 }}>
@@ -384,26 +427,32 @@ const SideBar = ({ board, isLoadingBoard }) => {
                     <Typography variant="body2" sx={{ fontSize: "13px", color: "#ccc" }}>
                       Bạn là thành viên của không gian làm việc này nhưng chưa tham gia bảng này. Hãy gửi yêu cầu cho quản trị viên để tham gia bảng.
                     </Typography>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      sx={{
-                        mt: 1,
-                        bgcolor: "#1976d2",
-                        color: "white",
-                        textTransform: "none",
-                        fontWeight: "bold",
-                        "&:hover": {
-                          bgcolor: "#1565c0",
-                        },
-                      }}
-                      onClick={() => {
-                        // Gọi API yêu cầu tham gia bảng ở đây
-                        console.log("Yêu cầu tham gia bảng", board?.id);
-                      }}
-                    >
-                      Yêu cầu tham gia bảng
-                    </Button>
+
+                    {
+                      loadingJoind ? (
+                        <LogoLoading />
+                      ) : (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          sx={{
+                            mt: 1,
+                            bgcolor: "#1976d2",
+                            color: "white",
+                            textTransform: "none",
+                            fontWeight: "bold",
+                            "&:hover": {
+                              bgcolor: "#1565c0",
+                            },
+                          }}
+                          onClick={handleJoinRequest}
+                          disabled={loadingJoind} // Vô hiệu hoá nút khi đang gửi yêu cầu
+                        >
+                          Yêu cầu tham gia bảng
+                        </Button>
+                      )
+                    }
+                    {isError && <Typography color="error">{error?.message || "Đã xảy ra lỗi khi gửi yêu cầu tham gia bảng."}</Typography>}
                   </>
                 )}
               </Box>

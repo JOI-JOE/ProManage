@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\SendRequestJoinWorkspace;
 use App\Events\WorkspaceMemberUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\WorkspaceMembersResource;
@@ -65,12 +66,27 @@ class WorkspaceMembersController extends Controller
         };
 
         if ($user) {
-            $isAlreadyMember = DB::table('workspace_members')
+            $existingMember = DB::table('workspace_members')
                 ->where('workspace_id', $workspaceId)
                 ->where('user_id', $user->id)
-                ->exists();
+                ->first();
 
-            if ($isAlreadyMember) {
+            if ($existingMember) {
+                // Nếu người dùng đã là thành viên và đang là "pending" (chưa tham gia chính thức)
+                if ($existingMember->member_type === 'pending' && !$existingMember->joined) {
+                    // Cập nhật lại trạng thái người dùng từ pending sang joined
+                    DB::table('workspace_members')
+                        ->where('id', $existingMember->id)
+                        ->update([
+                            'joined' => true, // Thay đổi trạng thái thành "đã tham gia"
+                            'member_type' => WorkspaceMembers::$NORMAL, // Cập nhật lại loại thành viên
+                        ]);
+                    // Gửi thông báo cho người dùng
+                    $sendNotification($user);
+                    event(new \App\Events\MemberInvitedToWorkspace($workspaceId, $user));
+                    return response()->json(['message' => 'User status updated to joined and invited successfully'], 200);
+                }
+                // Nếu người dùng đã là thành viên chính thức
                 return response()->json(['message' => 'User is already a member of this workspace'], 200);
             }
 
@@ -281,20 +297,22 @@ class WorkspaceMembersController extends Controller
         ]);
     }
 
-    public function addGuestToWorkspace($workspaceId, $memberId)
+
+    // Thành viên là khách
+    // case 1 - là ta có thể thêm họ vào workspace là cho họ lên normal và joined = true
+    public function addNewMemberToWorkspace($workspaceId, $memberId)
     {
         try {
-            // Kiểm tra memberId tồn tại trong bảng users
+            // Kiểm tra memberId tồn tại
             if (!User::where('id', $memberId)->exists()) {
                 throw ValidationException::withMessages([
                     'member_id' => 'Người dùng không tồn tại.'
                 ]);
             }
-
             // Kiểm tra workspace tồn tại
             $workspace = Workspace::findOrFail($workspaceId);
 
-            // Kiểm tra quyền của người dùng (phải là admin của workspace)
+            // Kiểm tra quyền admin
             $currentUser = Auth::user();
             $isAdmin = WorkspaceMembers::where('workspace_id', $workspaceId)
                 ->where('user_id', $currentUser->id)
@@ -307,8 +325,9 @@ class WorkspaceMembersController extends Controller
                 ], 403);
             }
 
-            // DB::raw(1) chỉ là một giá trị "giả lập" (dummy value) dùng để biểu thị rằng chỉ cần có một dòng tồn tại trong truy vấn con (subquery)
-            // Kiểm tra xem user có tồn tại trong board_members nhưng không có trong workspace_members
+            DB::beginTransaction();
+
+            // Trường hợp 1: Người dùng là guest
             $guest = User::where('id', $memberId)
                 ->whereExists(function ($query) use ($workspaceId) {
                     $query->select(DB::raw(1))
@@ -325,36 +344,60 @@ class WorkspaceMembersController extends Controller
                 })
                 ->first();
 
-            if (!$guest) {
+            if ($guest) {
+                WorkspaceMembers::create([
+                    'id' => Str::uuid(),
+                    'workspace_id' => $workspaceId,
+                    'user_id' => $guest->id,
+                    'member_type' => 'normal',
+                    'is_unconfirmed' => 0,
+                    'joined' => 1,
+                    'is_deactivated' => 0,
+                    'last_active' => now(),
+                ]);
+
+                Log::info("Guest {$guest->full_name} đã được thêm vào workspace {$workspace->name} bởi {$currentUser->full_name}.");
+
+                DB::commit();
+
                 return response()->json([
-                    'message' => 'Người dùng không phải là guest hoặc đã là thành viên của workspace.'
-                ], 404);
+                    'message' => 'Đã thêm thành viên guest vào workspace.',
+                    'added_user' => $guest->full_name
+                ]);
             }
 
-            // Bắt đầu giao dịch để đảm bảo tính toàn vẹn dữ liệu
-            DB::beginTransaction();
+            // Trường hợp 2: Người dùng đã gửi yêu cầu (pending)
+            $pendingMember = WorkspaceMembers::where('workspace_id', $workspaceId)
+                ->where('user_id', $memberId)
+                ->where('member_type', 'pending')
+                ->where('joined', false)
+                ->first();
 
-            // Thêm người dùng vào workspace_members
-            WorkspaceMembers::create([
-                'id' => Str::uuid(),
-                'workspace_id' => $workspaceId,
-                'user_id' => $guest->id,
-                'member_type' => 'normal',
-                'is_unconfirmed' => 0,
-                'joined' => 1,
-                'is_deactivated' => 0,
-                'last_active' => now(),
-            ]);
+            if ($pendingMember) {
+                $pendingMember->update([
+                    'member_type' => 'normal',
+                    'joined' => true,
+                    'is_unconfirmed' => 0,
+                    'last_active' => now(),
+                ]);
 
-            // Ghi log hoạt động
-            Log::info("Người dùng {$guest->full_name} đã được thêm vào workspace {$workspace->name} bởi {$currentUser->full_name}.");
+                $user = User::find($memberId);
+                Log::info("Yêu cầu của {$user->full_name} đã được chấp thuận bởi {$currentUser->full_name}.");
 
-            DB::commit();
+                DB::commit();
 
+                return response()->json([
+                    'message' => 'Đã chấp thuận yêu cầu tham gia workspace.',
+                    'added_user' => $user->full_name
+                ]);
+            }
+
+            DB::rollBack();
+            
             return response()->json([
-                'message' => 'Đã thêm thành công thành viên guest vào workspace.',
-                'added_user' => $guest->full_name
-            ], 200);
+                'message' => 'Người dùng không phải là guest hoặc chưa gửi yêu cầu tham gia.',
+                'data' => $workspace
+            ], 404);
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Dữ liệu đầu vào không hợp lệ.',
@@ -362,13 +405,83 @@ class WorkspaceMembersController extends Controller
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Lỗi khi thêm guest vào workspace: {$e->getMessage()}");
+            Log::error("Lỗi khi thêm thành viên vào workspace: {$e->getMessage()}");
+
             return response()->json([
-                'message' => 'Đã xảy ra lỗi khi thêm thành viên vào workspace.',
+                'message' => 'Đã xảy ra lỗi.',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+    // case 2 - là họ đang là khác thì chúng ta có thể đuổi cố họ khỏi bảng đó là xóa họ khỏi board member luôn
+
+
+
+    // Yêu cầu tham gia
+    // Đây là những người member_type trong workspace_member là pending và chưa joined 
+    // case 1 - cho họ vào workspace đay có thể là những thành vưa có thê là chưa tham gia vào workspace và cả board 
+    // case 2 - là họ có thể là tham gia board rồi nhưng đang đợi để được tham gia workspace 
+    // vậy khi ta sẽ xóa sổ họ trong workspace-member 
+    public function sendJoinRequest($workspaceId)
+    {
+        try {
+            // Lấy thông tin user đã xác thực
+            $user = Auth::user();
+
+            if (!$user instanceof \App\Models\User) {
+                throw new \Exception('User không hợp lệ');
+            }
+            // Tìm workspace hoặc trả về lỗi nếu không tồn tại
+            $workspace = Workspace::findOrFail($workspaceId);
+
+            // Kiểm tra xem user đã là thành viên hoặc đã gửi yêu cầu chưa
+            $existingMember = WorkspaceMembers::where('workspace_id', $workspaceId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($existingMember) {
+                return response()->json([
+                    'message' => 'Người dùng đã là thành viên của workspace hoặc yêu cầu đã được gửi.'
+                ], 400);
+            }
+
+            // Thêm vào workspace_members với trạng thái "pending"
+            WorkspaceMembers::create([
+                'id' => Str::uuid(),
+                'workspace_id' => $workspaceId,
+                'user_id' => $user->id,
+                'member_type' => 'pending',
+                'joined' => 0,
+                'last_active' => now(),
+            ]);
+
+            // Gửi sự kiện broadcast đến các thành viên trong workspace
+            event(new SendRequestJoinWorkspace($user, $workspace));
+
+            // Log lại hành động
+            Log::info("Người dùng {$user->name} ({$user->id}) đã gửi yêu cầu tham gia workspace {$workspace->name} ({$workspace->id}).");
+
+            return response()->json([
+                'message' => 'Yêu cầu tham gia workspace đã được gửi thành công.',
+                'user_id' => $user->id,
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Dữ liệu đầu vào không hợp lệ.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error("Lỗi khi gửi yêu cầu tham gia workspace: {$e->getMessage()}");
+
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi gửi yêu cầu tham gia workspace.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
 
     /// -------------------------------------------------------------------------
 

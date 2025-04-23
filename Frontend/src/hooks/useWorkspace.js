@@ -110,12 +110,20 @@ export const useGetWorkspaceById = (workspaceId) => {
   const channelRef = useRef(null);
   const userId = localStorage.getItem("idMember");
 
-  // Xử lý sự kiện khi có thay đổi thành viên (thêm, xóa, cập nhật quyền)
   const handleWorkspaceMemberUpdated = useCallback(
     (event) => {
       console.log("📢 WorkspaceMemberUpdated:", event);
-      // Kiểm tra nếu sự kiện thuộc workspaceId, bất kể người thay đổi có phải userId hiện tại hay không
-      if (event?.user?.workspaceId === workspaceId) {
+      if (event?.workspace?.id === workspaceId) {
+        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+      }
+    },
+    [queryClient, workspaceId]
+  );
+
+  const handleJoinRequestSent = useCallback(
+    (event) => {
+      console.log("📩 JoinRequestSent:", event);
+      if (event?.workspace?.id === workspaceId) {
         queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
       }
     },
@@ -127,23 +135,29 @@ export const useGetWorkspaceById = (workspaceId) => {
     const channel = echoInstance.channel(`workspace.${workspaceId}`);
     channelRef.current = channel;
 
-    // Lắng nghe sự kiện WorkspaceMemberUpdated
     channel.listen(".WorkspaceMemberUpdated", handleWorkspaceMemberUpdated);
+    channel.listen(".JoinRequestSent", handleJoinRequestSent);
 
     return () => {
       if (channelRef.current) {
         channelRef.current.stopListening(".WorkspaceMemberUpdated");
+        channelRef.current.stopListening(".JoinRequestSent");
         echoInstance.leave(`workspace.${workspaceId}`);
       }
     };
-  }, [userId, workspaceId, handleWorkspaceMemberUpdated]);
+  }, [
+    userId,
+    workspaceId,
+    handleWorkspaceMemberUpdated,
+    handleJoinRequestSent,
+  ]);
 
   return useQuery({
     queryKey: ["workspace", workspaceId],
     queryFn: () => getWorkspaceById(workspaceId),
     enabled: !!workspaceId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    cacheTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
     onError: (error) => {
       console.error("❌ Lỗi khi lấy dữ liệu workspace:", error);
     },

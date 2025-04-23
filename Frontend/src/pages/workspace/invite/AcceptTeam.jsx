@@ -104,7 +104,7 @@ const AcceptTeam = () => {
 
     // Nếu API trả về lỗi hoặc không có dữ liệu, hiển thị InvalidInvitation
     if (isError || !inviteData) {
-        return <InvalidInvitation />;
+        return <InvalidInvitation invitation={invitation} />;
     }
 
     // Nếu có dữ liệu hợp lệ, hiển thị giao diện phù hợp

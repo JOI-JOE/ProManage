@@ -9,6 +9,8 @@ import {
   addMemberToWorkspaceDirection,
   sendInviteWorkspace,
   joinWorkspace,
+  sendJoinRequest,
+  addNewMemberToWorkspace,
 } from "../api/models/inviteWorkspaceApi";
 
 // Hook mutation
@@ -140,6 +142,47 @@ export const useJoinWorkspace = () => {
       console.log("✅ Tham gia workspace thành công:", data);
     },
 
+    onError: (error) => {
+      const errorMessage = error?.message || "Đã xảy ra lỗi không xác định";
+      console.error("❌ Lỗi khi tham gia workspace:", errorMessage);
+    },
+  });
+};
+
+// Function mà muốn gửi yêu cầu để tham gia workspace
+export const useSendJoinRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId }) => sendJoinRequest({ workspaceId }), // Sửa lại để chỉ gửi workspaceId
+
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["user_main"] });
+      console.log("✅ Tham gia workspace thành công:", data);
+    },
+
+    onError: (error) => {
+      const errorMessage = error?.message || "Đã xảy ra lỗi không xác định";
+      console.error("❌ Lỗi khi tham gia workspace:", errorMessage);
+    },
+  });
+};
+
+// function mà quản trị viên của workspace có thể thêm guest hoặc request vào trong workspace
+export const useAddNewMemberToWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, memberId }) =>
+      addNewMemberToWorkspace({ workspaceId, memberId }), // Sửa lại để chỉ gửi workspaceId
+
+    onSuccess: (_data, variables) => {
+      const { workspaceId } = variables;
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", workspaceId],
+      });
+    },
     onError: (error) => {
       const errorMessage = error?.message || "Đã xảy ra lỗi không xác định";
       console.error("❌ Lỗi khi tham gia workspace:", errorMessage);
