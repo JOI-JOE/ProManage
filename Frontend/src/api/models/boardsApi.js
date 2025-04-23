@@ -76,6 +76,17 @@ export const logBoardAccess = async (boardId) => {
   }
 };
 
+export const updateBoardLastAccessed = async (boardId) => {
+  try {
+    const response = await authClient.post(`/boards/${boardId}/update-last-accessed`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật last_accessed của board:", error);
+    throw error;
+  }
+};
+
+
 export const updateBoardName = async (boardId, name) => {
   try {
     const response = await authClient.patch(`/boards/${boardId}/name`, { name });

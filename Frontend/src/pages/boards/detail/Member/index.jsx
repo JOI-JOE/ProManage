@@ -260,29 +260,12 @@ const Member = () => {
 
   return (
     <Box
-      sx={{
-        width: "100%",
-        maxWidth: "1200px",
-        height: "100vh",
-        padding: "32px 20px 20px 20px",
-        overflow: "auto",
-        maxHeight: "100vh",
-        "&::-webkit-scrollbar": {
-          width: "8px",
-          height: "8px",
-        },
-        "&::-webkit-scrollbar-track": {
-          background: "#f1f1f1",
-          borderRadius: "4px",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          background: "#888",
-          borderRadius: "4px",
-        },
-        "&::-webkit-scrollbar-thumb:hover": {
-          background: "#555",
-        },
-      }}
+    sx={{
+      width: "100%",
+      maxWidth: "1200px",
+      padding: "20px",
+      margin: "30px auto",
+    }}
     >
       <Box
         sx={{
@@ -294,25 +277,26 @@ const Member = () => {
           width: "100%",
           maxWidth: "1100px",
           margin: "0 auto",
+          minHeight: "80px",
         }}
       >
         {!isFormVisible ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Avatar
+             <Avatar
               sx={{
                 bgcolor: "#5D87FF",
-                width: "50px",
-                height: "50px",
+                width: "80px",
+                height: "80px",
                 marginLeft: "100px",
               }}
             >
-              <span style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
+              <span style={{ fontSize: "30px", fontWeight: "bold" }}>
                 {workspace?.display_name.charAt(0).toUpperCase()}
               </span>
             </Avatar>
             <Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <Typography fontWeight="bold" sx={{ fontSize: "1.2rem" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <Typography fontWeight="bold" sx={{ fontSize: 25 }}>
                   {workspace?.display_name}
                 </Typography>
                 <IconButton

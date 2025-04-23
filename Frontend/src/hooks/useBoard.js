@@ -11,20 +11,25 @@ import {
   getRecentBoards,
   getUnsplashImages,
   logBoardAccess,
-showBoardByWorkspaceId,
+  showBoardByWorkspaceId,
   toggleBoardClosed,
   toggleBoardMarked,
+  updateBoardLastAccessed,
   updateBoardName,
   updateBoardVisibility,
 } from "../api/models/boardsApi";
-import { useCallback, useContext, useEffect } from "react";
+import { useCallback, useContext, useEffect, useMemo } from "react";
 import echoInstance from "./realtime/useRealtime";
 import { toast } from "react-toastify";
+import { useGetUserWorkspaces } from "./useWorkspace";
+
+
 
 /**
  * Hook useBoard để tạo bảng mới.
  * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
  */
+
 export const useCreateBoard = () => {
   const queryClient = useQueryClient();
 
@@ -39,8 +44,11 @@ export const useCreateBoard = () => {
 export const useGetBoardByID = (boardId) => {
   const queryClient = useQueryClient();
 
+
+
   const boardDetail = useQuery({
     queryKey: ["boards", boardId],
+    enabled: !!boardId, // vẫn có, nhưng...
     queryFn: async () => {
       if (!boardId) return null; // Nếu không có boardId, không gọi API
 
@@ -56,33 +64,69 @@ export const useGetBoardByID = (boardId) => {
       }
     },
   });
+  const { data, error, isLoading, refetch: refetchWorkspaces } = useGetUserWorkspaces();
+  const allBoards = useMemo(() => {
+    if (!data) return [];
+
+    const owned = data?.owned_workspaces?.flatMap((ws, wsIndex) =>
+      (ws.boards || [])
+        .filter(board => board && board.id && board.name && !board.closed)
+        .map(board => ({
+          ...board,
+          workspaceName: ws.name || `Workspace Owned ${wsIndex + 1}`,
+          workspaceType: "owned",
+        }))
+    ) || [];
+
+    const guest = data?.guest_workspaces?.flatMap((ws, wsIndex) =>
+      (ws.boards || [])
+        .filter(board => board && board.id && board.name && !board.closed)
+        .map(board => ({
+          ...board,
+          workspaceName: ws.name || `Workspace Guest ${wsIndex + 1}`,
+          workspaceType: "guest",
+        }))
+    ) || [];
+
+    return [...owned, ...guest];
+  }, [data]);
+
+
 
   useEffect(() => {
-    if (!boardId || !echoInstance) return;
 
-    const channel = echoInstance.channel(`boards.${boardId}`);
-    // console.log(`📡 Đang lắng nghe kênh: card.${cardId}`);
+    // Lắng nghe tất cả các bảng mà người dùng có quyền truy cập
+    // const boardIds = ["740955b5-e686-4f5c-92f7-c3cdfd592f92", "d9056bf6-31d6-4da1-b762-9fc0909ece41"]; // Lấy danh sách boardId từ API hoặc state
+    const boardIds = allBoards.map(board => board.id).filter(Boolean);// Loại bỏ giá trị falsy (nếu có)
 
-    channel.listen(".BoardStatusUpdated", (event) => {
-      console.log("🔄 Nhận sự kiện BoardStatusUpdated:", event);
+    // console.log("Board IDs:", boardIds);
+    boardIds.forEach((boardId) => {
+      const channel = echoInstance.channel(`boards.${boardId}`);
 
-      // queryClient.invalidateQueries({ queryKey: ["checklist-item-members", itemId]});
-      queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
-      queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
+      channel.listen(".BoardStatusUpdated", (event) => {
+        console.log(`🔄 Nhận sự kiện BoardStatusUpdated cho ${boardId}:`, event);
+        queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
+        queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
+        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      });
+
+      channel.listen(".board.updateName", (data) => {
+        console.log(`📡 Board name updated for ${boardId}:`, data);
+        queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
+        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      });
     });
 
-    channel.listen(".board.updateName", (data) => {
-      console.log("📡 Board name updated: ", data);
-      queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
-    });
-
+    // Cleanup khi ứng dụng unmount
     return () => {
-      channel.stopListening(".BoardStatusUpdated");
-      channel.stopListening(".board.updateName");
-      echoInstance.leave(`boards.${boardId}`);
+      boardIds.forEach((boardId) => {
+        const channel = echoInstance.channel(`boards.${boardId}`);
+        channel.stopListening(".BoardStatusUpdated");
+        channel.stopListening(".board.updateName");
+        echoInstance.leave(`boards.${boardId}`);
+      });
     };
-  }, [boardId, queryClient]);
-
+  }, [allBoards, queryClient]);
   return boardDetail;
 };
 
@@ -141,6 +185,23 @@ export const useRecentBoardAccess = () => {
     onSuccess: (data) => {
       console.log("Bảng đã được lưu vào danh sách gần đây:", data);
       queryClient.invalidateQueries(["recentBoards"]);
+    },
+  });
+};
+
+export const useUpdateBoardLastAccessed = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateBoardLastAccessed,
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật thời gian truy cập board:", error);
+    },
+    onSuccess: (data) => {
+      console.log("⏱️ Last accessed của board đã được cập nhật:", data);
+      // Gợi ý: Bạn có thể cập nhật cache nếu có query liên quan
+      queryClient.invalidateQueries({ queryKey: ["boards"] });
+      queryClient.invalidateQueries({ queryKey: ["recentBoards"] });
     },
   });
 };
@@ -270,7 +331,7 @@ export const useUpdateBoardVisibility = () => {
   });
 };
 
-export const useToggleBoardClosed = () => {
+export const useToggleBoardClosed = (workspaceName) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -285,6 +346,8 @@ export const useToggleBoardClosed = () => {
       queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
+      queryClient.invalidateQueries({ queryKey: ["closedBoards"] });
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceName] });
 
       // queryClient.invalidateQueries(["board", boardId]);
     },

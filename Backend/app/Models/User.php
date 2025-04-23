@@ -101,11 +101,13 @@ class User extends Authenticatable
      */
 
 
-     public function workspaces_2()
+    public function workspaces_2()
     {
-        return $this->hasMany(Workspace::class, 'id_member_creator')->with(['boards' => function ($query) {
-            $query->where('closed', false);
-        }]);
+        return $this->hasMany(Workspace::class, 'id_member_creator')->with([
+            'boards' => function ($query) {
+                $query->where('closed', false);
+            }
+        ]);
     }
 
     public function boards()
@@ -126,6 +128,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(CommentCard::class);  // Mỗi user có thể tạo nhiều bình luận
     }
+
+    public function recentBoards()
+    {
+        return $this->hasMany(RecentBoard::class);
+    }
+
 
     public function boardsMember()
     {
