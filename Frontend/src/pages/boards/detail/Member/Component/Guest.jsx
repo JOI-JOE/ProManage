@@ -54,37 +54,26 @@ const Guest = ({ isAdmin, guests }) => {
 
             {
                 guests.map((guest) => (
-                    <Box key={guest.id} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <InitialsAvatar
-                            name={guest?.user?.full_name}
-                            avatarSrc={guest?.user.image}
-                            initials={guest?.user?.initials}
-                            size={32}
-                        />
-                        <Box sx={{ flexGrow: 1 }}>
-                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                {guest.user.full_name}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {/* @{guest.user.user_name.toLowerCase().replace(/\s/g, '')} */}
-                            </Typography>
+                    <Box key={guest.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: "space-between", mb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <InitialsAvatar
+                                name={guest?.user?.full_name}
+                                avatarSrc={guest?.user.image}
+                                initials={guest?.user?.initials}
+                                size={32}
+                            />
+                            <Box sx={{ flexGrow: 1 }}>
+                                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                    {guest?.user.full_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {guest?.user.email} • {guest.user.type}
+                                </Typography>
+                            </Box>
                         </Box>
 
                         {isAdmin && (
                             <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    sx={{
-                                        textTransform: 'none',
-                                        bgcolor: '#EBEEF0',
-                                        color: '#172B4D',
-                                        '&:hover': { bgcolor: '#D8DEE4' }
-                                    }}
-                                >
-                                    Xem bảng thông tin (1)
-                                </Button>
-
                                 <Button
                                     variant="contained"
                                     size="small"

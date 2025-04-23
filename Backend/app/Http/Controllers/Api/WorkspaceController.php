@@ -72,6 +72,7 @@ class WorkspaceController extends Controller
                 'boards.visibility',
                 'boards.created_by',
                 'boards.created_at',
+                'boards.closed',
                 'board_members.role',
                 DB::raw('(SELECT COUNT(*) FROM board_members bm WHERE bm.board_id = boards.id) AS member_count'),
                 'ws.id as workspace_id_ref',
@@ -86,7 +87,7 @@ class WorkspaceController extends Controller
                 $query->where('boards.created_by', $userId)
                     ->orWhereNotNull('board_members.user_id');
             })
-            ->where('boards.closed', 0)
+            // ->where('boards.closed', 0)
             ->orderBy('boards.created_at', 'desc')
             ->get();
 
@@ -131,6 +132,7 @@ class WorkspaceController extends Controller
                 'created_by_image' => $board->created_by_image,
                 'created_at' => $board->created_at,
                 'role' => $board->role,
+                'closed' => (bool) $board->closed,
                 'member_count' => $board->member_count
             ];
 
@@ -487,29 +489,6 @@ class WorkspaceController extends Controller
                 ->where('user_id', $currentUser->id)
                 ->where('member_type', 'admin')
                 ->exists();
-
-            // Lấy danh sách bảng được đánh dấu (markedBoards)
-            // $markedBoards = DB::table('boards')
-            //     ->where('workspace_id', $workspace->id)
-            //     ->where('is_marked', true)
-            //     ->where('closed', false)
-            //     ->get()
-            //     ->map(function ($board) {
-            //         return [
-            //             'id' => $board->id,
-            //             'name' => $board->name,
-            //             'thumbnail' => $board->thumbnail,
-            //             'description' => $board->description,
-            //             'is_marked' => (bool) $board->is_marked,
-            //             'archive' => (bool) $board->archive,
-            //             'closed' => (bool) $board->closed,
-            //             'created_by' => $board->created_by,
-            //             'visibility' => $board->visibility,
-            //             'workspace_id' => $board->workspace_id,
-            //             'created_at' => $board->created_at,
-            //             'updated_at' => $board->updated_at,
-            //         ];
-            //     })->toArray();
 
             // Lấy danh sách thành viên của workspace
             $members = DB::table('workspace_members')

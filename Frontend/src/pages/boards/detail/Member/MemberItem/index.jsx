@@ -122,7 +122,7 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
             {member?.user?.full_name || "Không xác định"}
           </Typography>
           <Typography variant="body2" sx={{ color: "gray" }}>
-            @{member?.user?.user_name || "Không có email"}
+            {member?.user?.email || "Không có email"}
           </Typography>
         </Box>
       </Box>

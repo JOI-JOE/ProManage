@@ -31,7 +31,6 @@ export const MeProvider = ({ children }) => {
     const boardIds = data?.boards || null;
     const pendingIds = data?.pending || null
 
-    console.log(data)
     const contextValue = useMemo(
         () => ({
             boardIds,

@@ -47,7 +47,9 @@ const MyWorkspace = ({ workspace, boards }) => {
                     {/* Logo của workspace */}
                     <WorkspaceAvatar workspace={workspace} />
                     <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
-                        {workspace.display_name.length > 10 ? workspace.display_name.substring(0, 20) + "..." : workspace.name}
+                        {workspace.display_name.length > 20
+                            ? `${workspace.display_name.substring(0, 20)}...`
+                            : workspace.display_name}
                     </Typography>
                 </Box>
 
@@ -151,11 +153,13 @@ const MyWorkspace = ({ workspace, boards }) => {
 
             {/* Danh sách bảng Trello */}
             <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-                {boards?.map((board) => (
-                    <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-                        <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
-                    </ListItem>
-                ))}
+                {boards
+                    ?.filter((board) => !board.closed) // lọc board chưa đóng
+                    .map((board) => (
+                        <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                            <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
+                        </ListItem>
+                    ))}
                 <ListItem sx={{ width: "auto", padding: 0 }}>
                     <Box
                         onClick={handleOpenCreateBoard}

@@ -4,6 +4,7 @@ import { useStateContext } from "../../contexts/ContextProvider";
 import { FcGoogle } from "react-icons/fc";
 import axios from "axios";
 import Cookies from "js-cookie";
+import LogoLoading from "../../components/Common/LogoLoading";
 
 const GoogleAuth = () => {
   const navigate = useNavigate();
@@ -107,17 +108,23 @@ const GoogleAuth = () => {
   if (token) return null;
 
   return (
-    <div className="flex flex-col items-center w-full max-w-md">
-      <button
-        onClick={handleLogin}
-        className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300 disabled:opacity-50"
-        disabled={isLoading}
-      >
-        <FcGoogle className="mr-2" size={16} />
-        <span>{isLoading && "Đang xử lý..."}</span>
-      </button>
+    <div className="flex flex-col items-center w-full max-w-md space-y-3">
+      {isLoading ? (
+        // Khi đang loading
+        <LogoLoading />
+      ) : (
+        // Khi không loading
+        <button
+          onClick={handleLogin}
+          className="flex items-center justify-center w-full px-4 py-2 text-white bg-gray-900 rounded-lg shadow-md hover:bg-gray-800 transition duration-300"
+        >
+          <FcGoogle className="mr-2" size={18} />
+        </button>
+      )}
+
+      {/* Hiển thị lỗi nếu có */}
       {error && (
-        <p className="text-red-500 text-sm mt-2 text-center">{error}</p>
+        <p className="text-red-500 text-sm text-center">{error}</p>
       )}
     </div>
   );

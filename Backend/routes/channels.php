@@ -19,9 +19,18 @@ use Illuminate\Support\Facades\Log;
 */
 
 
+Broadcast::channel('workspace.{id}', function ($user, $id) {
+    // Kiểm tra xem người dùng có phải là thành viên của workspace không
+    return \App\Models\WorkspaceMembers::where('workspace_id', $id)
+        ->where('user_id', $user->id)
+        ->exists();
+});
+
+
 Broadcast::channel('board.{boardId}', function ($user, $boardId) {
     return true;
 });
+
 // Broadcast::channel('workspace-invite-{workspaceId}', function ($user, $workspaceId) {
 //     return $user->isMemberOfWorkspace($workspaceId);
 // });
@@ -68,7 +77,7 @@ Broadcast::channel('private-user.{userId}', function ($user, $userId) {
 
 Broadcast::channel('board.{boardId}.admins', function ($user, $boardId) {
     $board = Board::findOrFail($boardId);
-    
+
     // Kiểm tra xem user có phải admin của bảng không
     return $board->members()
         ->where('user_id', $user->id)

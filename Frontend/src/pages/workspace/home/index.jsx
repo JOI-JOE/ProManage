@@ -148,7 +148,8 @@ const HomeWorkspace = ({ workspace }) => {
       </ListItem>
 
       <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        {workspace?.boards && workspace.boards.length > 0 ? (
+        {/* {workspace?.boards && workspace.boards.length > 0 ? ( */}
+        {workspace?.boards?.filter((board) => board.closed === false).length > 0 ? (
           <>
             {workspace.boards.map((board) => (
               <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>

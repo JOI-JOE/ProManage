@@ -104,7 +104,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/workspace/{workspaceId}/members',  'sendMemberWorkspace');
         Route::post('workspace/{workspaceId}/invitationSecret/{token}', 'joinWorkspace');
         Route::delete('workspace/{workspaceId}/members/{userId}',  'removeMember');
+    // cập nhập trạng thái cho người dùng , normal <-> admin , 
         Route::put('workspace/{workspaceId}/members/{userId}/type',  'changeType');
+        // Xử lý guest, guest cho workspace
+        Route::post('workspaces/{workspaceId}/addGuest/{memberId}', 'addGuestToWorkspace');
     });
 
     // Route::post('/send-mail', [EmailController::class, 'sendEmail']);

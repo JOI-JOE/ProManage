@@ -42,6 +42,7 @@ import { useGetInviteWorkspace } from "../../../../hooks/useWorkspaceInvite";
 import { useMe } from "../../../../contexts/MeContext";
 import Request from "./Component/Request";
 import Guest from "./Component/Guest";
+import WorkspaceAvatar from "../../../../components/Common/WorkspaceAvatar";
 
 const Member = () => {
   const { workspaceId } = useParams();
@@ -295,30 +296,22 @@ const Member = () => {
         }}
       >
         {!isFormVisible ? (
-          <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Avatar
-              sx={{
-                bgcolor: "#5D87FF",
-                width: "50px",
-                height: "50px",
-                marginLeft: "100px",
-              }}
-            >
-              <span style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
-                {workspace?.display_name.charAt(0).toUpperCase()}
-              </span>
-            </Avatar>
-            <Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: "10px", p: 2 }}>
+            <WorkspaceAvatar workspace={workspace} size={50} />
+            <Box sx={{ mt: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <Typography fontWeight="bold" sx={{ fontSize: "1.2rem" }}>
+                <Typography fontWeight="bold" sx={{ fontSize: "2rem" }}>
                   {workspace?.display_name}
                 </Typography>
-                <IconButton
-                  onClick={toggleFormVisibility}
-                  sx={{ color: "gray", "&:hover": { backgroundColor: "transparent" } }}
-                >
-                  <EditIcon sx={{ fontSize: 24 }} />
-                </IconButton>
+                {isAdmin && (
+                  <IconButton
+                    onClick={toggleFormVisibility}
+                    sx={{ color: "gray", "&:hover": { backgroundColor: "transparent" } }}
+                  >
+                    <EditIcon sx={{ fontSize: 24 }} />
+                  </IconButton>
+                )}
+
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: "5px", color: "gray" }}>
                 <LockIcon sx={{ fontSize: 14 }} />
@@ -465,7 +458,7 @@ const Member = () => {
                 {/* Fixed container with proper scrolling */}
                 <Box
                   sx={{
-                    maxHeight: 3 * 72, // Tối đa hiển thị 4 item (tùy chiều cao thực tế của mỗi item)
+                    maxHeight: 3 * 62, // Tối đa hiển thị 4 item (tùy chiều cao thực tế của mỗi item)
                     overflowY: 'auto',
                     pr: 1, // tránh đè lên scroll bar
                     "&::-webkit-scrollbar": {

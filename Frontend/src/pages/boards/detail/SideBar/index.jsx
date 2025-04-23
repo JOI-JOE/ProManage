@@ -34,6 +34,7 @@ import { useToggleBoardClosed } from "../../../../hooks/useBoard";
 import { useWorkspace } from "../../../../contexts/WorkspaceContext";
 import { useMe } from "../../../../contexts/MeContext";
 import LogoLoading from "../../../../components/Common/LogoLoading";
+import WorkspaceAvatar from "../../../../components/Common/WorkspaceAvatar";
 
 const SideBar = ({ board, isLoadingBoard }) => {
   const { boardId, workspaceId } = useParams();
@@ -49,6 +50,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
       // Nếu không có, tìm trong guestWorkspaces
       return guestWorkspaces.find((ws) => ws.id === board.workspace_id);
     }
+
     if (workspaceId) {
       const ws = workspaces.find((ws) => ws.id === workspaceId);
       if (ws) return ws;
@@ -57,6 +59,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
     }
     return null;
   }, [workspaces, guestWorkspaces, board?.workspace_id, workspaceId]);
+
 
   // Là thành viên workspace?
   const isMemberWorkspace = useMemo(() => {
@@ -74,7 +77,6 @@ const SideBar = ({ board, isLoadingBoard }) => {
   }, [pendingIds, currentWorkspace?.id]);
 
   console.log(isPendingWorkspace)
-
 
 
   const [openSettings, setOpenSettings] = useState(false);
@@ -141,7 +143,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
               bgcolor: "#292929",
             }}
           >
-            <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
+            <WorkspaceAvatar workspace={currentWorkspace} />
             <Box>
               <Typography variant="body1" sx={{ fontWeight: "bold" }}>
                 {currentWorkspace?.display_name}
@@ -154,7 +156,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
               <ListItem disablePadding>
                 <ListItemButton
                   component={Link}
-                  to={`/w/${currentWorkspace?.name}`}
+                  to={`/w/${currentWorkspace?.id}`}
                 >
                   <ListItemIcon sx={{ color: "white" }}>
                     <DashboardIcon />
@@ -255,96 +257,98 @@ const SideBar = ({ board, isLoadingBoard }) => {
           </Box>
 
           <List sx={{ p: 0.5 }}>
-            {currentWorkspace?.boards?.map((board) => {
-              const isCurrent = board.id === boardId;
-              const isBoardAdmin = board.role === "admin";
-              const isBoardMember = !!board.role;
+            {currentWorkspace?.boards
+              ?.filter((board) => board.closed === false)
+              .map((board) => {
+                const isCurrent = board.id === boardId;
+                const isBoardAdmin = board.role === "admin";
+                // const isBoardMember = !!board.role;
 
-              return (
-                <ListItem
-                  key={board.id}
-                  disablePadding
-                  sx={{ p: 1, display: "flex", alignItems: "center" }}
-                >
-                  <ListItemButton
-                    component={Link}
-                    to={`/b/${board.id}/${board.name}`}
-                    sx={{
-                      flexGrow: 1,
-                      backgroundColor: isCurrent ? "#ffffff33" : "transparent",
-                      "&:hover": { backgroundColor: "#ffffff22" },
-                      borderRadius: "6px",
-                    }}
+                return (
+                  <ListItem
+                    key={board.id}
+                    disablePadding
+                    sx={{ p: 1, display: "flex", alignItems: "center" }}
                   >
-                    <ListItemIcon sx={{ color: "white" }}>
-                      <FolderIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={board.name}
+                    <ListItemButton
+                      component={Link}
+                      to={`/b/${board.id}/${board.name}`}
                       sx={{
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        flexGrow: 1,
+                        backgroundColor: isCurrent ? "#ffffff33" : "transparent",
+                        "&:hover": { backgroundColor: "#ffffff22" },
+                        borderRadius: "6px",
                       }}
-                    />
-                  </ListItemButton>
-
-                  {isBoardAdmin && (
-                    <>
-                      <IconButton
-                        onClick={(e) => handleMenuOpen(e, board.id)}
-                        sx={{ color: "white", ml: "auto" }}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                      <Menu
-                        anchorEl={menuAnchor}
-                        open={selectedBoardId === board.id}
-                        onClose={handleMenuClose}
-                        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                        transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    >
+                      <ListItemIcon sx={{ color: "white" }}>
+                        <FolderIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={board.name}
                         sx={{
-                          "& .MuiPaper-root": {
-                            backgroundColor: "#2e2e2e",
-                            color: "white",
-                            borderRadius: "8px",
-                            minWidth: "300px",
-                          },
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
                         }}
-                      >
-                        <MenuItem
-                          disabled
-                          sx={{
-                            fontWeight: "bold",
-                            fontSize: "1rem",
-                            opacity: 1,
-                            textAlign: "center",
-                            justifyContent: "center",
-                            color: "#fff",
-                            padding: "12px 16px",
-                          }}
-                        >
-                          {board.name}
-                        </MenuItem>
+                      />
+                    </ListItemButton>
 
-                        <MenuItem
-                          onClick={() => handleCloseBoard(board.id)}
+                    {isBoardAdmin && (
+                      <>
+                        <IconButton
+                          onClick={(e) => handleMenuOpen(e, board.id)}
+                          sx={{ color: "white", ml: "auto" }}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                        <Menu
+                          anchorEl={menuAnchor}
+                          open={selectedBoardId === board.id}
+                          onClose={handleMenuClose}
+                          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                          transformOrigin={{ vertical: "top", horizontal: "left" }}
                           sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            padding: "10px 16px",
-                            "&:hover": { backgroundColor: "#ff4d4d", color: "white" },
+                            "& .MuiPaper-root": {
+                              backgroundColor: "#2e2e2e",
+                              color: "white",
+                              borderRadius: "8px",
+                              minWidth: "300px",
+                            },
                           }}
                         >
-                          Đóng bảng
-                          <CloseIcon />
-                        </MenuItem>
-                      </Menu>
-                    </>
-                  )}
-                </ListItem>
-              );
-            })}
+                          <MenuItem
+                            disabled
+                            sx={{
+                              fontWeight: "bold",
+                              fontSize: "1rem",
+                              opacity: 1,
+                              textAlign: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              padding: "12px 16px",
+                            }}
+                          >
+                            {board.name}
+                          </MenuItem>
+
+                          <MenuItem
+                            onClick={() => handleCloseBoard(board.id)}
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              padding: "10px 16px",
+                              "&:hover": { backgroundColor: "#ff4d4d", color: "white" },
+                            }}
+                          >
+                            Đóng bảng
+                            <CloseIcon />
+                          </MenuItem>
+                        </Menu>
+                      </>
+                    )}
+                  </ListItem>
+                );
+              })}
           </List>
 
           {!isMemberWorkspace && isBoardMember && (

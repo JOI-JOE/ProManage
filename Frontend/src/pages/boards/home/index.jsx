@@ -20,10 +20,12 @@ import MyWorkspace from "../../../components/MyWorkspace";
 import { useGetWorkspaces } from "../../../hooks/useWorkspace";
 import { useClosedBoards, useForceDestroyBoard, useToggleBoardClosed } from "../../../hooks/useBoard";
 import { useWorkspace } from "../../../contexts/WorkspaceContext";
+import MyBoard from "../../../components/MyBoard";
+import WorkspaceAvatar from "../../../components/Common/WorkspaceAvatar";
 
 const HomeBoard = ({ workspaces }) => {
   // const { data: workspaces, isLoading, isError } = useGetWorkspaces();
-  // const { guestWorkspaces } = useWorkspace()
+  const { guestWorkspaces } = useWorkspace()
 
   const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
 
@@ -32,6 +34,9 @@ const HomeBoard = ({ workspaces }) => {
   const { mutate: toggleBoardClosed } = useToggleBoardClosed();
 
   const { mutate: destroyBoard, isPending: isDeleting } = useForceDestroyBoard();
+
+
+  console.log(guestWorkspaces)
 
   // if (isLoading) return <p>Đang tải workspaces...</p>;
   // if (isError) return <p>Lỗi khi tải workspaces!</p>;
@@ -95,6 +100,53 @@ const HomeBoard = ({ workspaces }) => {
           null
         )}
       </div>
+
+
+
+      <Box id="guest-workspace">
+        <Typography
+          variant="h6" // Sử dụng h6 để tiêu đề nhỏ hơn và phù hợp hơn
+          sx={{
+            marginTop: "24px", // Giảm marginTop xuống 24px để khoảng cách hợp lý
+            marginBottom: "8px", // Giữ marginBottom nhỏ để cách nội dung bên dưới
+            fontWeight: "bold",
+            textTransform: "uppercase",
+            color: "#172B4D", // Màu chữ giống với giao diện trước đó
+          }}
+        >
+          CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
+        </Typography>
+        <div id="myGuestWorkspace">
+          {guestWorkspaces?.length > 0 ? (
+            guestWorkspaces.map((workspace) => (
+              <div key={workspace.id} style={{ marginBottom: "20px" }}>
+                {/* Hiển thị thông tin workspace */}
+                <div style={{ display: "flex", alignItems: "center", marginBottom: "10px", gap: 6 }}>
+                  <WorkspaceAvatar workspace={workspace} />
+                  <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
+                    {workspace.display_name.length > 20
+                      ? workspace.display_name.substring(0, 20) + "..."
+                      : workspace.display_name}
+                  </Typography>
+                </div>
+
+                {/* Hiển thị danh sách boards của workspace */}
+                {workspace.boards?.filter(board => !board.closed).length > 0 ? (
+                  workspace.boards
+                    .filter(board => !board.closed)
+                    .map((board) => (
+                      <ListItem sx={{ width: "auto", padding: 0 }} key={board.id}>
+                        <MyBoard board={board} id={`guest-board-${board.id}`} />
+                      </ListItem>
+                    ))
+                ) : null}
+              </div>
+            ))
+          ) : (
+            null
+          )}
+        </div>
+      </Box>
 
 
       {/* Nút xem tất cả bảng đã đóng */}

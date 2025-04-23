@@ -9,6 +9,8 @@ import {
     FormControlLabel
 } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
+import WorkspaceAvatar from '../../../../../components/Common/WorkspaceAvatar';
+import InitialsAvatar from '../../../../../components/Common/InitialsAvatar';
 
 const Request = ({ requests }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -80,94 +82,30 @@ const Request = ({ requests }) => {
                 }}
             />
 
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={selectAll}
-                            onChange={handleSelectAll}
-                            size="small"
-                        />
-                    }
-                    label={
-                        <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
-                            Chọn tất cả ({joinRequests.length})
-                        </Typography>
-                    }
-                />
-
-                <Box sx={{ flexGrow: 1 }} />
-
-                <Button
-                    variant="contained"
-                    disabled={selectedRequests.length === 0}
-                    sx={{
-                        bgcolor: '#EBEEF0',
-                        color: '#172B4D',
-                        textTransform: 'none',
-                        mr: 2,
-                        '&:hover': { bgcolor: '#D8DEE4' },
-                        '&.Mui-disabled': {
-                            bgcolor: '#F4F5F7',
-                            color: '#A5ADBA'
-                        }
-                    }}
-                >
-                    Thêm mục đã chọn vào Không gian làm việc
-                </Button>
-
-                <Button
-                    variant="contained"
-                    disabled={selectedRequests.length === 0}
-                    sx={{
-                        bgcolor: '#EBEEF0',
-                        color: '#172B4D',
-                        textTransform: 'none',
-                        '&:hover': { bgcolor: '#D8DEE4' },
-                        '&.Mui-disabled': {
-                            bgcolor: '#F4F5F7',
-                            color: '#A5ADBA'
-                        }
-                    }}
-                >
-                    Xóa yêu cầu đã chọn
-                </Button>
-            </Box>
 
             {requests?.map((request) => (
-                <Box key={request.id} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Checkbox
-                        checked={selectedRequests.includes(request.id)}
-                        onChange={() => handleSelectRequest(request.id)}
-                        size="small"
-                    />
-
-                    <Avatar
-                        sx={{
-                            bgcolor: '#e74c3c',
-                            width: 40,
-                            height: 40,
-                            fontSize: '1rem',
-                            mr: 2
-                        }}
-                    >
-                        {request.user.initials}
-                    </Avatar>
-
-                    <Box sx={{ flexGrow: 1 }}>
-                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                            {request.user.full_name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            @{request.user.email} • {request.user.type}
-                        </Typography>
+                <Box key={request.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: "space-between", mb: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <InitialsAvatar
+                            name={request?.user?.full_name}
+                            avatarSrc={request?.user.image}
+                            initials={request?.user?.initials}
+                            size={32}
+                        />
+                        <Box sx={{ flexGrow: 1 }}>
+                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                {request.user.full_name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {request.user.email} • {request.user.type}
+                            </Typography>
+                        </Box>
                     </Box>
 
-                    <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
-                        Đã gửi yêu cầu {request.requestDate}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
+                            Đã gửi yêu cầu {request.requestDate}
+                        </Typography>
                         <Button
                             variant="contained"
                             size="small"
