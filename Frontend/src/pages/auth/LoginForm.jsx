@@ -4,6 +4,7 @@ import { useLogin } from "../../hooks/useUser";
 import GitHubAuth from "./GitHubAuth";
 import GoogleAuth from "./GoogleAuth";
 import anh4 from "../../assets/anh4.jpg";
+import { useStateContext } from "../../contexts/ContextProvider";
 import Cookies from "js-cookie";
 
 const LoginForm = () => {
@@ -12,7 +13,14 @@ const LoginForm = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const location = useLocation();
   const inviteToken = location.state?.inviteToken;
-  const pendingInvite = Cookies.get("pending-invitation");
+  const invitationWorkspace = Cookies.get("invitation");
+
+  // Pending của workspace
+  // Nếu đã có token => kiểm tra xem có pending invite không
+
+  // -----------------------------------------------------
+  const { setToken, setLinkInvite } = useStateContext();
+
 
 
   const [errors, setErrors] = useState({
@@ -85,7 +93,6 @@ const LoginForm = () => {
   // Thay đổi cách quản lý các thông báo lỗi để đảm bảo chúng tồn tại đủ lâu
   const handleSubmit = (e) => {
     e.preventDefault();
-
     // Kiểm tra validation phía client
     if (!formData.email) {
       setErrorWithTimeout("email", "Vui lòng nhập email.");
@@ -95,39 +102,33 @@ const LoginForm = () => {
       setErrorWithTimeout("password", "Vui lòng nhập mật khẩu.");
       return;
     }
-
+    console.log(inviteToken)
     // Gọi mutation login
     login(formData, {
       onSuccess: (data) => {
-        // Xử lý thành công
         localStorage.setItem("token", data.token);
+        setToken(data.token);
         if (inviteToken) {
-          navigate(`/accept-invite/${inviteToken}`);
-        } else if (pendingInvite) {
-          if (pendingInvite?.startsWith("pending-")) {
-            const encoded = pendingInvite.replace("pending-", "");
-            const decoded = decodeURIComponent(encoded); // workspace:xxx:yyy
-            const [prefix, workspaceId, inviteToken] = decoded.split(":");
-            if (prefix === "workspace" && workspaceId && inviteToken) {
-              navigate(`/invite/${workspaceId}/${inviteToken}`);
-              Cookies.remove("pending-invitation");
-              return;
-            }
+          setLinkInvite(`/accept-invite/${inviteToken}`);
+        } else if (invitationWorkspace) {
+          // Giải mã và xử lý invitationWorkspace
+          const decoded = decodeURIComponent(decodeURIComponent(invitationWorkspace));
+          const [prefix, workspaceId, token] = decoded.split(":");
+          if (prefix === "workspace" && workspaceId && token) {
+            setLinkInvite(`/invite/${workspaceId}/${token}`);
+          } else {
+            setLinkInvite(null); // Nếu dữ liệu không hợp lệ
           }
-          navigate(`/invite/accept-team`);
         } else {
-          navigate("/home");
+          setLinkInvite(null);
         }
-
       },
       onError: (err) => {
         console.error("Lỗi đăng nhập:", err);
-
         // Đảm bảo lỗi đăng nhập được hiển thị đủ lâu
         if (err.response && err.response.status === 401) {
           // Kiểm tra lỗi cụ thể từ server (nếu có)
           const errorData = err.response.data;
-
           // Nếu lỗi liên quan đến email không tồn tại
           if (errorData && errorData.email) {
             setErrorWithTimeout("email", "Email không tồn tại.");
@@ -164,6 +165,8 @@ const LoginForm = () => {
       },
     });
   };
+
+
 
   return (
     <section

@@ -16,7 +16,7 @@ const InviteHandling = () => {
         // Điều hướng đến accept-team
         navigate("/invite/accept-team");
     }, [workspaceId, inviteToken, navigate]);
-    
+
 
     return null;
 };

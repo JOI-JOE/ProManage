@@ -230,7 +230,6 @@ const BoardContent = () => {
 
   if (isLoadingBoard) return <LogoLoading />;
 
-
   return (
     <>
       <BoardBar />

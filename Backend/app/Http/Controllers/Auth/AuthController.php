@@ -265,8 +265,7 @@ class AuthController extends Controller
     ////// Logout
     public function logout(Request $request)
     {
-
-
+        
         $request->user()->tokens()->delete(); // Xóa tất cả token của user
         return response()->json(['message' => 'Logged out successfully']);
     }

@@ -11,15 +11,17 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useMe } from "../../../../../contexts/MeContext";
-import { toast } from 'react-toastify';
 import { useChangeMemberType, useRemoveMember } from "../../../../../hooks/useWorkspace";
 import InitialsAvatar from "../../../../../components/Common/InitialsAvatar";
 
 const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
 
   const { user } = useMe();
 
@@ -52,10 +54,18 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
       },
       {
         onSuccess: () => {
-          toast.success(`Đã thay đổi vai trò của ${member.user.full_name} thành ${newType}`);
+          setAlert({
+            open: true,
+            message: `Đã thay đổi vai trò của ${member.user.full_name} thành ${newType === 'admin' ? 'Quản trị viên' : 'Thành viên'}`,
+            severity: 'success'
+          });
         },
         onError: (error) => {
-          toast.error("Không thể thay đổi vai trò. Vui lòng thử lại.");
+          setAlert({
+            open: true,
+            message: error.response?.data?.message || 'Không thể thay đổi vai trò. Vui lòng thử lại.',
+            severity: 'error'
+          });
           console.error("Lỗi khi thay đổi vai trò:", error);
         },
       }
@@ -73,11 +83,14 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
   const handleConfirmRemove = () => {
     // Prevent the sole admin from leaving
     if (isSoleAdmin) {
-      toast.error("Không thể rời khỏi! Không gian làm việc phải có ít nhất một quản trị viên.");
+      setAlert({
+        open: true,
+        message: 'Không thể rời khỏi! Không gian làm việc phải có ít nhất một quản trị viên.',
+        severity: 'error'
+      });
       handleCloseRemoveDialog();
       return;
     }
-
     removeMember(
       {
         workspaceId: workspace.id,
@@ -85,17 +98,28 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
       },
       {
         onSuccess: () => {
-          toast.success(`Đã ${isMe ? 'rời khỏi' : 'xóa'} thành viên ${member.user.full_name} thành công!`);
+          setAlert({
+            open: true,
+            message: `Đã ${isMe ? 'rời khỏi' : 'xóa'} thành viên ${member.user.full_name} thành công!`,
+            severity: 'success'
+          });
           handleCloseRemoveDialog();
         },
         onError: (error) => {
-          toast.error(`Không thể ${isMe ? 'rời khỏi' : 'xóa'} thành viên. Vui lòng thử lại.`);
+          setAlert({
+            open: true,
+            message: error.response?.data?.message || `Không thể ${isMe ? 'rời khỏi' : 'xóa'} thành viên. Vui lòng thử lại.`,
+            severity: 'error'
+          });
           console.error("Lỗi khi xóa thành viên:", error);
         },
       }
     );
   };
 
+  const handleCloseAlert = () => {
+    setAlert({ ...alert, open: false });
+  };
 
   return (
     <Box
@@ -109,12 +133,24 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
         marginBottom: "8px",
       }}
     >
+      {/* Snackbar for alerts */}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseAlert} severity={alert.severity} sx={{ width: '100%' }}>
+          {alert.message}
+        </Alert>
+      </Snackbar>
+
       {/* Member info */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
         <InitialsAvatar
           name={member?.user?.full_name}
-          avatarSrc={member?.user.image}
-          initials={member?.user?.initials}
+          avatarSrc={member?.user?.image}
+          initial={member?.user?.initials}
           size={32}
         />
         <Box>
@@ -213,7 +249,7 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
         )}
 
         {/* Remove/Leave button */}
-        {(isMe || (isAdmin)) && (
+        {(isMe || isAdmin) && (
           <Button
             variant="outlined"
             color="error"

@@ -5,8 +5,6 @@ import anh1 from "../assets/anh1.png"; // Đường dẫn chính xác tới file
 const Home = () => {
   const { user } = useMe();
 
-  const token = localStorage.getItem("token");
-  console.log(token);
   return (
     <div className="bg-gradient-to-br from-blue-50 to-teal-50 min-h-screen font-sans">
       {/* Navigation */}

@@ -15,30 +15,9 @@ const GoogleAuth = () => {
   // Kiểm tra token và chuyển hướng nếu đã đăng nhập
   useEffect(() => {
     if (token) {
-      // Nếu đã có token => kiểm tra xem có pending invite không
-      const pendingInvite = Cookies.get("pending-invitation");
-
-      if (pendingInvite?.startsWith("pending-")) {
-        const encoded = pendingInvite.replace("pending-", "");
-        const decoded = decodeURIComponent(encoded); // workspace:xxx:yyy
-        const [prefix, workspaceId, inviteToken] = decoded.split(":");
-
-        if (prefix === "workspace" && workspaceId && inviteToken) {
-          navigate(`/invite/${workspaceId}/${inviteToken}`);
-          Cookies.remove("pending-invitation");
-          return;
-        }
-      }
-
-      if (pendingInvite) {
-        navigate(`/invite/accept-team`);
-      } else {
-        navigate("/home");
-      }
+      navigate("/home");
     }
   }, [token, navigate]);
-
-
 
   // Xử lý callback từ Google OAuth (khi backend redirect về)
   useEffect(() => {
@@ -58,7 +37,7 @@ const GoogleAuth = () => {
       setIsLoading(true);
       try {
         // Lưu token vào localStorage và context
-        localStorage.setItem("auth_token", tokenParam);
+        localStorage.setItem("token", tokenParam);
         setToken(tokenParam);
 
         // Lưu idMember nếu cần (tùy vào yêu cầu của bạn)
@@ -78,10 +57,6 @@ const GoogleAuth = () => {
       }
     }
   }, [navigate, setToken]);
-
-  // Xử lý đăng nhập với Google
-
-  const pendingInvite = Cookies.get("pending-invitation");
 
 
   const handleLogin = async () => {

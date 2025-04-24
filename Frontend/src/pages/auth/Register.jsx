@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useRegister } from "../../hooks/useUser";
-import Cookies from "js-cookie";
 import anh4 from "../../assets/anh4.jpg";
+import { useStateContext } from "../../contexts/ContextProvider";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -15,8 +15,8 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const location = useLocation();
-  // mời workspace
-  const pendingInvite = Cookies.get("pending-invitation");
+  const { setToken } = useStateContext();
+
 
   // Lấy email và token từ query string
   const query = new URLSearchParams(location.search);
@@ -127,21 +127,9 @@ const Register = () => {
       onSuccess: (data) => {
         if (data.token) {
           localStorage.setItem("token", data.token);
+          setToken(data.token)
           if (effectiveInviteToken) {
             navigate(`/accept-invite/${effectiveInviteToken}`);
-          } else if (pendingInvite) {
-            // vào workspace
-            if (pendingInvite?.startsWith("pending-")) {
-              const encoded = pendingInvite.replace("pending-", "");
-              const decoded = decodeURIComponent(encoded); // workspace:xxx:yyy
-              const [prefix, workspaceId, inviteToken] = decoded.split(":");
-              if (prefix === "workspace" && workspaceId && inviteToken) {
-                navigate(`/invite/${workspaceId}/${inviteToken}`);
-                Cookies.remove("pending-invitation");
-                return;
-              }
-            }
-            navigate(`/invite/accept-team`);
           } else {
             navigate("/home");
           }

@@ -547,7 +547,7 @@ const AppBar = ({ username, email }) => {
                                     </Typography>
                                   </Box>
                                 </Box>
-                                </Box>
+                              </Box>
                             </li>
                           ))}
                         </ul>
@@ -583,7 +583,7 @@ const AppBar = ({ username, email }) => {
           />
         </Tooltip>
 
-        <Profile email={user?.email} user_name={user?.user_name} />
+        <Profile email={user?.email} user_name={user?.user_name} user={user} />
 
         <Popover
           open={open}

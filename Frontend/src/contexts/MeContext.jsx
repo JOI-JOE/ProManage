@@ -8,8 +8,8 @@ const MeContext = createContext({
     user: null,
     workspaceId: null,
     boardId: null,
-    isLoading: true,
-    isUserLoaded: false, // Thêm trạng thái này
+    userLoading: true,
+    isUserLoaded: false, 
     error: null,
 });
 

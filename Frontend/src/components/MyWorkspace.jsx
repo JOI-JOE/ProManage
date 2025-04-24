@@ -154,16 +154,17 @@ const MyWorkspace = ({ workspace, boards }) => {
             {/* Danh sách bảng Trello */}
             <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {boards
-                ?.sort((a, b) => {
-                    const dateA = a.last_accessed ? new Date(a.last_accessed) : new Date(0);
-                    const dateB = b.last_accessed ? new Date(b.last_accessed) : new Date(0);
-                    return dateB - dateA;
-                  })
-                ?.map((board) => (
-                    <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-                        <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
-                    </ListItem>
-                ))}
+                    ?.filter((board) => board.closed === false)
+                    ?.sort((a, b) => {
+                        const dateA = a.last_accessed ? new Date(a.last_accessed) : new Date(0);
+                        const dateB = b.last_accessed ? new Date(b.last_accessed) : new Date(0);
+                        return dateB - dateA;
+                    })
+                    ?.map((board) => (
+                        <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                            <MyBoard key={board.id} board={board} id={`recent-board-${board.id}`} />
+                        </ListItem>
+                    ))}
                 <ListItem sx={{ width: "auto", padding: 0 }}>
                     <Box
                         onClick={handleOpenCreateBoard}

@@ -114,10 +114,11 @@ export const loginUser = async (credentials) => {
 export const logoutUser = async () => {
   try {
     const response = await authClient.post("/logout");
-    localStorage.removeItem("token"); // Xóa token khỏi localStorage
-    return response.data; // Trả về dữ liệu phản hồi từ server
+    return response.data;
   } catch (error) {
     console.error("Lỗi khi đăng xuất:", error);
+    localStorage.removeItem("token");
+    localStorage.removeItem("idMember");
     throw error;
   }
 };

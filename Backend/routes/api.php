@@ -103,7 +103,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::controller(WorkspaceMembersController::class)->group(function () {
         Route::post('/workspace/{workspaceId}/members',  'sendMemberWorkspace');
         Route::post('workspace/{workspaceId}/invitationSecret/{token}', 'joinWorkspace');
-        Route::delete('workspace/{workspaceId}/members/{userId}',  'removeMember');
+        Route::delete('workspace/{workspaceId}/members/{userId}',  'removeMemberFromWorkspace');
         // cập nhập trạng thái cho người dùng , normal <-> admin , 
         Route::put('workspace/{workspaceId}/members/{userId}/type',  'changeType');
         // Xử lý guest, request cho workspace

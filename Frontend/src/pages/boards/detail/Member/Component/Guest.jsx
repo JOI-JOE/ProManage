@@ -4,38 +4,136 @@ import {
     Typography,
     TextField,
     Button,
-    Divider
+    Divider,
+    Snackbar,
+    Alert,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions
 } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
-import { useAddNewMemberToWorkspace } from '../../../../../hooks/useWorkspaceInvite';
 import InitialsAvatar from '../../../../../components/Common/InitialsAvatar';
 import LogoLoading from '../../../../../components/Common/LogoLoading';
+import { useRemoveMember } from '../../../../../hooks/useWorkspace';
+import { useAddNewMemberToWorkspace } from '../../../../../hooks/useWorkspaceInvite';
 
 const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
-    const [loadingAdd, setLoadingAdd] = useState(null); // Trạng thái loading cho từng thành viên
-    const [guests, setGuests] = useState(initialGuests); // Quản lý danh sách guests cục bộ
+    const [searchTerm, setSearchTerm] = useState('');
+    const [loadingAdd, setLoadingAdd] = useState(null);
+    const [loadingRemove, setLoadingRemove] = useState(null);
+    const [guests, setGuests] = useState(initialGuests);
+    const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
+    const [confirmDialog, setConfirmDialog] = useState({
+        open: false,
+        userId: null,
+        userName: ''
+    });
     const { mutateAsync: addMemberToWorkspace } = useAddNewMemberToWorkspace();
+    const { mutate: removeMember, isLoading: isRemovingMember } = useRemoveMember();
+
+    const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+    };
 
     const handleAddGuest = async (memberId) => {
-        try {
-            setLoadingAdd(memberId); // Cập nhật loading cho thành viên hiện tại
-            await addMemberToWorkspace({ workspaceId, memberId }); // Gọi API để thêm thành viên
+        if (!isAdmin) {
+            setAlert({
+                open: true,
+                message: 'Bạn không có quyền thực hiện hành động này.',
+                severity: 'error'
+            });
+            return;
+        }
 
-            // Xóa thành viên khỏi danh sách guests sau khi thêm thành công
+        if (!workspaceId || (typeof workspaceId !== 'string' && typeof workspaceId !== 'number')) {
+            setAlert({
+                open: true,
+                message: 'ID Không gian làm việc không hợp lệ.',
+                severity: 'error'
+            });
+            return;
+        }
+
+        try {
+            setLoadingAdd(memberId);
+            const response = await addMemberToWorkspace({ workspaceId, memberId });
+
             setGuests((prevGuests) =>
                 prevGuests.filter((guest) => guest.user.id !== memberId)
             );
 
+            setAlert({
+                open: true,
+                message: response.message || `Đã thêm thành viên vào Không gian làm việc.`,
+                severity: 'success'
+            });
         } catch (error) {
+            setAlert({
+                open: true,
+                message: error.response?.data?.message || 'Đã xảy ra lỗi khi thêm thành viên.',
+                severity: 'error'
+            });
             console.error("❌ Lỗi khi thêm thành viên:", error);
         } finally {
-            setLoadingAdd(null); // Reset loading sau khi hoàn thành
+            setLoadingAdd(null);
         }
     };
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const handleSearchChange = (event) => {
-        setSearchTerm(event.target.value);
+    const handleOpenConfirmDialog = (userId, userName) => {
+        setConfirmDialog({
+            open: true,
+            userId: userId,
+            userName: userName
+        });
+    };
+
+    const handleCloseConfirmDialog = () => {
+        setConfirmDialog({
+            open: false,
+            userId: null,
+            userName: ''
+        });
+    };
+
+    const handleRemoveGuest = () => {
+        const userId = confirmDialog.userId;
+        if (!userId) return;
+
+        console.log(userId)
+        console.log(workspaceId)
+        removeMember(
+            {
+                workspaceId: workspaceId,
+                userId: userId
+            },
+            {
+                onSuccess: () => {
+                    setGuests((prevGuests) =>
+                        prevGuests.filter((guest) => guest.user.id !== userId)
+                    );
+                    setAlert({
+                        open: true,
+                        message: `Đã xóa khách ${confirmDialog.userName} khỏi Không gian làm việc.`,
+                        severity: 'success'
+                    });
+                    handleCloseConfirmDialog();
+                },
+                onError: (error) => {
+                    setAlert({
+                        open: true,
+                        message: error.response?.data?.message || 'Đã xảy ra lỗi khi xóa khách.',
+                        severity: 'error'
+                    });
+                    console.error("❌ Lỗi khi xóa khách:", error);
+                }
+            }
+        );
+    };
+
+    const handleCloseAlert = () => {
+        setAlert({ ...alert, open: false });
     };
 
     const safeSearch = typeof searchTerm === 'string' ? searchTerm.toLowerCase() : '';
@@ -47,6 +145,52 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
 
     return (
         <Box>
+            <Snackbar
+                open={alert.open}
+                autoHideDuration={6000}
+                onClose={handleCloseAlert}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert onClose={handleCloseAlert} severity={alert.severity} sx={{ width: '100%' }}>
+                    {alert.message}
+                </Alert>
+            </Snackbar>
+
+            <Dialog
+                open={confirmDialog.open}
+                onClose={handleCloseConfirmDialog}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    {"Xóa khách"}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Đã gỡ khỏi Không gian làm việc.<br />
+                        Xóa toàn bộ truy cập tới Không gian làm việc. Họ sẽ nhận được thông báo.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseConfirmDialog} color="primary">
+                        Hủy
+                    </Button>
+                    <Button
+                        onClick={handleRemoveGuest}
+                        color="error"
+                        variant="contained"
+                        autoFocus
+                        disabled={isRemovingMember}
+                    >
+                        {isRemovingMember ? (
+                            <LogoLoading size={20} />
+                        ) : (
+                            'Xóa'
+                        )}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 'bold', mb: 2 }}>
                 Khách ({guests?.length})
             </Typography>
@@ -103,7 +247,7 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             {loadingAdd === guest?.user?.id ? (
                                 <Box sx={{ px: 2, py: 0.5 }}>
-                                    <LogoLoading size={24} />
+                                    <LogoLoading size={20} />
                                 </Box>
                             ) : (
                                 <Button
@@ -120,7 +264,6 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
                                     Thêm vào Không gian làm việc
                                 </Button>
                             )}
-
                             <Button
                                 variant="text"
                                 sx={{
@@ -128,8 +271,14 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
                                     borderRadius: '4px',
                                     color: '#57606f'
                                 }}
+                                onClick={() => handleOpenConfirmDialog(guest?.user?.id, guest?.user?.full_name)}
+                                disabled={loadingRemove === guest?.user?.id}
                             >
-                                <CloseIcon fontSize="small" />
+                                {loadingRemove === guest?.user?.id ? (
+                                    <LogoLoading size={20} />
+                                ) : (
+                                    <CloseIcon fontSize="small" />
+                                )}
                             </Button>
                         </Box>
                     )}

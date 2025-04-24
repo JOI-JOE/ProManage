@@ -50,8 +50,7 @@ class WorkspaceController extends Controller
             )
             ->addBinding($userId, 'select')
             ->where(function ($query) use ($userId) {
-                $query->where('workspace_members.user_id', $userId)
-                    ->orWhere('workspaces.id_member_creator', $userId);
+                $query->where('workspace_members.user_id', $userId);
             })
             ->distinct()
             ->get();

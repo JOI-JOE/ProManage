@@ -90,6 +90,7 @@ const HomeBoard = ({ workspaces }) => {
     });
   };
 
+  console.log(guestWorkspaces)
 
   return (
     <Box
@@ -190,8 +191,6 @@ const HomeBoard = ({ workspaces }) => {
         )}
       </div>
 
-
-
       <Box id="guest-workspace">
         <Typography
           variant="h6" // Sử dụng h6 để tiêu đề nhỏ hơn và phù hợp hơn
@@ -210,30 +209,50 @@ const HomeBoard = ({ workspaces }) => {
             guestWorkspaces.map((workspace) => (
               <div key={workspace.id} style={{ marginBottom: "20px" }}>
                 {/* Hiển thị thông tin workspace */}
-                <div style={{ display: "flex", alignItems: "center", marginBottom: "10px", gap: 6 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: "10px",
+                    gap: "6px",
+                  }}
+                >
                   <WorkspaceAvatar workspace={workspace} />
-                  <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
+                  <Typography
+                    fontWeight="bold"
+                    sx={{ whiteSpace: "nowrap" }}
+                  >
                     {workspace.display_name.length > 20
                       ? workspace.display_name.substring(0, 20) + "..."
                       : workspace.display_name}
                   </Typography>
                 </div>
-
-                {/* Hiển thị danh sách boards của workspace */}
-                {workspace.boards?.filter(board => !board.closed).length > 0 ? (
-                  workspace.boards
-                    .filter(board => !board.closed)
-                    .map((board) => (
-                      <ListItem sx={{ width: "auto", padding: 0 }} key={board.id}>
-                        <MyBoard board={board} id={`guest-board-${board.id}`} />
-                      </ListItem>
-                    ))
+                {/* Hiển thị danh sách boards của workspace với flex */}
+                {workspace.boards?.filter((board) => !board.closed).length > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "10px",
+                    }}
+                  >
+                    {workspace.boards
+                      .filter((board) => !board.closed)
+                      .map((board) => (
+                        <div
+                          key={board.id}
+                          style={{
+                            maxWidth: "300px", // Giới hạn chiều rộng tối đa
+                          }}
+                        >
+                          <MyBoard board={board} id={`guest-board-${board.id}`} />
+                        </div>
+                      ))}
+                  </div>
                 ) : null}
               </div>
             ))
-          ) : (
-            null
-          )}
+          ) : null}
         </div>
       </Box>
 

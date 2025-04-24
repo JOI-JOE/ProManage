@@ -7,12 +7,16 @@ import { WorkspaceProvider } from "../../contexts/WorkspaceContext";
 
 const DefaultLayout = () => {
   const navigate = useNavigate();
-  const { token } = useStateContext();
+  const { token, linkInvite, setLinkInvite } = useStateContext();
+
   useEffect(() => {
     if (!token) {
-      navigate('/login')
+      navigate("/login");
+    } else if (linkInvite) {
+      navigate(linkInvite);
+      setLinkInvite(null);
     }
-  }, [token, navigate])
+  }, [token, linkInvite, navigate, setLinkInvite]);
 
   return (
     <MeProvider>
