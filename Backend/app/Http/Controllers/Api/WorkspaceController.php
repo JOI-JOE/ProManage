@@ -50,8 +50,7 @@ class WorkspaceController extends Controller
             )
             ->addBinding($userId, 'select')
             ->where(function ($query) use ($userId) {
-                $query->where('workspace_members.user_id', $userId)
-                    ->orWhere('workspaces.id_member_creator', $userId);
+                $query->where('workspace_members.user_id', $userId);
             })
             ->distinct()
             ->get();
@@ -89,7 +88,7 @@ class WorkspaceController extends Controller
                 $query->where('boards.created_by', $userId)
                     ->orWhereNotNull('board_members.user_id');
             })
-            ->where('boards.closed', 0)
+            // ->where('boards.closed', 0)
             ->orderBy('boards.created_at', 'desc')
             ->get();
 
@@ -136,9 +135,8 @@ class WorkspaceController extends Controller
                 'created_at' => $board->created_at,
                 'role' => $board->role,
                 'member_count' => $board->member_count,
-                'closed' => $board->closed, // 👉 thêm dòng này
+                'closed' => (bool) $board->closed, // 👉 thêm dòng này
                 'last_accessed' => $board->last_accessed
-                
             ];
 
             if ($board->workspace_id && in_array($board->workspace_id, $workspaceIds)) {
@@ -182,33 +180,230 @@ class WorkspaceController extends Controller
         return response()->json($responseData, 200);
     }
 
-
     public function show($workspaceId)
     {
         try {
-            // Fetch workspace data
+            // Kiểm tra nếu tên workspace không hợp lệ
+            if (!$workspaceId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Id workspace không được để trống.',
+                ], 400);
+            }
+
+            // Lấy user hiện tại
+            $currentUser = auth()->user();
+
+            if (!$currentUser) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Người dùng chưa đăng nhập.',
+                ], 401);
+            }
+            // Tìm workspace theo tên
             $workspace = DB::table('workspaces')
                 ->where('id', $workspaceId)
                 ->first();
 
+            // Nếu không tìm thấy workspace
             if (!$workspace) {
-                Log::error("Không tìm thấy workspace ID: $workspaceId");
+                Log::error("Không tìm thấy workspace: $workspaceId");
                 return response()->json([
                     'success' => false,
                     'message' => 'Không tìm thấy workspace.',
                 ], 404);
             }
 
-            // Fetch creator data
-            $creator = DB::table('users')
-                ->where('id', $workspace->id_member_creator)
-                ->first();
+            // Kiểm tra xem người dùng hiện tại có phải admin của workspace này không
+            $isAdmin = DB::table('workspace_members')
+                ->where('workspace_id', $workspace->id)
+                ->where('user_id', $currentUser->id)
+                ->where('member_type', 'admin')
+                ->exists();
 
-            // Fetch boards
+            // Lấy danh sách thành viên của workspace
+            $members = DB::table('workspace_members')
+                ->where('workspace_id', $workspace->id)
+                ->where('joined', true)
+                ->where('is_deactivated', false)
+                ->join('users', 'workspace_members.user_id', '=', 'users.id')
+                ->select(
+                    'workspace_members.id',
+                    'workspace_members.workspace_id',
+                    'workspace_members.user_id',
+                    'workspace_members.member_type',
+                    'workspace_members.is_unconfirmed',
+                    'workspace_members.joined',
+                    'workspace_members.is_deactivated',
+                    'workspace_members.last_active',
+                    'users.id as user_id',
+                    'users.full_name',
+                    'users.email',
+                    'users.user_name',
+                    'users.initials',
+                    'users.image'
+                )
+                ->get()
+                ->map(function ($member) {
+                    return [
+                        'id' => $member->id,
+                        'workspace_id' => $member->workspace_id,
+                        'user_id' => $member->user_id,
+                        'member_type' => $member->member_type,
+                        'is_unconfirmed' => (bool) $member->is_unconfirmed,
+                        'joined' => (bool) $member->joined,
+                        'is_deactivated' => (bool) $member->is_deactivated,
+                        'last_active' => $member->last_active,
+                        'user' => [
+                            'id' => $member->user_id,
+                            'full_name' => $member->full_name,
+                            'email' => $member->email,
+                            'user_name' => $member->user_name,
+                            'initials' => $member->initials,
+                            'image' => $member->image,
+                        ],
+                    ];
+                })->toArray();
+
+            // Lấy danh sách yêu cầu tham gia (requests) - những thành viên chưa joined
+            $requests = DB::table('workspace_members')
+                ->where('workspace_id', $workspace->id)
+                ->where('joined', false)
+                ->where('member_type', 'pending')
+                ->join('users', 'workspace_members.user_id', '=', 'users.id')
+                ->select(
+                    'workspace_members.id',
+                    'workspace_members.workspace_id',
+                    'workspace_members.user_id',
+                    'workspace_members.member_type',
+                    'workspace_members.is_unconfirmed',
+                    'workspace_members.joined',
+                    'workspace_members.is_deactivated',
+                    'workspace_members.last_active',
+                    'users.id as user_id',
+                    'users.full_name',
+                    'users.email',
+                    'users.user_name',
+                    'users.initials',
+                    'users.image'
+                )
+                ->get()
+                ->map(function ($member) {
+                    return [
+                        'id' => $member->id,
+                        'workspace_id' => $member->workspace_id,
+                        'user_id' => $member->user_id,
+                        'member_type' => $member->member_type,
+                        'is_unconfirmed' => (bool) $member->is_unconfirmed,
+                        'joined' => (bool) $member->joined,
+                        'is_deactivated' => (bool) $member->is_deactivated,
+                        'last_active' => $member->last_active,
+                        'user' => [
+                            'id' => $member->user_id,
+                            'full_name' => $member->full_name,
+                            'email' => $member->email,
+                            'user_name' => $member->user_name,
+                            'initials' => $member->initials,
+                            'image' => $member->image,
+                        ],
+                    ];
+                })->toArray();
+
+            // Lấy danh sách guest - những người là thành viên của board nhưng không phải thành viên workspace
+            $guests = DB::table('board_members')
+                ->whereIn('board_id', function ($query) use ($workspaceId) {
+                    $query->select('id')
+                        ->from('boards')
+                        ->where('workspace_id', $workspaceId)
+                        ->where('closed', false);
+                })
+                ->where('joined', true)
+                ->where('is_deactivated', false)
+                ->whereNotIn('user_id', function ($query) use ($workspaceId) {
+                    $query->select('user_id')
+                        ->from('workspace_members')
+                        ->where('workspace_id', $workspaceId)
+                        ->where('joined', true)
+                        ->where('is_deactivated', false);
+                })
+                ->join('users', 'board_members.user_id', '=', 'users.id')
+                ->select(
+                    'board_members.user_id',
+                    'users.id as user_id',
+                    'users.full_name',
+                    'users.email',
+                    'users.user_name',
+                    'users.initials',
+                    'users.image'
+                )
+                ->distinct()
+                ->get()
+                ->map(function ($guest) {
+                    return [
+                        'user_id' => $guest->user_id,
+                        'user' => [
+                            'id' => $guest->user_id,
+                            'full_name' => $guest->full_name,
+                            'email' => $guest->email,
+                            'user_name' => $guest->user_name,
+                            'initials' => $guest->initials,
+                            'image' => $guest->image,
+                        ],
+                    ];
+                })->toArray();
+
+            // Lấy danh sách bảng của workspace
             $boards = DB::table('boards')
-                ->where('workspace_id', $workspaceId)
+                ->where('workspace_id', $workspace->id)
+                ->where('closed', false)
                 ->get()
                 ->map(function ($board) {
+                    // Lấy danh sách thành viên của bảng
+                    $boardMembers = DB::table('board_members')
+                        ->where('board_id', $board->id)
+                        ->where('joined', true)
+                        ->where('is_deactivated', false)
+                        ->join('users', 'board_members.user_id', '=', 'users.id')
+                        ->select(
+                            'board_members.id',
+                            'board_members.board_id',
+                            'board_members.user_id',
+                            'board_members.role',
+                            'board_members.is_unconfirmed',
+                            'board_members.joined',
+                            'board_members.is_deactivated',
+                            'board_members.referrer_id',
+                            'board_members.last_active',
+                            'users.id as user_id',
+                            'users.full_name',
+                            'users.email',
+                            'users.initials',
+                            'users.user_name',
+                            'users.image'
+                        )
+                        ->get()
+                        ->map(function ($boardMember) {
+                            return [
+                                'id' => $boardMember->id,
+                                'board_id' => $boardMember->board_id,
+                                'user_id' => $boardMember->user_id,
+                                'role' => $boardMember->role,
+                                'is_unconfirmed' => (bool) $boardMember->is_unconfirmed,
+                                'joined' => (bool) $boardMember->joined,
+                                'is_deactivated' => (bool) $boardMember->is_deactivated,
+                                'referrer_id' => $boardMember->referrer_id,
+                                'last_active' => $boardMember->last_active,
+                                'user' => [
+                                    'id' => $boardMember->user_id,
+                                    'full_name' => $boardMember->full_name,
+                                    'email' => $boardMember->email,
+                                    'user_name' => $boardMember->user_name,
+                                    'initials' => $boardMember->initials,
+                                    'image' => $boardMember->image,
+                                ],
+                            ];
+                        })->toArray();
+
                     return [
                         'id' => $board->id,
                         'name' => $board->name,
@@ -217,81 +412,41 @@ class WorkspaceController extends Controller
                         'is_marked' => (bool) $board->is_marked,
                         'archive' => (bool) $board->archive,
                         'closed' => (bool) $board->closed,
+                        'created_by' => $board->created_by,
                         'visibility' => $board->visibility,
-                        'created_at' => (new \DateTime($board->created_at))->format(\DateTime::ISO8601),
-                        'updated_at' => (new \DateTime($board->updated_at))->format(\DateTime::ISO8601),
+                        'workspace_id' => $board->workspace_id,
+                        'created_at' => $board->created_at,
+                        'updated_at' => $board->updated_at,
+                        'members' => $boardMembers,
                     ];
                 })->toArray();
 
-            // Fetch members and their user details
-            $members = DB::table('workspace_members')
-                ->join('users', 'workspace_members.user_id', '=', 'users.id')
-                ->where('workspace_members.workspace_id', $workspaceId)
-                ->select(
-                    'users.id',
-                    'users.user_name',
-                    'users.full_name',
-                    'users.email',
-                    'users.image',
-                    'workspace_members.member_type',
-                    'workspace_members.is_unconfirmed',
-                    'workspace_members.joined',
-                    'workspace_members.is_deactivated',
-                    'workspace_members.last_active'
-                )
-                ->get()
-                ->map(function ($member) {
-                    return [
-                        'id' => $member->id,
-                        'user_name' => $member->user_name,
-                        'full_name' => $member->full_name,
-                        'email' => $member->email,
-                        'image' => $member->image,
-                        'member_type' => $member->member_type,
-                        'is_unconfirmed' => (bool) $member->is_unconfirmed,
-                        'joined' => (bool) $member->joined,
-                        'is_deactivated' => (bool) $member->is_deactivated,
-                        'last_active' => $member->last_active
-                            ? (new \DateTime($member->last_active))->format(\DateTime::ISO8601)
-                            : null,
-                    ];
-                })->toArray();
-
-            // Format the response
-            $response = [
+            // Tạo mảng dữ liệu để truyền vào WorkspaceResource
+            $workspaceData = [
                 'id' => $workspace->id,
                 'name' => $workspace->name,
                 'display_name' => $workspace->display_name,
-                'description' => $workspace->desc,
+                'desc' => $workspace->desc,
                 'logo_hash' => $workspace->logo_hash,
                 'logo_url' => $workspace->logo_url,
                 'permission_level' => $workspace->permission_level,
                 'team_type' => $workspace->team_type,
-                'created_at' => (new \DateTime($workspace->created_at))->format(\DateTime::ISO8601),
-                'updated_at' => (new \DateTime($workspace->updated_at))->format(\DateTime::ISO8601),
-                'creator' => $creator ? [
-                    'id' => $creator->id,
-                    'user_name' => $creator->user_name,
-                    'full_name' => $creator->full_name,
-                    'email' => $creator->email,
-                    'image' => $creator->image,
-                ] : null,
-                'boards' => $boards,
+                'created_at' => $workspace->created_at,
+                'updated_at' => $workspace->updated_at,
                 'members' => $members,
+                'boards' => $boards,
+                'guests' => $guests,
+                'requests' => $requests,
+                'isCurrentUserAdmin' => $isAdmin,
             ];
 
-            return response()->json($response, 200);
-        } catch (QueryException $e) {
-            Log::error('Lỗi truy vấn cơ sở dữ liệu khi lấy workspace: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra khi lấy workspace.',
-            ], 500);
+            // Trả về dữ liệu workspace dưới dạng resource
+            return new WorkspaceResource($workspaceData);
         } catch (\Exception $e) {
-            Log::error('Lỗi khi lấy workspace: ' . $e->getMessage());
+            Log::error('Lỗi khi lấy chi tiết workspace: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi lấy workspace.',
+                'message' => 'Có lỗi xảy ra khi lấy chi tiết workspace.',
             ], 500);
         }
     }
@@ -305,6 +460,16 @@ class WorkspaceController extends Controller
                     'success' => false,
                     'message' => 'Tên workspace không được để trống.',
                 ], 400);
+            }
+
+            // Lấy user hiện tại
+            $currentUser = auth()->user();
+
+            if (!$currentUser) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Người dùng chưa đăng nhập.',
+                ], 401);
             }
 
             // Tìm workspace theo tên
@@ -321,28 +486,12 @@ class WorkspaceController extends Controller
                 ], 404);
             }
 
-            // Lấy danh sách bảng được đánh dấu (markedBoards)
-            $markedBoards = DB::table('boards')
+            // Kiểm tra xem người dùng hiện tại có phải admin của workspace này không
+            $isAdmin = DB::table('workspace_members')
                 ->where('workspace_id', $workspace->id)
-                ->where('is_marked', true)
-                ->where('closed', false)
-                ->get()
-                ->map(function ($board) {
-                    return [
-                        'id' => $board->id,
-                        'name' => $board->name,
-                        'thumbnail' => $board->thumbnail,
-                        'description' => $board->description,
-                        'is_marked' => (bool) $board->is_marked,
-                        'archive' => (bool) $board->archive,
-                        'closed' => (bool) $board->closed,
-                        'created_by' => $board->created_by,
-                        'visibility' => $board->visibility,
-                        'workspace_id' => $board->workspace_id,
-                        'created_at' => $board->created_at,
-                        'updated_at' => $board->updated_at,
-                    ];
-                })->toArray();
+                ->where('user_id', $currentUser->id)
+                ->where('member_type', 'admin')
+                ->exists();
 
             // Lấy danh sách thành viên của workspace
             $members = DB::table('workspace_members')
@@ -469,7 +618,8 @@ class WorkspaceController extends Controller
                 'updated_at' => $workspace->updated_at,
                 'members' => $members,
                 'boards' => $boards,
-                'markedBoards' => $markedBoards,
+                // 'markedBoards' => $markedBoards,
+                'isCurrentUserAdmin' => $isAdmin,
             ];
 
             // Trả về dữ liệu workspace dưới dạng resource
@@ -482,6 +632,7 @@ class WorkspaceController extends Controller
             ], 500);
         }
     }
+
     public function getBoardMarkedByWorkspace($workspaceName)
     {
         try {

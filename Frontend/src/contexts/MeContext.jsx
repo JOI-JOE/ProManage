@@ -8,9 +8,8 @@ const MeContext = createContext({
     user: null,
     workspaceId: null,
     boardId: null,
-    boardStars: null,
-    isLoading: true,
-    isUserLoaded: false, // Thêm trạng thái này
+    userLoading: true,
+    isUserLoaded: false, 
     error: null,
 });
 
@@ -30,17 +29,18 @@ export const MeProvider = ({ children }) => {
     const user = data?.user || null;
     const workspaceIds = data?.workspaces || null;
     const boardIds = data?.boards || null;
+    const pendingIds = data?.pending || null
 
-    console.log(data)
     const contextValue = useMemo(
         () => ({
             boardIds,
+            pendingIds,
             workspaceIds,
             user,
             userLoading,
             userError,
         }),
-        [user, userLoading, userError]
+        [boardIds, pendingIds, workspaceIds, user, userLoading, userError]
     );
 
     return <MeContext.Provider value={contextValue}>{children}</MeContext.Provider>;

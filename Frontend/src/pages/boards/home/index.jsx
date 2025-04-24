@@ -20,6 +20,8 @@ import MyWorkspace from "../../../components/MyWorkspace";
 import { useGetWorkspaces } from "../../../hooks/useWorkspace";
 import { useClosedBoards, useForceDestroyBoard, useRecentBoardAccess, useRecentBoards, useToggleBoardClosed, useToggleBoardMarked, useUpdateBoardLastAccessed } from "../../../hooks/useBoard";
 import { useWorkspace } from "../../../contexts/WorkspaceContext";
+import MyBoard from "../../../components/MyBoard";
+import WorkspaceAvatar from "../../../components/Common/WorkspaceAvatar";
 import { Link } from "react-router-dom";
 import { StarIcon as StarOutlineIcon } from "@heroicons/react/24/outline"; // Outline
 import { StarIcon } from "@heroicons/react/24/solid"; // Solid
@@ -27,7 +29,7 @@ import { StarIcon } from "@heroicons/react/24/solid"; // Solid
 
 const HomeBoard = ({ workspaces }) => {
   // const { data: workspaces, isLoading, isError } = useGetWorkspaces();
-  // const { guestWorkspaces } = useWorkspace()
+  const { guestWorkspaces } = useWorkspace()
 
   const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
 
@@ -37,9 +39,12 @@ const HomeBoard = ({ workspaces }) => {
   const { data: recentBoards, isLoading, error } = useRecentBoards();
   const saveRecentBoard = useRecentBoardAccess();
   const updateAccessTime = useUpdateBoardLastAccessed();
-// console.log(recentBoards);
+  // console.log(recentBoards);
   const { mutate: destroyBoard, isPending: isDeleting } = useForceDestroyBoard();
   const toggleBoardMarked = useToggleBoardMarked();
+
+
+  console.log(guestWorkspaces)
 
   // if (isLoading) return <p>Đang tải workspaces...</p>;
   // if (isError) return <p>Lỗi khi tải workspaces!</p>;
@@ -77,7 +82,7 @@ const HomeBoard = ({ workspaces }) => {
   const handleToggleMarked = (e, boardId) => {
     e.preventDefault();
     e.stopPropagation();
-  
+
     toggleBoardMarked.mutate(boardId, {
       onError: () => {
         setIsMarked((prev) => !prev);
@@ -85,6 +90,7 @@ const HomeBoard = ({ workspaces }) => {
     });
   };
 
+  console.log(guestWorkspaces)
 
   return (
     <Box
@@ -184,6 +190,71 @@ const HomeBoard = ({ workspaces }) => {
           null
         )}
       </div>
+
+      <Box id="guest-workspace">
+        <Typography
+          variant="h6" // Sử dụng h6 để tiêu đề nhỏ hơn và phù hợp hơn
+          sx={{
+            marginTop: "24px", // Giảm marginTop xuống 24px để khoảng cách hợp lý
+            marginBottom: "8px", // Giữ marginBottom nhỏ để cách nội dung bên dưới
+            fontWeight: "bold",
+            textTransform: "uppercase",
+            color: "#172B4D", // Màu chữ giống với giao diện trước đó
+          }}
+        >
+          CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
+        </Typography>
+        <div id="myGuestWorkspace">
+          {guestWorkspaces?.length > 0 ? (
+            guestWorkspaces.map((workspace) => (
+              <div key={workspace.id} style={{ marginBottom: "20px" }}>
+                {/* Hiển thị thông tin workspace */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: "10px",
+                    gap: "6px",
+                  }}
+                >
+                  <WorkspaceAvatar workspace={workspace} />
+                  <Typography
+                    fontWeight="bold"
+                    sx={{ whiteSpace: "nowrap" }}
+                  >
+                    {workspace.display_name.length > 20
+                      ? workspace.display_name.substring(0, 20) + "..."
+                      : workspace.display_name}
+                  </Typography>
+                </div>
+                {/* Hiển thị danh sách boards của workspace với flex */}
+                {workspace.boards?.filter((board) => !board.closed).length > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "10px",
+                    }}
+                  >
+                    {workspace.boards
+                      .filter((board) => !board.closed)
+                      .map((board) => (
+                        <div
+                          key={board.id}
+                          style={{
+                            maxWidth: "300px", // Giới hạn chiều rộng tối đa
+                          }}
+                        >
+                          <MyBoard board={board} id={`guest-board-${board.id}`} />
+                        </div>
+                      ))}
+                  </div>
+                ) : null}
+              </div>
+            ))
+          ) : null}
+        </div>
+      </Box>
 
 
       {/* Nút xem tất cả bảng đã đóng */}

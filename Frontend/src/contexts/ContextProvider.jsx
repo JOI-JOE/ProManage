@@ -1,15 +1,17 @@
-import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { createContext, useContext, useState, useCallback, useMemo } from "react";
+
 
 const StateContext = createContext({
     user: null,
     token: null,
-    setUser: () => { }, 
+    setUser: () => { },
     setToken: () => { },
 });
 
 export const ContextProvider = ({ children }) => {
     const [token, _setToken] = useState(localStorage.getItem("token"));
     const [user, setUser] = useState(null);
+    const [linkInvite, setLinkInvite] = useState(null);
 
     const setToken = useCallback((token) => {
         _setToken(token);
@@ -24,8 +26,9 @@ export const ContextProvider = ({ children }) => {
         token,
         setUser,
         setToken,
-    }), [user, token, setToken]);
-
+        linkInvite,
+        setLinkInvite,
+    }), [user, token, linkInvite, setToken, setLinkInvite]);
 
     return (
         <StateContext.Provider value={value}>

@@ -4,7 +4,7 @@ import {
   checkCode,
   fetchUserBoardsWithWorkspaces,
   forgotPassword,
-  // getUser,
+  getUser,
   updatePass,
   getUserById,
   updateUserProfile,
@@ -13,10 +13,12 @@ import {
 } from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
 import { logoutUser } from "../api/models/userApi";
+import { useNavigate } from "react-router-dom";
+import { useStateContext } from "../contexts/ContextProvider";
 
 export const useUserData = () => {
   return useQuery({
-    queryKey: ["userInfo"],
+    queryKey: ["user_main"],
     queryFn: fetchUserData,
     staleTime: 10 * 60 * 1000,
     cacheTime: 60 * 60 * 1000,
@@ -33,26 +35,20 @@ export const useFetchUserBoardsWithWorkspaces = (userId) => {
   });
 };
 
-// export const useUser = () => {
-//   return useQuery({
-//     queryKey: ["user"],
-//     queryFn: async () => await getUser(),
-//     staleTime: 1000 * 60 * 5,
-//     cacheTime: 1000 * 60 * 30,
-//   });
-// };
+export const useUser = () => {
+  return useQuery({
+    queryKey: ["user"],
+    queryFn: async () => await getUser(),
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
+  });
+};
 
 export const useLogin = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: loginUser, // Gọi API login
-    onSuccess: (data) => {
-      // Lưu token vào localStorage
-      localStorage.setItem("token", data.token);
-      // Invalidate cache của user để làm mới dữ liệu người dùng
-      queryClient.invalidateQueries(["user"]);
-    },
     onError: (error) => {
       console.error("Lỗi khi đăng nhập:", error);
       throw error; // Ném lỗi để xử lý ở phía component
@@ -79,8 +75,21 @@ export const useRegister = () => {
  * @returns {object} - Object chứa hàm mutate để gọi API đăng xuất và các trạng thái liên quan.
  */
 export const useLogout = () => {
+  const navigate = useNavigate();
+  const { setToken, setUser } = useStateContext();
+
   return useMutation({
     mutationFn: logoutUser,
+    onSuccess: () => {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem("token");
+    },
+    onError: (error) => {
+      console.error("Lỗi khi logout:", error);
+      localStorage.removeItem("token");
+      navigate("/login");
+    },
   });
 };
 

@@ -4,12 +4,25 @@ import { useLogin } from "../../hooks/useUser";
 import GitHubAuth from "./GitHubAuth";
 import GoogleAuth from "./GoogleAuth";
 import anh4 from "../../assets/anh4.jpg";
+import { useStateContext } from "../../contexts/ContextProvider";
+import Cookies from "js-cookie";
 
 const LoginForm = () => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const location = useLocation();
   const inviteToken = location.state?.inviteToken;
+  const invitationWorkspace = Cookies.get("invitation");
+
+  // Pending của workspace
+  // Nếu đã có token => kiểm tra xem có pending invite không
+
+  // -----------------------------------------------------
+  const { setToken, setLinkInvite } = useStateContext();
+
+
+
   const [errors, setErrors] = useState({
     email: "",
     password: "",
@@ -51,8 +64,8 @@ const LoginForm = () => {
     // Longer duration for password and authentication errors (15 seconds)
     const errorDuration =
       fieldName === "password" ||
-      fieldName === "general" ||
-      fieldName === "email"
+        fieldName === "general" ||
+        fieldName === "email"
         ? 15000
         : duration;
 
@@ -80,7 +93,6 @@ const LoginForm = () => {
   // Thay đổi cách quản lý các thông báo lỗi để đảm bảo chúng tồn tại đủ lâu
   const handleSubmit = (e) => {
     e.preventDefault();
-
     // Kiểm tra validation phía client
     if (!formData.email) {
       setErrorWithTimeout("email", "Vui lòng nhập email.");
@@ -90,26 +102,33 @@ const LoginForm = () => {
       setErrorWithTimeout("password", "Vui lòng nhập mật khẩu.");
       return;
     }
-
+    console.log(inviteToken)
     // Gọi mutation login
     login(formData, {
       onSuccess: (data) => {
-        // Xử lý thành công
         localStorage.setItem("token", data.token);
+        setToken(data.token);
         if (inviteToken) {
-          navigate(`/accept-invite/${inviteToken}`);
+          setLinkInvite(`/accept-invite/${inviteToken}`);
+        } else if (invitationWorkspace) {
+          // Giải mã và xử lý invitationWorkspace
+          const decoded = decodeURIComponent(decodeURIComponent(invitationWorkspace));
+          const [prefix, workspaceId, token] = decoded.split(":");
+          if (prefix === "workspace" && workspaceId && token) {
+            setLinkInvite(`/invite/${workspaceId}/${token}`);
+          } else {
+            setLinkInvite(null); // Nếu dữ liệu không hợp lệ
+          }
         } else {
-          navigate("/home");
+          setLinkInvite(null);
         }
       },
       onError: (err) => {
         console.error("Lỗi đăng nhập:", err);
-
         // Đảm bảo lỗi đăng nhập được hiển thị đủ lâu
         if (err.response && err.response.status === 401) {
           // Kiểm tra lỗi cụ thể từ server (nếu có)
           const errorData = err.response.data;
-
           // Nếu lỗi liên quan đến email không tồn tại
           if (errorData && errorData.email) {
             setErrorWithTimeout("email", "Email không tồn tại.");
@@ -147,6 +166,8 @@ const LoginForm = () => {
     });
   };
 
+
+
   return (
     <section
       className="min-h-screen flex items-center justify-center bg-cover bg-center"
@@ -175,9 +196,8 @@ const LoginForm = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Nhập email"
-              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.email ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.email && (
               <p className="text-red-500 text-xs mt-1 ml-1">{errors.email}</p>
@@ -207,9 +227,8 @@ const LoginForm = () => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Nhập mật khẩu"
-              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${
-                errors.password ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.password ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.password && (
               <p className="text-red-500 text-xs mt-1 ml-1">

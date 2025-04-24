@@ -49,11 +49,19 @@ class AuthController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
+        $pending = DB::table('workspace_members')
+            ->join('workspaces', 'workspace_members.workspace_id', '=', 'workspaces.id')
+            ->where('workspace_members.user_id', $userId)
+            ->where('workspace_members.member_type', 'pending')
+            ->select('workspaces.id')
+            ->get();
+
         // Lấy danh sách workspaces với thông tin chi tiết và trạng thái admin
         $workspaces = DB::table('workspaces')
             ->leftJoin('workspace_members', function ($join) use ($userId) {
                 $join->on('workspace_members.workspace_id', '=', 'workspaces.id')
-                    ->where('workspace_members.user_id', $userId);
+                    ->where('workspace_members.user_id', $userId)
+                    ->where('workspace_members.joined', '=', true);
             })
             ->select(
                 'workspaces.id',
@@ -71,7 +79,9 @@ class AuthController extends Controller
                 $query->whereIn('workspaces.id', function ($subQuery) use ($userId) {
                     $subQuery->select('workspace_id')
                         ->from('workspace_members')
-                        ->where('user_id', $userId);
+                        ->where('user_id', $userId)
+                        ->where('workspace_members.member_type', '!=', 'pending')
+                        ->where('workspace_members.is_deactivated', '=', false);
                 })
                     ->orWhere('workspaces.id_member_creator', $userId);
             })
@@ -138,6 +148,7 @@ class AuthController extends Controller
             'user' => $user,
             'workspaces' => $workspaces,
             'boards' => $boards,
+            'pending' => $pending
         ]);
     }
 
@@ -254,8 +265,7 @@ class AuthController extends Controller
     ////// Logout
     public function logout(Request $request)
     {
-
-
+        
         $request->user()->tokens()->delete(); // Xóa tất cả token của user
         return response()->json(['message' => 'Logged out successfully']);
     }

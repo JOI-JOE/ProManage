@@ -1,30 +1,29 @@
-import Cookies from "js-cookie";
 import { Button } from "@mui/material";
-import { useAddMemberToWorkspaceDirection } from "../../../../hooks/useWorkspaceInvite";
+import { useJoinWorkspace } from "../../../../hooks/useWorkspaceInvite";
+// import { useJoinWorkspace } from "../../../../hooks/useJoinWorkspace"; // <-- dùng đúng hook
 
-const InviteWithToken = ({ inviteData }) => {
-  const memberId = Cookies.get("idMember");
+const InviteWithToken = ({ inviteData, invitation }) => {
+  const token = invitation?.inviteToken; // sửa key đúng là inviteToken
   const inviter = inviteData?.memberInviter;
   const workspace = inviteData?.workspace;
 
-  const { mutate: addMember, isLoading: isJoining } = useAddMemberToWorkspaceDirection();
+  const { mutate: joinWorkspace, isLoading: isJoining } = useJoinWorkspace();
 
-  // Xử lý chấp nhận lời mời
   const handleAcceptInvite = () => {
-    if (!workspace?.id || !memberId) {
-      alert("Dữ liệu không hợp lệ!");
+    if (!workspace?.id || !token) {
+      alert("Dữ liệu lời mời không hợp lệ!");
       return;
     }
 
-    addMember(
-      { workspaceId: workspace.id, memberId },
+    joinWorkspace(
+      { workspaceId: workspace.id, token },
       {
         onSuccess: () => {
           alert("Bạn đã tham gia không gian làm việc thành công!");
-          window.location.reload(); // Hoặc chuyển hướng đến trang workspace
+          window.location.reload();
         },
         onError: (error) => {
-          alert(`Lỗi: ${error.message}`);
+          alert(`Lỗi: ${error?.message || "Không thể tham gia workspace"}`);
         },
       }
     );

@@ -23,8 +23,6 @@ import echoInstance from "./realtime/useRealtime";
 import { toast } from "react-toastify";
 import { useGetUserWorkspaces } from "./useWorkspace";
 
-
-
 /**
  * Hook useBoard để tạo bảng mới.
  * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
@@ -44,8 +42,6 @@ export const useCreateBoard = () => {
 export const useGetBoardByID = (boardId) => {
   const queryClient = useQueryClient();
 
-
-
   const boardDetail = useQuery({
     queryKey: ["boards", boardId],
     enabled: !!boardId, // vẫn có, nhưng...
@@ -64,47 +60,54 @@ export const useGetBoardByID = (boardId) => {
       }
     },
   });
-  const { data, error, isLoading, refetch: refetchWorkspaces } = useGetUserWorkspaces();
+  const {
+    data,
+    error,
+    isLoading,
+    refetch: refetchWorkspaces,
+  } = useGetUserWorkspaces();
   const allBoards = useMemo(() => {
     if (!data) return [];
 
-    const owned = data?.owned_workspaces?.flatMap((ws, wsIndex) =>
-      (ws.boards || [])
-        .filter(board => board && board.id && board.name && !board.closed)
-        .map(board => ({
-          ...board,
-          workspaceName: ws.name || `Workspace Owned ${wsIndex + 1}`,
-          workspaceType: "owned",
-        }))
-    ) || [];
+    const owned =
+      data?.owned_workspaces?.flatMap((ws, wsIndex) =>
+        (ws.boards || [])
+          .filter((board) => board && board.id && board.name && !board.closed)
+          .map((board) => ({
+            ...board,
+            workspaceName: ws.name || `Workspace Owned ${wsIndex + 1}`,
+            workspaceType: "owned",
+          }))
+      ) || [];
 
-    const guest = data?.guest_workspaces?.flatMap((ws, wsIndex) =>
-      (ws.boards || [])
-        .filter(board => board && board.id && board.name && !board.closed)
-        .map(board => ({
-          ...board,
-          workspaceName: ws.name || `Workspace Guest ${wsIndex + 1}`,
-          workspaceType: "guest",
-        }))
-    ) || [];
+    const guest =
+      data?.guest_workspaces?.flatMap((ws, wsIndex) =>
+        (ws.boards || [])
+          .filter((board) => board && board.id && board.name && !board.closed)
+          .map((board) => ({
+            ...board,
+            workspaceName: ws.name || `Workspace Guest ${wsIndex + 1}`,
+            workspaceType: "guest",
+          }))
+      ) || [];
 
     return [...owned, ...guest];
   }, [data]);
 
-
-
   useEffect(() => {
-
     // Lắng nghe tất cả các bảng mà người dùng có quyền truy cập
     // const boardIds = ["740955b5-e686-4f5c-92f7-c3cdfd592f92", "d9056bf6-31d6-4da1-b762-9fc0909ece41"]; // Lấy danh sách boardId từ API hoặc state
-    const boardIds = allBoards.map(board => board.id).filter(Boolean);// Loại bỏ giá trị falsy (nếu có)
+    const boardIds = allBoards.map((board) => board.id).filter(Boolean); // Loại bỏ giá trị falsy (nếu có)
 
     // console.log("Board IDs:", boardIds);
     boardIds.forEach((boardId) => {
       const channel = echoInstance.channel(`boards.${boardId}`);
 
       channel.listen(".BoardStatusUpdated", (event) => {
-        console.log(`🔄 Nhận sự kiện BoardStatusUpdated cho ${boardId}:`, event);
+        console.log(
+          `🔄 Nhận sự kiện BoardStatusUpdated cho ${boardId}:`,
+          event
+        );
         queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
         queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
         queryClient.invalidateQueries({ queryKey: ["workspaces"] });
@@ -219,6 +222,7 @@ export const useUpdateBoardName = () => {
       // Invalidate lại dữ liệu để cập nhật UI
 
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["workspace"], workspaceId });
 
       // queryClient.invalidateQueries({ queryKey: ["boardDetail", boardId], exact: true });
     },
@@ -331,7 +335,7 @@ export const useUpdateBoardVisibility = () => {
   });
 };
 
-export const useToggleBoardClosed = (workspaceName) => {
+export const useToggleBoardClosed = (workspaceId) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -340,14 +344,12 @@ export const useToggleBoardClosed = (workspaceName) => {
     // Xử lý khi API gọi thành công
     onSuccess: (data, boardId) => {
       console.log("✅ Đã cập nhật trạng thái board:", data);
-
       // Cập nhật lại cache cho danh sách board
-
       queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
       queryClient.invalidateQueries({ queryKey: ["closedBoards"] });
-      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceName] });
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
 
       // queryClient.invalidateQueries(["board", boardId]);
     },
@@ -359,13 +361,16 @@ export const useToggleBoardClosed = (workspaceName) => {
   });
 };
 
-export const useClosedBoards = () => {
+export const useClosedBoards = (workspaceId) => {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ["closedBoards"], // Key riêng cho danh sách board đã đóng
     queryFn: getBoardClosed, // Gọi API lấy danh sách bảng đã đóng
     staleTime: 1000 * 60 * 5, // Cache trong 5 phút trước khi "stale"
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Khi thành công, invalidate lại query để đồng bộ lại dữ liệu
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
     },
   });
 };
@@ -442,10 +447,6 @@ export const useForceDestroyBoard = (boardId) => {
 //     },
 //   });
 // };
-
-
-
-
 
 //       // (Optional) Invalidate workspace nếu bạn cần cập nhật số lượng board chẳng hạn:
 //       // queryClient.invalidateQueries({ queryKey: ['workspaces'], exact: true });

@@ -7,7 +7,7 @@ import { getListByBoardId } from "../api/models/listsApi";
 
 const BoardProvider = ({ children }) => {
   const { boardId } = useParams();
-  const { data: board } = useLists(boardId);
+  const { data: board, isLoading: isLoadingBoard } = useLists(boardId);
 
   const [lists, setLists] = useState([]);
   const [error, setError] = useState(null);
@@ -19,7 +19,6 @@ const BoardProvider = ({ children }) => {
       if (error) setError(error);
       else setLists(data);
     };
-
     fetchLists();
   }, [boardId]);
 
@@ -29,7 +28,7 @@ const BoardProvider = ({ children }) => {
   if (error === "unknown_error") return <div>Lỗi không xác định!</div>;
 
   // Sử dụng useMemo để tránh tạo object mới không cần thiết
-  const values = useMemo(() => ({ board }), [board]);
+  const values = useMemo(() => ({ board, isLoadingBoard }), [board]);
 
   return <BoardContext.Provider value={values}>{children}</BoardContext.Provider>;
 };

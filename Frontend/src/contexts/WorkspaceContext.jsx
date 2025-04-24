@@ -22,10 +22,11 @@ export const WorkspaceProvider = ({ children }) => {
 
   const workspaces = data?.workspaces || [];
   const guestWorkspaces = data?.guestWorkspaces || [];
-
+  const pendingWorkspaces = data?.pendingWorkspaces || [];
   const contextValue = useMemo(() => ({
     workspaces,
     guestWorkspaces,
+    pendingWorkspaces,
     isLoading,
     error,
   }), [workspaces, guestWorkspaces, isLoading, error]);

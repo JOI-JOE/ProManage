@@ -9,13 +9,13 @@ import BoardContent from "../pages/boards/detail/BoardContent";
 import Member from "../pages/boards/detail/Member";
 import Home from "../pages/Home";
 
-import LoginForm from "../pages/Auth/LoginForm";
+import LoginForm from "../pages/auth/LoginForm";
 
 import ForgotPassword from "../pages/auth/ForgortPassword";
 import Register from "../pages/auth/Register";
 
 // import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
-import GitHubAuth from "../pages/Auth/GitHubAuth";
+import GitHubAuth from "../pages/auth/GitHubAuth";
 import CardModal from "../pages/boards/detail/BoardContent/ListColumns/Column/ListCards/Card/CardDetail/CardDetail";
 import InviteHandling from "../pages/workspace/invite/InviteHandling";
 import InviteWithToken from "../pages/workspace/invite/child/InviteWithToken";
@@ -29,8 +29,8 @@ import Board from "../pages/boards/detail/Board";
 import Calendar from "../pages/Boards/detail/SideBar/Calendar/Calendar";
 import ProfileDisplay from "../components/Navigation/Menus/Profile and display/ProfileInfo";
 import Activity from "../components/Navigation/Menus/Profile and display/Activity";
-// import GitHubAuth from "../pages/auth/GitHubAuth";
-import GoogleAuth from "../pages/Auth/GoogleAuth";
+// import GitHubAuth from "../pages/auth/GitHsubAuth";
+import GoogleAuth from "../pages/auth/GoogleAuth";
 import RequestJoinBoard from "../pages/boards/invite/RequestJoinBoard";
 import VerifyCodePage from "../pages/auth/VerifyCodePage";
 import UpdatePass from "../pages/auth/UpdatePass";
@@ -68,10 +68,6 @@ const router = createBrowserRouter([
       { path: "/forgort-password", element: <ForgotPassword /> },
       { path: "/verify-code", element: <VerifyCodePage /> },
       { path: "/update-password", element: <UpdatePass /> },
-
-
-
-
     ],
   },
   {
@@ -95,9 +91,9 @@ const router = createBrowserRouter([
             element: <BoardContent />,
             children: [{ path: "c/:cardId", element: <CardModal /> }],
           },
-          { path: "w/:workspaceName", element: <Board /> },
-          { path: "w/:workspaceName/members", element: <Member /> },
-          { path: "w/:workspaceName/account", element: <Account /> },
+          { path: "w/:workspaceId", element: <Board /> },
+          { path: "w/:workspaceId/members", element: <Member /> },
+          { path: "w/:workspaceId/account", element: <Account /> },
           { path: "b/:boardId/gantt-chart", element: <GanttChart /> },
           { path: "w/:workspaceName/calendar", element: <Calendar /> },
           { path: "w/:workspaceName/calendar/c/:cardId", element: <CardModal /> },
@@ -137,7 +133,7 @@ const router = createBrowserRouter([
 
       {
         path: "invite/accept-team",
-        element: <AcceptTeam />,
+        element: <AcceptTeam />, // của workspace
       },
     ],
   },

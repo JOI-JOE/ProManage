@@ -6,10 +6,9 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { useGetGuestWorkspaces, useGetWorkspaces } from "../../../hooks/useWorkspace";
-import { useRecentBoardAccess, useRecentBoards } from "../../../hooks/useBoard";
 import { useNavigate } from "react-router-dom";
-import { useGuestBoards } from "../../../hooks/useInviteBoard";
+import { useWorkspace } from "../../../contexts/WorkspaceContext";
+import WorkspaceAvatar from "../../Common/WorkspaceAvatar";
 
 const StyledMenu = styled((props) => (
   <Menu
@@ -29,92 +28,29 @@ const StyledMenu = styled((props) => (
   },
 }));
 
-const WorkspaceItem = React.memo(({ workspace, onClose, isGuest = false }) => {
-  const navigate = useNavigate();
-
-  // const { data: guestBoards } = useGuestBoards();
-
-  // const handleWorkspaceClick = () => {
-  //   console.log(guestBoards);
-
-  //   if (isGuest) {
-  //     // Lấy danh sách bảng trong workspace khách
-  //     const guestBoardsList =
-  //       guestBoards?.find((ws) => ws.workspace_id === workspace.id)?.boards || [];
-
-  //     if (guestBoardsList.length > 0) {
-  //       // Sắp xếp theo bảng được truy cập gần nhất
-  //       const latestBoard = guestBoardsList[0];
-  //       navigate(`/b/${latestBoard.id}/${latestBoard.name}`);
-  //     }
-  //   } else {
-  //     // Điều hướng đến trang home nếu là workspace của mình
-  //     navigate(`/w/${workspace.name}/home`);
-  //   }
-  //   onClose();
-  // };
-
-  return (
-    <MenuItem
-      onClick={handleWorkspaceClick}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 1.5,
-        px: 2,
-        py: 1,
-        "&:hover": { bgcolor: "#F4F5F7" },
-      }}
-    >
-      <Box
-        sx={{
-          width: 32,
-          height: 32,
-          borderRadius: "50%",
-          bgcolor: isGuest ? "#EB5A47" : "#0079BF",
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontWeight: "bold",
-          fontSize: "1rem",
-          flexShrink: 0,
-        }}
-      >
-        {workspace.name?.charAt(0).toUpperCase()}
-      </Box>
-      <Typography variant="body2" sx={{ fontWeight: 500, color: "#172B4D" }}>
-        {workspace.name}
-      </Typography>
-    </MenuItem>
-  );
-});
-
 
 const Workspace = () => {
+  const { workspaces, guestWorkspaces, isLoading } = useWorkspace()
+
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
+  const navigate = useNavigate();
 
-  // const { data: workspaces, isLoading, isError } = useGetWorkspaces();
-  // const { data: guestWorkspace } = useGetGuestWorkspaces();
-  // console.log(guestWorkspace);
+  const handleRedirectToLastActiveBoard = (workspace) => {
+    const boards = workspace?.boards?.filter((b) => !b.closed);
+    if (!boards?.length) return;
 
-  // console.log(guestWorkspace);
+    const mostRecentBoard = boards.reduce((latest, current) => {
+      return new Date(current.last_accessed) > new Date(latest.last_accessed) ? current : latest;
+    });
 
-
-  // // Gom nhóm danh sách không gian làm việc khách (chỉ lấy unique workspace)
-  // const groupedGuestWorkspaces = useMemo(() => {
-  //   if (!guestWorkspace?.data) return [];
-
-  //   return guestWorkspace.data.map((infor) => ({
-  //     id: infor.id, // Tạo ID tạm
-  //     name: infor.name,
-  //   }));
-  // }, [guestWorkspace?.data]);
+    navigate(`/b/${mostRecentBoard?.id}/${mostRecentBoard?.name}`);
+  };
 
   return (
+
     <Box>
       <Button
         id="workspace-button"
@@ -135,34 +71,64 @@ const Workspace = () => {
         open={open}
         onClose={handleClose}
       >
-        {/* Hiển thị không gian làm việc của người dùng */}
+        {/* Section for user's workspaces */}
         <Typography variant="body1" sx={{ fontWeight: "bold", px: 2, py: 1, color: "#172B4D" }}>
-          Không gian của tôi
+          Các Không gian làm việc của bạn
         </Typography>
-        <Divider />
-        {/* {isLoading && (
-          <MenuItem>
-            <CircularProgress size={20} sx={{ mr: 1 }} /> Đang tải...
-          </MenuItem>
-        )} */}
-        {/* {isError && <MenuItem sx={{ color: "red" }}>Lỗi tải dữ liệu</MenuItem>}
-        {workspaces?.map((workspace) => (
-          <WorkspaceItem key={workspace.id} workspace={workspace} onClose={handleClose} />
-        ))} */}
 
-        {/* Hiển thị không gian làm việc khách */}
-        {/* {groupedGuestWorkspaces.length > 0 && (
-          <>
-            <Divider sx={{ my: 1 }} />
-            <Typography variant="body1" sx={{ fontWeight: "bold", px: 2, py: 1, color: "#172B4D" }}>
-              Không gian làm việc khách
+        {workspaces?.map((workspace) => (
+          <Box
+            key={workspace.id}
+            onClick={() => navigate(`/w/${workspace.id}`)}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              px: 2,
+              py: 1,
+              cursor: "pointer",
+              borderRadius: 1,
+              "&:hover": {
+                backgroundColor: "#F4F5F7",
+              },
+            }}
+          >
+            <WorkspaceAvatar workspace={workspace} />
+            <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
+              {workspace?.display_name}
             </Typography>
-            <Divider />
-            {groupedGuestWorkspaces.map((workspace) => (
-              <WorkspaceItem key={workspace.id} workspace={workspace} onClose={handleClose} isGuest />
-            ))}
-          </>
-        )} */}
+          </Box>
+        ))}
+
+        <Divider />
+        {/* Guest workspaces section */}
+        <Typography variant="body1" sx={{ fontWeight: "bold", px: 2, py: 1, mt: 1, color: "#172B4D" }}>
+          Các Không gian làm việc khách
+        </Typography>
+
+        {guestWorkspaces?.map((workspace) => (
+          <Box
+            key={workspace.id}
+            onClick={() => handleRedirectToLastActiveBoard(workspace)}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              px: 2,
+              py: 1,
+              cursor: "pointer",
+              borderRadius: 1,
+              "&:hover": {
+                backgroundColor: "#F4F5F7",
+              },
+            }}
+          >
+            <WorkspaceAvatar workspace={workspace} />
+            <Typography fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
+              {workspace?.display_name}
+            </Typography>
+          </Box>
+        ))}
       </StyledMenu>
     </Box>
   );
