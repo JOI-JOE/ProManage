@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 
 class BoardUpdatedName implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use InteractsWithSockets, SerializesModels;
 
     public $board;
 
@@ -24,8 +24,12 @@ class BoardUpdatedName implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new Channel("boards.{$this->board->id}");
+        return new Channel('boards.' . $this->board->id);
     }
 
-    
+    public function broadcastAs()
+    {
+        return 'board.updateName';
+    }
+
 }

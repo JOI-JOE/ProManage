@@ -287,7 +287,6 @@ class BoardController extends Controller
 
         } catch (\Throwable $th) {
             DB::rollBack();
-            report($th); // Ghi log lỗi
             return response()->json([
                 'result' => false,
                 'message' => 'An error occurred.',
@@ -512,5 +511,56 @@ class BoardController extends Controller
             'lists' => $board->listBoards, // hoặc 'list_board' nếu bạn dùng tên khác
         ]);
     }
+
+    public function copyBoard(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'workspace_id' => 'required|uuid',
+            'source_board_id' => 'required|uuid',
+            'keep_cards' => 'boolean',
+            'visibility' => 'required|in:private,workspace,public',
+        ]);
+
+        $sourceBoard = Board::with(['lists.cards'])->findOrFail($request->source_board_id);
+
+        // Tạo bản sao của bảng
+        $newBoard = $sourceBoard->replicate(['id', 'created_at', 'updated_at']);
+        $newBoard->name = $request->name;
+        $newBoard->workspace_id = $request->workspace_id;
+        $newBoard->visibility = $request->visibility;
+        $newBoard->is_marked = 0; 
+        $newBoard->save();
+
+
+        BoardMember::create([
+            'board_id' => $newBoard->id,
+            'user_id' => auth()->id(),
+            'role' => 'admin',
+            'joined' => true,
+        ]);
+
+        // Nếu người dùng chọn giữ lại thẻ
+        if ($request->keep_cards) {
+            foreach ($sourceBoard->lists as $list) {
+                $newList = $list->replicate(['id', 'created_at', 'updated_at']);
+                $newList->board_id = $newBoard->id;
+                $newList->save();
+
+                foreach ($list->cards as $card) {
+                    $newCard = $card->replicate(['id', 'created_at', 'updated_at']);
+                    $newCard->list_board_id = $newList->id;
+                    $newCard->save();
+                }
+            }
+        }
+
+        return response()->json([
+            'message' => 'Board copied successfully.',
+            'board' => $newBoard,
+        ], 201);
+    }
+
+
 
 }

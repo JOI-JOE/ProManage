@@ -25,6 +25,7 @@ dayjs.extend(isSameOrBefore);
 const Calendar = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [dateRange, setDateRange] = useState({ start: null, end: null });
   const [visibleMonths, setVisibleMonths] = useState([]);
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(null);
@@ -35,42 +36,48 @@ const Calendar = () => {
   const { workspaceName } = useParams();
   const { data, isLoading, error } = useGetWorkspaceByName(workspaceName);
 
-  const boardIds = data?.boards?.map(board => board.id);
 
-  // console.log(boardName);
+  const boardIds = data?.boards?.map(board => board.id);
+  // console.log(boardIds);
+
+  // console.log(dateRange);
 
 
   const calendarRef = useRef(null);
-  const { data: cardcaledar = [], refetch } = useCalendar(boardIds, currentMonth);
+  
+  const { data: cardcaledar = [], refetch } = useCalendar(boardIds, dateRange.start, dateRange.end);
+ 
   const { mutate: updateEndDate } = useUpdateCardCalendar();
-  // console.log(cardcaledar);
-  // Lấy tháng hiện tại mỗi khi chuyển tháng
-  const handleDatesSet = () => {
-    const calendarApi = calendarRef.current?.getApi();
-    if (calendarApi) {
-      const currentDate = calendarApi.getDate();
-      const year = currentDate.getFullYear();
-      const month = (currentDate.getMonth() + 1).toString().padStart(2, "0");
-      setCurrentMonth(`${year}-${month}`);
+  
 
-    }
+  const handleDatesSet = (arg) => {
+    const start = dayjs(arg.start).format("YYYY-MM-DD");
+    const end = dayjs(arg.end).format("YYYY-MM-DD");
+    // const calendarApi = calendarRef.current?.getApi();
+    // if (calendarApi) {
+    //   const currentDate = calendarApi.getDate();
+    //   const year = currentDate.getFullYear();
+    //   const month = (currentDate.getMonth() + 1).toString().padStart(2, "0");
+    //   setCurrentMonth(`${year}-${month}`);
+
+    // }
+    setDateRange({ start, end });
   };
   const getMonthsBetween = (start, end) => {
     const result = [];
     let current = dayjs(start).startOf("month");
     const last = dayjs(end).startOf("month");
-  
+
     while (current.isSameOrBefore(last)) {
       result.push(current.format("YYYY-MM"));
       current = current.add(1, "month");
     }
-  
     return result;
   };
   // console.log(getMonthsBetween("2025-03-28", "2025-06-02"));
-// 🧪 Kết quả: ["2025-03", "2025-04", "2025-05", "2025-06"]
+  // 🧪 Kết quả: ["2025-03", "2025-04", "2025-05", "2025-06"]
 
-  
+
 
   // Ánh xạ dữ liệu sự kiện từ API
   // import thêm dayjs
@@ -79,7 +86,7 @@ const Calendar = () => {
   useEffect(() => {
     if (cardcaledar) {
       const mapped = cardcaledar.map(card => {
-        
+
         const isAllDay =
           card.start && !card.start.includes("T") &&
           card.end && !card.end.includes("T");
@@ -116,45 +123,21 @@ const Calendar = () => {
   // Cập nhật UI khi kéo thả sự kiện
   const handleEventChange = (info) => {
     const updatedEventId = info.event.id;// lấy id từ event
-    const originalStartDate = info.event.startStr; // Ngày ban đầu trước khi kéo
+    const originalStartDate = info.oldEvent.startStr; // Ngày ban đầu trước khi kéo
     const newStartDate = info.event.startStr;
-    const boardId = info.event.extendedProps.board_id;
     const rawEndDate = info.event.endStr || newStartDate;
     const newEndDate = dayjs(rawEndDate).subtract(1, "day").format("YYYY-MM-DD");
-    console.log(rawEndDate);
-    console.log(newEndDate);
-
-    //     ✅ Đây là phần cực kỳ quan trọng:
-
-    // Lý do subtract(1, "day"): FullCalendar hiểu end là exclusive (ngày kết thúc KHÔNG bao gồm).
-
-    // Ví dụ:
-
-    // Nếu start = 2025-04-10 và end = 2025-04-11, thì FullCalendar chỉ hiển thị ngày 10.
-
-    // Vì vậy ta phải cộng 1 ngày khi hiển thị, và trừ 1 ngày khi lưu về DB.
-
-    // 📌 newEndDate = giá trị thật để lưu vào DB (ngày cuối cùng thật sự mà người dùng nhìn thấy).
-
-    // setCardEvents(prev =>
-    //   prev.map(ev =>
-    //     ev.id === updatedEventId ? { ...ev, start: newStartDate, end: rawEndDate } : ev
-    //   )
-    // );
-
-    // Cập nhật backend
     updateEndDate(
-      { cardId: updatedEventId, board_id: boardId, start_date: newStartDate, end_date: newEndDate, month: currentMonth },
+      { cardId: updatedEventId, start_date: newStartDate, end_date: newEndDate },
       {
         onSuccess: () => {
-          const originalMonth = dayjs(originalStartDate).format("YYYY-MM");
-          const months = getMonthsBetween(newStartDate, newEndDate);
-          const allMonths = [...new Set([originalMonth, ...months])];
-          console.log("Months to invalidate:", months);
-          allMonths.forEach((month) => {
-            queryClient.invalidateQueries({ queryKey: ["calendar", boardIds, month] });
+          // refetch();
+
+          // Invalidate query dựa trên dateRange.start và dateRange.end
+          queryClient.invalidateQueries({ 
+            queryKey: ["calendar", boardIds, dateRange.start, dateRange.end] 
           });
-        },        
+        },
         onError: (error) => {
           info.revert(); // Quay lại vị trí cũ nếu lỗi
           toast.error(error.response?.data?.message || "Cập nhật thất bại");
@@ -165,10 +148,10 @@ const Calendar = () => {
 
   const handleToggleComplete = (info) => {
     const cardId = info.event.id;
-  const startDate = info.event.startStr; // Ngày bắt đầu của sự kiện
-  const endDate = info.event.endStr || startDate; // Ngày kết thúc (nếu không có thì dùng ngày bắt đầu)
+    const startDate = info.event.startStr; // Ngày bắt đầu của sự kiện
+    const endDate = info.event.endStr || startDate; // Ngày kết thúc (nếu không có thì dùng ngày bắt đầu)
     toggleCardCompletion(
-       cardId ,
+      cardId,
       {
         onSuccess: () => {
           const months = getMonthsBetween(startDate, endDate); // Lấy tất cả các tháng mà sự kiện kéo dài qua
@@ -204,12 +187,19 @@ const Calendar = () => {
         initialView="dayGridMonth"
         editable={true}
         datesSet={handleDatesSet}
-        customButtons={{
-          menuButton: {
-            text: "☰",
-            click: () => setMenuOpen(!menuOpen),
+        // ✅ Thêm thuộc tính displayEventTime
+        displayEventTime={false}
+        views={{
+          timeGridWeek: {
+            slotLabelFormat: { hour: undefined, minute: undefined },
+            eventTimeFormat: { hour: undefined, minute: undefined }
           },
+          timeGridDay: {
+            slotLabelFormat: { hour: undefined, minute: undefined },
+            eventTimeFormat: { hour: undefined, minute: undefined }
+          }
         }}
+
         headerToolbar={{
           left: "prev,next today",
           center: "title",
@@ -242,7 +232,7 @@ const Calendar = () => {
               isCompleted={is_completed} // ✅ truyền vào
               onToggleComplete={() => handleToggleComplete(info)} // ⬅️ thêm hàm xử lý toggle
               eventStart={info.event.start}
-            currentDate={info.el.closest('.fc-daygrid-day')?.getAttribute('data-date') || arg.event.start}
+              currentDate={info.el.closest('.fc-daygrid-day')?.getAttribute('data-date') || arg.event.start}
 
 
             />);
@@ -252,22 +242,29 @@ const Calendar = () => {
             border: "1px solid #ccc",
             borderRadius: "6px",
             padding: "4px 6px",
-            overflow: "visible", // để các thành phần không bị cắt
+            overflow: "hidden",
+            height: '100% !important',
+            display: 'flex !important',
+            flexDirection: 'column',
+            position: 'relative', // Đảm bảo phần tử cha là relative
           });
 
           // Thêm khoảng cách giữa các event trong cùng 1 ngày
           const harness = info.el.closest(".fc-daygrid-event-harness");
           if (harness) {
-            harness.style.marginBottom = "8px"; // tăng nếu muốn cách rộng hơn
+            harness.style.height = "auto !important"; // Để harness ôm vừa content
+            harness.style.overflow = "visible !important"; // Hiển thị toàn bộ content
+            harness.style.marginBottom = "50px"; // tăng nếu muốn cách rộng hơn
           }
         }}
+
       />
 
-      <MenuCalendar
+      {/* <MenuCalendar
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         onFilterChange={handleFilterChange}
-      />
+      /> */}
     </Box>
   );
 };

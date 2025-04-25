@@ -14,6 +14,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Button,
   ListSubheader,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -32,7 +33,7 @@ import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
 import { useGetBoardMembers, useGuestBoards } from "../../../../hooks/useInviteBoard";
-import { useGetWorkspaces } from "../../../../hooks/useWorkspace";
+import { useCheckMemberInWorkspace, useGetWorkspaces } from "../../../../hooks/useWorkspace";
 import { useUser } from "../../../../hooks/useUser";
 
 const SideBar = () => {
@@ -64,6 +65,7 @@ const SideBar = () => {
     workspace.boards.some((board) => board.id === boardId)
   );
   // console.log(foundWorkspace);
+  const { data: checkMember } = useCheckMemberInWorkspace(foundWorkspace?.workspace_id, user?.id);
 
   let isGuest = false;
   if (foundWorkspace) {
@@ -253,7 +255,9 @@ const SideBar = () => {
       </Typography>
 
       <List sx={{ p: 0.5 }}>
-        {(isGuest ? foundWorkspace : currentWorkspace)?.boards?.map((board) => (
+        {(isGuest ? foundWorkspace : currentWorkspace)?.boards
+          .filter((board) => board.closed === 0)
+          .map((board) => (
           <ListItem
             key={board.id}
             disablePadding
@@ -370,8 +374,37 @@ const SideBar = () => {
 
             </Menu>
           </ListItem>
-        ))}
+          ))}
       </List>
+      {/* 👇 Nút yêu cầu tham gia đặt cuối cùng, luôn nằm dưới */}
+   {isGuest && checkMember?.is_member === false && (
+    <Box sx={{ p: 2, bgcolor: "#292929", mt: 9.5, borderRadius: "8px" }}>
+      <Typography variant="body2" sx={{ fontSize: "13px", color: "#ccc" }}>
+  Bạn đang là Khách của không gian làm việc này, muốn xem thêm bảng và thành viên khác hãy gửi yêu cầu cho quản trị viên không gian làm việc này. 
+</Typography>
+      <Button
+        fullWidth
+        variant="contained"
+        sx={{
+          mt:1,
+          bgcolor: "#1976d2",
+          color: "white",
+          textTransform: "none",
+          fontWeight: "bold",
+          "&:hover": {
+            bgcolor: "#1565c0",
+          },
+        }}
+        onClick={() => {
+          // Gọi API yêu cầu tham gia không gian làm việc ở đây
+          console.log("Yêu cầu tham gia không gian làm việc");
+        }}
+      >
+        Yêu cầu tham gia không gian làm việc
+      </Button>
+    </Box>
+  )}
+
     </Drawer>
   );
 };

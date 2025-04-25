@@ -145,9 +145,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //user profile
     Route::get('/user', [ApiUserController::class, 'getUserById']);
 
+
     Route::put('/user/update-profile', [ApiUserController::class, 'updateProfile']);
 
     Route::get('/user/activities', [ActivityLogController::class, 'getMyActivities']);
+
 
     Route::get('/user/workspaces', [WorkspaceMembersController::class, 'getUserWorkspaces']);
 
@@ -183,7 +185,7 @@ Route::delete('/boards/{boardId}', [BoardController::class, 'toggleBoardClosed']
 // Routes quản lý bảng
 Route::get('/boards', [BoardController::class, 'index']);
 
-
+Route::post('/boards/copy', [BoardController::class, 'copyBoard'])->middleware('auth:sanctum');
 Route::get('/boards/{board}/details', [BoardController::class, 'getBoardDetails']);
 Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
@@ -193,6 +195,7 @@ Route::post('/createBoard', [BoardController::class, 'store'])->middleware('auth
 
 
 Route::prefix('boards/{id}/')->group(function () {
+    Route::delete('fDestroy', [BoardController::class, 'ForceDestroy']);
     Route::patch('thumbnail', [BoardController::class, 'updateThumbnail']);
     Route::patch('marked', [BoardController::class, 'updateIsMarked']);
     Route::patch('archive', [BoardController::class, 'updateArchive']);
@@ -214,6 +217,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/guest-boards', [BoardMemberController::class, 'getGuestBoards']);
 
     Route::post('/board/{boardId}/invite', [BoardMemberController::class, 'generateInviteLink']);
+    Route::get('/{boardId}/invitation', [BoardMemberController::class, 'getLinkInviteByBoard']);
+
     Route::delete('/remove-invite/{token}', [BoardMemberController::class, 'removeInviteLink']);
     Route::post('/join-board/{token}', [BoardMemberController::class, 'join']);
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
@@ -230,6 +235,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-requests/{boardId}', [RequestInvitationController::class, 'getRequestsForBoard']);
     Route::post('/accept-request/{request_id}', [RequestInvitationController::class, 'acceptRequest']);
     Route::post('/reject-request/{request_id}', [RequestInvitationController::class, 'rejectRequest']);
+
+    Route::post('/reject-invite/{token}', [BoardMemberController::class, 'rejectInvite']);
+    Route::get('/workspace/{workspaceId}/check-member/{userId}', [BoardMemberController::class, 'checkMemberInWorkspace']);
 
     Broadcast::routes();
 });
@@ -338,13 +346,14 @@ Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNoti
 Route::get('/settings', [SettingController::class, 'index']);
 Route::get('/activities/{cardId}', [ActivityLogController::class, 'getActivitiesByCard']);
 Route::get('/calendar', [CalendarController::class, 'index']);
-Route::put('board/{boardId}/calendar/{cardId}', [CalendarController::class, 'update']);
+Route::put('/calendar/{cardId}', [CalendarController::class, 'update']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/boards/{boardId}/gantt', [GanttController::class, 'getGanttData']);
     Route::post('/gantt/update-task', [GanttController::class, 'updateTask']);
 });
+
 Route::post('/table-view', [TableViewController::class, 'tableView'])->middleware('auth:sanctum');
 Route::post('/lists/by-boards', [TableViewController::class, 'getListsByBoards']);
 Route::put('/cards/{id}/list', [TableViewController::class, 'updateList']);

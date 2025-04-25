@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Avatar,
   AvatarGroup,
@@ -21,9 +21,9 @@ import ViewPermissionsDialog from "./childComponent/View/View";
 import ShareBoardDialog from "./childComponent/Share/Share";
 import BoardMenu from "./BoardMenu";
 
-import { useUpdateBoardName } from "../../../../../hooks/useBoard";
+import {useUpdateBoardName } from "../../../../../hooks/useBoard";
 import BoardContext from "../../../../../contexts/BoardContext";
-import { useGetBoardMembers, useMemberJoinedListener, useRequestJoinBoard } from "../../../../../hooks/useInviteBoard";
+import { useCreatorComeBackBoard, useGetBoardMembers, useMemberJoinedListener, useRequestJoinBoard } from "../../../../../hooks/useInviteBoard";
 import { useParams } from "react-router-dom";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
 import { useUser } from "../../../../../hooks/useUser";
@@ -52,7 +52,8 @@ const BoardBar = () => {
   const { data: boardMembers = [] } = useGetBoardMembers(boardId);
   // console.log(board);
   const { data: user } = useUser();
-  useMemberJoinedListener(user?.id)
+  useMemberJoinedListener(user?.id,boardId);
+  useCreatorComeBackBoard(user?.id,boardId); // Lắng nghe sự kiện người tạo quay lại bảng
 
   const currentUserId = user?.id;
   const joinBoardMutation = useRequestJoinBoard(); // Sử dụng custom hook
@@ -141,7 +142,7 @@ const BoardBar = () => {
     }
 
     updateBoardName.mutate(
-      { boardId: boardId, name: boardName, workspaceId: board.workspaceId },
+      { boardId: boardId, name: teamName, workspaceId: board.workspaceId },
       {
         onSuccess: () => {
           setEditTitle(false);
@@ -155,6 +156,7 @@ const BoardBar = () => {
       handleTitleBlur();
     }
   };
+
 
   if (isLoading) return <p>Loading board...</p>;
   if (error) return <p>Board not found</p>;
@@ -202,7 +204,7 @@ const BoardBar = () => {
         {/*Chỉnh sửa tiêu đề  */}
         {editTitle ? (
           <TextField
-            value={teamName ?? boardName}
+            value={teamName}
             onChange={handleTitleChange}
             onBlur={handleTitleBlur}
             onKeyPress={handleTitleKeyPress}

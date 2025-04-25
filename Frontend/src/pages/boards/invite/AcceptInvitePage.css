@@ -1,50 +1,121 @@
-.invite-container {
+.accept-invite-container {
+  /* background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); */
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  height: 100vh;
-  background-image: url("https://i.pinimg.com/736x/3f/3e/66/3f3e668a472c84e334395992bdd0d9fb.jpg");
-  background-size: cover;
-  background-position: center;
-  padding: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  align-items: center;
+  padding: 2rem 0;
 }
 
-.loading {
-  font-size: 24px;
-  color: #555;
-}
-
-.error-message {
-  color: red;
-  font-size: 18px;
+.invite-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
 }
 
 .invite-title {
-  font-size: 32px;
-  color: #333;
-  margin-bottom: 20px;
+  font-size: 2rem !important;
+  font-weight: bold;
+  color: #1a237e;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
 }
 
-.invite-description {
-  font-size: 18px;
-  color: #666;
-  margin-bottom: 30px;
-  text-align: center;
+.invite-message {
+  font-size: 1.5em !important;
+  font-weight: bold;
+  color: #0E24F1;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
 }
 
 .join-button {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
+  background-color: #1976d2 !important;
+  color: white !important;
+  padding: 0.75rem 2rem !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  margin: 0.5rem !important;
 }
 
 .join-button:hover {
-  background-color: #0056b3;
+  background-color: #1565c0 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.reject-button {
+  background-color: #ffffff !important;
+  color: #d32f2f !important;
+  padding: 0.75rem 2rem !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  border: 2px solid #d32f2f !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  margin: 0.5rem !important;
+}
+
+.reject-button:hover {
+  background-color: #d32f2f !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.rejoin-button {
+  background-color: #4CAF50 !important; /* xanh lá dịu */
+  color: white !important;
+  padding: 0.5rem 1.5rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  margin-top: 1rem !important;
+  margin-right: 10px !important;
+}
+
+.rejoin-button:hover {
+  background-color: #43a047 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.back-button {
+  background-color: #433023 !important;
+  color: white !important;
+  padding: 0.5rem 1.5rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  margin-top: 1rem !important;
+}
+
+.back-button:hover {
+  background-color: #9e9e9e !important;
+}
+
+.switch-account-link {
+  color: #1976d2 !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  transition: color 0.3s ease !important;
+}
+
+.switch-account-link:hover {
+  color: #1565c0 !important;
+  text-decoration: underline !important;
+}
+
+.error-message {
+  font-size: 2.2rem !important;
+  font-weight: bold;
+  color: #FDC620;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
 }

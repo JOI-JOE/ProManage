@@ -24,7 +24,7 @@ const Activity = () => {
 
   const { data: workspaces = [], isLoading, error } = useUserWorkspaces();
   const { data: activities = [] } = useActivitiesByUser();
-  console.log(workspaces);
+  // console.log(workspaces);
 
   const [open, setOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -121,7 +121,7 @@ const Activity = () => {
                         padding: 0.5,
                         textDecoration: "none",
                         "&:hover": {
-                          backgroundColor: "#b6c2cf",
+                          backgroundColor: "#e0ebeb",
                         },
                       }}
                     >

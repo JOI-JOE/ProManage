@@ -9,6 +9,7 @@ import {
   getGuestWorkspace,
   getUserWorkspaces,
   getUserWorkspaces2,
+  checkMemberInWorkspace,
 } from "../api/models/workspacesApi";
 
 /**
@@ -127,5 +128,16 @@ export const useUserWorkspaces = () => {
   return useQuery({
     queryKey: ["userWorkspaces2"],
     queryFn: getUserWorkspaces2,
+  });
+};
+
+export const useCheckMemberInWorkspace = (workspaceId, userId) => {
+  return useQuery({
+    queryKey: ["workspace-member-check", workspaceId, userId], // Unique key theo cả 2 giá trị
+    queryFn: () => checkMemberInWorkspace(workspaceId, userId),
+    enabled: !!workspaceId && !!userId, // Gọi API khi cả 2 đều tồn tại
+    staleTime: 1000 * 60 * 5, // 5 phút
+    cacheTime: 1000 * 60 * 30, // 30 phút
+    retry: 2,
   });
 };

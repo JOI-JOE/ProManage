@@ -124,7 +124,11 @@ const Register = () => {
       onSuccess: (data) => {
         if (data.token) {
           localStorage.setItem("token", data.token);
+          if(effectiveInviteToken) {
+            navigate(`/accept-invite/${effectiveInviteToken}`);
+          } else {
           navigate("/home");
+          }
         }
       },
       onError: (error) => {
