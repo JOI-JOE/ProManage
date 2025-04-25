@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useRequestJoinBoard } from "../../../hooks/useInviteBoard";
 import { Button, Typography, Box } from "@mui/material";
 import { useMe } from "../../../contexts/MeContext";
@@ -9,7 +9,10 @@ const RequestJoinBoard = () => {
   const { boardId } = useParams(); // Lấy boardId từ URL params
   const [message, setMessage] = useState("");
   const [isRequestSent, setIsRequestSent] = useState(false);
-  const navigate = useNavigate();
+  const [boardDetails, setBoardDetails] = useState({ id: null, name: null }); // Lưu board_id và board_name
+  const [isMember, setIsMember] = useState(false); // State để kiểm tra nếu đã là thành viên
+  // const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { user } = useMe()
   const joinBoardMutation = useRequestJoinBoard(); // Sử dụng custom hook
 
@@ -24,15 +27,42 @@ const RequestJoinBoard = () => {
             if (data.success) {
               setMessage(data.message);
               setIsRequestSent(true);
+              setIsMember(false);
             } else {
-              setMessage(data.message);
-              setIsRequestSent(false);
+            // Xử lý các lỗi cụ thể
+            if (data.message === "Yêu cầu của bạn đã được gửi trước đó và đang chờ duyệt") {
+              setIsRequestSent(true); // Ẩn nút Gửi yêu cầu
+              setIsMember(false);
+            } else if (data.message === "Bạn đã là thành viên") {
+              setIsRequestSent(true); // Ẩn nút Gửi yêu cầu
+              setIsMember(true); // Hiển thị nút Đi Tới bảng
+              setBoardDetails({ id: data.board_id, name: data.board_name });
+            } else {
+              setIsRequestSent(false); // Hiển thị nút Gửi yêu cầu
+              setIsMember(false);
+              setBoardDetails({ id: null, name: null });
             }
+            setMessage(data.message);
+          }
           },
           onError: (error) => {
             const errorMessage = error.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại.";
+            // Xử lý các lỗi cụ thể
+            if (errorMessage === "Yêu cầu của bạn đã được gửi trước đó và đang chờ duyệt") {
+              setIsRequestSent(true); // Ẩn nút Gửi yêu cầu
+              setIsMember(false);
+            } else if (errorMessage === "Bạn đã là thành viên") {
+              setIsRequestSent(true); // Ẩn nút Gửi yêu cầu
+              setIsMember(true); // Hiển thị nút Đi Tới bảng
+              setBoardDetails({
+                id: error.response?.data?.board_id,
+                name: error.response?.data?.board_name,
+              });
+            } else {
+              setIsRequestSent(false); // Hiển thị nút Gửi yêu cầu
+              setIsMember(false);
+            }
             setMessage(errorMessage);
-            setIsRequestSent(false);
           },
         }
       );
@@ -40,6 +70,8 @@ const RequestJoinBoard = () => {
       console.error("Có lỗi xảy ra:", error);
       setMessage("Có lỗi xảy ra, vui lòng thử lại.");
       setIsRequestSent(false);
+      setIsMember(false);
+      setBoardDetails({ id: null, name: null });
     }
   };
 
@@ -77,6 +109,17 @@ const RequestJoinBoard = () => {
             sx={{ textTransform: "none", fontSize: "1rem" }}
           >
             {joinBoardMutation.isLoading ? "Đang gửi..." : "Gửi yêu cầu tham gia bảng"}
+          </Button>
+        ) : isMember ? (
+          <Button
+            variant="contained"
+            color="primary"
+            className="w-full py-2"
+            component={Link}
+            to={`/b/${boardDetails.id}/${encodeURIComponent(boardDetails.name)}`}
+            sx={{ textTransform: "none", fontSize: "1rem" }}
+          >
+            Đi Tới bảng
           </Button>
         ) : null}
       </div>

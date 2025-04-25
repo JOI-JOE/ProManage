@@ -16,7 +16,8 @@ const AcceptInvitePage = () => {
   const [hasRejected, setHasRejected] = useState(false);
   const [error, setError] = useState(null);
   const [userId, setUserId] = useState(null);
-  const joinBoardMutation = useRequestJoinBoard(); // Sử dụng custom hook
+   const joinBoardMutation = useRequestJoinBoard(); // Sử dụng custom hook
+   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
 
   useEffect(() => {
     const fetchInvite = async () => {
@@ -28,7 +29,7 @@ const AcceptInvitePage = () => {
         );
         // console.log("response", response.data);// có ra data nhé 
         // console.log("id-user", response.data.token.tokenable.id);// có ra data nhé 
-
+ 
         setBoard(response.data.board);
         setIsMember(response.data.is_member);
         setInviterName(response.data.inviter_name);
@@ -47,7 +48,7 @@ const AcceptInvitePage = () => {
     };
 
     fetchInvite();
-  }, [token, navigate]);
+  }, [token, navigate,isAuthenticated]);
 
   const handleJoinBoard = async () => {
     try {
@@ -81,12 +82,12 @@ const AcceptInvitePage = () => {
   // console.log("userId", board);// có ra data nhé
   const handleRequestRejoin = async () => {
     // console.log(111212);
-
+    
     try {
       joinBoardMutation.mutate(
-        { boardId: board, userId: userId }, // Truyền dữ liệu trực tiếp
+        { boardId: board , userId:userId}, // Truyền dữ liệu trực tiếp
         {
-          onSuccess: (data) => {
+          onSuccess: (data)=> {
             if (data.success) {
               toast.success("Yêu cầu tham gia đã được gửi!");
               // setMessage("Yêu cầu tham gia đã được gửi!");
@@ -99,11 +100,41 @@ const AcceptInvitePage = () => {
       );
     } catch (error) {
       console.error("Có lỗi xảy ra:", error);
-
+      
     }
   };
 
-  if (!board && !error && !hasRejected) return <LogoLoading />;
+  if (!isAuthenticated) {
+    // console.log("Token in AcceptInvitePage:", token);
+    
+    return (
+      <Box className="accept-invite-container">
+        <Container className="invite-content">
+          <Typography variant="h6" className="invite-title">
+            Vui lòng đăng nhập và truy cập lại liên kết để tham gia bảng
+          </Typography>
+          <Button
+            variant="contained"
+            className="join-button"
+            onClick={() => {
+              navigate("/login");
+            }}
+          >
+            Đăng nhập
+          </Button>
+          <Button
+            variant="contained"
+            className="back-button"
+            onClick={() => navigate("/home")}
+          >
+            Trở về trang chủ
+          </Button>
+        </Container>
+      </Box>
+    );
+  }
+
+  if (!board && !error && !hasRejected) return <LogoLoading/>;
 
   return (
     <Box className="accept-invite-container">
@@ -132,7 +163,7 @@ const AcceptInvitePage = () => {
           </Box>
         ) : (
           <Box>
-            {!isMember && (
+         {!isMember && (
               <Typography variant="h6" className="invite-title">
                 <Box className="font-bold" component="span">{inviterName}</Box>
                 <Box component="span"> đã chia sẻ </Box>
@@ -141,19 +172,29 @@ const AcceptInvitePage = () => {
               </Typography>
             )}
 
-            <Typography variant="body1" className="invite-message">
+            <Typography variant="body1"  className="invite-message">
               {isMember
                 ? "Bạn đã là thành viên của bảng này."
                 : "Nhấn nút bên dưới để tham gia bảng!"}
             </Typography>
-
-            <Button
-              variant="contained"
-              className="join-button"
-              onClick={handleJoinBoard}
-            >
-              {isMember ? "Đi Tới bảng" : "Tham gia bảng"}
-            </Button>
+            {isMember ? (
+              <Button
+                variant="contained"
+                className="join-button"
+                component={Link}
+                onClick={() => navigate(`/b/${board?.id}/${encodeURIComponent(board?.name)}`)}
+              >
+                Đi Tới bảng
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                className="join-button"
+                onClick={handleJoinBoard}
+              >
+                Tham gia bảng
+              </Button>
+            )}
             {!isMember && (
               <Button
                 variant="contained"

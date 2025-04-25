@@ -10,6 +10,7 @@ import {
   getListClosedByBoard,
   updatePositionList,
   duplicateList,
+  checkBoardAccess,
 } from "../api/models/listsApi";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -71,18 +72,30 @@ import { optimisticIdManager } from "./optimistic/optimisticIdManager";
 export const useLists = (boardId) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
   const [errorState, setErrorState] = useState(null);
+  const isAuthenticated = !!localStorage.getItem('token');
 
   const query = useQuery({
     queryKey: ["lists", boardId],
     queryFn: async () => {
-      const { data, error } = await getListByBoardId(boardId);
+      // const { data, error } = await getListByBoardId(boardId);
 
-      if (error) {
-        setErrorState(error);
+      const access = await checkBoardAccess(boardId);
+      if (access.error) {
+        setErrorState({ code: access.error, message: access.message, boardId });
+        return [];
       }
+      // console.log(`checkBoardAccess: Response ${access.error} -`, {
+      //   error: access.message,});
+      
 
-      return data;
+      const response = await getListByBoardId(boardId);
+      if (response.error) {
+        setErrorState({ code: response.error, message: response.message, boardId });
+        return [];
+      }
+      return response.data;
     },
     enabled: !!boardId,
     staleTime: 0,
@@ -91,10 +104,36 @@ export const useLists = (boardId) => {
 
   // Xử lý lỗi: nếu không có quyền hoặc không tìm thấy board
   useEffect(() => {
-    if (errorState === "no_access" || errorState === "not_found") {
-      navigate("/404");
-    } else if (errorState === "unknown_error") {
-      console.error("Lỗi không xác định xảy ra!");
+    if (errorState) {
+      console.log(`useLists: Xử lý lỗi - ${errorState.code}, boardId: ${errorState.boardId}`);
+      switch (errorState.code) {
+        case "unauthenticated":
+          console.log(`useLists: Chưa đăng nhập, điều hướng đến /login với boardId: ${errorState.boardId}`);
+          // return 111;
+          // console.warn(`useLists: Chưa đăng nhập, điều hướng đến /login với boardId: ${errorState.boardId}`);
+          // navigate(`login?boardId=${errorState.boardId}`, {
+          //   state: {
+          //     from: window.location.pathname,
+          //     boardId: errorState.boardId,
+          //   },
+          // });
+          break;
+        case "no_access":
+          console.warn(`useLists: Không có quyền truy cập, điều hướng đến /request-join/${errorState.boardId}`);
+          navigate(`/request-join/${errorState.boardId}`, {
+            state: { from: window.location.pathname },
+          });
+          break;
+        case "not_found":
+          console.warn(`useLists: Không tìm thấy board: ${errorState.message}`);
+          navigate("/404");
+          break;
+        case "unknown_error":
+          console.error(`useLists: Lỗi không xác định: ${errorState.message}`);
+          break;
+        default:
+          console.error("useLists: Lỗi không được xử lý:", errorState);
+      }
     }
   }, [errorState, navigate]);
 

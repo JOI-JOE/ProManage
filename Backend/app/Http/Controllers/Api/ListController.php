@@ -54,18 +54,18 @@ class ListController extends Controller
 
         $user = Auth::user();
 
-        $hasAccess = false;
+        // $hasAccess = false;
 
-        if ($board->visibility === 'private' && $board->members->contains($user->id)) {
-            $hasAccess = true;
-        } elseif ($board->visibility === 'workspace' && $board->workspace->users->contains($user->id) || $board->members->contains($user->id)) {
-            $hasAccess = true;
-        } elseif ($board->visibility === 'public') {
-            $hasAccess = true;
-        }
-        if (!$hasAccess) {
-            return response()->json(['error' => 'Access denied'], 403);
-        }
+        // if ($board->visibility === 'private' && $board->members->contains($user->id)) {
+        //     $hasAccess = true;
+        // } elseif ($board->visibility === 'workspace' && $board->workspace->users->contains($user->id) || $board->members->contains($user->id)) {
+        //     $hasAccess = true;
+        // } elseif ($board->visibility === 'public') {
+        //     $hasAccess = true;
+        // }
+        // if (!$hasAccess) {
+        //     return response()->json(['error' => 'Access denied'], 403);
+        // }
 
         $responseData = [
             'id' => $board->id,
@@ -121,6 +121,56 @@ class ListController extends Controller
         ];
         return response()->json($responseData);
     }
+
+    ///////////////// Viết riêng ra để làm cho dễ (quốc)
+    public function checkBoardAccess($boardId)
+    {
+        $board = Board::where('id', $boardId)
+            ->with(['members', 'workspace.users']) // load workspace users
+            ->first();
+
+        if (!$board) {
+            return response()->json(['message' => 'Board not found'], 404);
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Authentication required'], 401);
+        }
+
+        // ✅ Nếu là thành viên bảng → full quyền
+        if ($board->members->contains($user->id)) {
+            return response()->json(['access' => true]);
+        }
+
+        // 🌐 Nếu public → cho phép xem (readonly)
+        if ($board->visibility === 'public') {
+            return response()->json(['access' => true, 'readonly' => true]);
+        }
+
+        // 🏢 Nếu visibility là workspace → kiểm tra thành viên workspace
+        if ($board->visibility === 'workspace') {
+            if (!$board->workspace) {
+                return response()->json(['error' => 'Workspace not found for this board'], 500);
+            }
+
+            if ($board->workspace->users->contains($user->id)) {
+                return response()->json(['access' => true, 'readonly' => true]);
+            } else {
+                return response()->json(['error' => 'You are not a member of this workspace'], 403);
+            }
+        }
+
+        // 🔒 Nếu là bảng riêng tư → trả lỗi cụ thể
+        if ($board->visibility === 'private') {
+            return response()->json(['error' => 'You are not a member of this private board'], 403);
+        }
+
+        return response()->json(['error' => 'Access denied to this board'], 403);
+    }
+
+
+
 
     public function getListClosed($boardId)
     {
@@ -292,9 +342,9 @@ class ListController extends Controller
         try {
             // Tạo list mới
             ListBoard::where('board_id', $originalList->board_id)
-            ->where('position', '>', $originalList->position)
-            ->increment('position');
-    
+                ->where('position', '>', $originalList->position)
+                ->increment('position');
+
             $newList = ListBoard::create([
                 'board_id' => $originalList->board_id,
                 'name' => $request->input('name', $originalList->name . ' (Copy)'),
@@ -363,7 +413,6 @@ class ListController extends Controller
                 'message' => 'List duplicated successfully',
                 // 'list' => $newList->load('cards'),
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -371,7 +420,5 @@ class ListController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-
     }
-
 }

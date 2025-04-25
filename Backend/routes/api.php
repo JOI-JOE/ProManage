@@ -246,6 +246,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Broadcast::routes();
 });
 Route::get('/invite-board/{token}', [BoardMemberController::class, 'handleInvite']);
+Route::get('/check-board/{boardId}', [ListController::class, 'checkBoardAccess'])->middleware('auth:sanctum');
+
 
 // Recent board cho user trong workspace
 Route::middleware('auth:sanctum')->group(function () {
