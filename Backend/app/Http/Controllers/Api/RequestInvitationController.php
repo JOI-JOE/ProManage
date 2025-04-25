@@ -37,7 +37,13 @@ class RequestInvitationController extends Controller
 
             // Kiểm tra xem đã là thành viên chưa
             if ($board->members()->where('user_id', $user->id)->exists()) {
-                return response()->json(['success' => false, 'message' => 'Bạn đã là thành viên'], 400);
+                return response()->json(
+                    ['success' => false,
+                     'message' => 'Bạn đã là thành viên',
+                     'board_id' => $board->id,
+                     'board_name' => $board->name,
+                    
+                    ], 400);
             }
 
             // Kiểm tra xem đã có yêu cầu đang chờ chưa
@@ -109,11 +115,13 @@ class RequestInvitationController extends Controller
 
             // Broadcast event realtime tới các admin
             broadcast(new RequestJoinBoard($boardId, $user->id, $user->full_name, $requestId, $admins))->toOthers();
-            Log::info("Broadcasting to admins", ['admins' => $admins]);
+            Log::info("Broadcasting to admins for request join board", ['admins' => $admins]);
             return response()->json([
                 'success' => true,
                 'message' => 'Yêu cầu tham gia bảng đã được gửi và đang chờ quản trị viên duyệt!',
                 'is_member' => false,
+                'board_id' => $board->id,
+                'board_name' => $board->name
             ], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -159,6 +167,7 @@ class RequestInvitationController extends Controller
             $board->members()->attach($user->id, [
                 'id' => Str::uuid(), // Đảm bảo bảng board_members có cột id kiểu uuid
                 'role' => 'member',
+                'joined' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

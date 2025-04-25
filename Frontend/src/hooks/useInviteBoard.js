@@ -38,6 +38,7 @@ export const useGetBoardMembers = (boardId) => {
       // queryClient.invalidateQueries( ["boardMembers", boardId]);
       queryClient.invalidateQueries({ queryKey: ["boardMembers", boardId], exact: true });
       queryClient.invalidateQueries({ queryKey: ["user"], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["user_main"] });
     });
 
     return () => {
@@ -93,6 +94,7 @@ export const useUpdateRoleMemberInBoards = () => {
       if (data.success) {
       
         queryClient.invalidateQueries({ queryKey: ["boardMembers", boardId], exact: true });
+        // queryClient.invalidateQueries({ queryKey: ["user_main"] });
         
       }
     },
