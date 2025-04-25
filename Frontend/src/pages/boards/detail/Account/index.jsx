@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Box,
   Typography,
-  Avatar,
   Button,
   Paper,
   IconButton,
@@ -12,30 +11,52 @@ import {
   FormControlLabel,
   List,
   ListItem,
+  ListItemIcon,
+  ListItemText,
   TextField,
   Dialog,
   DialogTitle,
   DialogContent,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
-import EditIcon from "@mui/icons-material/Edit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-// import WorkspaceDetailForm from "../../../workspace/home/WorkspaceDetailForm";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import { useParams } from "react-router-dom";
+import { useGetWorkspaceById } from "../../../../hooks/useWorkspace";
+import WorkspaceHeader from "../Member/Common/WorkspaceHeader";
+import LogoLoading from "../../../../components/Common/LogoLoading";
 
 const Account = () => {
+  const { workspaceId } = useParams();
+
+  const {
+    data: workspace,
+    isLoading: isLoadingWorkspace,
+    isError: isWorkspaceError,
+    error: workspaceError,
+    refetch: refetchWorkspace,
+  } = useGetWorkspaceById(workspaceId, {
+    enabled: !!workspaceId,
+  });
+
   const [isFormVisible, setFormVisible] = useState(false);
-  const [visibility, setVisibility] = useState("private"); // Mặc định là riêng tư
+  const [visibility, setVisibility] = useState("public"); // Changed to "public" to match screenshot
   const [anchorEl, setAnchorEl] = useState(null);
-  const [setDeleteConfirmOpen] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("");
   const [deleteAnchorEl, setDeleteAnchorEl] = useState(null);
   const [isInviteOpen, setInviteOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const [isLinkActive, setIsLinkActive] = useState(false);
+
+  // Placeholder for admin status (adjust based on your auth logic)
+  const isAdmin = workspace?.isCurrentUserAdmin || true; // Set to true for demo; replace with actual logic
+  const allowInvite = false;
+
   const handleOpenInvite = () => {
     setInviteOpen(true);
     setLinkCopied(false);
@@ -46,21 +67,14 @@ const Account = () => {
     setFormVisible(!isFormVisible);
   };
 
-  const workspace = {
-    name: "Tên Không Gian",
-  };
-
-  // Mở Popover khi bấm "Thay đổi"
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
-  // Đóng Popover
   const handleClose = () => {
     setAnchorEl(null);
   };
 
-  // Chỉ thay đổi trạng thái, KHÔNG đóng Popover
   const handleVisibilityChange = (event) => {
     setVisibility(event.target.value);
   };
@@ -77,6 +91,7 @@ const Account = () => {
     setIsLinkActive(false);
     setLinkCopied(false);
   };
+
   const handleCloseInvite = () => {
     setInviteOpen(false);
   };
@@ -84,104 +99,55 @@ const Account = () => {
   const handleDeleteClick = (event) => {
     setDeleteAnchorEl(event.currentTarget);
   };
+
   const handleCloseDeletePopover = () => {
     setDeleteAnchorEl(null);
     setWorkspaceName("");
   };
+
   const handleDeleteConfirm = () => {
     console.log("Không gian làm việc đã bị xóa!");
-    setDeleteConfirmOpen(false);
     setWorkspaceName("");
+    handleCloseDeletePopover();
   };
+
+  if (isLoadingWorkspace) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+        <LogoLoading />
+      </Box>
+    );
+  }
+
+  if (isWorkspaceError) {
+    return (
+      <Box sx={{ textAlign: "center", py: 2 }}>
+        <Typography color="error">
+          Error: {workspaceError?.message || "Failed to load workspace"}
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
       sx={{
         width: "100%",
-        maxWidth: "1200px",
-        padding: "20px",
-        margin: "30px auto",
+        // maxWidth: "1200px",
+        // padding: "20px",
+        margin: "0 auto",
       }}
     >
-      {/* Header chứa Tiêu đề và Nút Mời Thành Viên */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #D3D3D3",
-          paddingBottom: "40px",
-          width: "100%",
-          maxWidth: "1100px",
-          margin: "0 auto",
-          minHeight: "80px",
-        }}
-      >
-        {/* Nếu form chưa hiển thị, hiển thị avatar và tiêu đề */}
-        {!isFormVisible ? (
-          <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Avatar
-              sx={{
-                bgcolor: "#5D87FF",
-                width: "80px",
-                height: "80px",
-                marginLeft: "100px",
-              }}
-            >
-              <span style={{ fontSize: "30px", fontWeight: "bold" }}>
-                {workspace.name.charAt(0).toUpperCase()}
-              </span>
-            </Avatar>
-            <Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <Typography fontWeight="bold" sx={{ fontSize: 25 }}>
-                  {workspace.name}
-                </Typography>
-                <IconButton
-                  onClick={toggleFormVisibility}
-                  sx={{
-                    color: "gray",
-                    "&:hover": { backgroundColor: "transparent" },
-                  }}
-                >
-                  <EditIcon sx={{ fontSize: 24 }} />
-                </IconButton>
-              </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  color: "gray",
-                }}
-              >
-                <LockIcon sx={{ fontSize: 14 }} />
-                <Typography sx={{ fontSize: 14 }}>Riêng tư</Typography>
-              </Box>
-            </Box>
-          </Box>
-        ) : (
-          <WorkspaceDetailForm />
-        )}
-
-        <Button
-          variant="contained"
-          sx={{
-            bgcolor: "#026AA7",
-            textTransform: "none",
-            fontSize: "14px",
-            fontWeight: "bold",
-            padding: "8px 12px",
-            boxShadow: "none",
-            marginRight: "60px",
-            "&:hover": { bgcolor: "#005A96" },
-          }}
-          onClick={handleOpenInvite}
-        >
-          Mời các thành viên Không gian làm việc
-        </Button>
-      </Box>
-
+      {/* Use WorkspaceHeader component */}
+      <WorkspaceHeader
+        workspace={workspace}
+        isAdmin={isAdmin}
+        isFormVisible={isFormVisible}
+        toggleFormVisibility={toggleFormVisibility}
+        handleOpenInvite={handleOpenInvite}
+        refetchWorkspace={refetchWorkspace}
+        allowInvite={allowInvite}
+      />
       {/* Modal Mời Thành Viên */}
       <Dialog
         open={isInviteOpen}
@@ -256,17 +222,19 @@ const Account = () => {
       {/* Nội dung */}
       <Paper
         sx={{
-          marginTop: "30px",
-          padding: "20px",
+          // marginTop: "30px",
+          padding: "24px",
           boxShadow: "none",
-          maxWidth: "900px",
-          width: "100%",
+          // maxWidth: "900px",
+          maxWidth: "1000px",
           margin: "30px auto",
+          border: "1px solid #dfe1e6",
+          borderRadius: "8px",
         }}
       >
         <Typography
           fontWeight="bold"
-          sx={{ fontSize: 20, marginBottom: "15px" }}
+          sx={{ fontSize: 20, marginBottom: "20px", color: "#172b4d" }}
         >
           Cài đặt Không gian làm việc
         </Typography>
@@ -277,222 +245,319 @@ const Account = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "15px",
-            // alignItems: "flex-start",
-            height: "100px", // Đặt chiều cao cố định để tránh nhảy layout
-            overflow: "hidden",
+            marginBottom: "24px",
+            minHeight: "80px",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Box>
-              <Typography fontWeight="bold" sx={{ fontSize: 15 }}>
-                Khả năng hiển thị trong Không gian làm việc
-              </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <Typography fontWeight="bold" sx={{ fontSize: 16, color: "#172b4d" }}>
+              Khả năng hiển thị trong Không gian làm việc
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+              {visibility === "private" ? (
+                <LockIcon sx={{ fontSize: 16, color: "#eb5a47", mt: "2px" }} />
+              ) : (
+                <PublicIcon sx={{ fontSize: 16, color: "#2eb886", mt: "2px" }} />
+              )}
               <Typography
                 sx={{
                   fontSize: 14,
-                  color: "gray",
+                  color: "#5e6c84",
+                  lineHeight: "20px",
                 }}
               >
                 {visibility === "private" ? (
                   <>
-                    <LockIcon sx={{ fontSize: 14, color: "red" }} />
-                    Riêng tư – Đây là Không gian làm việc riêng tư. Chỉ những
-                    người trong Không gian làm việc có thể truy cập hoặc nhìn
-                    thấy Không gian làm việc.
+                    Riêng tư – Đây là Không gian làm việc riêng tư. Chỉ những người trong Không gian làm việc có thể truy cập hoặc nhìn thấy Không gian làm việc.
                   </>
                 ) : (
                   <>
-                    <PublicIcon sx={{ fontSize: 14, color: "green" }} />
-                    Công khai – Đây là Không gian làm việc công khai. Bất kỳ ai
-                    có đường dẫn tới Không gian làm việc đều có thể nhìn thấy
-                    Không gian làm việc và Không gian làm việc có thể được tìm
-                    thấy trên các công cụ tìm kiếm như Google. Chỉ những người
-                    được mời vào Không gian làm việc mới có thể thêm và chỉnh
-                    sửa các bảng của Không gian làm việc.
+                    Công khai – Đây là Không gian làm việc công khai. Bất kỳ ai có đường dẫn tới Không gian làm việc đều có thể nhìn thấy Không gian làm việc và Không gian làm việc có thể được tìm thấy trên các công cụ tìm kiếm như Google. Chỉ những người được mời vào Không gian làm việc mới có thể thêm và chỉnh sửa các bảng của Không gian làm việc.
                   </>
                 )}
               </Typography>
             </Box>
           </Box>
-          {/* Nút thay đổi - Mở Popover */}
           <Button
             variant="outlined"
             size="small"
             onClick={handleOpen}
             sx={{
               whiteSpace: "nowrap",
-
-              marginLeft: "80px",
+              color: "#172b4d",
+              borderColor: "#dfe1e6",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "14px",
+              padding: "10px 25px",
+              "&:hover": {
+                borderColor: "#c1c7d0",
+                backgroundColor: "#f4f5f7",
+              },
             }}
           >
             Thay đổi
           </Button>
-
-          {/* Popover xuất hiện khi bấm "Thay đổi" */}
           <Popover
             open={Boolean(anchorEl)}
             anchorEl={anchorEl}
             onClose={handleClose}
-            anchorOrigin={{ vertical: "bottom", horizontal: "center" }} // Cố định vị trí
-            transformOrigin={{ vertical: "top", horizontal: "center" }} // Cố định vị trí
-            disablePortal // Ngăn popover thay đổi vị trí khi xuất hiện
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            transformOrigin={{ vertical: "top", horizontal: "center" }}
+            disablePortal
+            PaperProps={{
+              sx: {
+                mt: "50px",
+
+                borderRadius: "8px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                width: "320px",
+              },
+            }}
           >
-            <Box sx={{ padding: "10px 20px", width: "300px" }}>
+            <Box sx={{ padding: "12px 16px" }}>
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  mb: "12px",
                 }}
               >
-                <Typography fontWeight="bold">
+                <Typography fontWeight="bold" sx={{ fontSize: 14, color: "#172b4d" }}>
                   Chọn khả năng hiển thị
                 </Typography>
                 <IconButton size="small" onClick={handleClose}>
-                  <CloseIcon fontSize="small" />
+                  <CloseIcon fontSize="small" sx={{ color: "#5e6c84" }} />
                 </IconButton>
               </Box>
 
               <RadioGroup value={visibility} onChange={handleVisibilityChange}>
-                {/* Riêng tư */}
-                <FormControlLabel
-                  value="private"
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                        }}
-                      >
-                        <LockIcon sx={{ fontSize: 18, color: "red" }} />
-                        <Typography fontWeight="bold">Riêng tư</Typography>
+                <Box sx={{ width: "304px" }}>
+                  <FormControlLabel
+                    value="private"
+                    control={<Radio size="small" />}
+                    label={
+                      <Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <LockIcon sx={{ fontSize: 16, color: "#eb5a47" }} />
+                          <Typography fontWeight="bold" sx={{ fontSize: 14, color: "#172b4d" }}>
+                            Riêng tư
+                          </Typography>
+                        </Box>
+                        <Typography
+                          sx={{ fontSize: 12, color: "#5e6c84", marginLeft: "24px", mt: "4px" }}
+                        >
+                          Đây là Không gian làm việc riêng tư. Chỉ những người trong Không gian làm việc có thể truy cập hoặc nhìn thấy Không gian làm việc.
+                        </Typography>
                       </Box>
-                      <Typography
-                        sx={{ fontSize: 10, color: "gray", marginLeft: "25px" }}
-                      >
-                        Đây là Không gian làm việc riêng tư. Chỉ những người
-                        trong Không gian làm việc có thể truy cập hoặc nhìn thấy
-                        Không gian làm việc.
-                      </Typography>
-                    </Box>
-                  }
-                />
-
-                {/* Công khai */}
-                <FormControlLabel
-                  value="public"
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                        }}
-                      >
-                        <PublicIcon sx={{ fontSize: 18, color: "green" }} />
-                        <Typography fontWeight="bold">Công khai</Typography>
+                    }
+                    sx={{ mb: "12px" }}
+                  />
+                  <FormControlLabel
+                    value="public"
+                    control={<Radio size="small" />}
+                    label={
+                      <Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <PublicIcon sx={{ fontSize: 16, color: "#2eb886" }} />
+                          <Typography fontWeight="bold" sx={{ fontSize: 14, color: "#172b4d" }}>
+                            Công khai
+                          </Typography>
+                        </Box>
+                        <Typography
+                          sx={{ fontSize: 10, color: "#5e6c84", marginLeft: "24px", mt: "4px" }}
+                        >
+                          Đây là Không gian làm việc công khai. Bất kỳ ai có đường dẫn tới Không gian làm việc đều có thể nhìn thấy Không gian làm việc và Không gian làm việc có thể được tìm thấy trên các công cụ tìm kiếm như Google. Chỉ những người được mời vào Không gian làm việc mới có thể thêm và chỉnh sửa các bảng của Không gian làm việc.
+                        </Typography>
                       </Box>
-                      <Typography
-                        sx={{ fontSize: 10, color: "gray", marginLeft: "25px" }}
-                      >
-                        Đây là Không gian làm việc công khai. Bất kỳ ai có đường
-                        dẫn tới Không gian làm việc đều có thể nhìn thấy Không
-                        gian làm việc và Không gian làm việc có thể được tìm
-                        thấy trên các công cụ tìm kiếm như Google. Chỉ những
-                        người được mời vào Không gian làm việc mới có thể thêm
-                        và chỉnh sửa các bảng của Không gian làm việc.
-                      </Typography>
-                    </Box>
-                  }
-                />
+                    }
+                  />
+                </Box>
               </RadioGroup>
             </Box>
           </Popover>
         </Box>
+
         <Button
           variant="outlined"
           color="error"
           onClick={handleDeleteClick}
-          sx={{ marginTop: "200px", alignItems: "center" }}
+          sx={{
+            marginTop: "40px",
+            alignItems: "center",
+            textTransform: "none",
+            fontWeight: 500,
+            fontSize: "14px",
+            color: "#eb5a47",
+            borderColor: "#eb5a47",
+            padding: "6px 12px",
+            "&:hover": {
+              backgroundColor: "#ffeef0",
+              borderColor: "#eb5a47",
+            },
+          }}
         >
           Xóa Không gian làm việc này
         </Button>
       </Paper>
 
-      {/* Popover Xác nhận xóa */}
       <Popover
         open={Boolean(deleteAnchorEl)}
         anchorEl={deleteAnchorEl}
         onClose={handleCloseDeletePopover}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          },
+        }}
       >
-        <Paper sx={{ padding: 2, width: "300px" }}>
+        <Box sx={{ padding: "16px" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: "12px",
+            }}
+          >
+            <Typography fontWeight="bold" sx={{ fontSize: 14, color: "#172b4d" }}>
+              Xóa Không gian làm việc này?
+            </Typography>
+            <IconButton size="small" onClick={handleCloseDeletePopover}>
+              <CloseIcon fontSize="small" sx={{ color: "#5e6c84" }} />
+            </IconButton>
+          </Box>
           <Typography
             fontWeight="bold"
-            sx={{ mt: 1, textAlign: "center", color: "gray" }}
+            sx={{ fontSize: 14, color: "#172b4d", mb: "12px" }}
           >
-            Xóa tên không gian làm việc?
+            Nhập tên Không gian làm việc "{workspace?.display_name || 'Tên Không Gian'}" để xóa
           </Typography>
           <Typography
             fontWeight="bold"
-            sx={{ fontSize: "15px", marginTop: "20px" }}
-          >
-            Nhập tên Không gian làm việc "{workspace.name}" để xóa
-          </Typography>
-          <Typography
-            fontWeight="bold"
-            sx={{ mt: 1, color: "gray", fontSize: "13px", marginTop: "10px" }}
+            sx={{ fontSize: 12, color: "#5e6c84", mb: "8px" }}
           >
             Những điều cần biết:
           </Typography>
-          <List sx={{ fontSize: "14px" }}>
-            <ListItem>• Điều này là vĩnh viễn và không thể hoàn tác.</ListItem>
-            <ListItem>• Tất cả các bảng sẽ bị đóng.</ListItem>
-            <ListItem>• Các quản trị viên có thể mở lại các bảng.</ListItem>
-            <ListItem>
-              • Thành viên bảng sẽ không thể tương tác với bảng đã đóng.
+          <List dense sx={{ fontSize: "12px", color: "#5e6c84", mb: "12px", padding: 0 }}>
+            <ListItem sx={{ padding: "2px 0" }}>
+              <ListItemIcon sx={{ minWidth: "20px" }}>
+                <FiberManualRecordIcon sx={{ fontSize: 8, color: "#5e6c84" }} />
+              </ListItemIcon>
+              <ListItemText primary="Điều này là vĩnh viễn và không thể hoàn tác." />
+            </ListItem>
+            <ListItem sx={{ padding: "2px 0" }}>
+              <ListItemIcon sx={{ minWidth: "20px" }}>
+                <FiberManualRecordIcon sx={{ fontSize: 8, color: "#5e6c84" }} />
+              </ListItemIcon>
+              <ListItemText primary="Tất cả các bảng trong Không gian làm việc này sẽ bị đóng." />
+            </ListItem>
+            <ListItem sx={{ padding: "2px 0" }}>
+              <ListItemIcon sx={{ minWidth: "20px" }}>
+                <FiberManualRecordIcon sx={{ fontSize: 8, color: "#5e6c84" }} />
+              </ListItemIcon>
+              <ListItemText primary="Các quản trị viên có thể mở lại các bảng." />
+            </ListItem>
+            <ListItem sx={{ padding: "2px 0" }}>
+              <ListItemIcon sx={{ minWidth: "20px" }}>
+                <FiberManualRecordIcon sx={{ fontSize: 8, color: "#5e6c84" }} />
+              </ListItemIcon>
+              <ListItemText primary="Các thành viên bảng sẽ không thể tương tác với các bảng đã đóng." />
             </ListItem>
           </List>
           <TextField
             fullWidth
             variant="outlined"
-            label="Nhập tên Không gian làm việc"
+            placeholder="Nhập tên Không gian làm việc để xóa"
             value={workspaceName}
             onChange={(e) => setWorkspaceName(e.target.value)}
-            sx={{ mt: 2 }}
-            InputProps={{
-              sx: { color: "black" },
+            sx={{
+              mb: "12px",
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "4px",
+                "& fieldset": {
+                  borderColor: "#dfe1e6",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#c1c7d0",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#0079bf",
+                },
+              },
+              "& .MuiInputBase-input": {
+                padding: "8px",
+                fontSize: "14px",
+                color: "#172b4d",
+              },
             }}
             InputLabelProps={{
-              sx: { color: "black" },
+              sx: { color: "#5e6c84" },
               shrink: true,
             }}
           />
-
           <Box
-            sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}
+            sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}
           >
             <Button
               variant="contained"
               color="error"
-              disabled={workspaceName !== workspace.name}
+              disabled={workspaceName !== (workspace?.display_name || "Tên Không Gian")}
               onClick={handleDeleteConfirm}
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                fontSize: "14px",
+                backgroundColor: "#eb5a47",
+                "&:hover": {
+                  backgroundColor: "#d1453b",
+                },
+                "&:disabled": {
+                  backgroundColor: "#f4f5f7",
+                  color: "#a5adba",
+                },
+              }}
             >
               Xóa
             </Button>
-            <Button variant="outlined" onClick={handleCloseDeletePopover}>
+            <Button
+              variant="outlined"
+              onClick={handleCloseDeletePopover}
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                fontSize: "14px",
+                color: "#172b4d",
+                borderColor: "#dfe1e6",
+                "&:hover": {
+                  backgroundColor: "#f4f5f7",
+                  borderColor: "#c1c7d0",
+                },
+              }}
+            >
               Hủy
             </Button>
           </Box>
-        </Paper>
+        </Box>
       </Popover>
     </Box>
   );
 };
+
 export default Account;

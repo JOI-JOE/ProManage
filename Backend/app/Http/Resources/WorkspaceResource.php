@@ -8,23 +8,25 @@ use Illuminate\Support\Str;
 
 class WorkspaceResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(Request $request): array
+    public function toArray($request)
     {
+        // $this->resource là mảng $workspaceData đã được truyền vào
         return [
-            'id'               => $this->id,
-            'name'             => $this->name,
-            'display_name'     => $this->display_name,
-            'boards'           => BoardResource::collection($this->boards),
-            'markedBoards'     => BoardResource::collection($this->markedBoards),
-            'desc'             => Str::limit($this->desc, 50),
-            'permission_level' => $this->permission_level,
-            'team_type'        => $this->team_type,
-            'members'          => WorkspaceMembersResource::collection($this->members),
+            'id' => $this->resource['id'],
+            'name' => $this->resource['name'],
+            'display_name' => $this->resource['display_name'],
+            'desc' => $this->resource['desc'],
+            'logo_hash' => $this->resource['logo_hash'],
+            'logo_url' => $this->resource['logo_url'],
+            'permission_level' => $this->resource['permission_level'],
+            'team_type' => $this->resource['team_type'],
+            'created_at' => $this->resource['created_at'],
+            'updated_at' => $this->resource['updated_at'],
+            'members' => $this->resource['members'],
+            'boards' => $this->resource['boards'],
+            'guests' => $this->resource['guests'],
+            'requests' => $this->resource['requests'],
+            'isCurrentUserAdmin' => $this->resource['isCurrentUserAdmin']
         ];
     }
 }

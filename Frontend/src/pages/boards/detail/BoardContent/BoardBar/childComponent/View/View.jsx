@@ -10,13 +10,15 @@ import {
   Box,
   Button,
 } from "@mui/material";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useUpdateBoardVisibility } from "../../../../../../../hooks/useBoard";
 import { useGetBoardByID } from "../../../../../../../hooks/useBoard"; // Import hook để lấy thông tin bảng
 import { useParams } from "react-router-dom";
 import LockIcon from "@mui/icons-material/Lock"; // Icon cho Riêng tư
 import GroupIcon from "@mui/icons-material/Group"; // Icon cho Không gian làm việc
 import PublicIcon from "@mui/icons-material/Public"; // Icon cho Công khai
+import { useGetBoardMembers } from "../../../../../../../hooks/useInviteBoard";
+import { useMe } from "../../../../../../../contexts/MeContext";
 
 const ViewPermissionsDialog = ({ open, onClose }) => {
   const { boardId } = useParams(); // Lấy boardId từ URL
@@ -26,6 +28,24 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
 
   // Khởi tạo selectedVisibility với giá trị mặc định là "private"
   const [selectedVisibility, setSelectedVisibility] = useState("private");
+  const { data: boardMembers = [] } = useGetBoardMembers(boardId);
+  const {  user, boardIds } = useMe();
+
+  const currentUserId = user?.id;
+
+ const isAdminBoard = useMemo(() => {
+    const boardInfo = boardIds?.find((b) => b.id === board?.id);
+    return boardInfo?.is_admin || boardInfo?.role === 'admin';
+  }, [boardIds, boardId, boardIds?.find(b => b.id === board?.id)?.role]);
+    // console.log("boardIds", isAdminBoard);
+    
+
+  const isAdmin = Array.isArray(boardMembers?.data)
+    ? boardMembers.data.some(member =>
+      member.id === currentUserId && member.pivot.role === "admin"
+    )
+    : false;
+
 
   // Cập nhật selectedVisibility khi dữ liệu bảng được tải
   useEffect(() => {
@@ -69,6 +89,7 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
               <FormControlLabel
                 value="private"
                 control={<Radio />}
+                disabled={!isAdminBoard}
                 label={
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <LockIcon sx={{ mr: 1, color: "red" }} />
@@ -90,6 +111,7 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
               <FormControlLabel
                 value="workspace"
                 control={<Radio />}
+                disabled={!isAdminBoard}
                 label={
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <GroupIcon sx={{ mr: 1, color: "blue" }} />
@@ -110,6 +132,7 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
               <FormControlLabel
                 value="public"
                 control={<Radio />}
+                disabled={!isAdminBoard}
                 label={
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <PublicIcon sx={{ mr: 1, color: "green" }} />
@@ -129,7 +152,7 @@ const ViewPermissionsDialog = ({ open, onClose }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Hủy</Button>
-        <Button onClick={handleApply} disabled={updateVisibilityMutation.isLoading || isLoading}>
+        <Button onClick={handleApply} disabled={!isAdmin || updateVisibilityMutation.isLoading || isLoading}>
           {updateVisibilityMutation.isLoading ? "Đang cập nhật..." : "Áp dụng"}
         </Button>
       </DialogActions>

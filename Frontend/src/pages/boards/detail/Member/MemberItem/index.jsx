@@ -5,35 +5,121 @@ import {
   Button,
   Popover,
   Avatar,
-  Menu,
   MenuItem,
+  Select,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import CloseIcon from "@mui/icons-material/Close";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { useMe } from "../../../../../contexts/MeContext";
+import { useChangeMemberType, useRemoveMember } from "../../../../../hooks/useWorkspace";
+import InitialsAvatar from "../../../../../components/Common/InitialsAvatar";
 
-const MemberItem = ({ member }) => {
+const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
   const [anchorEl, setAnchorEl] = useState(null);
-  const [menuEl, setMenuEl] = useState(null);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+  const { user } = useMe();
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const { mutate: changeMemberType, isLoading: isChangingType } = useChangeMemberType();
+  const { mutate: removeMember, isLoading: isRemovingMember } = useRemoveMember();
 
-  const handleMenuClick = (event) => {
-    setMenuEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuEl(null);
-  };
-
+  const handleClick = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
   const open = Boolean(anchorEl);
   const id = open ? "simple-popover" : undefined;
+
+  const isMe = user?.id === member?.user_id;
+
+  const adminCount = workspace?.members?.filter((m) => m.member_type === "admin").length || 0;
+  const isSoleAdmin = isMe && member.member_type === "admin" && adminCount <= 1;
+
+  const memberBoards = Array.isArray(boards)
+    ? boards.filter((board) =>
+      board.members.some((bm) => bm.user_id === member.user_id)
+    )
+    : [];
+
+  const handleChangeMemberType = (event) => {
+    const newType = event.target.value;
+    changeMemberType(
+      {
+        workspaceId: workspace.id,
+        userId: member.user_id,
+        memberType: newType,
+      },
+      {
+        onSuccess: () => {
+          setAlert({
+            open: true,
+            message: `Đã thay đổi vai trò của ${member.user.full_name} thành ${newType === 'admin' ? 'Quản trị viên' : 'Thành viên'}`,
+            severity: 'success'
+          });
+        },
+        onError: (error) => {
+          setAlert({
+            open: true,
+            message: error.response?.data?.message || 'Không thể thay đổi vai trò. Vui lòng thử lại.',
+            severity: 'error'
+          });
+          console.error("Lỗi khi thay đổi vai trò:", error);
+        },
+      }
+    );
+  };
+
+  const handleOpenRemoveDialog = () => {
+    setRemoveDialogOpen(true);
+  };
+
+  const handleCloseRemoveDialog = () => {
+    setRemoveDialogOpen(false);
+  };
+
+  const handleConfirmRemove = () => {
+    // Prevent the sole admin from leaving
+    if (isSoleAdmin) {
+      setAlert({
+        open: true,
+        message: 'Không thể rời khỏi! Không gian làm việc phải có ít nhất một quản trị viên.',
+        severity: 'error'
+      });
+      handleCloseRemoveDialog();
+      return;
+    }
+    removeMember(
+      {
+        workspaceId: workspace.id,
+        userId: member.user_id,
+      },
+      {
+        onSuccess: () => {
+          setAlert({
+            open: true,
+            message: `Đã ${isMe ? 'rời khỏi' : 'xóa'} thành viên ${member.user.full_name} thành công!`,
+            severity: 'success'
+          });
+          handleCloseRemoveDialog();
+        },
+        onError: (error) => {
+          setAlert({
+            open: true,
+            message: error.response?.data?.message || `Không thể ${isMe ? 'rời khỏi' : 'xóa'} thành viên. Vui lòng thử lại.`,
+            severity: 'error'
+          });
+          console.error("Lỗi khi xóa thành viên:", error);
+        },
+      }
+    );
+  };
+
+  const handleCloseAlert = () => {
+    setAlert({ ...alert, open: false });
+  };
 
   return (
     <Box
@@ -42,47 +128,60 @@ const MemberItem = ({ member }) => {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "10px",
-        // borderBottom: "1px solid #333",
-        // borderTop: "1px solid #333",
+        width: "100%",
         background: "#ffffff",
-        // borderRadius: "8px",
         marginBottom: "8px",
       }}
     >
-      {/* Thông tin thành viên */}
+      {/* Snackbar for alerts */}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseAlert} severity={alert.severity} sx={{ width: '100%' }}>
+          {alert.message}
+        </Alert>
+      </Snackbar>
+
+      {/* Member info */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Avatar
-          sx={{
-            bgcolor: "#0079BF",
-            width: "35px",
-            height: "35px",
-            fontSize: "0.9rem",
-            fontWeight: "bold",
-          }}
-        >
-          {member?.name?.charAt(0)}
-        </Avatar>
+        <InitialsAvatar
+          name={member?.user?.full_name}
+          avatarSrc={member?.user?.image}
+          initial={member?.user?.initials}
+          size={32}
+        />
         <Box>
           <Typography fontWeight="bold" sx={{ color: "#172B4D" }}>
-            {member?.name}
+            {member?.user?.full_name || "Không xác định"}
           </Typography>
           <Typography variant="body2" sx={{ color: "gray" }}>
-            @{member.email} <br />
-            {member.last_active}
-            {/* @{member.email} • */}
+            {member?.user?.email || "Không có email"}
           </Typography>
         </Box>
       </Box>
 
-      {/* Nút thao tác */}
+      {/* Action buttons */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {/* View boards button */}
         <Button
           variant="contained"
           onClick={handleClick}
           size="small"
-          sx={{ fontSize: "0.7rem", padding: "2px 6px", ml: 1.5 }}
+          sx={{
+            fontSize: "0.7rem",
+            padding: "2px 12px",
+            borderRadius: "3px",
+            backgroundColor: "#0079BF",
+            color: "white",
+            "&:hover": {
+              backgroundColor: "#026AA7",
+            },
+          }}
         >
-          Xem bảng thông tin (1)
+          Xem bảng ({memberBoards.length})
         </Button>
 
         <Popover
@@ -90,58 +189,113 @@ const MemberItem = ({ member }) => {
           open={open}
           anchorEl={anchorEl}
           onClose={handleClose}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "left",
-          }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         >
           <Box sx={{ p: 2, width: 250 }}>
             <Typography fontWeight="bold">Bảng thông tin</Typography>
             <Typography variant="body2">
-              {member?.name} là thành viên của:
+              {member?.user?.full_name || "Không xác định"} là thành viên của:
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
-              <Avatar src={member.avatar} sx={{ width: 30, height: 30 }} />
-              <Typography variant="body2">Tên bảng</Typography>
-            </Box>
+            {memberBoards.length > 0 ? (
+              memberBoards.map((board) => (
+                <Box
+                  key={board.id}
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}
+                >
+                  <Avatar src={board.thumbnail} sx={{ width: 30, height: 30 }} />
+                  <Typography variant="body2">{board.name}</Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                Chưa tham gia bảng nào
+              </Typography>
+            )}
           </Box>
         </Popover>
 
-        <Button
-          sx={{ fontSize: "0.7rem" }}
-          variant="outlined"
-          size="small"
-          startIcon={<HelpOutlineIcon />}
-        >
-          {member.member_type === "admin" ? "Quản trị viên" : "Thành viên"}
-        </Button>
+        {/* Member type control */}
+        {isAdmin ? (
+          <Select
+            value={member.member_type}
+            onChange={handleChangeMemberType}
+            size="small"
+            disabled={isChangingType || isSoleAdmin}
+            sx={{
+              fontSize: "0.7rem",
+              borderRadius: "3px",
+              minWidth: 120,
+              color: "#172B4D",
+            }}
+          >
+            <MenuItem value="admin">Quản trị viên</MenuItem>
+            <MenuItem value="normal">Thành viên</MenuItem>
+          </Select>
+        ) : (
+          <Button
+            variant="outlined"
+            size="small"
+            disabled
+            sx={{
+              fontSize: "0.7rem",
+              borderRadius: "3px",
+              borderColor: "#DFE1E6",
+              color: "#172B4D",
+              padding: "2px 8px",
+            }}
+          >
+            {member.member_type === 'admin' ? 'Quản trị viên' : member.member_type === 'normal' ? 'Thành viên' : 'Đang chờ'}
+          </Button>
+        )}
 
-        <Button
-          sx={{ fontSize: "0.7rem", padding: "2px 6px" }}
-          variant="outlined"
-          color="error"
-          size="small"
-        >
-          Rời khỏi
-        </Button>
-
-        <Button onClick={handleMenuClick} size="small">
-          <MoreVertIcon />
-        </Button>
-
-        <Menu
-          anchorEl={menuEl}
-          open={Boolean(menuEl)}
-          onClose={handleMenuClose}
-        >
-          <MenuItem sx={{ fontSize: "0.789rem" }} onClick={handleMenuClose}>
-            Quản trị viên
-          </MenuItem>
-          <MenuItem sx={{ fontSize: "0.789rem" }} onClick={handleMenuClose}>
-            Loại bỏ
-          </MenuItem>
-        </Menu>
+        {/* Remove/Leave button */}
+        {(isMe || isAdmin) && (
+          <Button
+            variant="outlined"
+            color="error"
+            size="small"
+            onClick={handleOpenRemoveDialog}
+            disabled={isRemovingMember || (!isMe && !isAdmin) || isSoleAdmin}
+            sx={{
+              fontSize: "0.7rem",
+              padding: "2px 12px",
+              borderRadius: "3px",
+              borderColor: "#FF5630",
+              "&:hover": {
+                borderColor: "#DE350B",
+                backgroundColor: "#FFEBE6",
+              },
+            }}
+          >
+            {isMe ? "Rời khỏi" : "Loại bỏ"}
+          </Button>
+        )}
       </Box>
+
+      {/* Confirmation Dialog for Removing Member */}
+      <Dialog open={removeDialogOpen} onClose={handleCloseRemoveDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Xác nhận {isMe ? 'rời khỏi' : 'xóa'} thành viên</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Bạn có chắc chắn muốn {isMe ? 'rời khỏi' : 'xóa'}{" "}
+            <strong>{member?.user?.full_name}</strong> khỏi không gian làm việc{" "}
+            <strong>{workspace?.display_name}</strong> không?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRemoveDialog} disabled={isRemovingMember}>
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmRemove}
+            color="error"
+            variant="contained"
+            disabled={isRemovingMember}
+          >
+            {isRemovingMember ? "Đang xử lý..." : isMe ? "Rời khỏi" : "Xóa"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

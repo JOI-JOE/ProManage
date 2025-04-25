@@ -7,7 +7,7 @@ import { Box } from "@mui/material";
 import "./Calendar.css";
 import MenuCalendar from "./MenuCalendar/MenuCalendar";
 import { useNavigate, useParams } from "react-router-dom";
-import { useGetWorkspaceByName } from "../../../../../hooks/useWorkspace";
+import { useGetWorkspaceById, useGetWorkspaceByName } from "../../../../../hooks/useWorkspace";
 import { useCalendar, useUpdateCardCalendar } from "../../../../../hooks/useCalendar";
 import ReactDOM from 'react-dom/client';
 import EventCard from "./EventCard";
@@ -32,12 +32,23 @@ const Calendar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [cardEvents, setCardEvents] = useState([]);
   const { mutate: toggleCardCompletion } = useToggleCardCompletion();
+ const { workspaceId } = useParams();
+    // const { data, isLoading, error } = useGetWorkspaceByName(workspaceName);
+    const {
+        data: workspace,
+        isLoading: isLoadingWorkspace,
+        isError: isWorkspaceError,
+        error: workspaceError,
+        refetch: refetchWorkspace,
+    } = useGetWorkspaceById(workspaceId, {
+        enabled: !!workspaceId,
+    });
+console.log(workspace);
 
-  const { workspaceName } = useParams();
-  const { data, isLoading, error } = useGetWorkspaceByName(workspaceName);
+const boardIds = workspace?.boards
+  ?.filter(board => !board.closed)
+  .map(board => board.id);
 
-
-  const boardIds = data?.boards?.map(board => board.id);
   // console.log(boardIds);
 
   // console.log(dateRange);

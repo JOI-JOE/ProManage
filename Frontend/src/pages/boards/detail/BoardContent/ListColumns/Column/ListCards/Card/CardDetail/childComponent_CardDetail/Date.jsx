@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -30,13 +30,11 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
   const { data: cardSchedule = [] } = useCardSchedule(type === 'card' ? targetId : null);
   const { data: checklistSchedule = [] } = useChecklistsItemByDate(type === 'checklist-item' ? targetId : null);
 
-  let schedule = [];
-  if (type === "card" && targetId) {
-    schedule = cardSchedule;
-  } else if (type === "checklist-item" && targetId) {
-    schedule = checklistSchedule;
-  }
-
+  const schedule = useMemo(() => {
+    if (type === "card") return cardSchedule;
+    if (type === "checklist-item") return checklistSchedule;
+    return null;
+  }, [cardSchedule, checklistSchedule, type]);
   const { mutate: updateCardDate } = useUpdateCardDate();
   const { mutate: updateChecklistItemDate } = useUpdateItemDate();
   const { mutate: deleteDateCard } = useDeleteCardDate();

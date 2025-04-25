@@ -242,6 +242,7 @@ class BoardMemberController extends Controller
         $board->members()->attach($user->id, [
             'id' => Str::uuid(),
             'role' => 'member',
+            'joined' => 1,
 
         ]);
         $invite->update([

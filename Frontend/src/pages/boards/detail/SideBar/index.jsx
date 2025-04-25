@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -27,59 +27,56 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import WorkspaceContext from "../../../../contexts/WorkspaceContext";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
-import { useGetBoardMembers, useGuestBoards } from "../../../../hooks/useInviteBoard";
-import { useCheckMemberInWorkspace, useGetWorkspaces } from "../../../../hooks/useWorkspace";
-import { useUser } from "../../../../hooks/useUser";
-
-const SideBar = () => {
-  const { boardId } = useParams();
-  const { data: user } = useUser();
-  // console.log(boardId);
-  const { data: guestBoards } = useGuestBoards();
-  // console.log(guestBoards);
-  const { currentWorkspace } = useContext(WorkspaceContext);
-  const { data: boardMembers = [] } = useGetBoardMembers(boardId);
-
-  const currentUserId = user?.id;
-
-  const isMember = Array.isArray(boardMembers?.data)
-    ? boardMembers.data.some(member =>
-      member.id === currentUserId && member.pivot.role === "member"
-    )
-    : false;
+import { useWorkspace } from "../../../../contexts/WorkspaceContext";
+import { useMe } from "../../../../contexts/MeContext";
+import LogoLoading from "../../../../components/Common/LogoLoading";
+import WorkspaceAvatar from "../../../../components/Common/WorkspaceAvatar";
+import { useSendJoinRequest } from "../../../../hooks/useWorkspaceInvite";
+import CreateBoard from "../../../../components/CreateBoard";
 
 
-  const adminCount = boardMembers?.data?.filter((m) => m.pivot.role === "admin").length;
-  // console.log(adminCount);
+const SideBar = ({ board, isLoadingBoard }) => {
+  const { boardId, workspaceId } = useParams();
+  const { boardIds, pendingIds } = useMe();
+  const { workspaces, guestWorkspaces, isLoading } = useWorkspace();
 
-  // useMemberJoinedListener(user?.id)
+  // Workspace hiện tại
+  const currentWorkspace = useMemo(() => {
+    if (board?.workspace_id) {
+      // Ưu tiên tìm trong workspaces
+      const ws = workspaces.find((ws) => ws.id === board.workspace_id);
+      if (ws) return ws;
+      // Nếu không có, tìm trong guestWorkspaces
+      return guestWorkspaces.find((ws) => ws.id === board.workspace_id);
+    }
+
+    if (workspaceId) {
+      const ws = workspaces.find((ws) => ws.id === workspaceId);
+      if (ws) return ws;
+
+      return guestWorkspaces.find((ws) => ws.id === workspaceId);
+    }
+    return null;
+  }, [workspaces, guestWorkspaces, board?.workspace_id, workspaceId]);
+
+  // Là admin board?
+  const isAdminBoard = useMemo(() => {
+    const boardInfo = boardIds?.find((b) => b.id === board?.id);
+    return boardInfo?.is_admin || boardInfo?.role === 'admin';
+  }, [boardIds, boardId, boardIds?.find(b => b.id === board?.id)?.role]);
 
 
+  // Là thành viên workspace?
+  const isMemberWorkspace = currentWorkspace?.joined === 1;
+  const isBoardMember = boardIds?.some((b) => b.id === boardId);
 
-  const foundWorkspace = guestBoards?.find((workspace) =>
-    workspace.boards.some((board) => board.id === boardId)
-  );
-  // console.log(foundWorkspace);
-  const { data: checkMember } = useCheckMemberInWorkspace(foundWorkspace?.workspace_id, user?.id);
-
-  let isGuest = false;
-  if (foundWorkspace) {
-    isGuest = true;
-  }
-  // console.log(isGuest);
-
-  // const activeData = foundWorkspace || currentWorkspace;
 
   const [openSettings, setOpenSettings] = useState(false);
-  // const invitedWorkspace = currentWorkspace?.boards?.some(board => board.id == boardId) ? currentWorkspace : null;
-  // console.log(invitedWorkspace);
 
-  // console.log(currentWorkspace);
   const toggleSettings = () => {
     setOpenSettings(!openSettings);
   };
@@ -97,11 +94,42 @@ const SideBar = () => {
     setSelectedBoardId(null);
   };
 
-  const { mutate: toggleBoardClosed } = useToggleBoardClosed(); // Use hook
-
+  const { mutate: toggleBoardClosed } = useToggleBoardClosed(currentWorkspace?.id);
   const handleCloseBoard = (boardId) => {
-    toggleBoardClosed(boardId); // Gọi hook để thay đổi trạng thái đóng bảng
+    toggleBoardClosed(boardId);
     handleMenuClose();
+  };
+
+  const [isPendingWorkspace, setIsPendingWorkspace] = useState(false);
+
+  useEffect(() => {
+    setIsPendingWorkspace(pendingIds?.some((ws) => ws.id === board?.workspace_id));
+  }, [pendingIds, board?.workspace_id]); // Chạy lại mỗi khi pendingIds hoặc workspace_id thay đổi
+
+  const { mutate: sendRequestAttends, isLoading: loadingJoind, isError, error } = useSendJoinRequest();
+
+  const handleJoinRequest = async () => {
+    try {
+      await sendRequestAttends({ workspaceId: board.workspace_id });
+      // Cập nhật lại state khi yêu cầu tham gia đã được gửi
+      setIsPendingWorkspace(true);
+    } catch (error) {
+      console.error("Lỗi khi gửi yêu cầu tham gia bảng:", error);
+    }
+  };
+
+  // Function tạo board 
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleOpenCreateBoard = (event) => {
+    setAnchorEl(event.currentTarget);
+    setShowCreateBoard(true);
+  };
+
+  const handleCloseCreateBoard = () => {
+    setShowCreateBoard(false);
+    setAnchorEl(null);
   };
 
   return (
@@ -128,283 +156,308 @@ const SideBar = () => {
         },
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          p: 2,
-          bgcolor: "#292929",
-        }}
-      >
-        <Avatar sx={{ bgcolor: "#5D87FF" }}>K</Avatar>
-        <Box>
-          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-            {isGuest
-              ? foundWorkspace?.workspace_name
-              : currentWorkspace?.display_name}
-          </Typography>
+      {isLoading || isLoadingBoard ? (
+        <Box sx={{ p: 2 }}>
+          <LogoLoading />
         </Box>
-      </Box>
-
-      {!isGuest && (
-        <List>
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to={`/w/${currentWorkspace?.name}`}
-            >
-              <ListItemIcon sx={{ color: "white" }}>
-                <DashboardIcon />
-              </ListItemIcon>
-              <ListItemText primary="Bảng" />
-            </ListItemButton>
-          </ListItem>
-
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to={`/w/${currentWorkspace?.name}/members`}
-            >
-              <ListItemIcon sx={{ color: "white" }}>
-                <PeopleIcon />
-              </ListItemIcon>
-              <ListItemText primary="Thành viên" />
-              <AddIcon sx={{ color: "gray" }} />
-            </ListItemButton>
-          </ListItem>
-
-          <ListItemButton onClick={toggleSettings}>
-            <ListItemIcon sx={{ color: "white" }}>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Cài đặt Không gian làm việc" />
-            {openSettings ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
-
-          <Collapse in={openSettings} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              <ListItemButton sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: "white" }}>
-                  <ViewKanbanIcon />
-                </ListItemIcon>
-                <ListItemText
-                  component={Link}
-                  to={`/w/${currentWorkspace?.name}/account`}
-                  primary="Cài đặt không gian làm việc"
-                />
-              </ListItemButton>
-              <ListItemButton sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: "white" }}>
-                  <UpgradeIcon />
-                </ListItemIcon>
-                <ListItemText primary="Nâng cấp không gian làm việc" />
-              </ListItemButton>
-            </List>
-          </Collapse>
-        </List>
-      )}
-    <Box sx={{ width: 250,  height: "100vh" }}>
-            <List>
-                {/* Các mục khác trong sidebar (nếu có) */}
-                
-                {/* Nhóm "Xem không gian làm việc" */}
-                {!isGuest && (
-                    <Box>
-                        <ListSubheader
-                            sx={{
-                                bgcolor: "black",
-                                color: "white",
-                                fontSize: "0.9rem",
-                                fontWeight: "bold",
-                                pt: 2, // Khoảng cách phía trên
-                            }}
-                        >
-                            Xem không gian làm việc
-                        </ListSubheader>
-
-                        <ListItem disablePadding>
-                            <ListItemButton
-                                component={Link}
-                                to={`/w/${currentWorkspace?.name}/table-view`}
-                            >
-                                <ListItemIcon sx={{ color: "white" }}>
-                                    <DashboardIcon />
-                                </ListItemIcon>
-                                <ListItemText primary="Bảng" />
-                            </ListItemButton>
-                        </ListItem>
-
-                        <ListItem disablePadding>
-                            <ListItemButton
-                                component={Link}
-                                to={`/w/${currentWorkspace?.name}/calendar`}
-                            >
-                                <ListItemIcon sx={{ color: "white" }}>
-                                    <CalendarMonthIcon />
-                                </ListItemIcon>
-                                <ListItemText primary="Calendar" />
-                            </ListItemButton>
-                        </ListItem>
-                    </Box>
-                )}
-            </List>
-        </Box>
-      <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>
-        Các bảng của bạn
-      </Typography>
-
-      <List sx={{ p: 0.5 }}>
-        {(isGuest ? foundWorkspace : currentWorkspace)?.boards
-          .filter((board) => board.closed === 0)
-          .map((board) => (
-          <ListItem
-            key={board.id}
-            disablePadding
-            sx={{ p: 1, display: "flex", alignItems: "center" }}
+      ) : (
+        <>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              p: 2,
+              bgcolor: "#292929",
+            }}
           >
-            {/* Phần tên bảng dẫn link */}
-            <ListItemButton
-              component={Link}
-              to={`/b/${board.id}/${board.name}`}
-              sx={{
-                flexGrow: 1,
-                backgroundColor:
-                  board.id === Number(board.id) ? "#ffffff33" : "transparent",
-                "&:hover": { backgroundColor: "#ffffff22" },
-                borderRadius: "6px",
-              }}
-            >
-              <ListItemIcon sx={{ color: "white" }}>
-                <FolderIcon />
-              </ListItemIcon>
+            <WorkspaceAvatar workspace={currentWorkspace} />
+            <Box>
+              <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                {currentWorkspace?.display_name}
+              </Typography>
+            </Box>
+          </Box>
+
+          {isMemberWorkspace && (
+            <List>
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={`/w/${currentWorkspace?.id}`}
+                >
+                  <ListItemIcon sx={{ color: "white" }}>
+                    <DashboardIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Bảng" />
+                </ListItemButton>
+              </ListItem>
+
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={`/w/${currentWorkspace?.id}/members`}
+                >
+                  <ListItemIcon sx={{ color: "white" }}>
+                    <PeopleIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Thành viên" />
+                </ListItemButton>
+              </ListItem>
+
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={`/w/${currentWorkspace?.id}/account`}
+                >
+                  <ListItemIcon sx={{ color: "white" }}>
+                    <SettingsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Cài đặt không gian làm việc" />
+                </ListItemButton>
+              </ListItem>
               <ListItemText
-                primary={board.name}
-                sx={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
               />
-            </ListItemButton>
+            </List>
+          )}
 
-            {/* Nút ... mở dropdown, tách riêng hoàn toàn */}
-            <IconButton
-              onClick={(e) => handleMenuOpen(e, board.id)}
-              sx={{ color: "white", ml: "auto" }}
-            >
-              <MoreVertIcon />
-            </IconButton>
+          <List>
+            {isMemberWorkspace && (
+              <Box>
+                <ListSubheader
+                  sx={{
+                    bgcolor: "black",
+                    color: "white",
+                    fontSize: "0.9rem",
+                    fontWeight: "bold",
+                    // pt: 2,
+                  }}
+                >
+                  Xem không gian làm việc
+                </ListSubheader>
 
-            {/* Dropdown menu của từng bảng */}
-            <Menu
-              anchorEl={menuAnchor}
-              open={selectedBoardId === board.id}
-              onClose={handleMenuClose}
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-              transformOrigin={{ vertical: "top", horizontal: "left" }}
-              sx={{
-                "& .MuiPaper-root": {
-                  backgroundColor: "#2e2e2e",
-                  color: "white",
-                  borderRadius: "8px",
-                  minWidth: "300px",
-                },
-              }}
-            >
-              <MenuItem
-                disabled
+                <ListItem disablePadding>
+                  <ListItemButton
+                    component={Link}
+                    to={`/w/${currentWorkspace?.id}/table-view`}
+                  >
+                    <ListItemIcon sx={{ color: "white" }}>
+                      <DashboardIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Bảng" />
+                  </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding>
+                  <ListItemButton
+                    component={Link}
+                    to={`/w/${currentWorkspace?.id}/calendar`}
+                  >
+                    <ListItemIcon sx={{ color: "white" }}>
+                      <CalendarMonthIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Calendar" />
+                  </ListItemButton>
+                </ListItem>
+              </Box>
+            )}
+          </List>
+
+          <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ px: 2, mt: 2 }}>
+            <Typography sx={{ fontWeight: 600, fontSize: '15px' }}>
+              Các bảng của bạn
+            </Typography>
+            {isMemberWorkspace && (
+              <IconButton
+                onClick={handleOpenCreateBoard}
                 sx={{
-                  fontWeight: "bold",
-                  fontSize: "1rem",
-                  opacity: 1,
-                  textAlign: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  padding: "12px 16px",
+                  bgcolor: "#e0e0e0",
+                  borderRadius: "8px",
+                  p: "6px",
+                  ":hover": {
+                    bgcolor: "#bdbdbd",
+                  },
                 }}
               >
-                {board.name}
-              </MenuItem>
+                <AddIcon sx={{ fontSize: 20, color: "#424242" }} />
+              </IconButton>
+            )}
 
-              {(adminCount >= 2 || isMember) && (
-                [
-                  {
-                    text: "Rời khỏi bảng",
-                    icon: <ExitToAppIcon />,
-                    color: "#ff4d4d",
-                  },
-                ].map((item, index) => (
-                  <MenuItem
-                    key={index}
-                    onClick={() => console.log(item.text)}
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "10px 16px",
-                      "&:hover": { backgroundColor: item.color, color: "white" },
-                    }}
+            <CreateBoard
+              workspaceId={currentWorkspace?.id} // Truyền workspaceId nếu cần
+              open={showCreateBoard}
+              anchorEl={anchorEl}
+              onClose={handleCloseCreateBoard}
+            />
+          </Box>
+
+          <List sx={{ p: 0.5 }}>
+            {currentWorkspace?.boards
+              ?.filter((board) => board.closed === false)
+              .map((board) => {
+                const isCurrent = board.id === boardId;
+                const isBoardAdmin = board.role === "admin";
+                return (
+                  <ListItem
+                    key={board.id}
+                    disablePadding
+                    sx={{ p: 1, display: "flex", alignItems: "center" }}
                   >
-                    {item.text}
-                    {item.icon}
-                  </MenuItem>
-                ))
-              )}
+                    <ListItemButton
+                      component={Link}
+                      to={`/b/${board.id}/${board.name}`}
+                      sx={{
+                        flexGrow: 1,
+                        backgroundColor: isCurrent ? "#ffffff33" : "transparent",
+                        "&:hover": { backgroundColor: "#ffffff22" },
+                        borderRadius: "6px",
+                      }}
+                    >
+                      <ListItemIcon sx={{ color: "white" }}>
+                        <FolderIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={board.name}
+                        sx={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      />
+                    </ListItemButton>
+                    {isBoardAdmin && (
+                      <>
+                        <IconButton
+                          onClick={(e) => handleMenuOpen(e, board.id)}
+                          sx={{ color: "white", ml: "auto" }}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                        <Menu
+                          anchorEl={menuAnchor}
+                          open={selectedBoardId === board.id}
+                          onClose={handleMenuClose}
+                          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                          transformOrigin={{ vertical: "top", horizontal: "left" }}
+                          sx={{
+                            "& .MuiPaper-root": {
+                              backgroundColor: "#2e2e2e",
+                              color: "white",
+                              borderRadius: "8px",
+                              minWidth: "300px",
+                            },
+                          }}
+                        >
+                          {/* Tên board */}
+                          <MenuItem
+                            disabled
+                            sx={{
+                              fontWeight: "bold",
+                              fontSize: "1rem",
+                              opacity: 1,
+                              textAlign: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              padding: "12px 16px",
+                              pointerEvents: "none", // để chắc chắn không cho tương tác
+                            }}
+                          >
+                            {board.name}
+                          </MenuItem>
+
+                          <MenuItem
+                            onClick={() => handleCloseBoard(board.id)}
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              padding: "10px 16px",
+                              "&:hover": {
+                                backgroundColor: "#ff4d4d",
+                                color: "#fff",
+                              },
+                            }}
+                          >
+                            Đóng bảng
+                            <CloseIcon />
+                          </MenuItem>
+                        </Menu>
+                      </>
+
+                    )}
 
 
-              {!isMember && (
-                [
-                  { text: "Đóng bảng", icon: <CloseIcon />, color: "#ff4d4d" },
-                ].map((item, index) => (
-                  <MenuItem
-                    key={index}
-                    onClick={() => handleCloseBoard(board.id)}
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "10px 16px",
-                      "&:hover": { backgroundColor: item.color, color: "white" },
-                    }}
-                  >
-                    {item.text}
-                    {item.icon}
-                  </MenuItem>
-                ))
-              )}
+                  </ListItem>
+                );
+              })}
+          </List>
 
-            </Menu>
-          </ListItem>
-          ))}
-      </List>
-      {/* 👇 Nút yêu cầu tham gia đặt cuối cùng, luôn nằm dưới */}
-   {isGuest && checkMember?.is_member === false && (
-    <Box sx={{ p: 2, bgcolor: "#292929", mt: 9.5, borderRadius: "8px" }}>
-      <Typography variant="body2" sx={{ fontSize: "13px", color: "#ccc" }}>
-  Bạn đang là Khách của không gian làm việc này, muốn xem thêm bảng và thành viên khác hãy gửi yêu cầu cho quản trị viên không gian làm việc này. 
-</Typography>
-      <Button
-        fullWidth
-        variant="contained"
-        sx={{
-          mt:1,
-          bgcolor: "#1976d2",
-          color: "white",
-          textTransform: "none",
-          fontWeight: "bold",
-          "&:hover": {
-            bgcolor: "#1565c0",
-          },
-        }}
-        onClick={() => {
-          // Gọi API yêu cầu tham gia không gian làm việc ở đây
-          console.log("Yêu cầu tham gia không gian làm việc");
-        }}
-      >
-        Yêu cầu tham gia không gian làm việc
-      </Button>
-    </Box>
-  )}
+          {!isMemberWorkspace && isBoardMember && (
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 16,
+                left: 0,
+                right: 0,
+                px: 2,
+                zIndex: 1300,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: "#292929",
+                  borderRadius: "8px",
+                  maxWidth: 400,
+                  width: "100%",
+                }}
+              >
+                {isPendingWorkspace ? (
+                  <>
+                    <Typography variant="body2" sx={{ fontSize: "13px", color: "#ccc" }}>
+                      Bạn đã gửi yêu cầu tham gia bảng này. Vui lòng chờ quản trị viên phê duyệt.
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <Typography variant="body2" sx={{ fontSize: "13px", color: "#ccc" }}>
+                      Bạn là thành viên của không gian làm việc này nhưng chưa tham gia bảng này. Hãy gửi yêu cầu cho quản trị viên để tham gia bảng.
+                    </Typography>
 
+                    {
+                      loadingJoind ? (
+                        <LogoLoading />
+                      ) : (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          sx={{
+                            mt: 1,
+                            bgcolor: "#1976d2",
+                            color: "white",
+                            textTransform: "none",
+                            fontWeight: "bold",
+                            "&:hover": {
+                              bgcolor: "#1565c0",
+                            },
+                          }}
+                          onClick={handleJoinRequest}
+                          disabled={loadingJoind} // Vô hiệu hoá nút khi đang gửi yêu cầu
+                        >
+                          Yêu cầu tham gia bảng
+                        </Button>
+                      )
+                    }
+                    {isError && <Typography color="error">{error?.message || "Đã xảy ra lỗi khi gửi yêu cầu tham gia bảng."}</Typography>}
+                  </>
+                )}
+              </Box>
+            </Box>
+          )}
+
+        </>
+      )}
     </Drawer>
   );
 };

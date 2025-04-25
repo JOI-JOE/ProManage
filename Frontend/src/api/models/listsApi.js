@@ -34,6 +34,60 @@ export const getListByBoardId = async (boardId) => {
   }
 };
 
+export const checkBoardAccess = async (boardId) => {
+  try {
+    const response = await authClient.get(`/check-board/${boardId}`);
+    return { data: response.data, error: null };
+  } catch (error) {
+    const status = error.response?.status;
+    const errorMessage = error.response?.data?.error || error.message || 'Unknown error';
+    console.log(`checkBoardAccess: Response lỗi ${status || 'N/A'} -`, {
+      error: errorMessage,
+      boardId,
+      response: error.response?.data,
+      status,
+    });
+    if (status === 401) {
+      return {
+        data: null,
+        error: 'unauthenticated',
+        message: errorMessage,
+        boardId,
+      };
+    }
+    if (status === 403) {
+      return {
+        data: null,
+        error: 'no_access',
+        message: errorMessage,
+        boardId,
+      };
+    }
+    if (status === 404) {
+      return {
+        data: null,
+        error: 'not_found',
+        message: errorMessage,
+        boardId,
+      };
+    }
+    if (status === 500) {
+      return {
+        data: null,
+        error: 'server_error',
+        message: errorMessage,
+        boardId,
+      };
+    }
+    return {
+      data: null,
+      error: 'unknown_error',
+      message: errorMessage,
+      boardId,
+    };
+  }
+};
+
 export const getListClosedByBoard = async (boardId) => {
   try {
     if (!boardId) {
@@ -117,6 +171,18 @@ export const updateClosed = async (listId) => {
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái lưu trữ:", error);
     throw error; // Xử lý lỗi nếu có
+  }
+};
+
+export const duplicateList = async (listId, name = null) => {
+  try {
+    const response = await authClient.post(`/lists/${listId}/duplicate`, {
+      name, // optional, nếu không có sẽ tự thêm "(Copy)" trong backend
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi sao chép danh sách:", error);
+    throw error;
   }
 };
 

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import LogoLoading from '../../../components/Common/LogoLoading';
 
 const InvitePage = () => {
   const { token } = useParams();
@@ -14,7 +15,7 @@ const InvitePage = () => {
         const { user_exists, email } = response.data;
         // console.log('user_exists', user_exists);
         console.log('API response:', { email, user_exists }); // Debug
-        
+
         if (isAuthenticated) {
           navigate(`/accept-invite/${token}`);
         } else {
@@ -40,7 +41,7 @@ const InvitePage = () => {
     checkInvite();
   }, [token, isAuthenticated, navigate]);
 
-  return <div>Loading...</div>; // Hiển thị tạm thời trong khi kiểm tra
+  return <LogoLoading />; // Hiển thị tạm thời trong khi kiểm tra
 };
 
 export default InvitePage;

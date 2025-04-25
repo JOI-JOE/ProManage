@@ -199,9 +199,12 @@ const filteredListNames = [...new Set(
 
                   <TableCell
                   // onClick={(e) => handleListClick(e, item.board_name ,item.list_name)}
-                   sx={{ borderBottom: "1px solid #e0e0e0", cursor:"pointer","&:hover": {
-                          backgroundColor: "#e0ebeb",
-                        }, }}>
+                   sx={{ borderBottom: "1px solid #e0e0e0", 
+                        // cursor:"pointer",
+                        //   "&:hover": {
+                        //   backgroundColor: "#e0ebeb", 
+                        // }, 
+                        }}>
                     <Typography>{item.list_name}</Typography>
                   </TableCell>
 

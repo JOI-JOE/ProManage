@@ -18,21 +18,36 @@ import {
 import { Restore, Delete, Archive } from "@mui/icons-material";
 import MyWorkspace from "../../../components/MyWorkspace";
 import { useGetWorkspaces } from "../../../hooks/useWorkspace";
-import { useClosedBoards, useForceDestroyBoard, useToggleBoardClosed } from "../../../hooks/useBoard";
+import { useClosedBoards, useForceDestroyBoard, useRecentBoardAccess, useRecentBoards, useToggleBoardClosed, useToggleBoardMarked, useUpdateBoardLastAccessed } from "../../../hooks/useBoard";
+import { useWorkspace } from "../../../contexts/WorkspaceContext";
+import MyBoard from "../../../components/MyBoard";
+import WorkspaceAvatar from "../../../components/Common/WorkspaceAvatar";
+import { Link } from "react-router-dom";
+import { StarIcon as StarOutlineIcon } from "@heroicons/react/24/outline"; // Outline
+import { StarIcon } from "@heroicons/react/24/solid"; // Solid
 
-const HomeBoard = () => {
-  const { data: workspaces, isLoading, isError } = useGetWorkspaces();
+
+const HomeBoard = ({ workspaces }) => {
+  // const { data: workspaces, isLoading, isError } = useGetWorkspaces();
+  const { guestWorkspaces } = useWorkspace()
 
   const { data: closedBoards, isLoading: loadingClosed } = useClosedBoards();
-  
+
   const [openClosedBoards, setOpenClosedBoards] = useState(false);
 
   const { mutate: toggleBoardClosed } = useToggleBoardClosed();
-
+  const { data: recentBoards, isLoading, error } = useRecentBoards();
+  const saveRecentBoard = useRecentBoardAccess();
+  const updateAccessTime = useUpdateBoardLastAccessed();
+  // console.log(recentBoards);
   const { mutate: destroyBoard, isPending: isDeleting } = useForceDestroyBoard();
+  const toggleBoardMarked = useToggleBoardMarked();
 
-  if (isLoading) return <p>Đang tải workspaces...</p>;
-  if (isError) return <p>Lỗi khi tải workspaces!</p>;
+
+  console.log(guestWorkspaces)
+
+  // if (isLoading) return <p>Đang tải workspaces...</p>;
+  // if (isError) return <p>Lỗi khi tải workspaces!</p>;
 
   const handleOpenClosedBoards = () => setOpenClosedBoards(true);
   const handleCloseClosedBoards = () => setOpenClosedBoards(false);
@@ -46,7 +61,7 @@ const HomeBoard = () => {
   const handleDeleteBoard = (boardId) => {
     const confirm = window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn bảng này không?");
     if (!confirm) return;
-  
+
     destroyBoard(boardId, {
       onSuccess: () => {
         alert("✅ Đã xóa bảng thành công!");
@@ -59,6 +74,24 @@ const HomeBoard = () => {
     });
   };
 
+  const handleClickBoard = (boardId) => {
+    saveRecentBoard.mutate(boardId);
+    updateAccessTime.mutate(boardId);
+  };
+
+  const handleToggleMarked = (e, boardId) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    toggleBoardMarked.mutate(boardId, {
+      onError: () => {
+        setIsMarked((prev) => !prev);
+      },
+    });
+  };
+
+  console.log(guestWorkspaces)
+
   return (
     <Box
       sx={{
@@ -68,6 +101,70 @@ const HomeBoard = () => {
         marginTop: "25px",
       }}
     >
+      {/* da xem gan day */}
+      <Typography
+        variant="h6"
+        sx={{
+          marginTop: "50px",
+          marginBottom: "10px",
+          fontWeight: "bold",
+          textTransform: "uppercase",
+        }}
+      >
+        Đã xem gần đây
+      </Typography>
+      <List sx={{ display: "flex", flexDirection: "row", gap: 2, overflowX: "auto", padding: 0 }}>
+        {recentBoards?.data?.slice(0, 3)?.map((board) => (
+          <ListItem key={board.board_id} sx={{ width: "auto", padding: 0 }}>
+            <Link
+              to={`/b/${board.board_id}/${board.board_name}`}
+              style={{ textDecoration: "none" }}
+              onClick={() => handleClickBoard(board.board_id)}
+            >
+              <Box
+                sx={{
+                  width: "180px",
+                  height: "100px",
+                  background: board.thumbnail
+                    ? board.thumbnail.startsWith("#")
+                      ? board.thumbnail
+                      : `url(${board.thumbnail}) center/cover no-repeat`
+                    : "#1693E1",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  "&:hover": { opacity: 0.8 },
+                  position: "relative",
+                }}
+              >
+                <Typography sx={{ color: "white", fontWeight: "bold", textAlign: "center" }}>
+                  {board.board_name}
+                </Typography>
+
+                <IconButton
+                  sx={{
+                    position: "absolute",
+                    right: "6px",
+                    top: "80%",
+                    transform: "translateY(-50%)",
+                  }}
+                  onClick={(e) => handleToggleMarked(e, board.board_id)}
+
+                >
+                  {board.is_marked ? (
+                    <StarIcon className="h-4 w-6 text-yellow-500" />
+                  ) : (
+                    <StarOutlineIcon className="h-4 w-6 text-gray-500" />
+                  )}
+                </IconButton>
+              </Box>
+            </Link>
+          </ListItem>
+        ))}
+      </List>
+
       {/* Workspaces của bạn */}
       <Typography
         variant="h6"
@@ -81,16 +178,85 @@ const HomeBoard = () => {
         CÁC KHÔNG GIAN LÀM VIỆC CỦA BẠN
       </Typography>
       <div id="myBoardInWorkspace">
-        {workspaces?.map((workspace) => (
-          <MyWorkspace
-            key={workspace.display_name}
-            workspace={workspace}
-            boards={workspace.boards}
-          />
-        ))}
+        {workspaces?.length > 0 ? (
+          workspaces.map((workspace) => (
+            <MyWorkspace
+              key={workspace.id} // Sử dụng id làm key để đảm bảo tính duy nhất
+              workspace={workspace}
+              boards={workspace.boards || []} // Đảm bảo boards luôn là mảng, tránh lỗi nếu boards là undefined
+            />
+          ))
+        ) : (
+          null
+        )}
       </div>
 
-        
+      <Box id="guest-workspace">
+        <Typography
+          variant="h6" // Sử dụng h6 để tiêu đề nhỏ hơn và phù hợp hơn
+          sx={{
+            marginTop: "24px", // Giảm marginTop xuống 24px để khoảng cách hợp lý
+            marginBottom: "8px", // Giữ marginBottom nhỏ để cách nội dung bên dưới
+            fontWeight: "bold",
+            textTransform: "uppercase",
+            color: "#172B4D", // Màu chữ giống với giao diện trước đó
+          }}
+        >
+          CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
+        </Typography>
+        <div id="myGuestWorkspace">
+          {guestWorkspaces?.length > 0 ? (
+            guestWorkspaces.map((workspace) => (
+              <div key={workspace.id} style={{ marginBottom: "20px" }}>
+                {/* Hiển thị thông tin workspace */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: "10px",
+                    gap: "6px",
+                  }}
+                >
+                  <WorkspaceAvatar workspace={workspace} />
+                  <Typography
+                    fontWeight="bold"
+                    sx={{ whiteSpace: "nowrap" }}
+                  >
+                    {workspace.display_name.length > 20
+                      ? workspace.display_name.substring(0, 20) + "..."
+                      : workspace.display_name}
+                  </Typography>
+                </div>
+                {/* Hiển thị danh sách boards của workspace với flex */}
+                {workspace.boards?.filter((board) => !board.closed).length > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "10px",
+                    }}
+                  >
+                    {workspace.boards
+                      .filter((board) => !board.closed)
+                      .map((board) => (
+                        <div
+                          key={board.id}
+                          style={{
+                            maxWidth: "300px", // Giới hạn chiều rộng tối đa
+                          }}
+                        >
+                          <MyBoard board={board} id={`guest-board-${board.id}`} />
+                        </div>
+                      ))}
+                  </div>
+                ) : null}
+              </div>
+            ))
+          ) : null}
+        </div>
+      </Box>
+
+
       {/* Nút xem tất cả bảng đã đóng */}
       <Button
         variant="outlined"

@@ -3,43 +3,28 @@ import { useMutation } from "@tanstack/react-query";
 import {
   checkCode,
   fetchUserBoardsWithWorkspaces,
-  fetchUserDashboardData,
-  fetchUserProfile,
   forgotPassword,
   getUser,
   updatePass,
   getUserById,
   updateUserProfile,
   userRegister,
+  fetchUserData,
 } from "../api/models/userApi";
 import { loginUser } from "../api/models/userApi";
 import { logoutUser } from "../api/models/userApi";
+import { useNavigate } from "react-router-dom";
+import { useStateContext } from "../contexts/ContextProvider";
 
 export const useUserData = () => {
-  const {
-    data: userProfile,
-    isLoading: loadingProfile,
-    error: errorProfile,
-  } = useQuery({
-    queryKey: ["userProfile"],
-    queryFn: fetchUserProfile,
+  return useQuery({
+    queryKey: ["user_main"],
+    queryFn: fetchUserData,
+    staleTime: 10 * 60 * 1000,
+    cacheTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
-
-  const {
-    data: userDashboard,
-    isLoading: loadingDashboard,
-    error: errorDashboard,
-  } = useQuery({
-    queryKey: ["userDashboard"],
-    queryFn: fetchUserDashboardData,
-  });
-
-  return {
-    userProfile,
-    userDashboard,
-    isLoading: loadingProfile || loadingDashboard,
-    error: errorProfile || errorDashboard,
-  };
 };
 
 export const useFetchUserBoardsWithWorkspaces = (userId) => {
@@ -64,12 +49,6 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: loginUser, // Gọi API login
-    onSuccess: (data) => {
-      // Lưu token vào localStorage
-      localStorage.setItem("token", data.token);
-      // Invalidate cache của user để làm mới dữ liệu người dùng
-      queryClient.invalidateQueries(["user"]);
-    },
     onError: (error) => {
       console.error("Lỗi khi đăng nhập:", error);
       throw error; // Ném lỗi để xử lý ở phía component
@@ -96,8 +75,21 @@ export const useRegister = () => {
  * @returns {object} - Object chứa hàm mutate để gọi API đăng xuất và các trạng thái liên quan.
  */
 export const useLogout = () => {
+  const navigate = useNavigate();
+  const { setToken, setUser } = useStateContext();
+
   return useMutation({
     mutationFn: logoutUser,
+    onSuccess: () => {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem("token");
+    },
+    onError: (error) => {
+      console.error("Lỗi khi logout:", error);
+      localStorage.removeItem("token");
+      navigate("/login");
+    },
   });
 };
 
@@ -107,31 +99,18 @@ export const useLogout = () => {
  */
 export const useForgotPassword = () => {
   return useMutation({
-    mutationFn:({email})=> forgotPassword(email), // Gọi API quên mật khẩu
+    mutationFn: ({ email }) => forgotPassword(email), // Gọi API quên mật khẩu
   });
 };
 
 export const useCheckCode = () => {
-
-    
-
-    return useMutation({
-      
-        mutationFn: ({ email,code }) => checkCode(email,code),
-        
-        
-
-    });
+  return useMutation({
+    mutationFn: ({ email, code }) => checkCode(email, code),
+  });
 };
 export const useUpdatePass = () => {
-
-    
-
   return useMutation({
-    
-      mutationFn: ({ email,password }) => updatePass(email,password),
-      
-
+    mutationFn: ({ email, password }) => updatePass(email, password),
   });
 };
 
@@ -141,8 +120,6 @@ export const useUserById = () => {
     queryFn: () => getUserById(),
   });
 };
-
-
 
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();

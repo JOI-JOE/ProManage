@@ -5,6 +5,7 @@ import { Box, Container, Typography, Button, Link } from "@mui/material";
 import "./AcceptInvitePage.css"; // Import CSS file
 import { useRequestJoinBoard } from "../../../hooks/useInviteBoard";
 import { toast } from "react-toastify";
+import LogoLoading from "../../../components/Common/LogoLoading";
 
 const AcceptInvitePage = () => {
   const { token } = useParams();
@@ -16,6 +17,7 @@ const AcceptInvitePage = () => {
   const [error, setError] = useState(null);
   const [userId, setUserId] = useState(null);
    const joinBoardMutation = useRequestJoinBoard(); // Sử dụng custom hook
+   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
 
   useEffect(() => {
     const fetchInvite = async () => {
@@ -46,7 +48,7 @@ const AcceptInvitePage = () => {
     };
 
     fetchInvite();
-  }, [token, navigate]);
+  }, [token, navigate,isAuthenticated]);
 
   const handleJoinBoard = async () => {
     try {
@@ -102,7 +104,37 @@ const AcceptInvitePage = () => {
     }
   };
 
-  if (!board && !error && !hasRejected) return <div>Loading...</div>;
+  if (!isAuthenticated) {
+    // console.log("Token in AcceptInvitePage:", token);
+    
+    return (
+      <Box className="accept-invite-container">
+        <Container className="invite-content">
+          <Typography variant="h6" className="invite-title">
+            Vui lòng đăng nhập và truy cập lại liên kết để tham gia bảng
+          </Typography>
+          <Button
+            variant="contained"
+            className="join-button"
+            onClick={() => {
+              navigate("/login");
+            }}
+          >
+            Đăng nhập
+          </Button>
+          <Button
+            variant="contained"
+            className="back-button"
+            onClick={() => navigate("/home")}
+          >
+            Trở về trang chủ
+          </Button>
+        </Container>
+      </Box>
+    );
+  }
+
+  if (!board && !error && !hasRejected) return <LogoLoading/>;
 
   return (
     <Box className="accept-invite-container">
@@ -145,14 +177,24 @@ const AcceptInvitePage = () => {
                 ? "Bạn đã là thành viên của bảng này."
                 : "Nhấn nút bên dưới để tham gia bảng!"}
             </Typography>
-
-            <Button
-              variant="contained"
-              className="join-button"
-              onClick={handleJoinBoard}
-            >
-              {isMember ? "Đi Tới bảng" : "Tham gia bảng"}
-            </Button>
+            {isMember ? (
+              <Button
+                variant="contained"
+                className="join-button"
+                component={Link}
+                onClick={() => navigate(`/b/${board?.id}/${encodeURIComponent(board?.name)}`)}
+              >
+                Đi Tới bảng
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                className="join-button"
+                onClick={handleJoinBoard}
+              >
+                Tham gia bảng
+              </Button>
+            )}
             {!isMember && (
               <Button
                 variant="contained"

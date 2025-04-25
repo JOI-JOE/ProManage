@@ -24,24 +24,26 @@ import { useLogout } from "../../../hooks/useUser";
 import CreateWorkspace from "../../CreateWorkspace";
 import { useMe } from "../../../contexts/MeContext";
 import { Link } from 'react-router-dom';
+import { CircularProgress } from "@mui/material";
+import InitialsAvatar from "../../Common/InitialsAvatar";
 
 
-export default function ProfileMenu({ email, user_name }) {
+export default function ProfileMenu({ email, user_name, user }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [themeAnchorEl, setThemeAnchorEl] = React.useState(null);
   const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
   const [selectedTheme, setSelectedTheme] = React.useState("system");
   const [workspaceType, setWorkspaceType] = React.useState("");
 
-  // const {data: user } = useMe();
+  // const { data: user } = useMe();
 
-  // console.log(user);
+  // // console.log(user);
 
-  const goToCard = () => {
-    if (user?.user_name) {
-      navigate(`/u/${user?.user_name}/cards`);
-    }
-  };
+  // const goToCard = () => {
+  //   if (user?.user_name) {
+  //     navigate(`/u/${user?.user_name}/cards`);
+  //   }
+  // };
 
   const open = Boolean(anchorEl);
   const themeOpen = Boolean(themeAnchorEl);
@@ -75,22 +77,20 @@ export default function ProfileMenu({ email, user_name }) {
     setOpenWorkspaceModal(false);
   };
 
-  const navigate = useNavigate();
-
-  // Lấy thông tin user từ hook
-  // Hook logout
   const { mutate: logout, isLoading: logoutLoading } = useLogout();
-
-  // Xử lý logout
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const handleLogout = () => {
+    setIsLoggingOut(true);
     logout(null, {
       onSuccess: () => {
         console.log("Đăng xuất thành công!");
-        navigate("/login"); // Điều hướng về trang login
+        setIsLoggingOut(false);
       },
       onError: (error) => {
         console.error("Lỗi khi đăng xuất:", error);
         alert("Đã có lỗi xảy ra khi đăng xuất. Vui lòng thử lại sau.");
+        // Đặt lại state ngay cả khi có lỗi
+        setIsLoggingOut(false);
       },
     });
   };
@@ -100,19 +100,32 @@ export default function ProfileMenu({ email, user_name }) {
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
         <Tooltip title="Tài khoản">
           <IconButton onClick={handleClick} size="small">
-            <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
+            {/* <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
               {email?.charAt(0)?.toUpperCase() || ""}
-            </Avatar>
+            </Avatar> */}
+            <InitialsAvatar
+              name={user?.full_name}
+              avatarSrc={user?.image}
+              initial={user?.initials}
+              size={38}
+            />
           </IconButton>
         </Tooltip>
       </Box>
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
         <Box sx={{ p: 2, textAlign: "center" }}>
-          <Avatar
+          <InitialsAvatar
+            name={user?.full_name}
+            avatarSrc={user?.image}
+            initial={user?.initials}
+            size={38}
+            sx={{ margin: "auto" }}
+          />
+          {/* <Avatar
             sx={{ width: 40, height: 40, margin: "auto", bgcolor: "#00A3BF" }}
           >
             {email?.charAt(0)?.toUpperCase() || ""}
-          </Avatar>
+          </Avatar> */}
           <Typography
             variant="subtitle1"
             sx={{ fontWeight: "bold", mt: 1, color: "black" }}
@@ -182,7 +195,26 @@ export default function ProfileMenu({ email, user_name }) {
         <MenuItem>Trợ giúp</MenuItem>
         <MenuItem>Phím tắt</MenuItem>
         <Divider sx={{ marginY: "10px" }} />
-        <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
+        <MenuItem
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          sx={{ position: 'relative' }}
+        >
+          {isLoggingOut ? (
+            <>
+              <CircularProgress
+                size={16}
+                sx={{
+                  mr: 1,
+                  color: 'inherit'
+                }}
+              />
+              Đang đăng xuất...
+            </>
+          ) : (
+            "Đăng xuất"
+          )}
+        </MenuItem>
       </Menu>
 
       {/* Modal for Creating Workspace */}
