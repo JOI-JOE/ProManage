@@ -239,7 +239,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
                 <ListItem disablePadding>
                   <ListItemButton
                     component={Link}
-                    to={`/w/${currentWorkspace?.name}/table-view`}
+                    to={`/w/${currentWorkspace?.id}/table-view`}
                   >
                     <ListItemIcon sx={{ color: "white" }}>
                       <DashboardIcon />
@@ -251,7 +251,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
                 <ListItem disablePadding>
                   <ListItemButton
                     component={Link}
-                    to={`/w/${currentWorkspace?.name}/calendar`}
+                    to={`/w/${currentWorkspace?.id}/calendar`}
                   >
                     <ListItemIcon sx={{ color: "white" }}>
                       <CalendarMonthIcon />

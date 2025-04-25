@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,8 +10,9 @@ import {
   Select,
   MenuItem,
   FormControl,
+  TextField,
 } from "@mui/material";
-import { DatePicker, TimePicker } from "@mui/x-date-pickers";
+import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -23,64 +24,52 @@ import { useChecklistsItemByDate, useDeleteItemDate, useUpdateItemDate } from ".
 import "dayjs/locale/vi"; // Import locale tiếng Việt
 
 dayjs.locale("vi"); // Set locale
+
 const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
   const { cardId } = useParams();
-  // console.log("Parent component re-rendered!");
-  //  const { data: checklistItemMembers } = useGetMemberInCheckListItem(
-  //     type === 'checklist-item' ? targetId : null
-  //   );
-  const { data: cardSchedule = [] } = useCardSchedule(type === 'card' ? targetId : null); // Chỉ gọi API khi type là "card" và có targetId hợp lệ;
-  const { data: checklistSchedule = [] } = useChecklistsItemByDate(type === 'checklist-item' ? targetId : null)// Chỉ gọi API khi type là "checklist-item" và có targetId hợp lệ);
-  // console.log(checklistSchedule)
-  let schedule = [];
-  if (type === "card" && targetId) {
-    schedule = cardSchedule;
-  } else if (type === "checklist-item" && targetId) {
-    schedule = checklistSchedule;
-  }
-  // console.log(targetId);
-  // console.log(schedule)
+  const { data: cardSchedule = [] } = useCardSchedule(type === 'card' ? targetId : null);
+  const { data: checklistSchedule = [] } = useChecklistsItemByDate(type === 'checklist-item' ? targetId : null);
 
-
-  // console.log("type",type);
-  // console.log(targetId);
+  const schedule = useMemo(() => {
+    if (type === "card") return cardSchedule;
+    if (type === "checklist-item") return checklistSchedule;
+    return null;
+  }, [cardSchedule, checklistSchedule, type]);
   const { mutate: updateCardDate } = useUpdateCardDate();
   const { mutate: updateChecklistItemDate } = useUpdateItemDate();
   const { mutate: deleteDateCard } = useDeleteCardDate();
   const { mutate: deleteDateItem } = useDeleteItemDate();
 
-  // const { mutate: updateChecklistItemDate } = useUpdateItemDate();
-
   const [startDate, setStartDate] = useState(dayjs().startOf("day"));
   const [endDate, setEndDate] = useState(dayjs().startOf("day"));
-  const [endTime, setEndTime] = useState(null);
+  const [endTime, setEndTime] = useState("12:00"); // Mặc định là chuỗi "12:00"
   const [isStartDateChecked, setIsStartDateChecked] = useState(false);
   const [isEndDateChecked, setIsEndDateChecked] = useState(true);
   const [isEndTimeChecked, setIsEndTimeChecked] = useState(false);
-  // const [endDate, setEndDate] = useState(dayjs().startOf("day"));
-  // const [endTime, setEndTime] = useState(dayjs().startOf("day"));
-  const [reminder, setReminder] = useState(""); // State mặc định rỗn
+  const [reminder, setReminder] = useState("Không có");
+
   // Load dữ liệu cũ khi mở modal
   useEffect(() => {
-
     if (schedule) {
-
       setIsStartDateChecked(!!schedule.start_date);
-      setStartDate(schedule.start_date ? dayjs(schedule.start_date) : null);
+      setStartDate(schedule.start_date ? dayjs(schedule.start_date) : dayjs().startOf("day"));
 
       setIsEndDateChecked(!!schedule.end_date);
-      setEndDate(schedule.end_date ? dayjs(schedule.end_date) : null);
+      setEndDate(schedule.end_date ? dayjs(schedule.end_date) : dayjs().startOf("day"));
 
       setIsEndTimeChecked(!!schedule.end_time);
-      // setEndTime(schedule.end_time ? dayjs(schedule.end_time, "HH:mm") : null);
-      setEndTime(schedule.end_time ? dayjs(schedule.end_time, "HH:mm") : null);
+      if (schedule.end_time) {
+        const timeWithoutSeconds = schedule.end_time.split(':').slice(0, 2).join(':'); // Lấy "HH:mm" từ "HH:mm:ss"
+        setEndTime(timeWithoutSeconds);
+      } else {
+        setEndTime("12:00");
+      }
 
       // Nếu có reminder, tính khoảng thời gian so với `endDateTime`
       if (schedule.reminder && schedule.end_date && schedule.end_time) {
-        const endDateTime = dayjs(`${schedule.end_date} ${schedule.end_time}`, "YYYY-MM-DD HH:mm");
+        const endDateTime = dayjs(`${schedule.end_date} ${schedule.end_time}`, "YYYY-MM-DD HH:mm:ss");
         const reminderDateTime = dayjs(schedule.reminder, "YYYY-MM-DD HH:mm");
         const diff = endDateTime.diff(reminderDateTime, "minute");
-
 
         const reminderLabels = {
           0: "Vào thời điểm ngày hết hạn",
@@ -97,19 +86,8 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
       } else {
         setReminder("Không có");
       }
-      // console.log("Giá trị mới của state:");
-      // console.log("startDate:", startDate);
-      // console.log("endDate:", endDate);
-      // console.log("endTime:", endTime);
-      // console.log("reminder:", reminder);
-
-
     }
   }, [schedule]);
-  // useEffect(() => {
-  //   console.log("Reminder State sau khi cập nhật:", reminder);
-  // }, [reminder]);
-
 
   // Đảm bảo ngày bắt đầu luôn <= ngày kết thúc
   useEffect(() => {
@@ -120,20 +98,44 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
     }
   }, [startDate, endDate]);
 
+  // Xử lý thay đổi thời gian
+  const handleTimeChange = (e) => {
+    let value = e.target.value;
+
+    // Cho phép nhập từng ký tự, chỉ cần khớp với các định dạng trung gian
+    const timeRegex = /^(?:(?:[0-1]?[0-9]?|2[0-3]?)?(?:$|:(?:[0-5]?[0-9]?)?$))/;
+    if (value === "" || timeRegex.test(value)) {
+      setEndTime(value);
+    }
+  };
+
+  // Xử lý khi người dùng rời khỏi ô nhập thời gian (onBlur)
+  const handleTimeBlur = () => {
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+    if (!timeRegex.test(endTime)) {
+      setEndTime("12:00"); // Đặt lại giá trị mặc định nếu không hợp lệ
+    }
+  };
+
   // Lưu dữ liệu
   const handleSave = async (e) => {
     e.preventDefault();
 
-    if (!isEndDateChecked || !endDate || !endTime) {
-      console.error("Ngày kết thúc chưa được chọn!");
-      return;
+    if (!isEndDateChecked || !endDate) {
+      return; // Không hiển thị thông báo, chỉ thoát
     }
 
-    let endDateTime = dayjs(`${endDate.format("YYYY-MM-DD")} ${endTime.format("HH:mm")}`);
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+    let formattedEndTime = endTime;
+    if (!timeRegex.test(endTime)) {
+      formattedEndTime = "12:00"; // Sử dụng giá trị mặc định nếu thời gian không hợp lệ
+    }
+
+    const formattedEndDateTime = `${endDate.format("YYYY-MM-DD")} ${formattedEndTime}`;
+    const endDateTime = dayjs(formattedEndDateTime, "YYYY-MM-DD HH:mm");
 
     if (!endDateTime.isValid()) {
-      console.error("Lỗi: Ngày giờ kết thúc không hợp lệ!");
-      return;
+      return; // Không hiển thị thông báo, chỉ thoát
     }
 
     let reminderDateTime = null;
@@ -153,12 +155,9 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
 
     const formattedStartDate = isStartDateChecked && startDate ? startDate.format("YYYY-MM-DD") : null;
     const formattedEndDate = isEndDateChecked && endDate ? endDate.format("YYYY-MM-DD") : null;
-    const formattedEndTime = isEndDateChecked && endTime ? endTime.format("HH:mm") : null;
     const formattedReminder = reminderDateTime ? reminderDateTime.format("YYYY-MM-DD HH:mm") : null;
 
-
     if (type === "card") {
-      // Nếu là card, cập nhật ngày cho card
       updateCardDate({
         targetId,
         startDate: formattedStartDate,
@@ -167,8 +166,6 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
         reminder: formattedReminder,
       });
     } else if (type === "checklist-item") {
-      // console.log("đã ấn checklist")
-      // Nếu là checklist_item, cập nhật ngày cho checklist_item
       updateChecklistItemDate({
         targetId,
         endDate: formattedEndDate,
@@ -177,25 +174,18 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
       });
     }
 
-
     onClose();
-  }
-  const handleDelete = () => {
-    // Gọi API xóa ngày
-    if (type === "card") {
-      
-      // Nếu là card, cập nhật ngày cho card
-      deleteDateCard({ targetId }); // Truyền object { targetId }
-     
-    } else if (type === "checklist-item") {
-      // console.log("đã ấn checklist")
-      // Nếu là checklist_item, cập nhật ngày cho checklist_item
-      deleteDateItem({targetId})
-    }
-      onClose();
   };
 
-
+  // Xóa ngày
+  const handleDelete = () => {
+    if (type === "card") {
+      deleteDateCard({ targetId });
+    } else if (type === "checklist-item") {
+      deleteDateItem({ targetId });
+    }
+    onClose();
+  };
 
   return (
     <Dialog
@@ -250,7 +240,7 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
                 disabled={!isStartDateChecked}
                 value={startDate}
                 onChange={(newDate) => setStartDate(newDate)}
-                format="DD/MM/YYYY" // Định dạng ngày/tháng/năm
+                format="DD/MM/YYYY"
               />
             </LocalizationProvider>
           </Box>
@@ -271,13 +261,17 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
               disabled={!isEndDateChecked}
               value={endDate}
               onChange={(newDate) => setEndDate(newDate)}
-              format="DD/MM/YYYY" // Hiển thị ngày/tháng/năm
+              format="DD/MM/YYYY"
             />
-            <TimePicker
-              disabled={!isEndDateChecked}
+            <TextField
+            
+              type="text"
               value={endTime}
-              onChange={(newTime) => setEndTime(newTime)}
-              format="HH:mm" // Định dạng giờ:phút
+              onChange={handleTimeChange}
+              onBlur={handleTimeBlur}
+              placeholder="HH:mm"
+              sx={{ width: "90px" }}
+              disabled={!isEndDateChecked}
             />
           </LocalizationProvider>
         </Box>
@@ -293,9 +287,7 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
             sx={{ height: 32 }}
           >
             <MenuItem value="Không có">Không có</MenuItem>
-            <MenuItem value="Vào thời điểm ngày hết hạn">
-              Vào thời điểm ngày hết hạn
-            </MenuItem>
+            <MenuItem value="Vào thời điểm ngày hết hạn">Vào thời điểm ngày hết hạn</MenuItem>
             <MenuItem value="5 phút trước">5 Phút trước</MenuItem>
             <MenuItem value="10 phút trước">10 Phút trước</MenuItem>
             <MenuItem value="15 phút trước">15 Phút trước</MenuItem>
@@ -306,8 +298,7 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
           </Select>
         </FormControl>
         <Typography sx={{ fontSize: "12px", color: "gray" }}>
-          Nhắc nhở sẽ được gửi đến tất cả các thành viên và người theo dõi thẻ
-          này.
+          Nhắc nhở sẽ được gửi đến tất cả các thành viên và người theo dõi thẻ này.
         </Typography>
       </Box>
 
@@ -321,11 +312,11 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
           Lưu
         </Button>
         <Button
-          onClick={handleDelete} // Hàm xử lý khi nhấn nút Xóa, bạn cần định nghĩa hàm này
-          color="error" // Màu đỏ trong Material-UI
+          onClick={handleDelete}
+          color="error"
           variant="contained"
           size="small"
-          sx={{ ml: 5 }} // Thêm khoảng cách giữa hai nút
+          sx={{ ml: 5 }}
         >
           Xóa
         </Button>

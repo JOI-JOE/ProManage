@@ -104,7 +104,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/workspace/{workspaceId}/members',  'sendMemberWorkspace');
         Route::post('workspace/{workspaceId}/invitationSecret/{token}', 'joinWorkspace');
         Route::delete('workspace/{workspaceId}/members/{userId}',  'removeMemberFromWorkspace');
-        // cập nhập trạng thái cho người dùng , normal <-> admin , 
+        // cập nhập trạng thái cho người dùng , normal <-> admin ,
         Route::put('workspace/{workspaceId}/members/{userId}/type',  'changeType');
         // Xử lý guest, request cho workspace
         Route::post('workspaces/{workspaceId}/newMember/{memberId}', 'addNewMemberToWorkspace');
@@ -150,9 +150,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //user profile
     Route::get('/user', [ApiUserController::class, 'getUserById']);
 
+
     Route::put('/user/update-profile', [ApiUserController::class, 'updateProfile']);
 
     Route::get('/user/activities', [ActivityLogController::class, 'getMyActivities']);
+
 
     Route::get('/user/workspaces', [WorkspaceMembersController::class, 'getUserWorkspaces']);
 
@@ -351,7 +353,7 @@ Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNoti
 Route::get('/settings', [SettingController::class, 'index']);
 Route::get('/activities/{cardId}', [ActivityLogController::class, 'getActivitiesByCard']);
 Route::get('/calendar', [CalendarController::class, 'index']);
-Route::put('board/{boardId}/calendar/{cardId}', [CalendarController::class, 'update']);
+Route::put('/calendar/{cardId}', [CalendarController::class, 'update']);
 
 
 Route::middleware('auth:sanctum')->group(function () {

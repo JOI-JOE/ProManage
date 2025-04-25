@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, IconButton, TextField } from "@mui/material";
 import { useParams } from "react-router-dom";
-import { useGetWorkspaceByName } from "../../../../../hooks/useWorkspace";
+import { useGetWorkspaceById, useGetWorkspaceByName } from "../../../../../hooks/useWorkspace";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -17,8 +17,18 @@ import EditIcon from "@mui/icons-material/Edit";
 
 const TableView = () => {
     const queryClient = useQueryClient();
-    const { workspaceName } = useParams();
-    const { data, isLoading, error } = useGetWorkspaceByName(workspaceName);
+    const { workspaceId } = useParams();
+    // const { data, isLoading, error } = useGetWorkspaceByName(workspaceName);
+    const {
+        data: workspace,
+        isLoading: isLoadingWorkspace,
+        isError: isWorkspaceError,
+        error: workspaceError,
+        refetch: refetchWorkspace,
+    } = useGetWorkspaceById(workspaceId, {
+        enabled: !!workspaceId,
+    });
+    console.log(workspace);
     const { mutate: toggleCardCompletion } = useToggleCardCompletion();
     const { mutate: updateCardList } = useUpdateCardByList();
     const { mutate: addCardMember } = useAddMemberByCard();
@@ -26,7 +36,10 @@ const TableView = () => {
     const { mutate: updateDate } = useUpdateDueDate();
     const { mutate: updateCardTitle } = useUpdateCardTitle();
 
-    const boardIds = data?.boards?.map(board => board.id);
+    const boardIds = workspace?.boards
+  ?.filter(board => !board.closed)
+  .map(board => board.id);
+
     const { data: TableView = [] } = useTableView(boardIds);
     const { data: boardLists = [] } = useListByBoard(boardIds);
     const [tableData, setTableData] = useState([]);
