@@ -9,26 +9,18 @@ import Cookies from "js-cookie";
 
 const LoginForm = () => {
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({ email: "", password: "" });
   const location = useLocation();
-  const inviteToken = location.state?.inviteToken;
-  const invitationWorkspace = Cookies.get("invitation");
-
-  // Pending của workspace
-  // Nếu đã có token => kiểm tra xem có pending invite không
-
-  // -----------------------------------------------------
   const { setToken, setLinkInvite } = useStateContext();
 
-
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const inviteToken = location.state?.inviteToken;
+  const invitationWorkspace = Cookies.get("invitation");
 
   const [errors, setErrors] = useState({
     email: "",
     password: "",
     general: "",
   });
-  // Add state to track error timers
   const [errorTimers, setErrorTimers] = useState({});
 
   const { mutate: login, isLoading } = useLogin();
@@ -48,7 +40,6 @@ const LoginForm = () => {
     });
     setErrors({ ...errors, [name]: "" });
 
-    // Clear the timer for this field if it exists
     if (errorTimers[name]) {
       clearTimeout(errorTimers[name]);
       setErrorTimers((prev) => {
@@ -59,120 +50,126 @@ const LoginForm = () => {
     }
   };
 
-  // Function to set errors with timeout
   const setErrorWithTimeout = (fieldName, errorMessage, duration = 5000) => {
-    // Longer duration for password and authentication errors (15 seconds)
     const errorDuration =
-      fieldName === "password" ||
-        fieldName === "general" ||
-        fieldName === "email"
+      fieldName === "password" || fieldName === "general" || fieldName === "email"
         ? 15000
         : duration;
 
     setErrors((prev) => ({ ...prev, [fieldName]: errorMessage }));
 
-    // Clear any existing timer for this field
     if (errorTimers[fieldName]) {
       clearTimeout(errorTimers[fieldName]);
     }
 
-    // Set new timer
     const timerId = setTimeout(() => {
       setErrors((prev) => ({ ...prev, [fieldName]: "" }));
       setErrorTimers((prev) => {
         const newTimers = { ...prev };
-        delete newTimers[fieldName];
+        delete newTimers[name];
         return newTimers;
       });
     }, errorDuration);
 
-    // Store the timer
     setErrorTimers((prev) => ({ ...prev, [fieldName]: timerId }));
   };
 
-  // Thay đổi cách quản lý các thông báo lỗi để đảm bảo chúng tồn tại đủ lâu
   const handleSubmit = (e) => {
-    e.preventDefault();
-    // Kiểm tra validation phía client
-    if (!formData.email) {
-      setErrorWithTimeout("email", "Vui lòng nhập email.");
-      return;
-    }
-    if (!formData.password) {
-      setErrorWithTimeout("password", "Vui lòng nhập mật khẩu.");
-      return;
-    }
-    console.log(inviteToken)
-    // Gọi mutation login
-    login(formData, {
-      onSuccess: (data) => {
-        localStorage.setItem("token", data.token);
-        setToken(data.token);
-        if (inviteToken) {
-          setLinkInvite(`/accept-invite/${inviteToken}`);
-        } else if (invitationWorkspace) {
-          // Giải mã và xử lý invitationWorkspace
-          const decoded = decodeURIComponent(decodeURIComponent(invitationWorkspace));
-          const [prefix, workspaceId, token] = decoded.split(":");
-          if (prefix === "workspace" && workspaceId && token) {
-            setLinkInvite(`/invite/${workspaceId}/${token}`);
+    e.preventDefault(); // Prevent default form submission
+
+    try {
+      // Client-side validation
+      if (!formData.email) {
+        setErrorWithTimeout("email", "Vui lòng nhập email.");
+        return;
+      }
+      if (!formData.password) {
+        setErrorWithTimeout("password", "Vui lòng nhập mật khẩu.");
+        return;
+      }
+
+      // Call login mutation
+      login(formData, {
+        onSuccess: (data) => {
+
+          console.log("Đăng nhập thành công:", data);
+          localStorage.setItem("token", data.token);
+          setToken(data.token);
+          if (inviteToken) {
+            setLinkInvite(`/accept-invite/${inviteToken}`);
+            navigate(`/accept-invite/${inviteToken}`);
+          } else if (invitationWorkspace) {
+            const decoded = decodeURIComponent(decodeURIComponent(invitationWorkspace));
+            const [prefix, workspaceId, token] = decoded.split(":");
+            if (prefix === "workspace" && workspaceId && token) {
+              setLinkInvite(`/invite/${workspaceId}/${token}`);
+              navigate(`/invite/${workspaceId}/${token}`);
+            } else {
+              setLinkInvite(null);
+            }
           } else {
-            setLinkInvite(null); // Nếu dữ liệu không hợp lệ
+            setLinkInvite(null);
           }
-        } else {
-          setLinkInvite(null);
-        }
-      },
-      onError: (err) => {
-        console.error("Lỗi đăng nhập:", err);
-        // Đảm bảo lỗi đăng nhập được hiển thị đủ lâu
-        if (err.response && err.response.status === 401) {
-          // Kiểm tra lỗi cụ thể từ server (nếu có)
-          const errorData = err.response.data;
-          // Nếu lỗi liên quan đến email không tồn tại
-          if (errorData && errorData.email) {
-            setErrorWithTimeout("email", "Email không tồn tại.");
-          } else if (errorData && errorData.password) {
-            setErrorWithTimeout("password", "Mật khẩu không đúng.");
+        },
+        onError: (err) => {
+          console.error("Lỗi đăng nhập:", {
+            message: err.message,
+            status: err.response?.status,
+            data: err.response?.data,
+          });
+
+          if (err.response) {
+            const { status, data } = err.response;
+            console.log("Phản hồi từ server:", data);
+
+            if (status === 401) {
+              if (data?.password) {
+                setErrorWithTimeout("password", data.password);
+              } else if (data?.message && typeof data.message === "string") {
+                setErrorWithTimeout("password", data.message);
+              } else {
+                setErrorWithTimeout("general", "Tài khoản hoặc mật khẩu không chính xác.");
+              }
+            } else if (status === 404) {
+              if (data?.email) {
+                setErrorWithTimeout("email", data.email);
+              } else {
+                setErrorWithTimeout("email", data?.message || "Email không tồn tại trong hệ thống.");
+              }
+            } else if (status === 422) {
+              const validationErrors = data.errors || {};
+              if (validationErrors.email) {
+                setErrorWithTimeout("email", validationErrors.email[0]);
+              }
+              if (validationErrors.password) {
+                setErrorWithTimeout("password", validationErrors.password[0]);
+              }
+            } else {
+              setErrorWithTimeout(
+                "general",
+                data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau."
+              );
+            }
           } else {
-            // Thông báo lỗi chung nếu không xác định được lỗi cụ thể
+            console.error("Lỗi không có phản hồi:", err);
             setErrorWithTimeout(
               "general",
-              "Tài khoản hoặc mật khẩu không chính xác."
+              "Không thể kết nối đến server. Vui lòng thử lại."
             );
           }
-        } else if (err.response && err.response.status === 422) {
-          // Xử lý lỗi validation
-          const validationErrors = err.response.data.errors;
-          if (validationErrors) {
-            if (validationErrors.email) {
-              setErrorWithTimeout("email", validationErrors.email[0]);
-            }
-            if (validationErrors.password) {
-              setErrorWithTimeout("password", validationErrors.password[0]);
-            }
-          }
-        } else if (err.response && err.response.status === 404) {
-          // Lỗi email không tồn tại
-          setErrorWithTimeout("email", "Email không tồn tại trong hệ thống.");
-        } else {
-          // Xử lý các lỗi khác
-          setErrorWithTimeout(
-            "general",
-            "Có lỗi xảy ra. Vui lòng thử lại sau."
-          );
-        }
-      },
-    });
+        },
+      });
+    } catch (error) {
+      console.error("Lỗi trong handleSubmit:", error);
+      setErrorWithTimeout("general", "Có lỗi xảy ra. Vui lòng thử lại.");
+    }
   };
-
-
 
   return (
     <section
       className="min-h-screen flex items-center justify-center bg-cover bg-center"
       style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("${anh4}")`,
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('${anh4}')`,
       }}
     >
       <div className="w-full max-w-xs rounded-lg p-6 shadow-lg bg-white bg-opacity-95">
@@ -198,6 +195,7 @@ const LoginForm = () => {
               placeholder="Nhập email"
               className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.email ? "border-red-500" : "border-gray-300"
                 }`}
+              disabled={isLoading}
             />
             {errors.email && (
               <p className="text-red-500 text-xs mt-1 ml-1">{errors.email}</p>
@@ -214,8 +212,9 @@ const LoginForm = () => {
               </label>
               <button
                 type="button"
-                onClick={() => navigate("/forgort-password")}
+                onClick={() => navigate("/forgot-password")} // Fixed typo: forgort -> forgot
                 className="text-xs text-teal-600 hover:text-teal-800 transition"
+                disabled={isLoading}
               >
                 Quên mật khẩu?
               </button>
@@ -229,11 +228,10 @@ const LoginForm = () => {
               placeholder="Nhập mật khẩu"
               className={`w-full rounded-md border bg-white h-10 px-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-100 transition ${errors.password ? "border-red-500" : "border-gray-300"
                 }`}
+              disabled={isLoading}
             />
             {errors.password && (
-              <p className="text-red-500 text-xs mt-1 ml-1">
-                {errors.password}
-              </p>
+              <p className="text-red-500 text-xs mt-1 ml-1">{errors.password}</p>
             )}
           </div>
 
@@ -301,6 +299,7 @@ const LoginForm = () => {
           <button
             onClick={() => navigate("/register")}
             className="text-teal-600 font-medium hover:text-teal-800 transition"
+            disabled={isLoading}
           >
             Đăng ký
           </button>

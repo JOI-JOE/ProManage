@@ -2,7 +2,9 @@ import { Box, SvgIcon } from "@mui/material";
 import React from "react";
 import loadingLogo from "~/assets/loading.svg?react"; // Đảm bảo logo SVG được import đúng
 
+
 const LogoLoading = ({ scale = 0.5, y = 50, x = 50 }) => {
+
     return (
         <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
             <SvgIcon

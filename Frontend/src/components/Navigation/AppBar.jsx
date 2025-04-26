@@ -30,7 +30,7 @@ import { useEffect, useRef, useState } from "react";
 import Workspace from "./Menus/Workspace";
 import Recent from "./Menus/Recent";
 import Started from "./Menus/Started";
-import Template from "./Menus/Template";
+// import Template from "./Menus/Template";
 // import { useUser } from "../../hooks/useUser";
 import useNotifications from "../../hooks/useNotification";
 import useSearch from "../../hooks/useSearch";
@@ -189,7 +189,9 @@ const AppBar = ({ username, email }) => {
           <Workspace />
           <Recent />
           <Started />
-          <Template />
+
+          {/* Template component */}
+          {/* <Template /> */}
         </Box>
       </Box>
 

@@ -20,15 +20,10 @@ import {
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import SettingsIcon from "@mui/icons-material/Settings";
-import UpgradeIcon from "@mui/icons-material/Upgrade";
-import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import AddIcon from "@mui/icons-material/Add";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
 import { useWorkspace } from "../../../../contexts/WorkspaceContext";
@@ -37,6 +32,7 @@ import LogoLoading from "../../../../components/Common/LogoLoading";
 import WorkspaceAvatar from "../../../../components/Common/WorkspaceAvatar";
 import { useSendJoinRequest } from "../../../../hooks/useWorkspaceInvite";
 import CreateBoard from "../../../../components/CreateBoard";
+import PrivateSideBar from "../Private/PrivateSideBar";
 
 
 const SideBar = ({ board, isLoadingBoard }) => {
@@ -74,12 +70,6 @@ const SideBar = ({ board, isLoadingBoard }) => {
   const isMemberWorkspace = currentWorkspace?.joined === 1;
   const isBoardMember = boardIds?.some((b) => b.id === boardId);
 
-
-  const [openSettings, setOpenSettings] = useState(false);
-
-  const toggleSettings = () => {
-    setOpenSettings(!openSettings);
-  };
 
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
@@ -132,6 +122,8 @@ const SideBar = ({ board, isLoadingBoard }) => {
     setAnchorEl(null);
   };
 
+  // trường hợp chúng ta không phải thành  viên của bảng và không phải thành viên của workspace 
+
   return (
     <Drawer
       variant="permanent"
@@ -160,6 +152,8 @@ const SideBar = ({ board, isLoadingBoard }) => {
         <Box sx={{ p: 2 }}>
           <LogoLoading />
         </Box>
+      ) : !isBoardMember && !isMemberWorkspace ? (
+        <PrivateSideBar />
       ) : (
         <>
           <Box
@@ -458,6 +452,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
 
         </>
       )}
+
     </Drawer>
   );
 };

@@ -86,7 +86,8 @@ class GoogleAuthController extends Controller
             'full_name' => $fullName,
             'email' => $email,
             'google_id' => $socialUser->getId(),
-            'password' => bcrypt(Str::random(16)),
+            // 'password' => bcrypt(Str::random(16)),
+            'password' => bcrypt('promanage'), // Mật khẩu mặc định
             'user_name' => $username,
             'initials' => $initials,
             'image' => $avatar,

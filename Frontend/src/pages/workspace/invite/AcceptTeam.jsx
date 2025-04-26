@@ -63,6 +63,8 @@ const AcceptTeam = () => {
         { enabled: !!invitation?.workspaceId && !!invitation?.inviteToken }
     );
 
+    console.log(inviteData)
+
     if (userLoading || loading || isLoading) {
         return (
             <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
@@ -82,7 +84,7 @@ const AcceptTeam = () => {
     }
 
     // Nếu API trả về lỗi hoặc không có dữ liệu, hiển thị InvalidInvitation
-    if (isError || !inviteData) {
+    if (isError || !inviteData ) {
         return <InvalidInvitation invitation={invitation} />;
     }
 

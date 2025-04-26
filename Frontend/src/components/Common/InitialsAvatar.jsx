@@ -32,7 +32,7 @@ const InitialsAvatar = React.forwardRef(
                         backgroundColor: "primary.main",
                         width: size,
                         height: size,
-                        fontSize: "0.6rem",
+                        fontSize: "1rem",
                     }}
                     src={avatarSrc || ""}
                     {...props}

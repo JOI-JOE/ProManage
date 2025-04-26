@@ -248,7 +248,6 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
           </Button>
         )}
 
-        {/* Remove/Leave button */}
         {(isMe || isAdmin) && (
           <Button
             variant="outlined"

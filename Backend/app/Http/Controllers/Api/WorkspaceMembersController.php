@@ -38,31 +38,11 @@ class WorkspaceMembersController extends Controller
             return response()->json(['error' => 'Không tìm thấy không gian làm việc'], 404);
         }
 
-        // Kiểm tra xem lời mời đã được gửi cho email này trong workspace với accept_unconfirmed = true
-        $existingInvitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
-            ->where('email', $validated['email'])
-            ->where('accept_unconfirmed', true)
-            ->first();
-
-        if ($existingInvitation) {
-            return response()->json(['error' => 'Lời mời đã được gửi đến email này trong không gian làm việc này'], 400);
-        }
-
-        // Find user by email first
+        // Find user by email
         $user = User::where('email', $validated['email'])->first();
 
-        $invitation = WorkspaceInvitations::create([
-            'id' => Str::uuid(),
-            'invited_member_id' => $member->id,
-            'email' => $validated['email'],
-            'accept_unconfirmed' => true,
-            'workspace_id' => $workspaceId,
-            'invite_token' => Str::uuid()->toString(),
-        ]);
-
-        $link = env('FRONTEND_URL') . '/invite/' . $workspaceId . '/' . $invitation->invite_token;
-
-        $sendNotification = function ($recipient) use ($workspace, $member, $validated, $link) {
+        // Function to send notification
+        $sendNotification = function ($recipient, $link) use ($workspace, $member, $validated) {
             try {
                 $recipient->notify(new \App\Notifications\WorkspaceInvitationNotification(
                     $workspace->display_name,
@@ -82,25 +62,35 @@ class WorkspaceMembersController extends Controller
                 ->first();
 
             if ($existingMember) {
-                // Nếu người dùng đã là thành viên và đang là "pending" (chưa tham gia chính thức)
+                // If user is already a member
                 if ($existingMember->member_type === 'pending' && !$existingMember->joined) {
-                    // Cập nhật lại trạng thái người dùng từ pending sang joined
+                    // Update pending member to joined
                     DB::table('workspace_members')
                         ->where('id', $existingMember->id)
                         ->update([
                             'joined' => true,
                             'member_type' => WorkspaceMembers::$NORMAL,
                         ]);
-                    // Gửi thông báo cho người dùng
-                    $sendNotification($user);
-                    event(new \App\Events\MemberInvitedToWorkspace($workspaceId, $user));
-                    return response()->json(['message' => 'Trạng thái người dùng đã được cập nhật thành đã tham gia và gửi lời mời thành công'], 200);
                 }
-                // Nếu người dùng đã là thành viên chính thức
-                return response()->json(['message' => 'Người dùng đã là thành viên của không gian làm việc này'], 200);
+
+                // For existing members, use direct workspace link
+                $link = env('FRONTEND_URL') . '/w/' . $workspaceId;
+
+                // Send notification with direct link
+                $sendNotification($user, $link);
+                event(new \App\Events\MemberInvitedToWorkspace($workspaceId, $user));
+
+                return response()->json([
+                    'message' => $existingMember->joined
+                        ? 'Người dùng đã là thành viên, đã gửi thông báo với đường dẫn trực tiếp'
+                        : 'Trạng thái người dùng đã được cập nhật và gửi thông báo với đường dẫn trực tiếp'
+                ], 200);
             }
 
-            // Add to workspace_members
+            // New member: generate invite token and add to workspace_members
+            $inviteToken = Str::uuid()->toString();
+            $link = env('FRONTEND_URL') . '/invite/' . $workspaceId . '/' . $inviteToken;
+
             DB::table('workspace_members')->insert([
                 'id' => Str::uuid(),
                 'workspace_id' => $workspaceId,
@@ -109,13 +99,41 @@ class WorkspaceMembersController extends Controller
                 'joined' => true,
             ]);
 
-            // Gửi notification cho user
-            $sendNotification($user);
-
+            // Send notification with invite link
+            $sendNotification($user, $link);
             event(new \App\Events\MemberInvitedToWorkspace($workspaceId, $user));
 
             return response()->json(['message' => 'Người dùng đã được thêm và gửi lời mời thành công'], 201);
         } else {
+            // Non-existing user: create invitation with token
+            $inviteToken = Str::uuid()->toString();
+            $link = env('FRONTEND_URL') . '/invite/' . $workspaceId . '/' . $inviteToken;
+
+            // Check for existing invitation
+            $existingInvitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
+                ->where('email', $validated['email'])
+                ->first();
+
+            if ($existingInvitation) {
+                // Update existing invitation
+                $existingInvitation->update([
+                    'invited_member_id' => $member->id,
+                    'accept_unconfirmed' => true,
+                    'invite_token' => $inviteToken,
+                    'updated_at' => now(),
+                ]);
+            } else {
+                // Create new invitation
+                WorkspaceInvitations::create([
+                    'id' => Str::uuid(),
+                    'invited_member_id' => $member->id,
+                    'email' => $validated['email'],
+                    'accept_unconfirmed' => true,
+                    'workspace_id' => $workspaceId,
+                    'invite_token' => $inviteToken,
+                ]);
+            }
+
             try {
                 Mail::to($validated['email'])->queue(
                     new WorkspaceInvitation(
@@ -133,7 +151,7 @@ class WorkspaceMembersController extends Controller
         }
     }
 
-    public function removeMemberFromWorkspace($workspaceId, $memberId)
+    public function removeMemberFromWorkspace($workspaceId, $memberId, Request $request)
     {
         try {
             // Validate input parameters
@@ -149,6 +167,15 @@ class WorkspaceMembersController extends Controller
                 ]);
             }
 
+            // Validate move_type if provided
+            $moveType = $request->input('move_type');
+            $allowedMoveTypes = ['request', 'guest', 'member', null];
+            if (!in_array($moveType, $allowedMoveTypes, true)) {
+                throw ValidationException::withMessages([
+                    'move_type' => 'Loại chuyển động không hợp lệ. Phải là "request", "guest", "member" hoặc không được cung cấp.'
+                ]);
+            }
+
             // Check if user exists
             $user = User::find($memberId);
             if (!$user) {
@@ -160,14 +187,16 @@ class WorkspaceMembersController extends Controller
             // Check if workspace exists
             $workspace = Workspace::findOrFail($workspaceId);
 
-            // Check admin permissions
+            // Get current user
             $currentUser = Auth::user();
+            $isSelfRemoval = $currentUser->id === $memberId;
             $isAdmin = WorkspaceMembers::where('workspace_id', $workspaceId)
                 ->where('user_id', $currentUser->id)
                 ->where('member_type', 'admin')
                 ->exists();
 
-            if (!$isAdmin) {
+            // Check permissions: either admin or self-removal
+            if (!$isAdmin && !$isSelfRemoval) {
                 return response()->json([
                     'message' => 'Bạn không có quyền thực hiện hành động này.'
                 ], 403);
@@ -175,86 +204,181 @@ class WorkspaceMembersController extends Controller
 
             DB::beginTransaction();
 
-            // Case 1: Remove workspace member (normal or admin)
-            $workspaceMember = WorkspaceMembers::where('workspace_id', $workspaceId)
-                ->where('user_id', $memberId)
-                ->whereIn('member_type', ['normal', 'admin'])
-                ->first();
+            $results = [];
+            $actionMessage = $isSelfRemoval ? 'rời khỏi' : 'loại bỏ';
 
-            if ($workspaceMember) {
-                // Check if the user is the last admin
-                if ($workspaceMember->member_type === 'admin') {
-                    $adminCount = WorkspaceMembers::where('workspace_id', $workspaceId)
-                        ->where('member_type', 'admin')
-                        ->count();
+            // Handle specific move_type if provided
+            if ($moveType) {
+                if ($moveType === 'member') {
+                    // Case 1: Remove workspace member (normal or admin)
+                    $workspaceMember = WorkspaceMembers::where('workspace_id', $workspaceId)
+                        ->where('user_id', $memberId)
+                        ->whereIn('member_type', ['normal', 'admin'])
+                        ->first();
 
-                    if ($adminCount <= 1) {
-                        DB::rollBack();
-                        return response()->json([
-                            'message' => 'Không thể xóa admin cuối cùng của Không gian làm việc.'
-                        ], 422);
+                    if ($workspaceMember) {
+                        // Check if the user is the last admin
+                        if ($workspaceMember->member_type === 'admin') {
+                            $adminCount = WorkspaceMembers::where('workspace_id', $workspaceId)
+                                ->where('member_type', 'admin')
+                                ->count();
+
+                            if ($adminCount <= 1) {
+                                DB::rollBack();
+                                return response()->json([
+                                    'message' => 'Không thể xóa hoặc rời khỏi với tư cách admin cuối cùng của Không gian làm việc.'
+                                ], 422);
+                            }
+                        }
+                        $workspaceMember->delete();
+                        $results[] = $isSelfRemoval
+                            ? 'Bạn đã rời khỏi Không gian làm việc.'
+                            : 'Đã loại bỏ thành viên khỏi Không gian làm việc.';
+                        Log::info("Thành viên {$user->full_name} đã {$actionMessage} workspace {$workspace->name} bởi {$currentUser->full_name}.");
+                        event(new WorkspaceMemberUpdated($workspaceId, $user, 'removed', null));
+                    }
+                } elseif ($moveType === 'guest') {
+                    // Case 2: Remove guest (board member but not workspace member)
+                    $isGuest = DB::table('board_members')
+                        ->join('boards', 'board_members.board_id', '=', 'boards.id')
+                        ->where('board_members.user_id', $memberId)
+                        ->where('boards.workspace_id', $workspaceId)
+                        ->whereNotExists(function ($query) use ($workspaceId, $memberId) {
+                            $query->select(DB::raw(1))
+                                ->from('workspace_members')
+                                ->where('workspace_members.user_id', $memberId)
+                                ->where('workspace_members.workspace_id', $workspaceId)
+                                ->whereIn('member_type', ['normal', 'admin']);
+                        })
+                        ->exists();
+
+                    if ($isGuest) {
+                        $guestRemoved = DB::table('board_members')
+                            ->join('boards', 'board_members.board_id', '=', 'boards.id')
+                            ->where('board_members.user_id', $memberId)
+                            ->where('boards.workspace_id', $workspaceId)
+                            ->delete();
+
+                        if ($guestRemoved) {
+                            $results[] = $isSelfRemoval
+                                ? 'Bạn đã rời khỏi các bảng trong workspace.'
+                                : 'Đã loại bỏ thành viên guest khỏi workspace.';
+                            Log::info("Guest {$user->full_name} đã {$actionMessage} các bảng trong workspace {$workspace->name} bởi {$currentUser->full_name}.");
+                        }
+                    }
+                } elseif ($moveType === 'request') {
+                    // Case 3: Remove pending request
+                    $pendingRequest = WorkspaceMembers::where('workspace_id', $workspaceId)
+                        ->where('user_id', $memberId)
+                        ->where('member_type', 'pending')
+                        ->where('joined', false)
+                        ->first();
+
+                    if ($pendingRequest) {
+                        $pendingRequest->delete();
+                        $results[] = $isSelfRemoval
+                            ? 'Đã hủy yêu cầu tham gia workspace.'
+                            : 'Đã hủy yêu cầu tham gia workspace.';
+                        Log::info("Yêu cầu tham gia của {$user->full_name} đã bị hủy khỏi workspace {$workspace->name} bởi {$currentUser->full_name}.");
                     }
                 }
 
-                $workspaceMember->delete();
-                Log::info("Thành viên {$user->full_name} đã bị xóa khỏi workspace {$workspace->name} bởi {$currentUser->full_name}.");
-                event(new WorkspaceMemberUpdated($workspaceId, $user, 'removed', null));
+                // If no results and a specific move_type was requested, return an error
+                if (empty($results)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => "Người dùng không có vai trò {$moveType} trong workspace."
+                    ], 404);
+                }
+            } else {
+                // No move_type specified, check all cases
+                // Case 1: Remove workspace member (normal or admin)
+                $workspaceMember = WorkspaceMembers::where('workspace_id', $workspaceId)
+                    ->where('user_id', $memberId)
+                    ->whereIn('member_type', ['normal', 'admin'])
+                    ->first();
 
-                DB::commit();
+                if ($workspaceMember) {
+                    // Check if the user is the last admin
+                    if ($workspaceMember->member_type === 'admin') {
+                        $adminCount = WorkspaceMembers::where('workspace_id', $workspaceId)
+                            ->where('member_type', 'admin')
+                            ->count();
 
-                return response()->json([
-                    'message' => 'Đã xóa thành viên khỏi Không gian làm việc.',
-                    'removed_user' => $user->full_name
-                ]);
+                        if ($adminCount <= 1) {
+                            DB::rollBack();
+                            return response()->json([
+                                'message' => 'Không thể xóa hoặc rời khỏi với tư cách admin cuối cùng của Không gian làm việc.'
+                            ], 422);
+                        }
+                    }
+
+                    $workspaceMember->delete();
+                    $results[] = $isSelfRemoval
+                        ? 'Bạn đã rời khỏi Không gian làm việc.'
+                        : 'Đã loại bỏ thành viên khỏi Không gian làm việc.';
+                    Log::info("Thành viên {$user->full_name} đã {$actionMessage} workspace {$workspace->name} bởi {$currentUser->full_name}.");
+                    event(new WorkspaceMemberUpdated($workspaceId, $user, 'removed', null));
+                }
+
+                // Case 2: Remove guest (board member but not workspace member)
+                $isGuest = DB::table('board_members')
+                    ->join('boards', 'board_members.board_id', '=', 'boards.id')
+                    ->where('board_members.user_id', $memberId)
+                    ->where('boards.workspace_id', $workspaceId)
+                    ->whereNotExists(function ($query) use ($workspaceId, $memberId) {
+                        $query->select(DB::raw(1))
+                            ->from('workspace_members')
+                            ->where('workspace_members.user_id', $memberId)
+                            ->where('workspace_members.workspace_id', $workspaceId)
+                            ->whereIn('member_type', ['normal', 'admin']);
+                    })
+                    ->exists();
+
+                if ($isGuest) {
+                    $guestRemoved = DB::table('board_members')
+                        ->join('boards', 'board_members.board_id', '=', 'boards.id')
+                        ->where('board_members.user_id', $memberId)
+                        ->where('boards.workspace_id', $workspaceId)
+                        ->delete();
+
+                    if ($guestRemoved) {
+                        $results[] = $isSelfRemoval
+                            ? 'Bạn đã rời khỏi các bảng trong workspace.'
+                            : 'Đã loại bỏ thành viên guest khỏi workspace.';
+                        Log::info("Guest {$user->full_name} đã {$actionMessage} các bảng trong workspace {$workspace->name} bởi {$currentUser->full_name}.");
+                    }
+                }
+
+                // Case 3: Remove pending request
+                $pendingRequest = WorkspaceMembers::where('workspace_id', $workspaceId)
+                    ->where('user_id', $memberId)
+                    ->where('member_type', 'pending')
+                    ->where('joined', false)
+                    ->first();
+
+                if ($pendingRequest) {
+                    $pendingRequest->delete();
+                    $results[] = $isSelfRemoval
+                        ? 'Đã hủy yêu cầu tham gia workspace.'
+                        : 'Đã hủy yêu cầu tham gia workspace.';
+                    Log::info("Yêu cầu tham gia của {$user->full_name} đã bị hủy khỏi workspace {$workspace->name} bởi {$currentUser->full_name}.");
+                }
+
+                if (empty($results)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Người dùng không phải là thành viên, guest, hoặc không có yêu cầu tham gia.'
+                    ], 404);
+                }
             }
 
-            // Case 2: Remove guest (board member but not workspace member)
-            $guestRemoved = DB::table('board_members')
-                ->join('boards', 'board_members.board_id', '=', 'boards.id')
-                ->where('board_members.user_id', $memberId)
-                ->where('boards.workspace_id', $workspaceId)
-                ->whereNotExists(function ($query) use ($workspaceId, $memberId) {
-                    $query->select(DB::raw(1))
-                        ->from('workspace_members')
-                        ->where('workspace_members.user_id', $memberId)
-                        ->where('workspace_members.workspace_id', $workspaceId);
-                })
-                ->delete();
-
-            if ($guestRemoved) {
-                Log::info("Guest {$user->full_name} đã bị xóa khỏi các bảng trong workspace {$workspace->name} bởi {$currentUser->full_name}.");
-
-                DB::commit();
-
-                return response()->json([
-                    'message' => 'Đã xóa thành viên guest khỏi workspace.',
-                    'removed_user' => $user->full_name
-                ]);
-            }
-
-            // Case 3: Remove pending request
-            $pendingRemoved = WorkspaceMembers::where('workspace_id', $workspaceId)
-                ->where('user_id', $memberId)
-                ->where('member_type', 'pending')
-                ->where('joined', false)
-                ->delete();
-
-            if ($pendingRemoved) {
-                Log::info("Yêu cầu tham gia của {$user->full_name} đã bị xóa khỏi workspace {$workspace->name} bởi {$currentUser->full_name}.");
-
-                DB::commit();
-
-                return response()->json([
-                    'message' => 'Đã xóa yêu cầu tham gia workspace.',
-                    'removed_user' => $user->full_name
-                ]);
-            }
-
-            DB::rollBack();
+            DB::commit();
 
             return response()->json([
-                'message' => 'Người dùng không phải là thành viên, guest, hoặc không có yêu cầu tham gia.'
-            ], 404);
+                'message' => implode(' ', $results),
+                'removed_user' => $user->full_name
+            ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Dữ liệu đầu vào không hợp lệ.',
@@ -278,7 +402,6 @@ class WorkspaceMembersController extends Controller
             ], 500);
         }
     }
-
     public function changeType(Request $request, string $workspaceId, string $userId)
     {
         try {
@@ -328,7 +451,6 @@ class WorkspaceMembersController extends Controller
             return response()->json(['error' => 'Failed to change member type: ' . $e->getMessage()], 500);
         }
     }
-
     public function joinWorkspace($workspaceId, $token)
     {
         // Tìm workspace invitation với token hợp lệ
@@ -405,8 +527,6 @@ class WorkspaceMembersController extends Controller
             'workspace_id' => $workspaceId,
         ]);
     }
-
-
     // Thành viên là khách
     // case 1 - là ta có thể thêm họ vào workspace là cho họ lên normal và joined = true
     public function addNewMemberToWorkspace($workspaceId, $memberId)
@@ -540,7 +660,6 @@ class WorkspaceMembersController extends Controller
         }
     }
     // case 2 - là họ đang là khác thì chúng ta có thể đuổi cố họ khỏi bảng đó là xóa họ khỏi board member luôn
-
 
 
     // Yêu cầu tham gia

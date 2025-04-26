@@ -79,7 +79,7 @@ const router = createBrowserRouter([
         element: <Dashboard />,
         children: [
           { path: "u/:username/boards", element: <Boards /> },
-          { path: "w/:workspaceName/home", element: <Workspaces /> },
+          { path: "w/:workspaceId/home", element: <Workspaces /> },
         ],
       },
       {

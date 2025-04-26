@@ -12,6 +12,7 @@ import {
   fetchWorkspacesAll,
   changeType,
   removeMemberWorkspace,
+  updateWorkspacePermission,
   // checkMemberInWorkspace,
 } from "../api/models/workspacesApi";
 import { useCallback, useEffect, useId, useRef } from "react";
@@ -112,9 +113,12 @@ export const useGetWorkspaceById = (workspaceId) => {
 
   const handleWorkspaceMemberUpdated = useCallback(
     (event) => {
-      console.log("📢 WorkspaceMemberUpdated:", event);
+      // console.log("📢 WorkspaceMemberUpdated:", event);
       if (event?.workspace?.id === workspaceId) {
-        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+        queryClient.invalidateQueries({
+          queryKey: ["workspace", workspaceId],
+          exact: true,
+        });
       }
     },
     [queryClient, workspaceId]
@@ -122,9 +126,12 @@ export const useGetWorkspaceById = (workspaceId) => {
 
   const handleJoinRequestSent = useCallback(
     (event) => {
-      console.log("📩 JoinRequestSent:", event);
+      // console.log("📩 JoinRequestSent:", event);
       if (event?.workspace?.id === workspaceId) {
-        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+        queryClient.invalidateQueries({
+          queryKey: ["workspace", workspaceId],
+          exact: true,
+        });
       }
     },
     [queryClient, workspaceId]
@@ -216,20 +223,6 @@ export const useCreateWorkspace = () => {
   });
 };
 
-export const useUpdateInforWorkspace = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data }) => updateWorkspaceInfo(id, data),
-    onSuccess: (updatedWorkspace) => {
-      queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
-    },
-    onError: (error) => {
-      console.error("Lỗi khi cập nhật workspace:", error);
-    },
-  });
-};
-
 export const useGetUserWorkspaces = () => {
   return useQuery({
     queryKey: ["userWorkspaces"], // Key để cache dữ liệu
@@ -246,9 +239,10 @@ export const useUserWorkspaces = () => {
     queryFn: getUserWorkspaces2,
   });
 };
+// Function chính
 
 // Hook to change a member's type in a workspace
-export const useChangeMemberType = (workspaceId) => {
+export const useChangeMemberType = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -266,17 +260,50 @@ export const useChangeMemberType = (workspaceId) => {
   });
 };
 
+export const useUpdateInforWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }) => updateWorkspaceInfo(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
+    },
+    onError: (error) => {
+      console.error("Lỗi khi cập nhật workspace:", error);
+    },
+  });
+};
+
+export const useUpdateWorkspacePermission = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workspaceId, permissionLevel }) =>
+      updateWorkspacePermission(workspaceId, permissionLevel),
+    onSuccess: (response, variables) => {},
+    onError: (error) => {
+      console.error("Error when updating workspace permission:", error);
+    },
+  });
+};
+
 // Hook to remove a member from a workspace
 export const useRemoveMember = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ workspaceId, userId }) =>
-      removeMemberWorkspace(workspaceId, userId),
+    mutationFn: ({ workspaceId, userId, moveType }) =>
+      removeMemberWorkspace(workspaceId, userId, moveType),
     onSuccess: (response, variables) => {
-      // Invalidate the workspace query to refresh workspace data
+      // Invalidate workspace query to refresh workspace data
       queryClient.invalidateQueries({
         queryKey: ["workspace", variables.workspaceId],
+        exact: true,
+      });
+
+      // Invalidate workspace join requests query to refresh pending requests
+      queryClient.invalidateQueries({
+        queryKey: ["workspaceJoinRequests", variables.workspaceId],
         exact: true,
       });
     },
@@ -285,7 +312,6 @@ export const useRemoveMember = () => {
     },
   });
 };
-
 // export const useCheckMemberInWorkspace = (workspaceId, userId) => {
 //   return useQuery({
 //     queryKey: ["workspace-member-check", workspaceId, userId], // Unique key theo cả 2 giá trị

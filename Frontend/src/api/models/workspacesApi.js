@@ -43,6 +43,57 @@ export const getBoardMarkedByWorkspace = async (workspaceName) => {
   return response.data;
 };
 
+export const getUserWorkspaces = async () => {
+  const response = await authClient.get("/workspaces/all");
+  return response.data;
+};
+
+export const getUserWorkspaces2 = async () => {
+  try {
+    const response = await authClient.get("user/workspaces");
+
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy workspace của người dùng:", error);
+    throw error;
+  }
+};
+
+// START ------------------------------------------------------------------------------------------------
+// Function chính của hậu
+export const changeType = async (workspaceId, userId, memberType) => {
+  try {
+    const response = await authClient.put(
+      `/workspace/${workspaceId}/members/${userId}/type`,
+      { member_type: memberType }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error changing member type:", error);
+    throw error;
+  }
+};
+
+// Remove member
+export const removeMemberWorkspace = async (
+  workspaceId,
+  userId,
+  moveType = null
+) => {
+  try {
+    const response = await authClient.delete(
+      `/workspace/${workspaceId}/members/${userId}`,
+      {
+        data: moveType ? { move_type: moveType } : undefined,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error removing member:", error);
+    throw error;
+  }
+};
+
 export const getWorkspaceById = async (workspaceId) => {
   const response = await authClient.get(`/workspaces/${workspaceId}`);
   return response.data;
@@ -61,6 +112,7 @@ export const createWorkspace = async (data) => {
     });
 };
 
+// PUt
 export const updateWorkspaceInfo = async (id, data) => {
   return authClient
     .put(`/workspaces/${id}`, data)
@@ -73,48 +125,27 @@ export const updateWorkspaceInfo = async (id, data) => {
       return Promise.reject(error);
     });
 };
-
-export const getUserWorkspaces = async () => {
-  const response = await authClient.get("/workspaces/all");
-  return response.data;
-};
-
-export const getUserWorkspaces2 = async () => {
+// Pathc
+export const updateWorkspacePermission = async (
+  workspaceId,
+  permissionLevel
+) => {
   try {
-    const response = await authClient.get("user/workspaces");
-
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi lấy workspace của người dùng:", error);
-    throw error;
-  }
-};
-
-export const changeType = async (workspaceId, userId, memberType) => {
-  try {
-    const response = await authClient.put(
-      `/workspace/${workspaceId}/members/${userId}/type`,
-      { member_type: memberType }
+    const response = await authClient.patch(
+      `/workspace/${workspaceId}/permission`,
+      {
+        permission_level: permissionLevel,
+      }
     );
     return response.data;
   } catch (error) {
-    console.error("Error changing member type:", error);
+    console.error(`Error updating workspace permission:`, error);
     throw error;
   }
 };
 
-// Remove member
-export const removeMemberWorkspace = async (workspaceId, userId) => {
-  try {
-    const response = await authClient.delete(
-      `/workspace/${workspaceId}/members/${userId}`
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error removing member:", error);
-    throw error;
-  }
-};
+// END ------------------------------------------------------------------------------------------------
+
 ////// Viết luôn vào đây luôn cho tiện (quoc)
 export const checkMemberInWorkspace = async (workspaceId, userId) => {
   try {

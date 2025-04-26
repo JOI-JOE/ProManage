@@ -24,7 +24,7 @@ import {
   Alert,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import loadingLogo from "~/assets/loading.svg?react";
 import MemberItem from "./MemberItem";
 import GenerateLink from "../../../../components/GenerateLink";
@@ -43,7 +43,27 @@ import WorkspaceHeader from "./Common/WorkspaceHeader";
 
 const Member = () => {
   const { workspaceId } = useParams();
-  const { user, workspaceIds } = useMe();
+  const { workspaceIds, userLoading } = useMe();
+  const [isAllowed, setIsAllowed] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Chỉ check khi user đã load xong
+    if (userLoading || !workspaceIds || !workspaceId) return;
+
+    const isExist = workspaceIds.some(ws => ws.id === workspaceId);
+
+    if (isExist) {
+      setIsAllowed(true);
+    } else {
+      navigate(`/w/${workspaceId}`);
+    }
+
+    setChecked(true);
+  }, [workspaceId, workspaceIds, userLoading, navigate]);
+
+
 
   const {
     data: workspace,
@@ -52,11 +72,12 @@ const Member = () => {
     error: workspaceError,
     refetch: refetchWorkspace,
   } = useGetWorkspaceById(workspaceId, {
-    enabled: !!workspaceId,
+    enabled: !!workspaceId && isAllowed,
   });
 
   const isAdminWorkspace = workspace?.isCurrentUserAdmin;
   const [isAdmin, setIsAdmin] = useState(isAdminWorkspace);
+
   useEffect(() => {
     if (isAdminWorkspace !== undefined) {
       setIsAdmin(isAdminWorkspace);
@@ -68,7 +89,7 @@ const Member = () => {
     isLoading: isInviteLoading,
     refetch: refetchInvite,
   } = useGetInviteWorkspace(workspace?.id, {
-    enabled: !!workspace?.id,
+    enabled: !!workspace?.id && isAllowed,
   });
 
   const { mutate: createInviteLink, isLoading: isCreatingInvite } = useCreateInviteWorkspace();
@@ -273,7 +294,7 @@ const Member = () => {
     member.user?.full_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isLoadingWorkspace) {
+  if (userLoading || !checked || isLoadingWorkspace) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
         <SvgIcon
@@ -282,6 +303,18 @@ const Member = () => {
           viewBox="0 0 24 24"
           inheritViewBox
         />
+      </Box>
+    );
+  }
+
+  if (!isAllowed) return null;
+
+  if (isWorkspaceError) {
+    return (
+      <Box sx={{ textAlign: "center", py: 2 }}>
+        <Typography color="error">
+          Error: {workspaceError?.message || "Failed to load workspace"}
+        </Typography>
       </Box>
     );
   }

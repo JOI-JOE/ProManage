@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -19,19 +19,42 @@ import {
   DialogContent,
   Stack,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import { useParams } from "react-router-dom";
-import { useGetWorkspaceById } from "../../../../hooks/useWorkspace";
+import { useNavigate, useParams } from "react-router-dom";
+import { useGetWorkspaceById, useUpdateWorkspacePermission } from "../../../../hooks/useWorkspace";
 import WorkspaceHeader from "../Member/Common/WorkspaceHeader";
 import LogoLoading from "../../../../components/Common/LogoLoading";
+import { useMe } from "../../../../contexts/MeContext";
 
 const Account = () => {
   const { workspaceId } = useParams();
+  const { workspaceIds, userLoading } = useMe();
+  const [isAllowed, setIsAllowed] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Chỉ check khi user đã load xong
+    if (userLoading || !workspaceIds || !workspaceId) return;
+
+    const isExist = workspaceIds.some(ws => ws.id === workspaceId);
+
+    if (isExist) {
+      setIsAllowed(true);
+    } else {
+      navigate(`/w/${workspaceId}`);
+    }
+
+    setChecked(true);
+  }, [workspaceId, workspaceIds, userLoading, navigate]);
+
 
   const {
     data: workspace,
@@ -40,11 +63,12 @@ const Account = () => {
     error: workspaceError,
     refetch: refetchWorkspace,
   } = useGetWorkspaceById(workspaceId, {
-    enabled: !!workspaceId,
+    enabled: !!workspaceId && isAllowed,
   });
 
+
   const [isFormVisible, setFormVisible] = useState(false);
-  const [visibility, setVisibility] = useState("public"); // Changed to "public" to match screenshot
+  const [visibility, setVisibility] = useState(workspace?.permission_level || "public");
   const [anchorEl, setAnchorEl] = useState(null);
   const [workspaceName, setWorkspaceName] = useState("");
   const [deleteAnchorEl, setDeleteAnchorEl] = useState(null);
@@ -52,10 +76,12 @@ const Account = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const [isLinkActive, setIsLinkActive] = useState(false);
+  const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
 
-  // Placeholder for admin status (adjust based on your auth logic)
-  const isAdmin = workspace?.isCurrentUserAdmin || true; // Set to true for demo; replace with actual logic
+  const isAdmin = workspace?.isCurrentUserAdmin || false; // Adjust based on actual logic
   const allowInvite = false;
+
+  const { mutate: updatePermission, isLoading: isUpdatingPermission } = useUpdateWorkspacePermission();
 
   const handleOpenInvite = () => {
     setInviteOpen(true);
@@ -76,24 +102,44 @@ const Account = () => {
   };
 
   const handleVisibilityChange = (event) => {
-    setVisibility(event.target.value);
+    const newVisibility = event.target.value;
+    setVisibility(newVisibility);
+
+    if (isAdmin) {
+      updatePermission(
+        { workspaceId, permissionLevel: newVisibility },
+        {
+          onSuccess: () => {
+            setAlert({
+              open: true,
+              message: "Cập nhật quyền truy cập Không gian làm việc thành công.",
+              severity: "success",
+            });
+            refetchWorkspace();
+            handleClose();
+          },
+          onError: (error) => {
+            setAlert({
+              open: true,
+              message: error.response?.data?.message || "Đã xảy ra lỗi khi cập nhật quyền truy cập.",
+              severity: "error",
+            });
+            setVisibility(workspace?.permission_level || "public");
+          },
+        }
+      );
+    } else {
+      setAlert({
+        open: true,
+        message: "Bạn không có quyền cập nhật quyền truy cập của Không gian làm việc này.",
+        severity: "error",
+      });
+      setVisibility(workspace?.permission_level || "public");
+    }
   };
 
-  const handleCopyLink = () => {
-    setLinkCopied(true);
-    setIsLinkActive(true);
-    setShowCopiedMessage(true);
-    navigator.clipboard.writeText("https://example.com/invite-link");
-    setTimeout(() => setShowCopiedMessage(false), 3000);
-  };
-
-  const handleDisableLink = () => {
-    setIsLinkActive(false);
-    setLinkCopied(false);
-  };
-
-  const handleCloseInvite = () => {
-    setInviteOpen(false);
+  const handleCloseAlert = () => {
+    setAlert({ ...alert, open: false });
   };
 
   const handleDeleteClick = (event) => {
@@ -111,13 +157,15 @@ const Account = () => {
     handleCloseDeletePopover();
   };
 
-  if (isLoadingWorkspace) {
+  if (userLoading || !checked || isLoadingWorkspace) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
         <LogoLoading />
       </Box>
     );
   }
+
+  if (!isAllowed) return null;
 
   if (isWorkspaceError) {
     return (
@@ -129,15 +177,26 @@ const Account = () => {
     );
   }
 
+
   return (
     <Box
       sx={{
         width: "100%",
-        // maxWidth: "1200px",
-        // padding: "20px",
         margin: "0 auto",
       }}
     >
+      {/* Snackbar for alerts */}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseAlert} severity={alert.severity} sx={{ width: "100%" }}>
+          {alert.message}
+        </Alert>
+      </Snackbar>
+
       {/* Use WorkspaceHeader component */}
       <WorkspaceHeader
         workspace={workspace}
@@ -148,84 +207,12 @@ const Account = () => {
         refetchWorkspace={refetchWorkspace}
         allowInvite={allowInvite}
       />
-      {/* Modal Mời Thành Viên */}
-      <Dialog
-        open={isInviteOpen}
-        onClose={handleCloseInvite}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ fontSize: "20px" }}>
-          Mời vào Không gian làm việc
-          <IconButton
-            sx={{ position: "absolute", right: 8, top: 8 }}
-            onClick={handleCloseInvite}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            placeholder="Địa chỉ email hoặc tên"
-            sx={{ marginBottom: "10px" }}
-          />
-          <Stack direction="column" spacing={1} sx={{ mt: 2 }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{
-                p: 1,
-                bgcolor: linkCopied ? "#E6F4EA" : "transparent",
-                borderRadius: 1,
-              }}
-            >
-              {showCopiedMessage ? (
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <CheckCircleIcon color="success" />
-                  <Typography variant="body2" color="success.main">
-                    Liên kết đã sao chép vào khay nhớ tạm
-                  </Typography>
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="textSecondary">
-                  Mời ai đó vào Không gian làm việc này bằng liên kết:
-                </Typography>
-              )}
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleCopyLink}
-              >
-                {linkCopied ? "Đã sao chép" : "Tạo liên kết"}
-              </Button>
-            </Stack>
-            {isLinkActive && (
-              <Typography
-                variant="body2"
-                color="primary"
-                sx={{
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  textAlign: "right",
-                }}
-                onClick={handleDisableLink}
-              >
-                Tắt liên kết
-              </Typography>
-            )}
-          </Stack>
-        </DialogContent>
-      </Dialog>
 
       {/* Nội dung */}
       <Paper
         sx={{
-          // marginTop: "30px",
           padding: "24px",
           boxShadow: "none",
-          // maxWidth: "900px",
           maxWidth: "1000px",
           margin: "30px auto",
           border: "1px solid #dfe1e6",
@@ -282,6 +269,7 @@ const Account = () => {
             variant="outlined"
             size="small"
             onClick={handleOpen}
+            disabled={isUpdatingPermission || !isAdmin}
             sx={{
               whiteSpace: "nowrap",
               color: "#172b4d",
@@ -294,9 +282,13 @@ const Account = () => {
                 borderColor: "#c1c7d0",
                 backgroundColor: "#f4f5f7",
               },
+              "&:disabled": {
+                backgroundColor: "#f4f5f7",
+                color: "#a5adba",
+              },
             }}
           >
-            Thay đổi
+            {isUpdatingPermission ? <CircularProgress size={20} /> : "Thay đổi"}
           </Button>
           <Popover
             open={Boolean(anchorEl)}
@@ -308,7 +300,6 @@ const Account = () => {
             PaperProps={{
               sx: {
                 mt: "50px",
-
                 borderRadius: "8px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                 width: "320px",
@@ -331,7 +322,6 @@ const Account = () => {
                   <CloseIcon fontSize="small" sx={{ color: "#5e6c84" }} />
                 </IconButton>
               </Box>
-
               <RadioGroup value={visibility} onChange={handleVisibilityChange}>
                 <Box sx={{ width: "304px" }}>
                   <FormControlLabel
@@ -378,7 +368,7 @@ const Account = () => {
                           </Typography>
                         </Box>
                         <Typography
-                          sx={{ fontSize: 10, color: "#5e6c84", marginLeft: "24px", mt: "4px" }}
+                          sx={{ fontSize: 12, color: "#5e6c84", marginLeft: "24px", mt: "4px" }}
                         >
                           Đây là Không gian làm việc công khai. Bất kỳ ai có đường dẫn tới Không gian làm việc đều có thể nhìn thấy Không gian làm việc và Không gian làm việc có thể được tìm thấy trên các công cụ tìm kiếm như Google. Chỉ những người được mời vào Không gian làm việc mới có thể thêm và chỉnh sửa các bảng của Không gian làm việc.
                         </Typography>

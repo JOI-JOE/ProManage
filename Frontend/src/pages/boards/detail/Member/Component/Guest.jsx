@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -23,7 +23,7 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loadingAdd, setLoadingAdd] = useState(null);
     const [loadingRemove, setLoadingRemove] = useState(null);
-    const [guests, setGuests] = useState(initialGuests);
+    const [guests, setGuests] = useState(initialGuests || []);
     const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
     const [confirmDialog, setConfirmDialog] = useState({
         open: false,
@@ -32,6 +32,11 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
     });
     const { mutateAsync: addMemberToWorkspace } = useAddNewMemberToWorkspace();
     const { mutate: removeMember, isLoading: isRemovingMember } = useRemoveMember();
+
+    // Sync guests state with initialGuests prop
+    useEffect(() => {
+        setGuests(initialGuests || []);
+    }, [initialGuests]);
 
     const handleSearchChange = (event) => {
         setSearchTerm(event.target.value);
@@ -101,12 +106,12 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
         const userId = confirmDialog.userId;
         if (!userId) return;
 
-        console.log(userId)
-        console.log(workspaceId)
+        setLoadingRemove(userId);
         removeMember(
             {
-                workspaceId: workspaceId,
-                userId: userId
+                workspaceId,
+                userId,
+                moveType: 'guest' // Specify move_type for guest removal
             },
             {
                 onSuccess: () => {
@@ -127,6 +132,9 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
                         severity: 'error'
                     });
                     console.error("❌ Lỗi khi xóa khách:", error);
+                },
+                onSettled: () => {
+                    setLoadingRemove(null);
                 }
             }
         );
@@ -180,9 +188,9 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
                         color="error"
                         variant="contained"
                         autoFocus
-                        disabled={isRemovingMember}
+                        disabled={loadingRemove === confirmDialog.userId || isRemovingMember}
                     >
-                        {isRemovingMember ? (
+                        {loadingRemove === confirmDialog.userId ? (
                             <LogoLoading size={20} />
                         ) : (
                             'Xóa'

@@ -73,7 +73,7 @@ Route::middleware('auth:sanctum')->get('/workspaces/all', [WorkspaceController::
 
 
 // Đường dẫn này để kiểm tra xem lời mời có hợp lệ
-Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
+// Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', [WorkspaceInvitationsController::class, 'getInvitationSecretByReferrer']);
 Route::get('/workspace/public/{workspaceId}', [WorkspaceController::class, 'getWorkspaceById']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -85,12 +85,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('workspaces', 'index');
         Route::get('workspaces/user/all', 'getAllWorksapces');
         Route::get('workspaces/{workspaceId}', 'show');
-        Route::get('guestWorkspace', 'getGuestWorkspaces');
+        Route::get('guestWorkspace', action: 'getGuestWorkspaces');
         Route::get('workspaces/name/{workspaceName}', 'showWorkspaceByName'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::get('workspaces/boardMarked/{workspaceName}', 'getBoardMarkedByWorkspace'); // Lấy theo tên (dùng query param ?name=xxx)
         Route::post('workspaces', 'store');
         Route::delete('workspaces/{workspace}', 'destroy');
         Route::put('workspaces/{workspace}', 'updateWorkspaceInfo');
+        Route::patch('/workspace/{workspaceId}/permission', 'updateWorkspacePermissionLevel');
     });
 
     Route::controller(WorkspaceInvitationsController::class)->group(callback: function () {
@@ -98,6 +99,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post("/workspaces/{workspaceId}/invitationSecret", 'createInvitationSecret');
         Route::get('/workspaces/{workspaceId}/invitationSecret', 'getInvitationSecret');
         Route::delete('/workspaces/{workspaceId}/invitationSecret', 'cancelInvitationSecret');
+        Route::get('/workspaces/{workspaceId}/invitationSecret/{inviteToken}', 'getInvitationSecretByReferrer');
     });
 
     Route::controller(WorkspaceMembersController::class)->group(function () {

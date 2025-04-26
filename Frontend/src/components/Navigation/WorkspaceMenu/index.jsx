@@ -41,9 +41,6 @@ const WorkspaceMenu = ({ workspace }) => {
       <ListItemButton key="workspace-item" onClick={toggleSettings} sx={{ display: "flex", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <ListItemIcon sx={{ color: "black" }}>
-            {/* <Avatar sx={{ bgcolor: "#5D87FF" }}>
-              {workspace.display_name.charAt(0)}
-            </Avatar> */}
             <WorkspaceAvatar workspace={workspace} />
           </ListItemIcon>
           <ListItemText
@@ -65,20 +62,16 @@ const WorkspaceMenu = ({ workspace }) => {
       <Collapse in={openSettings} timeout="auto" unmountOnExit>
         <Box sx={{ pl: 4 }}>
           <List>
-            <ListItemButton component={Link} to={`/w/${workspace.name}/home`}>
+            <ListItemButton component={Link} to={`/w/${workspace?.id}/home`}>
               <ListItemIcon sx={{ color: "black" }}>
                 <ViewKanbanIcon />
               </ListItemIcon>
               <ListItemText primary="Bảng" sx={{ color: "black" }} />
             </ListItemButton>
-            <ListItemButton>
-              <ListItemIcon sx={{ color: "black" }}>
-                <FavoriteBorderIcon />
-              </ListItemIcon>
-              <ListItemText primary="Điểm nổi bật" sx={{ color: "black" }} />
-            </ListItemButton>
+
 
             <ListItemButton
+              omponent={Link} to={`/w/${workspace?.id}/table-view`}
               onMouseEnter={() => handleMouseEnter("Hình")}
               onMouseLeave={handleMouseLeave}
             >
@@ -99,7 +92,6 @@ const WorkspaceMenu = ({ workspace }) => {
                 <PeopleIcon />
               </ListItemIcon>
               <ListItemText primary="Thành viên" sx={{ color: "black" }} />
-              <AddIcon sx={{ color: "gray" }} />
               {hoveredItem === "Thành viên" && (
                 <ChevronRightIcon sx={{ color: "gray" }} />
               )}
