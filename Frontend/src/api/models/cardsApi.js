@@ -171,6 +171,7 @@ export const updateCardDate = async (
   reminder
 ) => {
   try {
+    console.log(endTime);
     const response = await authClient.put(`cards/${targetId}/dates`, {
       start_date: startDate,
       end_date: endDate,

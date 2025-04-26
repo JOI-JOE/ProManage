@@ -1,41 +1,62 @@
-.fc .fc-button-primary:not(:disabled).fc-button-active {
-  background: rgb(56, 84, 84);
-  border: none;
+/* Calendar.css */
+
+/* Loại bỏ style mặc định của FullCalendar cho event */
+.fc-event {
+  background-color: white;
+  border: 1px solid black;
+  color: inherit !important;
+  cursor: pointer;
+  margin-bottom: 3px; /* Tăng margin-bottom để tạo khoảng cách dọc */
+  padding: 0 !important;
 }
-.fc .fc-button-primary {
-  background: teal;
+
+.fc-event-main {
+  display: block !important;
 }
-.fc .fc-button:hover {
-  background: teal;
+
+.fc-event-title-container {
+  height: auto !important;
+  overflow: visible !important;
 }
-.fc .fc-button {
-  border: none;
+
+.fc-event-title {
+  padding: 0 !important;
 }
-.fc-daygrid-day.fc-day-today {
-  background-color: #dff9fb !important;
+
+/* Điều chỉnh harness để các event xếp gọn hơn và có khoảng cách */
+.fc-daygrid-event-harness {
+  margin-bottom: 3px !important; /* Tăng margin-bottom cho harness */
+  height: auto !important;
+  overflow: visible !important;
+  padding: 1px; /* Thêm một chút padding cho harness */
 }
-.fc-timegrid-col.fc-day-today {
-  background-color: #dff9fb !important;
+
+/* Tùy chỉnh header toolbar nếu cần */
+.fc-header-toolbar {
+  margin-bottom: 10px;
 }
+
 .fc-button {
-  box-shadow: none !important;
+  font-size: 0.8em;
+  padding: 0.3em 0.6em;
 }
 
-/* Tùy chỉnh thanh scrollbar */
-::-webkit-scrollbar {
-  width: 6px; /* Độ rộng thanh scrollbar */
+.fc-toolbar-title {
+  font-size: 1em;
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1; /* Màu nền của track */
-  border-radius: 10px;
+/* Style cho ô ngày (nếu cần) */
+.fc-daygrid-day-frame {
+  border: 1px solid #ddd;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #888; /* Màu của thanh kéo */
-  border-radius: 10px;
+.fc-col-header-cell {
+  border: 1px solid #ddd;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #555; /* Màu khi hover */
+/* Giảm chiều cao của các hàng sự kiện trong ngày */
+.fc-daygrid-day-events {
+  /* Bạn có thể thử giảm padding top/bottom nếu có */
+  /* padding-top: 1px;
+  padding-bottom: 1px; */
 }

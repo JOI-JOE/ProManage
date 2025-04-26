@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useForgotPassword } from "../../hooks/useUser";
 import { useNavigate } from "react-router-dom";
-import FormLabel from '@mui/material/FormLabel';
+import FormLabel from "@mui/material/FormLabel";
+import anh4 from "../../assets/anh4.jpg";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const { mutate:forgotpass, isLoading } = useForgotPassword();
+  const { mutate: forgotpass, isLoading } = useForgotPassword();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -25,71 +26,133 @@ const ForgotPassword = () => {
       setError("Vui lòng nhập email hợp lệ");
       return;
     }
-    console.log(email)
+    console.log(email);
 
-    forgotpass({email}, {
-      
-      onSuccess: () => {
-        navigate(`/verify-code?email=${email}`)
-      },
-      onError: (err) =>
-       {
-        setError(err?.response?.data?.error || "Có lỗi sảy ra vui lòng thử lại");
-       }
-    });
+    forgotpass(
+      { email },
+      {
+        onSuccess: () => {
+          navigate(`/verify-code?email=${email}`);
+        },
+        onError: (err) => {
+          setError(
+            err?.response?.data?.error || "Có lỗi sảy ra vui lòng thử lại"
+          );
+        },
+      }
+    );
   };
 
   return (
-    <section className="bg-gray-100 min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-md bg-white rounded-lg p-8 shadow-lg">
-        {/* Logo */}
-        <div className="flex justify-center mb-6">
-          <h2 className="text-2xl font-bold text-blue-500">ProManage</h2>
+    <section
+      className="min-h-screen flex items-center justify-center bg-cover bg-center"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("${anh4}")`,
+      }}
+    >
+      <div className="w-full max-w-xs bg-white rounded-md p-4 shadow-lg">
+        {/* Logo Placeholder */}
+        <div className="flex justify-center mb-3">
+          <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-4 h-4 text-teal-500"
+            >
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+          </div>
         </div>
 
         {/* Title */}
-        <h3 className="text-3xl font-semibold text-center mb-6">Forgot Password</h3>
+        <h3 className="text-base font-bold text-center mb-1 text-gray-800">
+          Quên mật khẩu
+        </h3>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-2">
           {/* Email Field */}
-          <FormLabel htmlFor="email">Email</FormLabel>
-          <div className="mb-4">
-            <input
-              type="text"
-              name="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className={`w-full rounded-md border py-2 px-4 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500 ${
-                error ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-xs font-medium text-gray-700 mb-1"
+            >
+              Email
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                id="email"
+                name="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Nhập email của bạn"
+                className={`w-full rounded-md border py-1.5 px-2 text-xs placeholder-gray-400 outline-none focus:ring-1 focus:ring-blue-500 transition-all ${
+                  error ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              <span className="absolute right-2 top-1.5 text-gray-400">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-3 h-3"
+                >
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </span>
+            </div>
+            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
           </div>
 
           {/* Success Message */}
-          {message && <p className="text-green-600 text-sm mb-4 text-center">{message}</p>}
+          {message && (
+            <div className="bg-green-50 p-1.5 rounded">
+              <p className="text-green-600 text-xs text-center">{message}</p>
+            </div>
+          )}
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full mt-4 bg-gray-800 text-white p-3 rounded-md hover:bg-gray-900 disabled:opacity-50 cursor-pointer"
+            className="w-full mt-3 bg-teal-600 text-white py-1.5 px-2 rounded text-xs hover:bg-teal-700 disabled:opacity-50 transition-colors font-medium shadow-sm"
             disabled={isLoading}
           >
-            {isLoading ? "Sending..." : "Send Email"}
+            {isLoading ? "Đang gửi..." : "Gửi Email"}
           </button>
         </form>
 
         {/* Back to Login Link */}
-        <p className="text-center mt-4">
-          <button
-            onClick={() => navigate("/login")}
-            className="text-blue-500 hover:underline text-sm cursor-pointer"
+        <button
+          onClick={() => navigate("/login")}
+          className="flex items-center justify-center w-full mt-2 py-1 text-teal-600 hover:text-teal-700 transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-2.5 h-2.5 mr-1"
           >
-            Back to Sign in
-          </button>
-        </p>
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          <span className="text-xs">Quay lại đăng nhập</span>
+        </button>
       </div>
     </section>
   );
