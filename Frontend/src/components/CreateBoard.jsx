@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -15,17 +15,27 @@ import LockIcon from "@mui/icons-material/Lock";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
-import { useCreateBoard, useImageUnsplash } from "../hooks/useBoard";
+import { useCreateBoard, useImageUnsplash, useRecentBoardAccess, useUpdateBoardLastAccessed } from "../hooks/useBoard";
 import { useColor } from "../hooks/useColor";
 import { useWorkspace } from "../contexts/WorkspaceContext";
+import { useNavigate } from "react-router-dom";
 
 const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
+  const navigate = useNavigate()
   const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
+  const saveRecentBoard = useRecentBoardAccess();
+  const updateAccessTime = useUpdateBoardLastAccessed();
   const {
     data: unsplashImages,
     isLoading: unsplashingImages,
     refetch,
   } = useImageUnsplash();
+
+  useEffect(() => {
+    if (unsplashImages && unsplashImages.length > 0) {
+      handleSelectBg(unsplashImages[0].urls.small); // ✅ chọn ảnh đầu tiên
+    }
+  }, [unsplashImages]);
 
   const { workspaces } = useWorkspace();
   const filterWorkspace = useMemo(
@@ -38,7 +48,7 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
     [workspaces]
   );
 
-  console.log(filterWorkspace[0]?.id)
+  // console.log(filterWorkspace[0]?.id)
   const { data: colors, isLoading: isLoadingColors } = useColor();
 
   const [boardTitle, setBoardTitle] = useState("");
@@ -46,6 +56,12 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
   const [workspace, setWorkspace] = useState(workspaceId || filterWorkspace[0]?.id || ""); // Initialize with workspaceId or first workspace
   const [viewPermission, setViewPermission] = useState("workspace");
 
+
+
+  const handleClickBoard = (boardId) => {
+    saveRecentBoard.mutate(boardId); // Lưu vào recent-board
+    updateAccessTime.mutate(boardId); // Cập nhật thời gian truy cập
+  };
   // Khi popover mở, gọi refetch để tải ảnh Unsplash
   const handleOpen = useCallback(
     (event) => {
@@ -82,9 +98,14 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
     };
 
     createBoard(boardData, {
-      onSuccess: () => {
-        alert(`🎉 Bảng "${boardTitle}" đã được tạo thành công!`);
+      onSuccess: (response) => {
+
+        handleClickBoard(response.data.id);
+
         handleClose();
+
+        navigate(`/b/${response.data.id}/${response.data.name}`);
+
       },
       onError: (error) => {
         alert(`❌ Lỗi khi tạo bảng: ${error.message}`);
@@ -159,31 +180,6 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
               mb: 2,
             }}
           />
-
-          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-            Phông nền
-          </Typography>
-
-          <Grid container spacing={1} sx={{ mb: 2 }}>
-            {colors?.map((color) => (
-              <Grid item key={color.id}>
-                <Box
-                  sx={{
-                    width: 50,
-                    height: 35,
-                    backgroundColor: color.hex_code,
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    border:
-                      selectedBg === color.hex_code
-                        ? "2px solid #007BFF"
-                        : "none",
-                  }}
-                  onClick={() => handleSelectBg(color.hex_code)}
-                />
-              </Grid>
-            ))}
-          </Grid>
 
           <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
             Ảnh từ Unsplash

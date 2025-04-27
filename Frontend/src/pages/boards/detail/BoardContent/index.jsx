@@ -247,12 +247,13 @@ const BoardContent = () => {
                 ? board?.thumbnail
                 : `url(${board?.thumbnail})`
               : "#1693E1",
-            backgroundSize: "cover",
+            backgroundSize: "100% 100%", // Stretch image to fill container
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
             imageRendering: "auto",
-            height: theme.trello.boardContentHeight, // Đặt giá trị height từ theme
+            height: theme.trello.boardContentHeight,
             padding: "18px 0 7px 0px",
+            display: "flex",
           })}
         >
           <Col_list columns={orderedColumns} boardId={boardId} />

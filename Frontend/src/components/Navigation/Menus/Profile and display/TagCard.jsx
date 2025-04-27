@@ -35,7 +35,7 @@ const TagCard = () => {
 
 
   const data = card?.cards;
-  console.log(data?.list_name);
+  console.log(data);
 
   const [checkedItems, setCheckedItems] = useState([]);
   const [hoverRow, setHoverRow] = useState(null);

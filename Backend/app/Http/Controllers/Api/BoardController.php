@@ -86,17 +86,17 @@ class BoardController extends Controller
 
         $access['isWorkspaceMember'] = $board->workspace_id
             ? DB::table('workspace_members')
-            ->where('workspace_id', $board->workspace_id)
-            ->where('user_id', $userId)
-            ->exists()
+                ->where('workspace_id', $board->workspace_id)
+                ->where('user_id', $userId)
+                ->exists()
             : false;
 
         // Lấy thông tin workspace
         $workspace = $board->workspace_id
             ? DB::table('workspaces')
-            ->where('id', $board->workspace_id)
-            ->select('id', 'name', 'display_name', 'permission_level', 'logo_url')
-            ->first()
+                ->where('id', $board->workspace_id)
+                ->select('id', 'name', 'display_name', 'permission_level', 'logo_url')
+                ->first()
             : null;
 
         // Xử lý các trường hợp
@@ -226,7 +226,7 @@ class BoardController extends Controller
         try {
             // Tìm board theo ID
             $board = Board::with('creator')->findOrFail($boardId);
-            
+
             // Trả về kết quả nếu tìm thấy
             return response()->json([
                 'result' => true,
@@ -308,12 +308,16 @@ class BoardController extends Controller
         }
 
         // Lấy các bảng đã đóng, kiểm tra xem người dùng có phải là thành viên trong bảng board_members đó không
-        $closedBoards = Board::where('closed', 1) // Lọc các bảng đã đóng
-            ->whereHas('members', function ($query) use ($user) {
-                $query->where('user_id', $user->id); // Kiểm tra user_id
-            })
-            ->with(['workspace', 'members']) // Eager load thông tin workspace và board_members
-            ->get();
+        $closedBoards = Board::where('closed', 1)
+        ->where(function ($query) use ($user) {
+            $query->where('created_by', $user->id)
+                  ->orWhereHas('members', function ($q) use ($user) {
+                      $q->where('user_id', $user->id);
+                  });
+        })
+        
+        ->with(['workspace', 'members'])
+        ->get();
 
         return response()->json([
             'result' => true,
@@ -659,12 +663,36 @@ class BoardController extends Controller
     public function ForceDestroy(string $id)
     {
         $board = Board::findOrFail($id);
+
+        // Xóa tất cả card_label liên quan đến labels của board
+        foreach ($board->labels as $label) {
+            DB::table('card_label')->where('label_id', $label->id)->delete();
+        }
+
+        // Xóa các comments, checklists, attachments liên quan đến cards thông qua lists
+        foreach ($board->lists as $list) {
+            foreach ($list->cards as $card) {
+                $card->comments()->delete();
+                $card->checklists()->delete();
+                $card->attachments()->delete();
+            }
+            // Xóa cards trong list
+            $list->cards()->delete();
+        }
+
+        // Xóa labels và lists
+        $board->labels()->delete();
+        $board->lists()->delete();
+
+        // Cuối cùng xóa board
         $board->delete();
+
         return response()->json([
             'result' => true,
             'message' => 'success',
         ]);
     }
+
 
     public function getBoard($id)
     {
@@ -767,9 +795,9 @@ class BoardController extends Controller
         // Ví dụ: Kiểm tra xem user có phải là thành viên của workspace chứa board không
         $hasAccess = $board->workspace()->where(function ($query) use ($user) {
             $query->where('id_member_creator', $user->id)
-                  ->orWhereHas('members', function ($query) use ($user) {
-                      $query->where('user_id', $user->id);
-                  });
+                ->orWhereHas('members', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                });
         })->exists();
 
         if (!$hasAccess) {

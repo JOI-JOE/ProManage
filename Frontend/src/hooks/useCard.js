@@ -33,7 +33,18 @@ export const useCreateCard = () => {
     onError: (error) => {
       console.error("❌ Lỗi khi tạo thẻ:", error);
     },
+    onSuccess: (data, listId) => {
+      // console.log(`🔄 Cập nhật trạng thái lưu trữ cho list ${listId}`);
+
+      // Cập nhật danh sách listClosed ngay lập tức mà không cần gọi API lại
+
+
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+
+    },
   });
+
+
 };
 
 export const useUpdateCardPosition = () => {

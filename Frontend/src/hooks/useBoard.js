@@ -106,11 +106,14 @@ export const useGetBoardByID = (boardId) => {
       channel.listen(".BoardStatusUpdated", (event) => {
         console.log(
           `🔄 Nhận sự kiện BoardStatusUpdated cho ${boardId}:`,
-          event
+          event.board.workspace_id
         );
         queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
         queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
+        // queryClient.invalidateQueries({ queryKey: ["closedBoards"] });
         queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+        
+        queryClient.invalidateQueries({ queryKey: ["workspace",event.board.workspace_id] });
       });
 
       channel.listen(".board.updateName", (data) => {
@@ -201,10 +204,12 @@ export const useUpdateBoardLastAccessed = () => {
       console.error("Lỗi khi cập nhật thời gian truy cập board:", error);
     },
     onSuccess: (data) => {
-      console.log("⏱️ Last accessed của board đã được cập nhật:", data);
+      // console.log("⏱️ Last accessed của board đã được cập nhật:", data);
       // Gợi ý: Bạn có thể cập nhật cache nếu có query liên quan
-      queryClient.invalidateQueries({ queryKey: ["boards"] });
-      queryClient.invalidateQueries({ queryKey: ["recentBoards"] });
+      // queryClient.invalidateQueries({ queryKey: ["boards"] });
+      // queryClient.invalidateQueries({ queryKey: ["user"] });
+      // queryClient.invalidateQueries({ queryKey: ["recentBoards"] });
+
     },
   });
 };
@@ -349,6 +354,7 @@ export const useToggleBoardClosed = (workspaceId) => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["guestBoards"] });
       queryClient.invalidateQueries({ queryKey: ["closedBoards"] });
+      queryClient.invalidateQueries({ queryKey: ["recentBoards"] });
       queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
 
       // queryClient.invalidateQueries(["board", boardId]);

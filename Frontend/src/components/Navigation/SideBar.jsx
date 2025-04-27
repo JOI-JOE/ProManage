@@ -49,14 +49,14 @@ const SideBar = () => {
                     </ListItemButton>
                 </ListItem>
 
-                <ListItem disablePadding>
+                {/* <ListItem disablePadding>
                     <ListItemButton>
                         <ListItemIcon sx={{ color: "black" }}>
                             <FolderIcon />
                         </ListItemIcon>
                         <ListItemText primary="Mẫu" sx={{ color: "black" }} />
                     </ListItemButton>
-                </ListItem>
+                </ListItem> */}
 
                 <ListItem disablePadding>
                     <ListItemButton>

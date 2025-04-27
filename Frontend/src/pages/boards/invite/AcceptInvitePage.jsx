@@ -6,6 +6,7 @@ import "./AcceptInvitePage.css"; // Import CSS file
 import { useRequestJoinBoard } from "../../../hooks/useInviteBoard";
 import { toast } from "react-toastify";
 import LogoLoading from "../../../components/Common/LogoLoading";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AcceptInvitePage = () => {
   const { token } = useParams();
@@ -50,6 +51,8 @@ const AcceptInvitePage = () => {
     fetchInvite();
   }, [token, navigate,isAuthenticated]);
 
+  const queryClient = useQueryClient();
+
   const handleJoinBoard = async () => {
     try {
       const response = await axios.post(
@@ -59,6 +62,12 @@ const AcceptInvitePage = () => {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
+      const data = response.data;
+
+      await queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
+      await queryClient.invalidateQueries({ queryKey: ["user_main"], exact: true });
+
+
       navigate(`/b/${response.data.board_id}/${response.data.board_name}`);
     } catch (error) {
       setError(error.response?.data?.message || "Error joining board");

@@ -245,7 +245,7 @@ const GanttChart = () => {
             </div>
             <div className="gantt-container" ref={ganttContainer}></div>
 
-            <ListItem disablePadding>
+            {/* <ListItem disablePadding>
                 <ListItemButton
                     onClick={() => setIsMoveCardModalOpen(true)}
                 >
@@ -260,7 +260,7 @@ const GanttChart = () => {
             <AddCardModal
                 open={isMoveCardModalOpen}
                 onClose={() => setIsMoveCardModalOpen(false)}
-            />
+            /> */}
         </div>
 
 
