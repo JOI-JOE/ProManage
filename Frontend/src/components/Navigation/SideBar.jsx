@@ -56,7 +56,7 @@ const SideBar = () => {
                         </ListItemIcon>
                         <ListItemText primary="Mẫu" sx={{ color: "black" }} />
                     </ListItemButton>
-                </ListItem>
+                </ListItem> */}
 
                 <ListItem disablePadding>
                     <ListItemButton>

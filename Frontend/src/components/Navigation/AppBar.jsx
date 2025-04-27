@@ -490,7 +490,7 @@ const AppBar = ({ username, email }) => {
                               >
                                 <Box
                                   component={Link}
-                                  to={`/b/${card.board_id}/${card.board_name}/c/${card.id}/${card.title}`}
+                                  to={`/b/${card.board_id}/${card.board_name}/c/${card.id}`}
                                   sx={{
                                     display: "flex",
                                     alignItems: "center",

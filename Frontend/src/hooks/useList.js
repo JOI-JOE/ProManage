@@ -220,6 +220,10 @@ export const useCreateList = () => {
   return useMutation({
     mutationFn: createListAPI, // Hàm gọi POST API
 
+    onSuccess: (data, listId) => {
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+
+    },
     onError: (error) => {
       console.error("❌ Lỗi khi tạo danh sách:", error);
     },

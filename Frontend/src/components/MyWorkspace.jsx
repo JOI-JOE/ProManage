@@ -18,7 +18,7 @@ import WorkspaceAvatar from "./Common/WorkspaceAvatar";
 import { Link } from "react-router-dom";
 
 const MyWorkspace = ({ workspace, boards }) => {
-    // console.log(boards);
+    // console.log(workspace.id);
     const [showCreateBoard, setShowCreateBoard] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
 
@@ -81,9 +81,10 @@ const MyWorkspace = ({ workspace, boards }) => {
                     </Button>
 
                     <Button
-                        variant="outlined"
+                        // w/:workspaceId
                         component={Link}
                         to={`/w/${workspace?.id}/table-view`}
+                        variant="outlined"
                         sx={{
                             backgroundColor: "#F8F9FA",
                             height: "36px",

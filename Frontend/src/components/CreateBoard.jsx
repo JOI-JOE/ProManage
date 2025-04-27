@@ -17,13 +17,17 @@ import LockIcon from "@mui/icons-material/Lock";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PublicIcon from "@mui/icons-material/Public";
 import CloseIcon from "@mui/icons-material/Close";
-import { useCreateBoard, useImageUnsplash } from "../hooks/useBoard";
+import { useCreateBoard, useImageUnsplash, useRecentBoardAccess, useUpdateBoardLastAccessed } from "../hooks/useBoard";
 import { useColor } from "../hooks/useColor";
 import { useWorkspace } from "../contexts/WorkspaceContext";
 import LogoLoading from "./Common/LogoLoading";
+import { useNavigate } from "react-router-dom";
 
 const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
+  const navigate = useNavigate()
   const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
+  const saveRecentBoard = useRecentBoardAccess();
+  const updateAccessTime = useUpdateBoardLastAccessed();
   const {
     data: unsplashImages,
     isLoading: unsplashingImages,
@@ -80,6 +84,13 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
   }, []);
 
   // Handle popover open
+
+
+  const handleClickBoard = (boardId) => {
+    saveRecentBoard.mutate(boardId); // Lưu vào recent-board
+    updateAccessTime.mutate(boardId); // Cập nhật thời gian truy cập
+  };
+  // Khi popover mở, gọi refetch để tải ảnh Unsplash
   const handleOpen = useCallback(
     (event) => {
       if (onOpen) onOpen(event);

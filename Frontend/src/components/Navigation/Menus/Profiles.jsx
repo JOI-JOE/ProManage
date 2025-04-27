@@ -161,8 +161,8 @@ export default function ProfileMenu({ email, user_name, user }) {
         {/* <MenuItem>Cài đặt</MenuItem> */}
         {/* <MenuItem onClick={handleThemeClick}>
           Chủ đề <ArrowRightIcon fontSize="small" sx={{ ml: "auto" }} />
-        </MenuItem>
-        <Menu
+        </MenuItem> */}
+        {/* <Menu
           anchorEl={themeAnchorEl}
           open={themeOpen}
           onClose={handleThemeClose}

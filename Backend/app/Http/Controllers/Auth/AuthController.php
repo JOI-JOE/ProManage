@@ -114,6 +114,7 @@ class AuthController extends Controller
                 'boards.thumbnail',
                 'boards.visibility',
                 'boards.workspace_id',
+                'boards.closed',
                 'boards.created_by',
                 'boards.created_at',
                 'board_members.role',
@@ -128,7 +129,6 @@ class AuthController extends Controller
                 })
                     ->orWhere('boards.created_by', $userId);
             })
-            ->where('boards.closed', 0)
             ->distinct()
             ->get()
             ->map(function ($board) {
@@ -137,6 +137,8 @@ class AuthController extends Controller
                     'name' => $board->name,
                     'visibility' => $board->visibility,
                     'workspace_id' => $board->workspace_id,
+                    'thumbnail' => $board->thumbnail,
+                    'closed' => (bool) $board->closed,
                     'is_admin' => (bool) $board->is_admin,
                     'role' => $board->role
                 ];
@@ -265,7 +267,7 @@ class AuthController extends Controller
     ////// Logout
     public function logout(Request $request)
     {
-        
+
         $request->user()->tokens()->delete(); // Xóa tất cả token của user
         return response()->json(['message' => 'Logged out successfully']);
     }

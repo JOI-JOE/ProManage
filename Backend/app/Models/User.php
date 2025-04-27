@@ -114,6 +114,23 @@ class User extends Authenticatable
     {
         return $this->hasMany(Board::class, 'created_by');
     }
+
+    public function boards1()
+    {
+        return $this->belongsToMany(Board::class, 'board_member')
+            ->withPivot(['role', 'is_unconfirmed', 'joined', 'is_deactivated', 'referrer_id', 'last_active'])
+            ->withTimestamps();
+    }
+
+    public function roleInBoard($boardId)
+    {
+        return $this->boards1()->where('board_id', $boardId)->first()?->pivot->role;
+    }
+
+    public function hasBoardRole($boardId, $role)
+    {
+        return $this->roleInBoard($boardId) === $role;
+    }
     public function workspaceMember()
     {
         return $this->hasMany(WorkspaceMembers::class, 'user_id', 'id');

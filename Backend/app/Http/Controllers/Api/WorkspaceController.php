@@ -512,26 +512,26 @@ class WorkspaceController extends Controller
                         )
                         ->get()
                         ->map(function ($boardMember) {
-                            return [
-                                'id' => $boardMember->id,
-                                'board_id' => $boardMember->board_id,
-                                'user_id' => $boardMember->user_id,
-                                'role' => $boardMember->role,
-                                'is_unconfirmed' => (bool) $boardMember->is_unconfirmed,
-                                'joined' => (bool) $boardMember->joined,
-                                'is_deactivated' => (bool) $boardMember->is_deactivated,
-                                'referrer_id' => $boardMember->referrer_id,
-                                'last_active' => $boardMember->last_active,
-                                'user' => [
-                                    'id' => $boardMember->user_id,
-                                    'full_name' => $boardMember->full_name,
-                                    'email' => $boardMember->email,
-                                    'user_name' => $boardMember->user_name,
-                                    'initials' => $boardMember->initials,
-                                    'image' => $boardMember->image,
-                                ],
-                            ];
-                        })->toArray();
+                        return [
+                            'id' => $boardMember->id,
+                            'board_id' => $boardMember->board_id,
+                            'user_id' => $boardMember->user_id,
+                            'role' => $boardMember->role,
+                            'is_unconfirmed' => (bool) $boardMember->is_unconfirmed,
+                            'joined' => (bool) $boardMember->joined,
+                            'is_deactivated' => (bool) $boardMember->is_deactivated,
+                            'referrer_id' => $boardMember->referrer_id,
+                            'last_active' => $boardMember->last_active,
+                            'user' => [
+                                'id' => $boardMember->user_id,
+                                'full_name' => $boardMember->full_name,
+                                'email' => $boardMember->email,
+                                'user_name' => $boardMember->user_name,
+                                'initials' => $boardMember->initials,
+                                'image' => $boardMember->image,
+                            ],
+                        ];
+                    })->toArray();
 
                     $currentUserId = Auth::id();
                     $isBoardMember = collect($boardMembers)->contains('user_id', $currentUserId);
@@ -837,25 +837,25 @@ class WorkspaceController extends Controller
                         )
                         ->get()
                         ->map(function ($boardMember) {
-                            return [
-                                'id' => $boardMember->id,
-                                'board_id' => $boardMember->board_id,
-                                'user_id' => $boardMember->user_id,
-                                'role' => $boardMember->role,
-                                'is_unconfirmed' => (bool) $boardMember->is_unconfirmed,
-                                'joined' => (bool) $boardMember->joined,
-                                'is_deactivated' => (bool) $boardMember->is_deactivated,
-                                'referrer_id' => $boardMember->referrer_id,
-                                'last_active' => $boardMember->last_active,
-                                'user' => [
-                                    'id' => $boardMember->user_id,
-                                    'full_name' => $boardMember->full_name,
-                                    'email' => $boardMember->email,
-                                    'initials' => $boardMember->initials,
-                                    'image' => $boardMember->image,
-                                ],
-                            ];
-                        })->toArray();
+                        return [
+                            'id' => $boardMember->id,
+                            'board_id' => $boardMember->board_id,
+                            'user_id' => $boardMember->user_id,
+                            'role' => $boardMember->role,
+                            'is_unconfirmed' => (bool) $boardMember->is_unconfirmed,
+                            'joined' => (bool) $boardMember->joined,
+                            'is_deactivated' => (bool) $boardMember->is_deactivated,
+                            'referrer_id' => $boardMember->referrer_id,
+                            'last_active' => $boardMember->last_active,
+                            'user' => [
+                                'id' => $boardMember->user_id,
+                                'full_name' => $boardMember->full_name,
+                                'email' => $boardMember->email,
+                                'initials' => $boardMember->initials,
+                                'image' => $boardMember->image,
+                            ],
+                        ];
+                    })->toArray();
 
                     return [
                         'id' => $board->id,

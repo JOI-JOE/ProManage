@@ -68,7 +68,7 @@ const BoardMenu = React.memo(({board}) => {
 
   const listItems = [
     { text: "Về bảng này", icon: <InfoIcon />, action: toggleDetails(true) },
-    { text: "Hoạt động", icon: <HistoryIcon />, action: toggleActivity(true) },
+    // { text: "Hoạt động", icon: <HistoryIcon />, action: toggleActivity(true) },
     {
       text: "Mục đã lưu trữ",
       icon: <ArchiveIcon />,
@@ -77,29 +77,29 @@ const BoardMenu = React.memo(({board}) => {
   ];
 
   const settingsItems = [
-    { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) },
+    // { text: "Cài đặt", icon: <SettingsIcon />, action: toggleSettings(true) },
    
-    {
-      text: "Thay đổi hình nền",
-      icon: <PaletteIcon />,
-      action: toggleBackground(true),
-    },
+    // {
+    //   text: "Thay đổi hình nền",
+    //   icon: <PaletteIcon />,
+    //   action: toggleBackground(true),
+    // },
     { text: "Nhãn", icon: <LabelIcon />, action: toggleLabel(true) },
   ];
 
   const actionItems = [
-    { text: "Theo dõi", icon: <VisibilityIcon /> },
-    {
-      text: "Cài đặt Email-tới-bảng",
-      icon: <EmailIcon />,
-      action: toggleEmail,
-    },
+    // { text: "Theo dõi", icon: <VisibilityIcon /> },
+    // {
+    //   text: "Cài đặt Email-tới-bảng",
+    //   icon: <EmailIcon />,
+    //   action: toggleEmail,
+    // },
     {
       text: "Sao chép bảng thông tin",
       icon: <ContentCopyIcon />,
       action: toggleCopy,
     },
-    { text: "In, xuất và chia sẻ", icon: <PrintIcon />, action: togglePrint },
+    // { text: "In, xuất và chia sẻ", icon: <PrintIcon />, action: togglePrint },
   ];
 
   const drawerList = (

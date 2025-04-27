@@ -248,14 +248,14 @@ const BoardBar = () => {
           component={RouterLink}
           to={`/b/${boardId}/gantt-chart`} // hoặc route nào bạn đang dùng cho Gantt chart
         />
-        <Chip
+        {/* <Chip
           icon={<FilterListIcon />}
           label="Lọc bảng"
           variant="outlined"
           clickable
           sx={style}
           onClick={handleFilterDialogOpen}
-        />
+        /> */}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", paddingX: 2 }}>
         <AvatarGroup
