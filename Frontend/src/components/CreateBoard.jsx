@@ -85,7 +85,6 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
 
   // Handle popover open
 
-
   const handleClickBoard = (boardId) => {
     saveRecentBoard.mutate(boardId); // Lưu vào recent-board
     updateAccessTime.mutate(boardId); // Cập nhật thời gian truy cập
@@ -164,7 +163,6 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
         setWorkspace(workspaceId || filterWorkspace[0]?.id || "");
         setViewPermission("workspace");
         setIsSubmitting(false);
-        // Close the popover
         onClose();
       },
       onError: (error) => {
@@ -176,6 +174,7 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
         setIsSubmitting(false);
       },
     });
+
   }, [
     boardTitle,
     selectedBg,
@@ -188,7 +187,7 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
     colors,
     onClose,
   ]);
- 
+
   const isButtonDisabled = isCreatingBoard || isSubmitting || !boardTitle.trim() || !selectedBg || !workspace;
 
   return (
