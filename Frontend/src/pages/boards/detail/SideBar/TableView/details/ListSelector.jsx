@@ -24,6 +24,8 @@ const ListSelector = ({ cardId, boardId, listBoardId, boardLists, onListChange }
     list.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // console.log(filteredLists);
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -126,7 +128,9 @@ const ListSelector = ({ cardId, boardId, listBoardId, boardLists, onListChange }
         {/* Danh sách các tùy chọn */}
         <List sx={{ maxHeight: "200px", overflowY: "auto" }}>
           {filteredLists.length > 0 ? (
-            filteredLists.map((list) => (
+            filteredLists
+            .filter((list) => list.closed === 0) 
+            .map((list) => (
               <ListItem
                 key={list.id}
                 onClick={() => handleListSelect(list.id)}

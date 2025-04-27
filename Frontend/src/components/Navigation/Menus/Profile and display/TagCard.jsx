@@ -22,6 +22,9 @@ import { useToggleCardCompletion, useUserBoardCards } from "../../../../hooks/us
 import { useUserById } from "../../../../hooks/useUser";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useListByBoard, useUpdateCardByList } from "../../../../hooks/useTableView";
+import { useMe } from "../../../../contexts/MeContext";
+import ListSelector from "../../../../pages/boards/detail/SideBar/TableView/details/ListSelector";
 
 const TagCard = () => {
   // const { user } = useMe();
@@ -30,12 +33,30 @@ const TagCard = () => {
 
 
   const { data: card, isLoading, error } = useUserBoardCards(user?.id);
+  const { mutate: updateCardList } = useUpdateCardByList();
 
   const navigate = useNavigate();
+  // const boardIds = workspace?.boards
+  // ?.filter(board => !board.closed)
+  // .map(board => board.id);
+
+  const { boardIds } = useMe();
+
+  const boardIdList = boardIds
+    ?.filter(board => !board.closed)
+    .map(board => board.id);
 
 
+  const { data: boardLists = [] } = useListByBoard(boardIdList);
+
+
+  // console.log(boardLists);
+
+
+  // const { data: boardLists = [] } = useListByBoard(boardIds);
+  // console.log(boardLists);
   const data = card?.cards;
-  console.log(data);
+  // console.log(data);
 
   const [checkedItems, setCheckedItems] = useState([]);
   const [hoverRow, setHoverRow] = useState(null);
@@ -48,6 +69,26 @@ const TagCard = () => {
 
   const [sortOption, setSortOption] = useState("due_date");
 
+  const handleListChange = (cardId, newListId) => {
+    const newList = boardLists.find(list => list.id === newListId);
+    if (!newList) return;
+
+
+    updateCardList(
+        { cardId, listBoardId: newListId },
+        {
+            onSuccess: () => {
+              // console.log(boardIdList);
+                queryClient.invalidateQueries({ queryKey: ["table-view", boardIdList] });
+                queryClient.invalidateQueries({ queryKey: ["userBoardCards", user.id] });
+            },
+            onError: (error) => {
+              
+                toast.error(error.response?.data?.message || "Không thể cập nhật danh sách");
+            }
+        }
+    );
+};
   const handleCheckboxChange = (index) => {
     const newCheckedItems = [...checkedItems];
     newCheckedItems[index] = !newCheckedItems[index];
@@ -90,11 +131,11 @@ const TagCard = () => {
     setListMenuAnchor(event.currentTarget);
   };
 
-const filteredListNames = [...new Set(
-  (data || [])
-    .filter((card) => card.board_name === selectedBoardName)
-    .map((card) => card.list_name)
-)];
+  const filteredListNames = [...new Set(
+    (data || [])
+      .filter((card) => card.board_name === selectedBoardName)
+      .map((card) => card.list_name)
+  )];
 
   const handleListMenuClose = () => {
     setListMenuAnchor(null);
@@ -197,15 +238,14 @@ const filteredListNames = [...new Set(
                     <Typography>{item.title}</Typography>
                   </TableCell>
 
-                  <TableCell
-                  // onClick={(e) => handleListClick(e, item.board_name ,item.list_name)}
-                   sx={{ borderBottom: "1px solid #e0e0e0", 
-                        // cursor:"pointer",
-                        //   "&:hover": {
-                        //   backgroundColor: "#e0ebeb", 
-                        // }, 
-                        }}>
-                    <Typography>{item.list_name}</Typography>
+                  <TableCell>
+                    <ListSelector
+                      cardId={item.id}
+                      boardId={item.board_id}
+                      listBoardId={item.list_board_id}
+                      boardLists={boardLists}
+                      onListChange={handleListChange}
+                    />
                   </TableCell>
 
                   <TableCell sx={{ borderBottom: "1px solid #e0e0e0" }}>
@@ -228,11 +268,13 @@ const filteredListNames = [...new Set(
                     {item.end_date ? new Date(item.end_date).toLocaleDateString() : "-"}
                   </TableCell>
 
-                  <TableCell 
+                  <TableCell
                     onClick={() => navigate(`/b/${item.board_id}/${item.board_name}`)}
-                    sx={{ borderBottom: "1px solid #e0e0e0", cursor:"pointer","&:hover": {
-                          backgroundColor: "#e0ebeb",
-                        },}}>
+                    sx={{
+                      borderBottom: "1px solid #e0e0e0", cursor: "pointer", "&:hover": {
+                        backgroundColor: "#e0ebeb",
+                      },
+                    }}>
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <Box
                         component="img"

@@ -166,7 +166,7 @@ class TableViewController extends Controller
             $boardIds = explode(',', $boardIds);
         }
         $lists = ListBoard::whereIn('board_id', $boardIds)
-            ->select('id', 'name', 'board_id')
+            ->select('id', 'name', 'board_id', 'closed')
             ->get();
 
         return response()->json(

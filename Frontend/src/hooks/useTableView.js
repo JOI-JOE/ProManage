@@ -35,8 +35,8 @@ export const useUpdateCardByList = () => {
         mutationFn: ({ cardId,
             listBoardId }) => UpdateCardByList(cardId, listBoardId),
 
-        onSuccess: () => {
-
+        onSuccess: (cardId) => {
+// console.log(cardId);
             queryClient.invalidateQueries({ queryKey: ["table-view"], exact: true });
 
         },

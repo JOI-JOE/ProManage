@@ -221,7 +221,19 @@ export const useCreateList = () => {
     mutationFn: createListAPI, // Hàm gọi POST API
 
     onSuccess: (data, listId) => {
+      // console.log(data);
       queryClient.invalidateQueries({ queryKey: ["lists"] });
+
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return (
+            queryKey[0] === 'table-view-list' &&
+            Array.isArray(queryKey[1]) &&
+            queryKey[1].includes(data.board_id)
+          );
+        },
+      });
 
     },
     onError: (error) => {
@@ -281,6 +293,17 @@ export const useListsClosed = (boardId) => {
       queryClient.invalidateQueries({ queryKey: ["listClosed", boardId] });
       queryClient.invalidateQueries({ queryKey: ["lists", boardId] });
 
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return (
+            queryKey[0] === 'table-view-list' &&
+            Array.isArray(queryKey[1]) &&
+            queryKey[1].includes(boardId)
+          );
+        },
+      });
+
     },
   });
 
@@ -290,11 +313,20 @@ export const useListsClosed = (boardId) => {
     onSuccess: (data, listId) => {
       // console.log(`🔄 Cập nhật trạng thái lưu trữ cho list ${listId}`);
 
-      // Cập nhật danh sách listClosed ngay lập tức mà không cần gọi API lại
 
 
       queryClient.invalidateQueries({ queryKey: ["lists", boardId] });
       queryClient.invalidateQueries({ queryKey: ["listClosed", boardId] });
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return (
+            queryKey[0] === 'table-view-list' &&
+            Array.isArray(queryKey[1]) &&
+            queryKey[1].includes(boardId)
+          );
+        },
+      });
 
       // Cập nhật danh sách list active (nếu có)
       // queryClient.invalidateQueries(["list", listId]);
