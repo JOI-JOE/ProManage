@@ -50,7 +50,7 @@ const WorkspaceHeader = ({
                             <LockIcon sx={{ fontSize: 14 }} />
                             <Typography sx={{ fontSize: 14 }}>Riêng tư</Typography>
                         </Box>
-                        <Box sx={{ width: "50%", mt: 2, overflow: "hidden" }}>
+                        <Box sx={{ width: "100%", mt: 2, overflow: "hidden" }}>
                             <Typography
                                 fontWeight="bold"
                                 sx={{

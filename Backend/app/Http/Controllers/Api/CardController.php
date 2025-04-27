@@ -784,7 +784,8 @@ class CardController extends Controller
         $boards = $user->boards()->with([
             'workspace',
             'lists' => function ($q) use ($id) {
-            $q->with([
+                $q->where('closed', false) // <-- Chỉ lấy list chưa đóng
+            ->with([
                 'cards' => function ($q) use ($id) {
                     $q->where('is_archived', false)
                       ->whereHas('users', fn($q) => $q->where('user_id', $id)) // <-- Chỉ card user có tham gia

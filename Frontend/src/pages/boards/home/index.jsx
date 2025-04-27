@@ -114,7 +114,9 @@ const HomeBoard = ({ workspaces }) => {
         Đã xem gần đây
       </Typography>
       <List sx={{ display: "flex", flexDirection: "row", gap: 2, overflowX: "auto", padding: 0 }}>
-        {recentBoards?.data?.slice(0, 3)?.map((board) => (
+        {recentBoards?.data
+         ?.filter((board) => board.closed !== 1)
+        ?.slice(0, 3)?.map((board) => (
           <ListItem key={board.board_id} sx={{ width: "auto", padding: 0 }}>
             <Link
               to={`/b/${board.board_id}/${board.board_name}`}

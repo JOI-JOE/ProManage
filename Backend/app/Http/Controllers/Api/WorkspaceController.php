@@ -383,26 +383,26 @@ class WorkspaceController extends Controller
                         )
                         ->get()
                         ->map(function ($boardMember) {
-                            return [
-                                'id' => $boardMember->id,
-                                'board_id' => $boardMember->board_id,
-                                'user_id' => $boardMember->user_id,
-                                'role' => $boardMember->role,
-                                'is_unconfirmed' => (bool) $boardMember->is_unconfirmed,
-                                'joined' => (bool) $boardMember->joined,
-                                'is_deactivated' => (bool) $boardMember->is_deactivated,
-                                'referrer_id' => $boardMember->referrer_id,
-                                'last_active' => $boardMember->last_active,
-                                'user' => [
-                                    'id' => $boardMember->user_id,
-                                    'full_name' => $boardMember->full_name,
-                                    'email' => $boardMember->email,
-                                    'user_name' => $boardMember->user_name,
-                                    'initials' => $boardMember->initials,
-                                    'image' => $boardMember->image,
-                                ],
-                            ];
-                        })->toArray();
+                        return [
+                            'id' => $boardMember->id,
+                            'board_id' => $boardMember->board_id,
+                            'user_id' => $boardMember->user_id,
+                            'role' => $boardMember->role,
+                            'is_unconfirmed' => (bool) $boardMember->is_unconfirmed,
+                            'joined' => (bool) $boardMember->joined,
+                            'is_deactivated' => (bool) $boardMember->is_deactivated,
+                            'referrer_id' => $boardMember->referrer_id,
+                            'last_active' => $boardMember->last_active,
+                            'user' => [
+                                'id' => $boardMember->user_id,
+                                'full_name' => $boardMember->full_name,
+                                'email' => $boardMember->email,
+                                'user_name' => $boardMember->user_name,
+                                'initials' => $boardMember->initials,
+                                'image' => $boardMember->image,
+                            ],
+                        ];
+                    })->toArray();
 
                     return [
                         'id' => $board->id,
@@ -566,25 +566,25 @@ class WorkspaceController extends Controller
                         )
                         ->get()
                         ->map(function ($boardMember) {
-                            return [
-                                'id' => $boardMember->id,
-                                'board_id' => $boardMember->board_id,
-                                'user_id' => $boardMember->user_id,
-                                'role' => $boardMember->role,
-                                'is_unconfirmed' => (bool) $boardMember->is_unconfirmed,
-                                'joined' => (bool) $boardMember->joined,
-                                'is_deactivated' => (bool) $boardMember->is_deactivated,
-                                'referrer_id' => $boardMember->referrer_id,
-                                'last_active' => $boardMember->last_active,
-                                'user' => [
-                                    'id' => $boardMember->user_id,
-                                    'full_name' => $boardMember->full_name,
-                                    'email' => $boardMember->email,
-                                    'initials' => $boardMember->initials,
-                                    'image' => $boardMember->image,
-                                ],
-                            ];
-                        })->toArray();
+                        return [
+                            'id' => $boardMember->id,
+                            'board_id' => $boardMember->board_id,
+                            'user_id' => $boardMember->user_id,
+                            'role' => $boardMember->role,
+                            'is_unconfirmed' => (bool) $boardMember->is_unconfirmed,
+                            'joined' => (bool) $boardMember->joined,
+                            'is_deactivated' => (bool) $boardMember->is_deactivated,
+                            'referrer_id' => $boardMember->referrer_id,
+                            'last_active' => $boardMember->last_active,
+                            'user' => [
+                                'id' => $boardMember->user_id,
+                                'full_name' => $boardMember->full_name,
+                                'email' => $boardMember->email,
+                                'initials' => $boardMember->initials,
+                                'image' => $boardMember->image,
+                            ],
+                        ];
+                    })->toArray();
 
                     return [
                         'id' => $board->id,
@@ -706,10 +706,8 @@ class WorkspaceController extends Controller
     }
     public function updateWorkspaceInfo(Request $request, $id)
     {
-        // Tìm workspace dựa trên ID
         $workspace = Workspace::find($id);
 
-        // Nếu không tìm thấy workspace, trả về lỗi 404
         if (!$workspace) {
             return response()->json([
                 'message' => 'Workspace not found.',
@@ -718,19 +716,26 @@ class WorkspaceController extends Controller
 
         // Validate dữ liệu đầu vào
         $validatedData = $request->validate([
-            'name' => 'sometimes|string|max:255', // 'sometimes' để cho phép trường này không bắt buộc
-            'display_name' => 'required|string|max:50|unique:workspaces,display_name,' . $id,
+            'name' => 'sometimes|string|max:255',
+            'display_name' => 'sometimes|required|string|max:50|unique:workspaces,display_name,' . $id,
             'desc' => 'nullable|string|max:1000',
         ]);
 
-        // Cập nhật workspace với dữ liệu đã validate
+        // Không có dữ liệu nào để cập nhật
+        if (empty($validatedData)) {
+            return response()->json([
+                'message' => 'No changes detected.',
+            ], 200);
+        }
+
         $workspace->update($validatedData);
 
         return response()->json([
             'message' => 'Workspace updated successfully',
-            'data' => new WorkspaceResource($workspace->fresh()), // Sử dụng fresh() để tải lại dữ liệu mới nhất
+            'data' => new WorkspaceResource($workspace->fresh()),
         ], 200);
     }
+
     public function permissionLevel(Request $request)
     {
         $validatedData = $request->validate([

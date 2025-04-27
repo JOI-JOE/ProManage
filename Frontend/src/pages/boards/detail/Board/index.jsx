@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -34,6 +34,7 @@ import { useClosedBoards, useForceDestroyBoard, useToggleBoardClosed } from "../
 import WorkspaceHeader from "../Member/Common/WorkspaceHeader";
 import { Archive, Delete, Restore } from "@mui/icons-material";
 import LogoLoading from "../../../../components/Common/LogoLoading";
+import { useMe } from "../../../../contexts/MeContext";
 
 const Board = () => {
   const { workspaceId } = useParams();
@@ -54,6 +55,18 @@ const Board = () => {
 
   // Placeholder for admin status (adjust based on your auth logic)
   const isAdmin = workspace?.isCurrentUserAdmin || false;
+  const { user, boardIds } = useMe();
+  // console.log("boardIds", boardIds);
+
+  // const isAdminBoard = useMemo(() => {
+  //   const boardInfo = boardIds?.find((b) => b.id === board?.id);
+  //   return boardInfo?.is_admin || boardInfo?.role === 'admin';
+  // }, [boardIds, boardId, boardIds?.find(b => b.id === board?.id)?.role]);
+
+  const checkIsAdmin = (boardId) => {
+    const boardInfo = boardIds?.find((b) => b.id === boardId);
+    return boardInfo?.is_admin || boardInfo?.role === 'admin';
+  };
 
   const [isFormVisible, setFormVisible] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -503,21 +516,21 @@ const Board = () => {
           )}
         </List>
 
-        {closedBoards?.data?.length > 0 && (
-          <Button
-            variant="outlined"
-            sx={{
-              backgroundColor: "#EDEBFC",
-              height: "30px",
-              width: "250px",
-              marginTop: "40px",
-            }}
-            onClick={handleOpenClosedBoards}
-            startIcon={<Archive />}
-          >
-            Xem tất cả các bảng đã đóng
-          </Button>
-        )}
+        {/* {closedBoards?.data?.length > 0 && ( */}
+        <Button
+          variant="outlined"
+          sx={{
+            backgroundColor: "#EDEBFC",
+            height: "30px",
+            width: "250px",
+            marginTop: "40px",
+          }}
+          onClick={handleOpenClosedBoards}
+          startIcon={<Archive />}
+        >
+          Xem tất cả các bảng đã đóng
+        </Button>
+        {/* )} */}
 
         <Dialog open={openClosedBoards} onClose={handleCloseClosedBoards} fullWidth>
           <DialogTitle fontWeight="bold">📌 Các bảng đã đóng</DialogTitle>
@@ -526,41 +539,61 @@ const Board = () => {
               <CircularProgress />
             ) : closedBoards?.data?.length > 0 ? (
               <List>
-                {closedBoards?.data?.map((board) => (
-                  <ListItem
-                    key={board.id}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "8px 0",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        backgroundColor: "#f4f4f4",
-                        borderRadius: "8px",
-                      },
-                    }}
-                  >
-                    <ListItemAvatar>
-                      <Avatar src={board.thumbnail || "https://via.placeholder.com/150"} />
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={board.name}
-                      secondary={`Không gian làm việc: ${board.workspace?.display_name || "Không rõ"}`}
-                    />
-                    <IconButton onClick={() => handleReopenBoard(board.id)} color="primary">
-                      <RestoreIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDeleteBoard(board.id)}
-                      color="error"
-                      disabled={isDeleting}
+                {closedBoards?.data?.map((board) => {
+                  const isAdminBoard = checkIsAdmin(board.id);
+                  return (
+                    <ListItem
+                      key={board.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "8px 0",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          backgroundColor: "#f4f4f4",
+                          borderRadius: "8px",
+                        },
+                      }}
                     >
-                      {isDeleting ? <CircularProgress size={20} /> : <Delete />}
-                    </IconButton>
-                  </ListItem>
-                ))}
+                      <ListItemAvatar>
+                        <Avatar src={board.thumbnail || "https://via.placeholder.com/150"} />
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={board.name}
+                        secondary={
+                          <>
+                            Không gian làm việc: {board.workspace?.display_name || "Không rõ"}
+                            {!isAdminBoard && (
+                              <Typography style={{ fontSize: '12px' }} color="error">
+                                Bạn không phải là Quản trị viên của bảng này vì thế bạn không thể mở lại bảng này.
+                              </Typography>
+                            )}
+                          </>
+                        }
+                      />
+
+
+
+                      {isAdminBoard && (
+                        <>
+                          <IconButton onClick={() => handleReopenBoard(board.id)} color="primary">
+                            <RestoreIcon />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleDeleteBoard(board.id)}
+                            color="error"
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? <CircularProgress size={20} /> : <Delete />}
+                          </IconButton>
+                        </>
+                      )}
+                    </ListItem>
+                  );
+                })}
               </List>
+
             ) : (
               <Typography variant="body2" color="textSecondary">
                 Không có bảng nào đã đóng!

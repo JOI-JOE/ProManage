@@ -120,7 +120,7 @@ export const getBoardMarked = async () => {
 export const getUnsplashImages = async () => {
   try {
     const response = await axios.get(
-      "https://api.unsplash.com/search/photos?query=workspace&per_page=10&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"
+      "https://api.unsplash.com/search/photos?query=mountain&per_page=10&orientation=landscape&client_id=3FSDAzFI1-_UTdXCx6QonPOxi8C8R6EBCg0Y_PrSQmk"
     );
 
     return response.data.results; // Lấy danh sách ảnh từ `results`

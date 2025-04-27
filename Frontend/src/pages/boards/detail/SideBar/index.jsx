@@ -233,7 +233,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
                     // pt: 2,
                   }}
                 >
-                  Xem không gian làm việc
+                  Dạng xem không gian làm việc
                 </ListSubheader>
 
                 <ListItem disablePadding>
@@ -313,8 +313,17 @@ const SideBar = ({ board, isLoadingBoard }) => {
                         borderRadius: "6px",
                       }}
                     >
-                      <ListItemIcon sx={{ color: "white" }}>
-                        <FolderIcon />
+                     <ListItemIcon sx={{ color: "white" }}>
+                        <img
+                          src={board?.thumbnail}
+                          alt="Thumbnail"
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: 4,
+                            objectFit: "cover",
+                          }}
+                        />
                       </ListItemIcon>
                       <ListItemText
                         primary={board.name}

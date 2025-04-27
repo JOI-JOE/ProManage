@@ -15,9 +15,10 @@ import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAlt
 import MyBoard from "./MyBoard";
 import CreateBoard from "./CreateBoard";
 import WorkspaceAvatar from "./Common/WorkspaceAvatar";
+import { Link } from "react-router-dom";
 
 const MyWorkspace = ({ workspace, boards }) => {
-    // console.log(boards);
+    // console.log(workspace.id);
     const [showCreateBoard, setShowCreateBoard] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
 
@@ -62,6 +63,8 @@ const MyWorkspace = ({ workspace, boards }) => {
                 >
                     <Button
                         variant="outlined"
+                        component={Link}
+                        to={`/w/${workspace?.id}`}
                         sx={{
                             backgroundColor: "#F8F9FA",
                             height: "36px",
@@ -78,6 +81,10 @@ const MyWorkspace = ({ workspace, boards }) => {
                     </Button>
 
                     <Button
+                        // w/:workspaceId
+                        component={Link}
+                        to={`/w/${workspace?.id}/table-view`}
+
                         variant="outlined"
                         sx={{
                             backgroundColor: "#F8F9FA",
@@ -97,6 +104,8 @@ const MyWorkspace = ({ workspace, boards }) => {
 
                     <Button
                         variant="outlined"
+                        component={Link}
+                        to={`/w/${workspace?.id}/members`}
                         sx={{
                             backgroundColor: "#F8F9FA",
                             height: "36px",
@@ -115,6 +124,8 @@ const MyWorkspace = ({ workspace, boards }) => {
 
                     <Button
                         variant="outlined"
+                        component={Link}
+                        to={`/w/${workspace?.id}/account`}
                         sx={{
                             backgroundColor: "#F8F9FA",
                             height: "36px",
@@ -131,7 +142,7 @@ const MyWorkspace = ({ workspace, boards }) => {
                         Cài đặt
                     </Button>
 
-                    <Button
+                    {/* <Button
                         variant="contained"
                         sx={{
                             backgroundColor: "#EDEBFC",
@@ -147,7 +158,7 @@ const MyWorkspace = ({ workspace, boards }) => {
                     >
                         <SignalCellularAltOutlinedIcon fontSize="small" />
                         Nâng cấp
-                    </Button>
+                    </Button> */}
                 </Box>
             </ListItem>
 

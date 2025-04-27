@@ -134,12 +134,12 @@ export default function ProfileMenu({ email, user_name, user }) {
             {email}
           </Typography>
         </Box>
-        <Divider />
-        <MenuItem>Chuyển đổi Tài khoản</MenuItem>
+        {/* <Divider /> */}
+        {/* <MenuItem>Chuyển đổi Tài khoản</MenuItem>
         <MenuItem>
           Quản lý tài khoản{" "}
           <SettingsIcon fontSize="small" sx={{ ml: "auto" }} />
-        </MenuItem>
+        </MenuItem> */}
         <Divider />
         <Typography
           variant="body2"
@@ -156,10 +156,10 @@ export default function ProfileMenu({ email, user_name, user }) {
         <MenuItem component={Link} to={`/u/${user_name}/cards`}>
           Thẻ
         </MenuItem>
-        <MenuItem>Cài đặt</MenuItem>
+        {/* <MenuItem>Cài đặt</MenuItem>
         <MenuItem onClick={handleThemeClick}>
           Chủ đề <ArrowRightIcon fontSize="small" sx={{ ml: "auto" }} />
-        </MenuItem>
+        </MenuItem> */}
         <Menu
           anchorEl={themeAnchorEl}
           open={themeOpen}
@@ -191,9 +191,9 @@ export default function ProfileMenu({ email, user_name, user }) {
         </MenuItem> */}
         <CreateWorkspace />
 
-        <Divider />
-        <MenuItem>Trợ giúp</MenuItem>
-        <MenuItem>Phím tắt</MenuItem>
+        {/* <Divider /> */}
+        {/* <MenuItem>Trợ giúp</MenuItem>
+        <MenuItem>Phím tắt</MenuItem> */}
         <Divider sx={{ marginY: "10px" }} />
         <MenuItem
           onClick={handleLogout}
