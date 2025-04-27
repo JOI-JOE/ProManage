@@ -15,6 +15,7 @@ import SignalCellularAltOutlinedIcon from "@mui/icons-material/SignalCellularAlt
 import MyBoard from "./MyBoard";
 import CreateBoard from "./CreateBoard";
 import WorkspaceAvatar from "./Common/WorkspaceAvatar";
+import { Link } from "react-router-dom";
 
 const MyWorkspace = ({ workspace, boards }) => {
     // console.log(boards);
@@ -62,6 +63,8 @@ const MyWorkspace = ({ workspace, boards }) => {
                 >
                     <Button
                         variant="outlined"
+                        component={Link}
+                        to={`/w/${workspace?.id}`}
                         sx={{
                             backgroundColor: "#F8F9FA",
                             height: "36px",
@@ -79,6 +82,8 @@ const MyWorkspace = ({ workspace, boards }) => {
 
                     <Button
                         variant="outlined"
+                        component={Link}
+                        to={`/w/${workspace?.id}/table-view`}
                         sx={{
                             backgroundColor: "#F8F9FA",
                             height: "36px",
@@ -96,6 +101,8 @@ const MyWorkspace = ({ workspace, boards }) => {
                     </Button>
 
                     <Button
+                        component={Link}
+                        to={`/w/${workspace?.id}/members`}
                         variant="outlined"
                         sx={{
                             backgroundColor: "#F8F9FA",
@@ -114,6 +121,8 @@ const MyWorkspace = ({ workspace, boards }) => {
                     </Button>
 
                     <Button
+                        component={Link}
+                        to={`/w/${workspace?.id}/account`}
                         variant="outlined"
                         sx={{
                             backgroundColor: "#F8F9FA",
@@ -130,31 +139,13 @@ const MyWorkspace = ({ workspace, boards }) => {
                         <SettingsIcon fontSize="small" />
                         Cài đặt
                     </Button>
-
-                    <Button
-                        variant="contained"
-                        sx={{
-                            backgroundColor: "#EDEBFC",
-                            height: "36px",
-                            width: "140px",
-                            borderRadius: "8px",
-                            color: "#8250DF",
-                            textTransform: "none",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "5px",
-                        }}
-                    >
-                        <SignalCellularAltOutlinedIcon fontSize="small" />
-                        Nâng cấp
-                    </Button>
                 </Box>
             </ListItem>
 
             {/* Danh sách bảng Trello */}
             <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                 {boards
-                    ?.filter((board) => board.closed === false)
+                    ?.filter((board) => board.closed === false && board.joined === true)
                     ?.sort((a, b) => {
                         const dateA = a.last_accessed ? new Date(a.last_accessed) : new Date(0);
                         const dateB = b.last_accessed ? new Date(b.last_accessed) : new Date(0);

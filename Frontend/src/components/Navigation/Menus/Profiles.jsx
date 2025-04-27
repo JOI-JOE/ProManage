@@ -98,19 +98,19 @@ export default function ProfileMenu({ email, user_name, user }) {
   return (
     <React.Fragment>
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-        <Tooltip title="Tài khoản">
-          <IconButton onClick={handleClick} size="small">
-            {/* <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
+        {/* <Tooltip title="Tài khoản"> */}
+        <IconButton onClick={handleClick} size="small">
+          {/* <Avatar sx={{ bgcolor: "#00A3BF", width: 35, height: 35 }}>
               {email?.charAt(0)?.toUpperCase() || ""}
             </Avatar> */}
-            <InitialsAvatar
-              name={user?.full_name}
-              avatarSrc={user?.image}
-              initial={user?.initials}
-              size={38}
-            />
-          </IconButton>
-        </Tooltip>
+          <InitialsAvatar
+            name={user?.full_name}
+            avatarSrc={user?.image}
+            initial={user?.initials}
+            size={38}
+          />
+        </IconButton>
+        {/* </Tooltip> */}
       </Box>
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
         <Box sx={{ p: 2, textAlign: "center" }}>
@@ -129,21 +129,23 @@ export default function ProfileMenu({ email, user_name, user }) {
           <Typography
             variant="subtitle1"
             sx={{ fontWeight: "bold", mt: 1, color: "black" }}
-          ></Typography>
+          >
+            {user?.full_name}
+          </Typography>
           <Typography variant="body2" sx={{ color: "black" }}>
             {email}
           </Typography>
         </Box>
         <Divider />
-        <MenuItem>Chuyển đổi Tài khoản</MenuItem>
+        {/* <MenuItem>Chuyển đổi Tài khoản</MenuItem>
         <MenuItem>
           Quản lý tài khoản{" "}
           <SettingsIcon fontSize="small" sx={{ ml: "auto" }} />
-        </MenuItem>
+        </MenuItem> */}
         <Divider />
         <Typography
           variant="body2"
-          sx={{ px: 2, fontWeight: "bold", color: "text.secondary" }}
+          sx={{ p: 2, fontWeight: "bold", color: "text.secondary" }}
         >
           ProManage
         </Typography>
@@ -156,8 +158,8 @@ export default function ProfileMenu({ email, user_name, user }) {
         <MenuItem component={Link} to={`/u/${user_name}/cards`}>
           Thẻ
         </MenuItem>
-        <MenuItem>Cài đặt</MenuItem>
-        <MenuItem onClick={handleThemeClick}>
+        {/* <MenuItem>Cài đặt</MenuItem> */}
+        {/* <MenuItem onClick={handleThemeClick}>
           Chủ đề <ArrowRightIcon fontSize="small" sx={{ ml: "auto" }} />
         </MenuItem>
         <Menu
@@ -184,16 +186,18 @@ export default function ProfileMenu({ email, user_name, user }) {
               />
             </MenuItem>
           </RadioGroup>
-        </Menu>
+        </Menu> */}
         <Divider sx={{ my: 2 }} />
         {/* <MenuItem onClick={handleOpenWorkspaceModal}>
           <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
         </MenuItem> */}
+
+        {/* Tạo workspace */}
         <CreateWorkspace />
 
-        <Divider />
-        <MenuItem>Trợ giúp</MenuItem>
-        <MenuItem>Phím tắt</MenuItem>
+        {/* <Divider /> */}
+        {/* <MenuItem>Trợ giúp</MenuItem> */}
+        {/* <MenuItem>Phím tắt</MenuItem> */}
         <Divider sx={{ marginY: "10px" }} />
         <MenuItem
           onClick={handleLogout}
@@ -218,7 +222,7 @@ export default function ProfileMenu({ email, user_name, user }) {
       </Menu>
 
       {/* Modal for Creating Workspace */}
-      <Modal open={openWorkspaceModal} onClose={handleCloseWorkspaceModal}>
+      {/* <Modal open={openWorkspaceModal} onClose={handleCloseWorkspaceModal}>
         <Box
           sx={{
             position: "absolute",
@@ -315,7 +319,7 @@ export default function ProfileMenu({ email, user_name, user }) {
             Tiếp tục
           </Button>
         </Box>
-      </Modal>
+      </Modal> */}
     </React.Fragment>
   );
 }

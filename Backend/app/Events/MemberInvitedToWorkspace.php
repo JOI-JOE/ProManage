@@ -38,7 +38,7 @@ class MemberInvitedToWorkspace implements ShouldBroadcast
             ],
         ];
 
-        Log::info('Broadcast payload for MemberInvitedToWorkspace', $data);
+        Log::info('Thềm thành viên vào lạhklasjfkajsklfjlkasjfkl', $data);
 
         return $data;
     }

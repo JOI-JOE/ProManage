@@ -62,7 +62,7 @@ const WorkspaceMenu = ({ workspace }) => {
       <Collapse in={openSettings} timeout="auto" unmountOnExit>
         <Box sx={{ pl: 4 }}>
           <List>
-            <ListItemButton component={Link} to={`/w/${workspace?.id}/home`}>
+            <ListItemButton component={Link} to={`/w/${workspace?.id}`}>
               <ListItemIcon sx={{ color: "black" }}>
                 <ViewKanbanIcon />
               </ListItemIcon>
@@ -85,6 +85,7 @@ const WorkspaceMenu = ({ workspace }) => {
             </ListItemButton>
 
             <ListItemButton
+              omponent={Link} to={`/w/${workspace?.id}/members`}
               onMouseEnter={() => handleMouseEnter("Thành viên")}
               onMouseLeave={handleMouseLeave}
             >
@@ -98,6 +99,7 @@ const WorkspaceMenu = ({ workspace }) => {
             </ListItemButton>
 
             <ListItemButton
+              omponent={Link} to={`/w/${workspace?.id}/account`}
               onMouseEnter={() => handleMouseEnter("Cài đặt")}
               onMouseLeave={handleMouseLeave}
             >

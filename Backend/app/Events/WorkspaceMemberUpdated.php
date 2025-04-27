@@ -74,10 +74,8 @@ class WorkspaceMemberUpdated implements ShouldBroadcast
             'memberType' => $this->memberType,
         ];
 
-        // Ghi log payload trước khi broadcast
-        Log::info('Broadcasting WorkspaceMemberUpdated Event', $payload);
+        Log::info('tao đang làm update', $payload);
 
-        // Trả về dữ liệu payload
         return $payload;
     }
 }

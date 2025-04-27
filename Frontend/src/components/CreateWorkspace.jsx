@@ -10,6 +10,8 @@ import Select from "@mui/material/Select";
 import CloseIcon from "@mui/icons-material/Close";
 import PeopleIcon from "@mui/icons-material/People";
 import { useCreateWorkspace } from "../hooks/useWorkspace";
+import LogoLoading from "./Common/LogoLoading";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const CreateWorkspace = () => {
     const [openWorkspaceModal, setOpenWorkspaceModal] = React.useState(false);
@@ -17,48 +19,73 @@ const CreateWorkspace = () => {
     const [workspaceName, setWorkspaceName] = React.useState("");
     const [workspaceType, setWorkspaceType] = React.useState("");
     const [workspaceDescription, setWorkspaceDescription] = React.useState("");
+    const [errorMessage, setErrorMessage] = React.useState("");
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const handleCloseWorkspaceModal = () => {
+        // Không cho phép đóng modal khi đang gửi request
+        if (isSubmitting) return;
+
         setOpenWorkspaceModal(false);
         setWorkspaceName("");
         setWorkspaceType("");
         setWorkspaceDescription("");
+        setErrorMessage("");
     };
 
     const handleOpenWorkspaceModal = () => {
         setOpenWorkspaceModal(true);
+        setErrorMessage("");
     };
 
     const { mutate: handleCreateWorkspace, isLoading } = useCreateWorkspace();
 
     const handleSubmit = () => {
+        // Đặt trạng thái đang submit để ngăn người dùng bấm nhiều lần
+        setIsSubmitting(true);
+
         console.log("Dữ liệu workspace trước khi gửi:", {
             name: workspaceName,
             type: workspaceType,
-            desc: workspaceDescription,
+            desc: workspaceDescription || null,
         });
 
         handleCreateWorkspace(
             {
                 display_name: workspaceName,
                 team_type: workspaceType,
-                desc: workspaceDescription,
+                desc: workspaceDescription || null,
             },
             {
                 onSuccess: (data) => {
-                    console.log("Tạo thành công:", data);
+                    console.log("Tạo thành công:", data);   
+                    setIsSubmitting(false);
                     setOpenWorkspaceModal(false);
                     setWorkspaceName("");
                     setWorkspaceType("");
                     setWorkspaceDescription("");
+                    setErrorMessage("");
                     setOpenInviteModal(true);
                 },
                 onError: (error) => {
                     console.error("Lỗi:", error.response?.data || error.message);
-                    alert("Có lỗi xảy ra khi tạo không gian làm việc!");
+                    setIsSubmitting(false);
+                    const errorData = error.response?.data;
+                    if (errorData?.message === "The display name has already been taken.") {
+                        setErrorMessage("Tên không gian làm việc đã được sử dụng. Vui lòng chọn tên khác.");
+                    } else {
+                        setErrorMessage("Có lỗi xảy ra khi tạo không gian làm việc!");
+                    }
                 },
             }
         );
+    };
+
+    // Handle keyboard events to prevent focus loss
+    const handleKeyDown = (event) => {
+        if (event.shiftKey && (event.key === "C" || event.key === "V")) {
+            event.stopPropagation();
+        }
     };
 
     return (
@@ -68,7 +95,13 @@ const CreateWorkspace = () => {
                 <PeopleIcon sx={{ mr: 2 }} /> Tạo Không gian làm việc
             </MenuItem>
 
-            <Modal open={openWorkspaceModal} onClose={handleCloseWorkspaceModal}>
+            <Modal
+                open={openWorkspaceModal}
+                onClose={handleCloseWorkspaceModal}
+                disableEnforceFocus={false}
+                disableAutoFocus={true}
+                disableEscapeKeyDown={isSubmitting} // Vô hiệu hóa nút ESC khi đang submit
+            >
                 <Box
                     sx={{
                         position: "absolute",
@@ -83,11 +116,14 @@ const CreateWorkspace = () => {
                         display: "flex",
                         flexDirection: "column",
                         color: "black",
+                        outline: "none",
                     }}
+                    onKeyDown={handleKeyDown}
                 >
                     <IconButton
                         onClick={handleCloseWorkspaceModal}
                         sx={{ position: "absolute", top: 8, right: 8, color: "black" }}
+                        disabled={isSubmitting} // Vô hiệu hóa nút đóng khi đang submit
                     >
                         <CloseIcon />
                     </IconButton>
@@ -111,16 +147,46 @@ const CreateWorkspace = () => {
                         Tên Không gian làm việc
                     </Typography>
                     <TextField
+                        required
                         fullWidth
                         placeholder="Công ty của bạn"
-                        variant="outlined"
-                        sx={{ mb: 1, color: "black" }}
                         value={workspaceName}
                         onChange={(e) => {
-                            console.log("workspaceName:", e.target.value); // Debug
+                            console.log("workspaceName:", e.target.value);
                             setWorkspaceName(e.target.value);
+                            setErrorMessage("");
                         }}
+                        InputLabelProps={{
+                            style: { color: "gray" },
+                        }}
+                        disabled={isSubmitting} // Vô hiệu hóa input khi đang submit
+                        sx={{
+                            mb: 1,
+                            color: "black",
+                            "& .MuiOutlinedInput-root": {
+                                "& fieldset": {
+                                    borderColor: "black",
+                                    borderWidth: 1,
+                                },
+                                "&:hover fieldset": {
+                                    borderColor: "black",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "black",
+                                    borderWidth: 1,
+                                },
+                            },
+                            "& .MuiOutlinedInput-notchedOutline": {
+                                borderRadius: "4px",
+                            },
+                        }}
+                        autoFocus
                     />
+                    {errorMessage && (
+                        <Typography variant="body2" sx={{ color: "red", mb: 1 }}>
+                            {errorMessage}
+                        </Typography>
+                    )}
                     <Typography variant="body2" sx={{ mb: 4, color: "black" }}>
                         Đây là tên của công ty, nhóm hoặc tổ chức của bạn.
                     </Typography>
@@ -130,15 +196,15 @@ const CreateWorkspace = () => {
                     >
                         Loại Không gian làm việc
                     </Typography>
-
                     <Select
                         fullWidth
                         value={workspaceType}
                         onChange={(e) => {
-                            console.log("workspaceType:", e.target.value); // Debug
+                            console.log("workspaceType:", e.target.value);
                             setWorkspaceType(e.target.value);
                         }}
                         displayEmpty
+                        disabled={isSubmitting} // Vô hiệu hóa select khi đang submit
                         sx={{ mb: 2 }}
                     >
                         <MenuItem value="" disabled>
@@ -166,25 +232,32 @@ const CreateWorkspace = () => {
                         sx={{ mb: 1 }}
                         value={workspaceDescription}
                         onChange={(e) => setWorkspaceDescription(e.target.value)}
+                        disabled={isSubmitting} // Vô hiệu hóa input khi đang submit
                     />
                     <Typography variant="body2" sx={{ mb: 4, color: "black" }}>
                         Đưa các thành viên của bạn vào bảng với mô tả ngắn về Không gian làm
                         việc của bạn.
                     </Typography>
-
                     <Button
                         fullWidth
                         variant="contained"
                         onClick={handleSubmit}
-                        disabled={!workspaceName || !workspaceType || !workspaceDescription} // Kiểm tra điều kiện
+                        disabled={!workspaceName || !workspaceType || isSubmitting}
+                        startIcon={isSubmitting ? <LogoLoading scale={0.3} color="inherit" /> : null}
                     >
-                        Tiếp tục
+                        {isSubmitting ? "Đang tạo..." : "Tiếp tục"}
                     </Button>
                 </Box>
             </Modal>
 
             {/* Modal Mời Thành Viên */}
-            <Modal open={openInviteModal} onClose={() => setOpenInviteModal(false)}>
+            {/* <Modal
+                open={openInviteModal}
+                onClose={() => setOpenInviteModal(false)}
+                disableEnforceFocus={false}
+                disableAutoFocus={true}
+                disableEscapeKeyDown={false}
+            >
                 <Box
                     sx={{
                         position: "absolute",
@@ -196,7 +269,9 @@ const CreateWorkspace = () => {
                         boxShadow: 24,
                         p: 4,
                         borderRadius: 2,
+                        outline: "none",
                     }}
+                    onKeyDown={handleKeyDown}
                 >
                     <IconButton
                         onClick={() => setOpenInviteModal(false)}
@@ -204,34 +279,29 @@ const CreateWorkspace = () => {
                     >
                         <CloseIcon />
                     </IconButton>
-
                     <Typography
                         variant="h5"
                         sx={{ fontWeight: "bold", mb: 1, fontSize: "27px" }}
                     >
                         Mời nhóm của bạn
                     </Typography>
-
                     <Typography variant="body2" sx={{ mb: 2 }}>
                         Mời tối đa 9 người khác bằng liên kết hoặc nhập tên hoặc email của
                         họ.
                     </Typography>
-
                     <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
                         Các thành viên Không gian làm việc
                     </Typography>
-
                     <TextField
                         fullWidth
                         placeholder="ví dụ: calrissian@cloud.ci"
                         variant="outlined"
                         sx={{ mb: 2 }}
+                        autoFocus
                     />
-
                     <Button fullWidth variant="contained" disabled>
                         Mời vào Không gian làm việc
                     </Button>
-
                     <Typography
                         variant="body2"
                         sx={{
@@ -246,7 +316,7 @@ const CreateWorkspace = () => {
                         Tôi sẽ thực hiện sau
                     </Typography>
                 </Box>
-            </Modal>
+            </Modal> */}
         </div>
     );
 };

@@ -13,6 +13,7 @@ import {
   DialogActions,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import { useMe } from "../../../../../contexts/MeContext";
 import { useChangeMemberType, useRemoveMember } from "../../../../../hooks/useWorkspace";
@@ -22,11 +23,12 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
+  const [isRemoving, setIsRemoving] = useState(false); // Thêm state cho loading khi xóa
 
   const { user } = useMe();
 
   const { mutate: changeMemberType, isLoading: isChangingType } = useChangeMemberType();
-  const { mutate: removeMember, isLoading: isRemovingMember } = useRemoveMember();
+  const { mutate: removeMember } = useRemoveMember();
 
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
@@ -91,10 +93,14 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
       handleCloseRemoveDialog();
       return;
     }
+
+    setIsRemoving(true); // Bật trạng thái loading
+
     removeMember(
       {
         workspaceId: workspace.id,
         userId: member.user_id,
+        moveType: 'member'
       },
       {
         onSuccess: () => {
@@ -103,7 +109,13 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
             message: `Đã ${isMe ? 'rời khỏi' : 'xóa'} thành viên ${member.user.full_name} thành công!`,
             severity: 'success'
           });
+          setIsRemoving(false); // Tắt trạng thái loading
           handleCloseRemoveDialog();
+
+          // If the user is leaving (not being removed by admin), redirect to their boards page
+          if (isMe) {
+            window.location.href = `/u/${user?.username || user?.id}/boards`;
+          }
         },
         onError: (error) => {
           setAlert({
@@ -111,6 +123,7 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
             message: error.response?.data?.message || `Không thể ${isMe ? 'rời khỏi' : 'xóa'} thành viên. Vui lòng thử lại.`,
             severity: 'error'
           });
+          setIsRemoving(false); // Tắt trạng thái loading
           console.error("Lỗi khi xóa thành viên:", error);
         },
       }
@@ -254,7 +267,7 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
             color="error"
             size="small"
             onClick={handleOpenRemoveDialog}
-            disabled={isRemovingMember || (!isMe && !isAdmin) || isSoleAdmin}
+            disabled={isRemoving || (!isMe && !isAdmin) || isSoleAdmin}
             sx={{
               fontSize: "0.7rem",
               padding: "2px 12px",
@@ -264,9 +277,13 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
                 borderColor: "#DE350B",
                 backgroundColor: "#FFEBE6",
               },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
             }}
           >
-            {isMe ? "Rời khỏi" : "Loại bỏ"}
+            {isRemoving && <CircularProgress size={16} />}
+            {isRemoving ? "Đang xử lý..." : (isMe ? "Rời khỏi" : "Loại bỏ")}
           </Button>
         )}
       </Box>
@@ -282,16 +299,27 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseRemoveDialog} disabled={isRemovingMember}>
+          <Button
+            onClick={handleCloseRemoveDialog}
+            disabled={isRemoving}
+            sx={{ color: "#172B4D" }}
+          >
             Hủy
           </Button>
           <Button
             onClick={handleConfirmRemove}
             color="error"
             variant="contained"
-            disabled={isRemovingMember}
+            disabled={isRemoving}
+            sx={{
+              minWidth: '120px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
           >
-            {isRemovingMember ? "Đang xử lý..." : isMe ? "Rời khỏi" : "Xóa"}
+            {isRemoving && <CircularProgress size={20} />}
+            {isRemoving ? "Đang xử lý..." : (isMe ? "Rời khỏi" : "Xóa")}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -8,7 +8,7 @@
   <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
     <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; margin-top: 20px;">
       <!-- Header with Logo -->
-      <tr>
+      {{-- <tr>
         <td bgcolor="#ffffff" style="padding: 20px 30px; border-top-left-radius: 5px; border-top-right-radius: 5px;">
           <table border="0" cellpadding="0" cellspacing="0" width="100%">
             <tr>
@@ -29,14 +29,14 @@
                   
                   <!-- Tagline -->
                   <text x="70" y="65" font-family="Arial, sans-serif" font-size="12" fill="#5E6C84">
-                    Task & Project Management
+                    Task Management
                   </text>
                 </svg>
               </td>
             </tr>
           </table>
         </td>
-      </tr>
+      </tr> --}}
 
       <!-- Main Content -->
       <tr>
@@ -60,7 +60,7 @@
             <!-- Description -->
             <tr>
               <td style="padding: 0 0 25px 0; color: #153643; font-size: 16px; line-height: 24px; text-align: left;">
-                Tham gia cùng họ trên Promange để cộng tác, quản lý dự án và đạt đỉnh năng suất mới.
+                Tham gia cùng họ trên Promange để cộng tác và đạt đỉnh năng suất mới.
               </td>
             </tr>
 

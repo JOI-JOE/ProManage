@@ -37,7 +37,7 @@ import PrivateSideBar from "../Private/PrivateSideBar";
 
 const SideBar = ({ board, isLoadingBoard }) => {
   const { boardId, workspaceId } = useParams();
-  const { boardIds, pendingIds } = useMe();
+  const { boardIds, pendingIds, userLoading } = useMe();
   const { workspaces, guestWorkspaces, isLoading } = useWorkspace();
 
   // Workspace hiện tại
@@ -69,7 +69,6 @@ const SideBar = ({ board, isLoadingBoard }) => {
   // Là thành viên workspace?
   const isMemberWorkspace = currentWorkspace?.joined === 1;
   const isBoardMember = boardIds?.some((b) => b.id === boardId);
-
 
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
@@ -122,7 +121,6 @@ const SideBar = ({ board, isLoadingBoard }) => {
     setAnchorEl(null);
   };
 
-  // trường hợp chúng ta không phải thành  viên của bảng và không phải thành viên của workspace 
 
   return (
     <Drawer
@@ -148,7 +146,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
         },
       }}
     >
-      {isLoading || isLoadingBoard ? (
+      {isLoading || isLoadingBoard || userLoading ? (
         <Box sx={{ p: 2 }}>
           <LogoLoading />
         </Box>
@@ -287,7 +285,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
 
           <List sx={{ p: 0.5 }}>
             {currentWorkspace?.boards
-              ?.filter((board) => board.closed === false)
+              ?.filter((board) => board.closed === false && board.joined === true)
               .map((board) => {
                 const isCurrent = board.id === boardId;
                 const isBoardAdmin = board.role === "admin";

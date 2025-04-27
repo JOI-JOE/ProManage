@@ -17,11 +17,11 @@ import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
 import MyBoard from "../../../components/MyBoard";
 import CreateBoard from "../../../components/CreateBoard";
 import emptyBoard from "~/assets/emptyBoard.svg?react";
-import { useSelector } from "react-redux";
 import WorkspaceHeader from "../../boards/detail/Member/Common/WorkspaceHeader";
+import LogoLoading from "../../../components/Common/LogoLoading";
 
 
-const HomeWorkspace = ({ workspace, refetchWorkspace }) => {
+const HomeWorkspace = ({ workspace, refetchWorkspace, isLoadingWorkspace }) => {
 
   const [showCreateBoard, setShowCreateBoard] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -45,6 +45,17 @@ const HomeWorkspace = ({ workspace, refetchWorkspace }) => {
 
   const isAdmin = workspace?.isCurrentUserAdmin || false;
 
+  if (isLoadingWorkspace) {
+    return (
+      <Box sx={{
+        width: "60%",
+        padding: "20px",
+        marginLeft: "auto",
+      }}>
+        <LogoLoading />
+      </Box>
+    );
+  }
 
   return (
     <Box

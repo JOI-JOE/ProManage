@@ -272,7 +272,7 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
                                     Thêm vào Không gian làm việc
                                 </Button>
                             )}
-                            <Button
+                            {/* <Button
                                 variant="text"
                                 sx={{
                                     minWidth: '32px',
@@ -287,7 +287,7 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
                                 ) : (
                                     <CloseIcon fontSize="small" />
                                 )}
-                            </Button>
+                            </Button> */}
                         </Box>
                     )}
                 </Box>

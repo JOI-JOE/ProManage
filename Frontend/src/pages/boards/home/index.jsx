@@ -25,9 +25,10 @@ import WorkspaceAvatar from "../../../components/Common/WorkspaceAvatar";
 import { Link } from "react-router-dom";
 import { StarIcon as StarOutlineIcon } from "@heroicons/react/24/outline"; // Outline
 import { StarIcon } from "@heroicons/react/24/solid"; // Solid
+import LogoLoading from "../../../components/Common/LogoLoading";
 
 
-const HomeBoard = ({ workspaces }) => {
+const HomeBoard = ({ workspaces, workspaceLoading }) => {
   // const { data: workspaces, isLoading, isError } = useGetWorkspaces();
   const { guestWorkspaces } = useWorkspace()
 
@@ -90,8 +91,20 @@ const HomeBoard = ({ workspaces }) => {
     });
   };
 
-  console.log(guestWorkspaces)
-
+  if (workspaceLoading) {
+    return (
+      <Box
+        sx={{
+          width: "60%",
+          padding: "20px",
+          marginLeft: "auto",
+          marginTop: "25px",
+        }}
+      >
+        <LogoLoading />
+      </Box>
+    );
+  }
   return (
     <Box
       sx={{
@@ -193,69 +206,71 @@ const HomeBoard = ({ workspaces }) => {
 
       <Box id="guest-workspace">
         <Box id="guest-workspace">
-          <Typography
-            variant="h6"
-            sx={{
-              marginTop: "24px",
-              marginBottom: "8px",
-              fontWeight: "bold",
-              textTransform: "uppercase",
-              color: "#172B4D",
-            }}
-          >
-            CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
-          </Typography>
           <div id="myGuestWorkspace">
-            {guestWorkspaces?.length > 0 ? (
-              guestWorkspaces
-                .filter((workspace) =>
-                  workspace.boards?.some((board) => !board.closed)
-                )
-                .map((workspace) => (
-                  <div key={workspace.id} style={{ marginBottom: "20px" }}>
-                    {/* Hiển thị thông tin workspace */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginBottom: "10px",
-                        gap: "6px",
-                      }}
-                    >
-                      <WorkspaceAvatar workspace={workspace} />
-                      <Typography
-                        fontWeight="bold"
-                        sx={{ whiteSpace: "nowrap" }}
+            {guestWorkspaces?.length > 0 && (
+              <>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    marginTop: "24px",
+                    marginBottom: "8px",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    color: "#172B4D",
+                  }}
+                >
+                  CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
+                </Typography>
+                {guestWorkspaces
+                  .filter((workspace) =>
+                    workspace.boards?.some((board) => !board.closed)
+                  )
+                  .map((workspace) => (
+                    <div key={workspace.id} style={{ marginBottom: "20px" }}>
+                      {/* Hiển thị thông tin workspace */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                          gap: "6px",
+                        }}
                       >
-                        {workspace.display_name.length > 20
-                          ? workspace.display_name.substring(0, 20) + "..."
-                          : workspace.display_name}
-                      </Typography>
+                        <WorkspaceAvatar workspace={workspace} />
+                        <Typography
+                          fontWeight="bold"
+                          sx={{ whiteSpace: "nowrap" }}
+                        >
+                          {workspace.display_name.length > 20
+                            ? workspace.display_name.substring(0, 20) + "..."
+                            : workspace.display_name}
+                        </Typography>
+                      </div>
+                      {/* Hiển thị danh sách boards của workspace với flex */}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "10px",
+                        }}
+                      >
+                        {workspace.boards
+                          .filter((board) => !board.closed)
+                          .map((board) => (
+                            <div
+                              key={board.id}
+                              style={{
+                                maxWidth: "300px",
+                              }}
+                            >
+                              <MyBoard board={board} id={`guest-board-${board.id}`} />
+                            </div>
+                          ))}
+                      </div>
                     </div>
-                    {/* Hiển thị danh sách boards của workspace với flex */}
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "10px",
-                      }}
-                    >
-                      {workspace.boards
-                        .filter((board) => !board.closed)
-                        .map((board) => (
-                          <div
-                            key={board.id}
-                            style={{
-                              maxWidth: "300px",
-                            }}
-                          >
-                            <MyBoard board={board} id={`guest-board-${board.id}`} />
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                ))
-            ) : null}
+                  ))}
+              </>
+            )}
           </div>
         </Box>
       </Box>

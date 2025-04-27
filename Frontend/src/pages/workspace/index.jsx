@@ -17,7 +17,7 @@ const Workspaces = () => {
     });
     return (
         <>
-            <HomeWorkspace workspace={workspace} refetchWorkspace={refetchWorkspace} />
+            <HomeWorkspace workspace={workspace} refetchWorkspace={refetchWorkspace} isLoadingWorkspace={isLoadingWorkspace} />
         </>
     );
 };

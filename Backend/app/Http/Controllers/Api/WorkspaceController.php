@@ -55,7 +55,7 @@ class WorkspaceController extends Controller
             ->distinct()
             ->get();
 
-        // Lấy tất cả boards mà user tham gia hoặc tạo
+        // Lấy tất cả boards mà user tham gia trong workspace đã tham gia (bao gồm cả closed boards)
         $boards = DB::table('boards')
             ->leftJoin('board_members', function ($join) use ($userId) {
                 $join->on('board_members.board_id', '=', 'boards.id')
@@ -75,6 +75,7 @@ class WorkspaceController extends Controller
                 'boards.is_marked',
                 'boards.closed',
                 'board_members.role',
+                'board_members.joined',
                 DB::raw('(SELECT COUNT(*) FROM board_members bm WHERE bm.board_id = boards.id) AS member_count'),
                 'ws.id as workspace_id_ref',
                 'ws.name as workspace_name',
@@ -88,15 +89,64 @@ class WorkspaceController extends Controller
                 $query->where('boards.created_by', $userId)
                     ->orWhereNotNull('board_members.user_id');
             })
-            // ->where('boards.closed', 0)
             ->orderBy('boards.created_at', 'desc')
             ->get();
 
+        // Lấy boards của guest workspace (không lấy closed boards)
+        $guestBoards = DB::table('boards')
+            ->leftJoin('board_members', function ($join) use ($userId) {
+                $join->on('board_members.board_id', '=', 'boards.id')
+                    ->where('board_members.user_id', $userId);
+            })
+            ->leftJoin('workspaces as ws', 'boards.workspace_id', '=', 'ws.id')
+            ->leftJoin('users as creator', 'boards.created_by', '=', 'creator.id')
+            ->select(
+                'boards.id',
+                'boards.name',
+                'boards.workspace_id',
+                'boards.thumbnail',
+                'boards.visibility',
+                'boards.created_by',
+                'boards.created_at',
+                'boards.last_accessed',
+                'boards.is_marked',
+                'boards.closed',
+                'board_members.role',
+                'board_members.joined',
+                DB::raw('(SELECT COUNT(*) FROM board_members bm WHERE bm.board_id = boards.id) AS member_count'),
+                'ws.id as workspace_id_ref',
+                'ws.name as workspace_name',
+                'ws.display_name as workspace_display_name',
+                'ws.permission_level as workspace_visibility',
+                'ws.logo_url as workspace_logo',
+                'creator.user_name as created_by_name',
+                'creator.image as created_by_image'
+            )
+            ->where(function ($query) use ($userId) {
+                $query->where('boards.created_by', $userId)
+                    ->orWhereNotNull('board_members.user_id');
+            })
+            ->where('boards.closed', 0) // Chỉ lấy những board không closed đối với guest
+            ->whereExists(function ($query) use ($userId) {
+                $query->select(DB::raw(1))
+                    ->from('board_members')
+                    ->whereRaw('board_members.board_id = boards.id')
+                    ->where('board_members.user_id', $userId)
+                    ->whereNotExists(function ($subQuery) use ($userId) {
+                        $subQuery->select(DB::raw(1))
+                            ->from('workspace_members')
+                            ->whereRaw('workspace_members.workspace_id = boards.workspace_id')
+                            ->where('workspace_members.user_id', $userId)
+                            ->where('workspace_members.joined', 1);
+                    });
+            })
+            ->orderBy('boards.created_at', 'desc')
+            ->get();
 
         // Chuẩn bị dữ liệu trả về
         $responseData = [
             'workspaces' => [],
-            'guestWorkspaces' => [], // Thay personal_boards bằng guestWorkspaces
+            'guestWorkspaces' => [],
             'id' => $userId
         ];
 
@@ -119,8 +169,7 @@ class WorkspaceController extends Controller
             ];
         })->values()->all();
 
-        // Chuẩn bị guestWorkspaces (các workspace mà user chưa tham gia nhưng có tham gia board)
-        $guestWorkspaces = [];
+        // Xử lý boards cho workspace đã tham gia
         foreach ($boards as $board) {
             $boardData = [
                 'id' => $board->id,
@@ -134,8 +183,9 @@ class WorkspaceController extends Controller
                 'is_marked' => $board->is_marked,
                 'created_at' => $board->created_at,
                 'role' => $board->role,
+                'joined' => (bool) $board->joined,
                 'member_count' => $board->member_count,
-                'closed' => (bool) $board->closed, // 👉 thêm dòng này
+                'closed' => (bool) $board->closed,
                 'last_accessed' => $board->last_accessed
             ];
 
@@ -147,22 +197,42 @@ class WorkspaceController extends Controller
                         break;
                     }
                 }
-            } elseif ($board->workspace_id && $board->workspace_id_ref) {
-                // Board thuộc workspace mà user chưa tham gia (guest workspace)
-                $workspaceId = $board->workspace_id;
-                if (!isset($guestWorkspaces[$workspaceId])) {
-                    $guestWorkspaces[$workspaceId] = [
-                        'id' => $board->workspace_id_ref,
-                        'name' => $board->workspace_name,
-                        'display_name' => $board->workspace_display_name,
-                        'logo' => $board->workspace_logo,
-                        'permission_level' => $board->workspace_visibility,
-                        'boards' => []
-                    ];
-                }
-                $guestWorkspaces[$workspaceId]['boards'][] = $boardData;
             }
-            // Bỏ qua các board không thuộc workspace (personal boards) vì không cần nữa
+        }
+
+        // Xử lý guest boards (không lấy closed)
+        $guestWorkspaces = [];
+        foreach ($guestBoards as $board) {
+            $boardData = [
+                'id' => $board->id,
+                'name' => $board->name,
+                'workspace_id' => $board->workspace_id,
+                'thumbnail' => $board->thumbnail,
+                'visibility' => $board->visibility,
+                'created_by' => $board->created_by,
+                'created_by_name' => $board->created_by_name,
+                'created_by_image' => $board->created_by_image,
+                'is_marked' => $board->is_marked,
+                'created_at' => $board->created_at,
+                'role' => $board->role,
+                'joined' => (bool) $board->joined,
+                'member_count' => $board->member_count,
+                'closed' => (bool) $board->closed,
+                'last_accessed' => $board->last_accessed
+            ];
+
+            $workspaceId = $board->workspace_id;
+            if (!isset($guestWorkspaces[$workspaceId])) {
+                $guestWorkspaces[$workspaceId] = [
+                    'id' => $board->workspace_id_ref,
+                    'name' => $board->workspace_name,
+                    'display_name' => $board->workspace_display_name,
+                    'logo' => $board->workspace_logo,
+                    'permission_level' => $board->workspace_visibility,
+                    'boards' => []
+                ];
+            }
+            $guestWorkspaces[$workspaceId]['boards'][] = $boardData;
         }
 
         // Chuyển guestWorkspaces thành mảng và đảm bảo boards không bị lồng
@@ -487,7 +557,7 @@ class WorkspaceController extends Controller
 
             // Prepare response data for members
             $workspaceData = [
-            'id' => $workspace->id,
+                'id' => $workspace->id,
                 'name' => $workspace->name,
                 'display_name' => $workspace->display_name,
                 'desc' => $workspace->desc,

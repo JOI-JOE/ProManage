@@ -2,9 +2,9 @@ import { useWorkspace } from "../../contexts/WorkspaceContext";
 import HomeBoard from "./home";
 
 const Boards = () => {
-    const { workspaces } = useWorkspace();
+    const { workspaces, isLoading } = useWorkspace();
     return (
-        <HomeBoard workspaces={workspaces || []} />
+        <HomeBoard workspaces={workspaces || []} workspaceLoading={isLoading} />
     )
 
 }

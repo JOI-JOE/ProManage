@@ -57,10 +57,10 @@ class SendRequestJoinWorkspace implements ShouldBroadcast
     {
         $payload = [
             'user' => $this->user->only(['id', 'name', 'email']),
-            'workspace' => $this->workspace->only(['id', 'name']),
+            'workspace' => $this->workspace->only(attributes: ['id', 'name']),
         ];
 
-        Log::info('Broadcasting WorkspaceMemberUpdated event with payload:', $payload);
+        Log::info('Tao gửi yêu cầu này', $payload);
 
         return $payload;
     }
