@@ -806,6 +806,7 @@ class CardController extends Controller
                         'title' => $card->title,
                         'end_date' => $card->end_date,
                         'list_name' => $list->name,
+                        'list_board_id' => $list->id,
                         'is_completed' => $card->is_completed,
                         'labels' => $card->labels->map(fn($label) => ['name' => $label->name, 'color' => $label->color]),
                         'board_id' => $board->id,

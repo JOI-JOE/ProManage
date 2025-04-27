@@ -1095,7 +1095,7 @@ const CardModal = ({ }) => {
             )}
 
             {/* Nút Theo dõi luôn hiển thị */}
-            <Button
+            {/* <Button
               variant="outlined"
               sx={{
                 fontSize: "0.6rem",
@@ -1108,7 +1108,7 @@ const CardModal = ({ }) => {
             >
               <VisibilityIcon sx={{ fontSize: "12px", mr: 0.5 }} />
               {isFollowing ? "Đang theo dõi" : "Theo dõi"}
-            </Button>
+            </Button> */}
           </Box>
           <IconButton
             aria-label="close"

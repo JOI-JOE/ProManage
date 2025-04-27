@@ -46,7 +46,6 @@ const TableView = () => {
     const boardIdsForMembers = tableData.map(row => row.board_id);
     const { data: allBoardMembers = [] } = useMemberByBoard(boardIdsForMembers);
     const [editState, setEditState] = useState({});
-
     // State để quản lý dialog LabelList
     const [openLabelDialog, setOpenLabelDialog] = useState(false);
     const [selectedCard, setSelectedCard] = useState(null);
@@ -125,6 +124,7 @@ const TableView = () => {
             { cardId, listBoardId: newListId },
             {
                 onSuccess: () => {
+                    console.log(boardIds);
                     queryClient.invalidateQueries({ queryKey: ["table-view", boardIds] });
                 },
                 onError: (error) => {
@@ -442,7 +442,7 @@ const TableView = () => {
                                             {(row.labels || []).map((label, index) => {
                                                 // console.log(label.name);
 
-                                                console.log(label);
+                                                // console.log(label);
 
                                                 return (
                                                     <Box
