@@ -24,7 +24,10 @@ class MemberInvitedToWorkspace implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new Channel("user.{$this->user->id}");
+        return [
+            new Channel("user.{$this->user->id}"),
+            new Channel("workspace.{$this->workspaceId}")
+        ];
     }
 
     public function broadcastWith()
@@ -39,7 +42,6 @@ class MemberInvitedToWorkspace implements ShouldBroadcast
         ];
 
         Log::info('Thềm thành viên vào lạhklasjfkajsklfjlkasjfkl', $data);
-
         return $data;
     }
 

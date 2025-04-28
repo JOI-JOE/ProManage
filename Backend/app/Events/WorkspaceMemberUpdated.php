@@ -16,23 +16,16 @@ class WorkspaceMemberUpdated implements ShouldBroadcast
 
     public $workspaceId;
     public $user;
-    public $action; // 'removed' | 'updated'
-    public $memberType; // 'admin' | 'member' | null nếu là bị xoá
 
     /**
      * Tạo instance sự kiện.
-     *
-     * @param int $workspaceId
-     * @param User $user
-     * @param string $action
-     * @param string|null $memberType
      */
-    public function __construct($workspaceId, User $user, string $action, ?string $memberType = null)
+    public function __construct($workspaceId, User $user)
     {
         $this->workspaceId = $workspaceId;
         $this->user = $user;
-        $this->action = $action;
-        $this->memberType = $memberType;
+
+        $this->dontBroadcastToCurrentUser();
     }
 
     /**
@@ -43,7 +36,6 @@ class WorkspaceMemberUpdated implements ShouldBroadcast
     public function broadcastOn()
     {
         return [
-            new Channel("user.{$this->user->id}"),
             new Channel("workspace.{$this->workspaceId}")
         ];
     }
@@ -53,7 +45,7 @@ class WorkspaceMemberUpdated implements ShouldBroadcast
      */
     public function broadcastAs()
     {
-        return 'WorkspaceMemberUpdated';
+        return 'workspace.member.updated';
     }
     /**
      * Dữ liệu sẽ được gửi kèm với sự kiện broadcast.
@@ -63,19 +55,12 @@ class WorkspaceMemberUpdated implements ShouldBroadcast
     public function broadcastWith()
     {
         // Xây dựng dữ liệu payload
-        $payload = [
-            'user' => [
-                'id' => $this->user->id,
-                'name' => $this->user->name,
-                'email' => $this->user->email,
-                'workspaceId' => $this->workspaceId,
-            ],
-            'action' => $this->action,
-            'memberType' => $this->memberType,
+        $data = [
+            'workspace_id' => $this->workspaceId,
+            'user_id' => $this->user->id,
         ];
+        Log::info('Chuyển giao quyền lực vào lạhklasjfkajsklfjlkasjfkl', $data);
 
-        Log::info('tao đang làm update', $payload);
-
-        return $payload;
+        return $data;
     }
 }

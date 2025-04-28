@@ -31,43 +31,38 @@ export const usefetchWorkspaces = () => {
 
 // Realtime -----------------------------------------------------------------------------------
 
-/// dữ liệu workspace tống
 export const useGetWorkspaces = () => {
   const queryClient = useQueryClient();
   const channelRef = useRef(null);
   const { user } = useMe();
 
-  // // Xử lý sự kiện khi có thành viên mới được mời
-  const handleMemberInvited = useCallback(
+  // Hàm chung để invalidate queries
+  const invalidateQueries = (queries) => {
+    queries.forEach((query) =>
+      queryClient.invalidateQueries({
+        queryKey: query,
+        exact: true,
+      })
+    );
+  };
+
+  // Hàm xử lý sự kiện member được tạo
+  const handleMemberCreated = useCallback(
     (event) => {
-      if (event?.user?.id === user?.id) {
-        console.log("📩 MemberInvitedToWorkspace:", event);
-        // Nếu trùng, invalidate lại query workspaces để refetch dữ liệu
-        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-        queryClient.invalidateQueries({
-          queryKey: ["workspace", event?.user?.workspaceId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["user_main"],
-        });
+      console.log(event);
+      if (event?.user_id === user?.id) {
+        invalidateQueries([["workspaces"], ["user_main"]]);
       }
     },
     [queryClient, user?.id]
   );
 
-  // Xử lý sự kiện khi có thay đổi thành viên (thêm, xóa, cập nhật quyền)
-  const handleWorkspaceMemberUpdated = useCallback(
+  // Hàm xử lý sự kiện member bị xóa
+  const handleMemberRemoved = useCallback(
     (event) => {
-      // Nếu sự kiện liên quan đến userId, invalidate lại query workspaces
-      if (event?.user?.id === user?.id) {
-        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-        queryClient.invalidateQueries({
-          queryKey: ["workspace", event?.user?.workspaceId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["user_main"],
-          exact: true,
-        });
+      console.log(event);
+      if (event?.user_id === user?.id) {
+        invalidateQueries([["workspaces"], ["user_main"]]);
       }
     },
     [queryClient, user?.id]
@@ -75,31 +70,32 @@ export const useGetWorkspaces = () => {
 
   useEffect(() => {
     if (!user?.id) return;
-    const channel = echoInstance.channel(`user.${user?.id}`);
+
+    const channel = echoInstance.channel(`user.${user.id}`);
     channelRef.current = channel;
 
-    // Lắng nghe sự kiện MemberInvitedToWorkspace
-    channel.listen(".MemberInvitedToWorkspace", handleMemberInvited);
-    channel.listen(".WorkspaceMemberUpdated", handleWorkspaceMemberUpdated);
+    // Lắng nghe sự kiện member được tạo và xóa
+    channel.listen(".workspace.member.created", handleMemberCreated);
+    channel.listen(".workspace.member.removed", handleMemberRemoved);
 
     return () => {
       if (channelRef.current) {
-        // Dừng lắng nghe khi component unmount
-        channelRef.current.stopListening(".MemberInvitedToWorkspace");
-        channelRef.current.stopListening(".WorkspaceMemberUpdated");
-        echoInstance.leave(`user.${user?.id}`);
+        // Dừng lắng nghe sự kiện khi component unmount hoặc user thay đổi
+        channelRef.current.stopListening(".workspace.member.created");
+        channelRef.current.stopListening(".workspace.member.removed");
+        echoInstance.leave(`user.${user.id}`);
       }
     };
-  }, [user?.id, handleWorkspaceMemberUpdated]);
+  }, [user?.id, handleMemberCreated, handleMemberRemoved]);
 
-  // Fetch workspaces
+  // Query workspaces
   return useQuery({
     queryKey: ["workspaces"],
     queryFn: getWorkspacesAll,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false, // Không refetch khi focus lại tab
-    retry: 2, // Thử lại 2 lần nếu lỗi
+    staleTime: 5 * 60 * 1000, // Dữ liệu stale sau 5 phút
+    cacheTime: 10 * 60 * 1000, // Dữ liệu được lưu trong cache 10 phút
+    refetchOnWindowFocus: false, // Không refetch khi window focus
+    retry: 2, // Thử lại tối đa 2 lần khi query thất bại
     onSuccess: (data) => {
       console.log("✅ Danh sách workspaces:", data);
     },
@@ -113,67 +109,74 @@ export const useGetWorkspaceById = (workspaceId) => {
   const queryClient = useQueryClient();
   const channelRef = useRef(null);
 
-  const handleWorkspaceMemberUpdated = useCallback(
-    (event) => {
-      console.log(event);
-      if (event?.user?.workspaceId === workspaceId) {
-        queryClient.invalidateQueries({
-          queryKey: ["workspace", workspaceId],
-          exact: true,
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["workspaces"],
-          exact: true,
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["user_main"],
-          exact: true,
-        });
-      }
-    },
-    [queryClient, workspaceId]
-  );
+  // Hàm chung để invalidate queries
+  const invalidateQueries = (queries) => {
+    queries.forEach((query) =>
+      queryClient.invalidateQueries({
+        queryKey: query,
+        exact: true,
+      })
+    );
+  };
 
-  const handleJoinRequestSent = useCallback(
-    (event) => {
-      console.log(event);
-      if (event?.workspace?.id === workspaceId) {
-        queryClient.invalidateQueries({
-          queryKey: ["workspace", workspaceId],
-          exact: true,
-        });
+  // Hàm xử lý khi thông tin thành viên workspace được cập nhật
+  const handleMemberUpdated = (event) => {
+    console.log(event);
+    if (event?.workspace_id === workspaceId) {
+      invalidateQueries([["workspace", workspaceId]]);
+    }
+  };
 
-        queryClient.invalidateQueries({
-          queryKey: ["workspaces"],
-          exact: true,
-        });
-      }
-    },
-    [queryClient, workspaceId]
-  );
+  // Hàm xử lý khi yêu cầu gia nhập workspace được gửi
+  const handleJoinRequestSent = (event) => {
+    if (event?.workspace?.id === workspaceId) {
+      invalidateQueries([["workspace", workspaceId]]);
+    }
+  };
+
+  // Hàm xử lý khi thành viên được thêm vào workspace
+  const handleMemberCreated = (event) => {
+    console.log(event);
+    if (event?.workspace_id === workspaceId) {
+      invalidateQueries([["workspace", workspaceId]]);
+    }
+  };
+
+  const handleMemberRemoved = (event) => {
+    if (event?.workspace_id === workspaceId) {
+      invalidateQueries([["workspace", workspaceId]]);
+    }
+  };
 
   useEffect(() => {
-    // if (!userId || !workspaceId) return;
     if (!workspaceId) return;
+
+    // Thiết lập kênh của Echo
     const channel = echoInstance.channel(`workspace.${workspaceId}`);
     channelRef.current = channel;
 
-    channel.listen(".WorkspaceMemberUpdated", handleWorkspaceMemberUpdated);
+    // Lắng nghe các sự kiện
+    channel.listen(".workspace.member.removed", handleMemberRemoved);
+    channel.listen(".workspace.member.created", handleMemberCreated);
+    channel.listen(".workspace.member.updated", handleMemberUpdated);
     channel.listen(".JoinRequestSent", handleJoinRequestSent);
 
+    // Cleanup khi component unmount hoặc workspaceId thay đổi
     return () => {
       if (channelRef.current) {
-        channelRef.current.stopListening(".WorkspaceMemberUpdated");
+        channelRef.current.stopListening(".workspace.member.removed");
+        channelRef.current.stopListening(".workspace.member.created");
+        channelRef.current.stopListening(".workspace.member.updated");
         channelRef.current.stopListening(".JoinRequestSent");
         echoInstance.leave(`workspace.${workspaceId}`);
       }
     };
-  }, [workspaceId, handleWorkspaceMemberUpdated, handleJoinRequestSent]);
+  }, [workspaceId]); // Dùng `workspaceId` làm dependency
 
   return useQuery({
     queryKey: ["workspace", workspaceId],
     queryFn: () => getWorkspaceById(workspaceId),
-    enabled: !!workspaceId,
+    enabled: !!workspaceId, // Đảm bảo rằng chỉ thực hiện query khi workspaceId có giá trị
     staleTime: 1000 * 60 * 5,
     cacheTime: 1000 * 60 * 30,
     onError: (error) => {
@@ -308,10 +311,10 @@ export const useRemoveMember = () => {
     mutationFn: ({ workspaceId, userId, moveType }) =>
       removeMemberWorkspace(workspaceId, userId, moveType),
     onSuccess: (response, variables) => {
-      // queryClient.invalidateQueries({
-      //   queryKey: ["workspace", variables.workspaceId],
-      //   exact: true,
-      // });
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", variables.workspaceId],
+        exact: true,
+      });
     },
     onError: (error) => {
       console.error("Error when removing member:", error);

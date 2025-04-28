@@ -208,7 +208,7 @@ const HomeBoard = ({ workspaces, workspaceLoading }) => {
 
       <Box id="guest-workspace">
         <Box id="guest-workspace">
-          <div id="myGuestWorkspace">
+        <div id="myGuestWorkspace">
             {guestWorkspaces?.length > 0 && (
               <>
                 <Typography

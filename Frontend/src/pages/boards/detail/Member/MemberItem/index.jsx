@@ -112,7 +112,6 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
           setIsRemoving(false); // Tắt trạng thái loading
           handleCloseRemoveDialog();
 
-          // If the user is leaving (not being removed by admin), redirect to their boards page
           if (isMe) {
             window.location.href = `/u/${user?.username || user?.id}/boards`;
           }

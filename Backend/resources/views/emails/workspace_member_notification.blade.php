@@ -136,7 +136,7 @@
             @else
               <img
                 src="https://static.vecteezy.com/system/resources/previews/026/619/142/original/default-avatar-profile-icon-of-social-media-user-photo-image-vector.jpg"
-                alt="{{ $inviter->user_name }}"
+                alt="{{ $inviter->full_name }}"
               />
             @endif
           </div>
@@ -166,6 +166,18 @@
                   <a href="{{ $url }}">{{ $workspace->display_name }}</a>.
                 </p>
                 @break
+              @case('send_request')
+                <p>
+                  <strong>{{ $inviter->full_name }}</strong> đã gửi yêu cầu tham gia Không gian làm việc
+                  <a href="{{ $url }}">{{ $workspace->display_name }}</a>.
+                </p>
+                @break
+              @case('join')
+                <p>
+                  <strong>{{ $inviter->full_name }}</strong> đã tham gia Không gian làm việc
+                  <a href="{{ $url }}">{{ $workspace->display_name }}</a>.
+                </p>
+                @break
               @default
                 <p>
                   Có cập nhật liên quan đến Không gian làm việc
@@ -173,6 +185,10 @@
                 </p>
             @endswitch
           </div>
+        </div>
+
+        <div style="text-align: center;">
+          <a href="{{ $url }}" class="button">Xem Không gian làm việc</a>
         </div>
 
         <div class="footer">

@@ -65,7 +65,7 @@ const SideBar = () => {
                         </ListItemIcon>
                         <ListItemText primary="Trang chủ" sx={{ color: "black" }} />
                     </ListItemButton>
-                </ListItem> */}
+                </ListItem>
             </List>
 
             <Typography sx={{ ml: 2, mt: 2, color: "gray", fontSize: "14px" }}>

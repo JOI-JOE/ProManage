@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\MemberInvitedToWorkspace;
 use App\Events\SendRequestJoinWorkspace;
+use App\Events\WorkspaceMemberCreated;
+use App\Events\WorkspaceMemberRemoved;
 use App\Events\WorkspaceMemberUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\WorkspaceMembersResource;
@@ -12,6 +14,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceInvitations;
 use App\Models\WorkspaceMembers;
+use App\Notifications\WorkspaceInvitationNotification;
 use App\Notifications\WorkspaceMemberNotification;
 use App\Notifications\WorkspaceMemberTypeChangedNotification;
 use Exception;
@@ -26,6 +29,7 @@ use Illuminate\Validation\ValidationException;
 
 class WorkspaceMembersController extends Controller
 {
+    // Done 1
     public function sendMemberWorkspace($workspaceId, Request $request)
     {
         $member = Auth::user();
@@ -47,13 +51,13 @@ class WorkspaceMembersController extends Controller
         // Function to send notification
         $sendNotification = function ($recipient, $link) use ($workspace, $member, $validated) {
             try {
-                $recipient->notify(new \App\Notifications\WorkspaceInvitationNotification(
+                $recipient->notify(new WorkspaceInvitationNotification(
                     $workspace->display_name,
                     $member->full_name,
                     $validated['message'] ?? null,
                     $link
                 ));
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error('Không thể gửi thông báo: ' . $e->getMessage());
             }
         };
@@ -76,12 +80,10 @@ class WorkspaceMembersController extends Controller
                         ]);
                 }
 
-                // For existing members, use direct workspace link
                 $link = env('FRONTEND_URL') . '/w/' . $workspaceId;
-
-                // Send notification with direct link
                 $sendNotification($user, $link);
-                event(new MemberInvitedToWorkspace($workspaceId, $user));
+                // event(new MemberInvitedToWorkspace($workspaceId, $user));
+                event(new WorkspaceMemberCreated($workspaceId, $user));
 
                 return response()->json([
                     'message' => $existingMember->joined
@@ -104,7 +106,9 @@ class WorkspaceMembersController extends Controller
 
             // Send notification with invite link
             $sendNotification($user, $link);
-            event(new MemberInvitedToWorkspace($workspaceId, $user));
+            // event(new MemberInvitedToWorkspace($workspaceId, $user));
+            event(new WorkspaceMemberCreated($workspaceId, $user));
+
 
             return response()->json(['message' => 'Người dùng đã được thêm và gửi lời mời thành công'], 201);
         } else {
@@ -146,13 +150,14 @@ class WorkspaceMembersController extends Controller
                         $link
                     )
                 );
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error('Không thể gửi email lời mời: ' . $e->getMessage());
             }
 
             return response()->json(['message' => 'Lời mời đã được gửi đến email mới'], 201);
         }
     }
+    // DOne 2
     public function changeType(Request $request, $workspaceId, $userId)
     {
         try {
@@ -203,8 +208,6 @@ class WorkspaceMembersController extends Controller
             event(new WorkspaceMemberUpdated(
                 $workspaceId,
                 $user,
-                'updated', // The action here is 'updated'
-                $validated['member_type']
             ));
 
             // Return success response
@@ -215,6 +218,7 @@ class WorkspaceMembersController extends Controller
         }
     }
     // function xóa 
+    // Done 3
     public function removeMemberFromWorkspace($workspaceId, $memberId, Request $request)
     {
         try {
@@ -308,7 +312,8 @@ class WorkspaceMembersController extends Controller
                             ));
                         }
 
-                        event(new WorkspaceMemberUpdated($workspaceId, $user, 'removed', null));
+                        // event(new WorkspaceMemberUpdated($workspaceId, $user, 'removed', null));
+                        event(new WorkspaceMemberRemoved($workspaceId, $user));
                     }
                 } elseif ($moveType === 'guest') {
                     // Case 2: Remove guest (board member but not workspace member)
@@ -421,7 +426,8 @@ class WorkspaceMembersController extends Controller
                             ));
                         }
 
-                        event(new WorkspaceMemberUpdated($workspaceId, $user, 'removed', null));
+                        // event(new WorkspaceMemberUpdated($workspaceId, $user, 'removed', null));
+                        event(new WorkspaceMemberRemoved($workspaceId, $user));
                     }
                 }
                 // If no results and a specific move_type was requested, return an error
@@ -469,10 +475,9 @@ class WorkspaceMembersController extends Controller
                             'remove'
                         ));
                     }
-
-                    event(new WorkspaceMemberUpdated($workspaceId, $user, 'removed', null));
+                    event(new WorkspaceMemberRemoved($workspaceId, $user));
                 }
-
+                // Bỏ code 
                 // Case 2: Remove guest
                 $isGuest = DB::table('board_members')
                     ->join('boards', 'board_members.board_id', '=', 'boards.id')
@@ -594,7 +599,7 @@ class WorkspaceMembersController extends Controller
                 'message' => 'Không gian làm việc không tồn tại.',
                 'error' => 'Workspace not found.'
             ], 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             Log::error("Lỗi khi xóa thành viên khỏi workspace: {$e->getMessage()}");
 
@@ -675,7 +680,8 @@ class WorkspaceMembersController extends Controller
                 DB::commit();
 
                 // Keep existing event
-                event(new MemberInvitedToWorkspace($workspaceId, $user));
+                // event(new MemberInvitedToWorkspace($workspaceId, $user));
+                event(new WorkspaceMemberCreated($workspaceId, $user));
 
                 // Add notification
                 $user->notify(new WorkspaceMemberNotification($currentUser, $user, $workspace, url("/workspaces/{$workspaceId}"), 'add'));
@@ -703,9 +709,8 @@ class WorkspaceMembersController extends Controller
 
                 DB::commit();
 
-                // Keep existing event
-                event(new MemberInvitedToWorkspace($workspaceId, $user));
-
+                // event(new MemberInvitedToWorkspace($workspaceId, $user));
+                event(new WorkspaceMemberCreated($workspaceId, $user));
                 // Add notification
                 $user->notify(new WorkspaceMemberNotification($currentUser, $user, $workspace, url("/workspaces/{$workspaceId}"), 'add'));
 
@@ -733,7 +738,7 @@ class WorkspaceMembersController extends Controller
                 'message' => 'Không gian làm việc không tồn tại.',
                 'error' => 'Workspace not found.'
             ], 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             Log::error("Lỗi khi thêm thành viên vào workspace: {$e->getMessage()}");
 
@@ -752,6 +757,7 @@ class WorkspaceMembersController extends Controller
             if (!$user instanceof User) {
                 throw new Exception('User không hợp lệ');
             }
+
             // Tìm workspace hoặc trả về lỗi nếu không tồn tại
             $workspace = Workspace::findOrFail($workspaceId);
 
@@ -776,10 +782,33 @@ class WorkspaceMembersController extends Controller
                 'last_active' => now(),
             ]);
 
+            // Lấy danh sách admin của workspace
+            $admins = WorkspaceMembers::where('workspace_id', $workspaceId)
+                ->where('member_type', 'admin')
+                ->with('user')
+                ->get();
+
+            // Gửi thông báo cho từng admin
+            foreach ($admins as $admin) {
+                try {
+                    $admin->user->notify(new WorkspaceMemberNotification(
+                        $user, // actor: người gửi yêu cầu
+                        $admin->user, // target: admin
+                        $workspace,
+                        env('FRONTEND_URL') . "/w/{$workspace->id}",
+                        'send_request'
+                    ));
+                    Log::info("Gửi thông báo cho admin {$admin->user->full_name} ({$admin->user->id}) về yêu cầu tham gia workspace {$workspace->name}.");
+                } catch (Exception $e) {
+                    Log::error("Lỗi khi gửi thông báo cho admin {$admin->user->id}: {$e->getMessage()}");
+                }
+            }
+
+            // Gửi event để xử lý realtime
             event(new SendRequestJoinWorkspace($user, $workspace));
 
             // Log lại hành động
-            Log::info("Người dùng {$user->name} ({$user->id}) đã gửi yêu cầu tham gia workspace {$workspace->name} ({$workspace->id}).");
+            Log::info("Người dùng {$user->full_name} ({$user->id}) đã gửi yêu cầu tham gia workspace {$workspace->name} ({$workspace->id}).");
 
             return response()->json([
                 'message' => 'Yêu cầu tham gia workspace đã được gửi thành công.',
@@ -867,6 +896,22 @@ class WorkspaceMembersController extends Controller
         if ($invitation->invited_member_id === null) {
             $invitation->invited_member_id = $user->id;
             $invitation->save();
+        }
+
+        // Notify all admins
+        $admins = WorkspaceMembers::where('workspace_id', $workspaceId)
+            ->where('member_type', 'admin')
+            ->with('user')
+            ->get();
+
+        foreach ($admins as $admin) {
+            $admin->user->notify(new WorkspaceMemberNotification(
+                $user, // actor: người tham gia
+                $admin->user, // target: admin
+                $workspace,
+                env('FRONTEND_URL') . "/w/{$workspace->id}/",
+                'join'
+            ));
         }
 
         return response()->json([

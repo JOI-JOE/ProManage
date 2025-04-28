@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\WorkspaceUpdate;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WorkspaceRequest;
 use App\Http\Resources\WorkspaceResource;
@@ -654,7 +655,6 @@ class WorkspaceController extends Controller
 
         // Validate dữ liệu đầu vào
         $validatedData = $request->validate([
-            // 'name' => 'sometimes|string|max:255',
             'display_name' => 'sometimes|string|max:50|unique:workspaces,display_name,' . $id,
             'desc' => 'nullable|string|max:1000',
         ]);
@@ -662,9 +662,12 @@ class WorkspaceController extends Controller
         // Cập nhật workspace với dữ liệu đã validate
         $workspace->update($validatedData);
 
+        // Dispatch event
+        // event(new WorkspaceUpdate($workspace->fresh()));
+
         return response()->json([
             'message' => 'Workspace updated successfully',
-            'data' => new WorkspaceResource($workspace->fresh()), // Sử dụng fresh() để tải lại dữ liệu mới nhất
+            'data' => new WorkspaceResource($workspace->fresh()),
         ], 200);
     }
 
@@ -695,13 +698,16 @@ class WorkspaceController extends Controller
 
             // Validate dữ liệu đầu vào
             $validatedData = $request->validate([
-                'permission_level' => 'required|in:public,private', // Bắt buộc và chỉ nhận public/private
+                'permission_level' => 'required|in:public,private',
             ]);
 
             // Cập nhật permission_level
             $workspace->update([
                 'permission_level' => $validatedData['permission_level'],
             ]);
+
+            // Dispatch event
+            // event(new WorkspaceUpdate($workspace->fresh()));
 
             return response()->json([
                 'message' => 'Cập nhật quyền truy cập Không gian làm việc thành công.',

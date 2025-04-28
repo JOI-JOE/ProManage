@@ -110,7 +110,7 @@ export const useSearchMembers = (query, idWorkspace) => {
 
 // function sau khi bấm gửi lời mời thêm vào trong trang thành viên
 export const useSendInviteWorkspace = () => {
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ workspaceId, email, memberId, message }) => {

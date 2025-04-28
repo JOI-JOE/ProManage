@@ -86,7 +86,7 @@ class WorkspaceInvitationsController extends Controller
                 'status'  => 'success',
                 'message' => 'Lời mời đã bị hủy!',
             ], Response::HTTP_OK);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Bạn không có quyền hủy lời mời này!',
@@ -240,13 +240,34 @@ class WorkspaceInvitationsController extends Controller
             $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
                 ->where('invite_token', $inviteToken)
                 ->with([
-                    'inviter:id,full_name,email,user_name', // Load thông tin người mời
-                    'workspace:id,name,display_name' // Load thông tin workspace
+                    'workspace:id,name,display_name', // Load thông tin workspace
                 ])
                 ->firstOrFail();
 
+            // Lấy thông tin người mời dựa trên invited_by_member_id
+            $inviterId = $invitation->invited_by_member_id ?? $invitation->invited_member_id;
+
+            $inviter = User::where('id', $inviterId)
+                ->select('id', 'full_name', 'email', 'user_name')
+                ->first();
+
+
+            // Kiểm tra nếu invitation có email
+            if (!empty($invitation->email)) {
+                // Lấy thông tin người dùng hiện tại
+                $currentUser = auth()->user();
+
+                // Xác minh email của người dùng hiện tại có khớp với email trong invitation
+                if (!$currentUser || $currentUser->email !== $invitation->email) {
+                    return response()->json([
+                        'isValid' => false,
+                        'message' => 'Email không khớp với lời mời!',
+                    ], 403);
+                }
+            }
+
             return response()->json([
-                'memberInviter' => $invitation->inviter, // Thông tin người mời
+                'memberInviter' => $inviter, // Thông tin người mời
                 'workspace'     => $invitation->workspace, // Thông tin workspace
                 'type'          => "normal"
             ], 200);
