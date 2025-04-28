@@ -148,6 +148,13 @@ export const useGetWorkspaceById = (workspaceId) => {
     }
   };
 
+  const handleWorkspaceUpdated = (event) => {
+    if (event?.id === workspaceId) {
+      invalidateQueries([["workspace", workspaceId]]);
+      invalidateQueries([["workspaces"]]);
+    }
+  };
+
   useEffect(() => {
     if (!workspaceId) return;
 
@@ -159,6 +166,7 @@ export const useGetWorkspaceById = (workspaceId) => {
     channel.listen(".workspace.member.removed", handleMemberRemoved);
     channel.listen(".workspace.member.created", handleMemberCreated);
     channel.listen(".workspace.member.updated", handleMemberUpdated);
+    channel.listen(".workspace.updated", handleWorkspaceUpdated);
     channel.listen(".JoinRequestSent", handleJoinRequestSent);
 
     // Cleanup khi component unmount hoặc workspaceId thay đổi
@@ -167,6 +175,7 @@ export const useGetWorkspaceById = (workspaceId) => {
         channelRef.current.stopListening(".workspace.member.removed");
         channelRef.current.stopListening(".workspace.member.created");
         channelRef.current.stopListening(".workspace.member.updated");
+        channelRef.current.stopListening(".workspace.updated");
         channelRef.current.stopListening(".JoinRequestSent");
         echoInstance.leave(`workspace.${workspaceId}`);
       }

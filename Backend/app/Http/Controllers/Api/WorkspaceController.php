@@ -662,8 +662,7 @@ class WorkspaceController extends Controller
         // Cập nhật workspace với dữ liệu đã validate
         $workspace->update($validatedData);
 
-        // Dispatch event
-        // event(new WorkspaceUpdate($workspace->fresh()));
+        event(new WorkspaceUpdate($workspace));
 
         return response()->json([
             'message' => 'Workspace updated successfully',
