@@ -339,14 +339,14 @@ const Col = ({ column }) => {
                                 <ContentCopyIcon />
                                 Copy
                             </MenuItem>
-                            <MenuItem
+                            {/* <MenuItem
                                 onClick={handleClose}
                                 disableRipple
                                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
                             >
                                 <VisibilityIcon />
                                 Theo dõi
-                            </MenuItem>
+                            </MenuItem> */}
 
                             <Divider sx={{ my: 0.5 }} />
 
@@ -356,7 +356,7 @@ const Col = ({ column }) => {
                                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
                             >
                                 <ArchiveIcon />
-                                Archive this column
+                              Lưu trữ
                             </MenuItem>
 
                             <MenuItem
@@ -365,7 +365,7 @@ const Col = ({ column }) => {
                                 sx={{ fontSize: "0.85rem", color: "secondary.main" }}
                             >
                                 <DeleteForeverIcon />
-                                Remove this column
+                               Xoá
                             </MenuItem>
                         </StyledMenu>
                     </Box>
