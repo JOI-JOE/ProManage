@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, IconButton, TextField } from "@mui/material";
+import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, IconButton, TextField, ListItem, ListItemButton, ListItemIcon, ListItemText, Button } from "@mui/material";
 import { useParams } from "react-router-dom";
 import { useGetWorkspaceById, useGetWorkspaceByName } from "../../../../../hooks/useWorkspace";
 import { useQueryClient } from "@tanstack/react-query";
@@ -14,6 +14,11 @@ import MemberSelector from "./details/MemberSelector";
 import DateSelector from "./details/DateSelector";
 import LabelList from "./details/LabelList"; // Import LabelList
 import EditIcon from "@mui/icons-material/Edit";
+import AddCardModal from "../GanttChart/AddCardModal";
+import MoveUpIcon from "@mui/icons-material/MoveUp";
+import AddIcon from "@mui/icons-material/Add"; // dùng icon Add
+
+
 
 const TableView = () => {
     const queryClient = useQueryClient();
@@ -28,7 +33,7 @@ const TableView = () => {
     } = useGetWorkspaceById(workspaceId, {
         enabled: !!workspaceId,
     });
-    console.log(workspace);
+    // console.log(workspace);
     const { mutate: toggleCardCompletion } = useToggleCardCompletion();
     const { mutate: updateCardList } = useUpdateCardByList();
     const { mutate: addCardMember } = useAddMemberByCard();
@@ -37,18 +42,21 @@ const TableView = () => {
     const { mutate: updateCardTitle } = useUpdateCardTitle();
 
     const boardIds = workspace?.boards
-  ?.filter(board => !board.closed)
-  .map(board => board.id);
+        ?.filter(board => !board.closed)
+        .map(board => board.id);
 
     const { data: TableView = [] } = useTableView(boardIds);
     const { data: boardLists = [] } = useListByBoard(boardIds);
     const [tableData, setTableData] = useState([]);
+    console.log(tableData);
     const boardIdsForMembers = tableData.map(row => row.board_id);
     const { data: allBoardMembers = [] } = useMemberByBoard(boardIdsForMembers);
     const [editState, setEditState] = useState({});
     // State để quản lý dialog LabelList
     const [openLabelDialog, setOpenLabelDialog] = useState(false);
     const [selectedCard, setSelectedCard] = useState(null);
+    const [isMoveCardModalOpen, setIsMoveCardModalOpen] = useState(false); // State để mở/đóng modal di chuyển
+
     useEffect(() => {
         if (TableView?.length) {
             setTableData(TableView);
@@ -318,8 +326,14 @@ const TableView = () => {
                 <Box sx={{ fontSize: "1.5rem", fontWeight: "bold" }}>Bảng</Box>
             </Box>
 
-            <TableContainer component={Paper} sx={{ boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)" }}>
-                <Table>
+            <TableContainer component={Paper}
+                sx={{
+                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                    maxHeight: "600px", // 📌 Giới hạn chiều cao (tuỳ chỉnh cao thấp)
+                    overflow: "auto",   // 📌 Cho phép scroll
+                }}  
+            >
+                <Table stickyHeader>
                     <TableHead>
                         <TableRow sx={{ backgroundColor: "#f4f5f7" }}>
                             <TableCell>Thẻ</TableCell>
@@ -538,7 +552,7 @@ const TableView = () => {
                 </Table>
             </TableContainer>
 
-            {/* Dialog LabelList */}
+
             {selectedCard && (
                 <LabelList
                     open={openLabelDialog}
@@ -547,7 +561,46 @@ const TableView = () => {
                     boardId={selectedCard.board_id}
                 />
             )}
+
+            <Box
+                sx={{
+                    position: "absolute",
+                    bottom: 16,
+                    left: 30,
+                    zIndex: 10,
+                }}
+            >
+                <Button
+                    onClick={() => setIsMoveCardModalOpen(true)}
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    sx={{
+                        textTransform: "none",
+                        fontWeight: 500,
+                        backgroundColor: "#0079bf",
+                        color: "#fff",
+                        "&:hover": {
+                            backgroundColor: "#026aa7",
+                        },
+                        borderRadius: 2,
+                        fontSize: "14px",
+                        px: 2,
+                        py: 1,
+                        boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.15)",
+                    }}
+                >
+                    Thêm
+                </Button>
+            </Box>
+
+            <AddCardModal
+                workspace={workspace}
+                boardIds={boardIds}
+                open={isMoveCardModalOpen}
+                onClose={() => setIsMoveCardModalOpen(false)}
+            />
         </Box>
+
     );
 };
 

@@ -34,7 +34,7 @@ export const useCreateBoard = () => {
   return useMutation({
     mutationFn: createBoard, // Gọi API tạo board
     onSuccess: () => {
-      queryClient.invalidateQueries(["workspaces"]);
+      queryClient.invalidateQueries({queryKey: ["workspaces"]});
     },
   });
 };
