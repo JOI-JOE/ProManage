@@ -76,8 +76,6 @@ class WorkspaceMemberNotification extends Notification implements ShouldQueue
      */
     public function toArray($notifiable): array
     {
-        Log::info("Gửi thông báo cho: {$notifiable->full_name}, action_type: {$this->action_type}");
-
         return [
             'message' => $this->getMessage($notifiable),
             'url' => $this->url,
@@ -174,8 +172,6 @@ class WorkspaceMemberNotification extends Notification implements ShouldQueue
     }
 
     /**
-     * Notify all admins of the workspace.
-     * This method should be called externally when needed.
      *
      * @return void
      */

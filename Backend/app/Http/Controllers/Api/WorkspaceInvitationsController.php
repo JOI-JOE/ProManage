@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\WorkspaceInvitationCanceled;
 use App\Http\Controllers\Controller;
 use App\Jobs\SendWorkspaceEmailJob;
 use App\Models\User;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class WorkspaceInvitationsController extends Controller
@@ -73,14 +75,16 @@ class WorkspaceInvitationsController extends Controller
     }
     public function cancelInvitationSecret($workspaceId)
     {
-        try {
-            $user = Auth::user(); // Lấy thông tin người dùng hiện tại
+    try {
+            $user = Auth::user();
 
             $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
-                ->where('invited_by_member_id', $user->id) // Chỉ xóa nếu là người tạo
+                ->where('invited_by_member_id', $user->id)
                 ->firstOrFail();
 
             $invitation->delete();
+
+            broadcast(new WorkspaceInvitationCanceled($workspaceId))->toOthers();
 
             return response()->json([
                 'status'  => 'success',
@@ -90,7 +94,7 @@ class WorkspaceInvitationsController extends Controller
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Bạn không có quyền hủy lời mời này!',
-            ], Response::HTTP_FORBIDDEN); // 403: Forbidden
+            ], Response::HTTP_FORBIDDEN);
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',
@@ -234,9 +238,27 @@ class WorkspaceInvitationsController extends Controller
         similar_text(strtolower($query), strtolower($text), $percent);
         return $percent / 100;
     }
+
+    private function isWorkspaceFull($workspaceId)
+    {
+        $memberCount = DB::table('workspace_members')
+            ->where('workspace_id', $workspaceId)
+            ->where('joined', true)
+            ->count();
+
+        return $memberCount >= 10;
+    }
     public function getInvitationSecretByReferrer($workspaceId, $inviteToken)
     {
         try {
+            // Check if workspace has reached member limit
+            if ($this->isWorkspaceFull($workspaceId)) {
+                return response()->json([
+                    'isValid' => false,
+                    'message' => 'Không gian làm việc đã đạt giới hạn 10 thành viên!',
+                ], 403);
+            }
+
             $invitation = WorkspaceInvitations::where('workspace_id', $workspaceId)
                 ->where('invite_token', $inviteToken)
                 ->with([
@@ -250,7 +272,6 @@ class WorkspaceInvitationsController extends Controller
             $inviter = User::where('id', $inviterId)
                 ->select('id', 'full_name', 'email', 'user_name')
                 ->first();
-
 
             // Kiểm tra nếu invitation có email
             if (!empty($invitation->email)) {
@@ -267,8 +288,8 @@ class WorkspaceInvitationsController extends Controller
             }
 
             return response()->json([
-                'memberInviter' => $inviter, // Thông tin người mời
-                'workspace'     => $invitation->workspace, // Thông tin workspace
+                'memberInviter' => $inviter,
+                'workspace'     => $invitation->workspace,
                 'type'          => "normal"
             ], 200);
         } catch (ModelNotFoundException $e) {

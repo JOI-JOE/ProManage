@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\WorkspaceUpdate;
+use App\Events\WorkspaceUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WorkspaceRequest;
 use App\Http\Resources\WorkspaceResource;
@@ -643,10 +643,10 @@ class WorkspaceController extends Controller
     }
     public function updateWorkspaceInfo(Request $request, $id)
     {
+        $userId = auth()->id();
         // Tìm workspace dựa trên ID
         $workspace = Workspace::find($id);
 
-        // Nếu không tìm thấy workspace, trả về lỗi 404
         if (!$workspace) {
             return response()->json([
                 'message' => 'Workspace not found.',
@@ -662,27 +662,26 @@ class WorkspaceController extends Controller
         // Cập nhật workspace với dữ liệu đã validate
         $workspace->update($validatedData);
 
-        event(new WorkspaceUpdate($workspace));
+        event(new WorkspaceUpdated($workspace, $userId));
 
         return response()->json([
             'message' => 'Workspace updated successfully',
-            'data' => new WorkspaceResource($workspace->fresh()),
+            'id' => $workspace->id,
         ], 200);
     }
 
     public function updateWorkspacePermissionLevel(Request $request, $workspaceId)
     {
         try {
+            $userId = auth()->id();
             // Tìm workspace dựa trên workspaceId
             $workspace = Workspace::find($workspaceId);
-
             // Nếu không tìm thấy workspace, trả về lỗi 404
             if (!$workspace) {
                 return response()->json([
                     'message' => 'Không gian làm việc không tồn tại.',
                 ], 404);
             }
-
             // Kiểm tra quyền admin
             $isAdmin = WorkspaceMembers::where('workspace_id', $workspaceId)
                 ->where('user_id', auth()->id())
@@ -706,11 +705,11 @@ class WorkspaceController extends Controller
             ]);
 
             // Dispatch event
-            // event(new WorkspaceUpdate($workspace->fresh()));
+            event(new WorkspaceUpdated($workspace, $userId));
 
             return response()->json([
                 'message' => 'Cập nhật quyền truy cập Không gian làm việc thành công.',
-                'data' => new WorkspaceResource($workspace->fresh()),
+                'id' => $workspaceId,
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([

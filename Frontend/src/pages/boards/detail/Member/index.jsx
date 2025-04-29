@@ -465,7 +465,7 @@ const Member = () => {
               </>
             )}
             {activeTab === 'guests' && (
-              <Guest isAdmin={isAdmin} guests={guests} workspaceId={workspaceId} />
+              <Guest isAdmin={isAdmin} guests={guests} workspaceId={workspaceId} boards={workspace?.boards} />
             )}
             {activeTab === 'requests' && (
               <Request isAdmin={isAdmin} requests={requests} workspaceId={workspaceId} />

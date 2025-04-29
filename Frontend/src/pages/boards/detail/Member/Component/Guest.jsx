@@ -7,31 +7,22 @@ import {
     Divider,
     Snackbar,
     Alert,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogContentText,
-    DialogActions
+    Popover,
+    Avatar
 } from "@mui/material";
-import CloseIcon from '@mui/icons-material/Close';
 import InitialsAvatar from '../../../../../components/Common/InitialsAvatar';
 import LogoLoading from '../../../../../components/Common/LogoLoading';
-import { useRemoveMember } from '../../../../../hooks/useWorkspace';
 import { useAddNewMemberToWorkspace } from '../../../../../hooks/useWorkspaceInvite';
 
-const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
+const Guest = ({ isAdmin, guests: initialGuests, workspaceId, boards }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loadingAdd, setLoadingAdd] = useState(null);
-    const [loadingRemove, setLoadingRemove] = useState(null);
     const [guests, setGuests] = useState(initialGuests || []);
     const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
-    const [confirmDialog, setConfirmDialog] = useState({
-        open: false,
-        userId: null,
-        userName: ''
-    });
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [selectedGuest, setSelectedGuest] = useState(null);
+
     const { mutateAsync: addMemberToWorkspace } = useAddNewMemberToWorkspace();
-    const { mutate: removeMember, isLoading: isRemovingMember } = useRemoveMember();
 
     // Sync guests state with initialGuests prop
     useEffect(() => {
@@ -86,63 +77,22 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
         }
     };
 
-    const handleOpenConfirmDialog = (userId, userName) => {
-        setConfirmDialog({
-            open: true,
-            userId: userId,
-            userName: userName
-        });
-    };
-
-    const handleCloseConfirmDialog = () => {
-        setConfirmDialog({
-            open: false,
-            userId: null,
-            userName: ''
-        });
-    };
-
-    const handleRemoveGuest = () => {
-        const userId = confirmDialog.userId;
-        if (!userId) return;
-
-        setLoadingRemove(userId);
-        removeMember(
-            {
-                workspaceId,
-                userId,
-                moveType: 'guest' // Specify move_type for guest removal
-            },
-            {
-                onSuccess: () => {
-                    setGuests((prevGuests) =>
-                        prevGuests.filter((guest) => guest.user.id !== userId)
-                    );
-                    setAlert({
-                        open: true,
-                        message: `Đã xóa khách ${confirmDialog.userName} khỏi Không gian làm việc.`,
-                        severity: 'success'
-                    });
-                    handleCloseConfirmDialog();
-                },
-                onError: (error) => {
-                    setAlert({
-                        open: true,
-                        message: error.response?.data?.message || 'Đã xảy ra lỗi khi xóa khách.',
-                        severity: 'error'
-                    });
-                    console.error("❌ Lỗi khi xóa khách:", error);
-                },
-                onSettled: () => {
-                    setLoadingRemove(null);
-                }
-            }
-        );
-    };
-
     const handleCloseAlert = () => {
         setAlert({ ...alert, open: false });
     };
+
+    const handleViewBoardsClick = (event, guest) => {
+        setAnchorEl(event.currentTarget);
+        setSelectedGuest(guest);
+    };
+
+    const handleClosePopover = () => {
+        setAnchorEl(null);
+        setSelectedGuest(null);
+    };
+
+    const open = Boolean(anchorEl);
+    const id = open ? "guest-boards-popover" : undefined;
 
     const safeSearch = typeof searchTerm === 'string' ? searchTerm.toLowerCase() : '';
     const filteredGuests = Array.isArray(guests)
@@ -151,8 +101,16 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
         )
         : [];
 
+    // Hàm lấy danh sách bảng mà guest thuộc về dựa trên user_id
+    const getGuestBoards = (userId) => {
+        if (!Array.isArray(boards)) return [];
+        return boards.filter((board) =>
+            board.members.some((bm) => bm.user_id === userId)
+        );
+    };
+
     return (
-        <Box>
+        <Box id="guest">
             <Snackbar
                 open={alert.open}
                 autoHideDuration={6000}
@@ -163,41 +121,6 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
                     {alert.message}
                 </Alert>
             </Snackbar>
-
-            <Dialog
-                open={confirmDialog.open}
-                onClose={handleCloseConfirmDialog}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-            >
-                <DialogTitle id="alert-dialog-title">
-                    {"Xóa khách"}
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                        Đã gỡ khỏi Không gian làm việc.<br />
-                        Xóa toàn bộ truy cập tới Không gian làm việc. Họ sẽ nhận được thông báo.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseConfirmDialog} color="primary">
-                        Hủy
-                    </Button>
-                    <Button
-                        onClick={handleRemoveGuest}
-                        color="error"
-                        variant="contained"
-                        autoFocus
-                        disabled={loadingRemove === confirmDialog.userId || isRemovingMember}
-                    >
-                        {loadingRemove === confirmDialog.userId ? (
-                            <LogoLoading size={20} />
-                        ) : (
-                            'Xóa'
-                        )}
-                    </Button>
-                </DialogActions>
-            </Dialog>
 
             <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 'bold', mb: 2 }}>
                 Khách ({guests?.length})
@@ -231,67 +154,99 @@ const Guest = ({ isAdmin, guests: initialGuests, workspaceId }) => {
                     }
                 }}
             />
+            {filteredGuests?.map((guest) => {
+                // Lấy danh sách bảng của guest hiện tại
+                const guestBoards = getGuestBoards(guest.user.id);
 
-            {filteredGuests?.map((guest) => (
-                <Box key={guest.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: "space-between", mb: 2 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <InitialsAvatar
-                            name={guest?.user?.full_name}
-                            avatarSrc={guest?.user.image}
-                            initials={guest?.user?.initials}
-                            size={32}
-                        />
-                        <Box sx={{ flexGrow: 1 }}>
-                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                {guest?.user.full_name}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {guest?.user.email} • {guest.user.type}
-                            </Typography>
+                return (
+                    <Box key={guest.user.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: "space-between", mb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <InitialsAvatar
+                                name={guest?.user?.full_name}
+                                avatarSrc={guest?.user.image}
+                                initials={guest?.user?.initials}
+                                size={32}
+                            />
+                            <Box sx={{ flexGrow: 1 }}>
+                                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                    {guest?.user.full_name} ({guest?.user?.initials || ''})
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    @{guest?.user.email.split('@')[0]} •
+                                </Typography>
+                            </Box>
                         </Box>
-                    </Box>
 
-                    {isAdmin && (
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            {loadingAdd === guest?.user?.id ? (
-                                <Box sx={{ px: 2, py: 0.5 }}>
-                                    <LogoLoading size={20} />
-                                </Box>
-                            ) : (
+                        {isAdmin && (
+                            <Box sx={{ display: 'flex', gap: 1 }}>
                                 <Button
-                                    variant="contained"
+                                    variant="outlined"
                                     size="small"
                                     sx={{
                                         textTransform: 'none',
-                                        bgcolor: '#EBEEF0',
+                                        borderColor: '#EBEEF0',
                                         color: '#172B4D',
-                                        '&:hover': { bgcolor: '#D8DEE4' }
+                                        '&:hover': { borderColor: '#D8DEE4' }
                                     }}
-                                    onClick={() => handleAddGuest(guest?.user?.id)}
+                                    onClick={(event) => handleViewBoardsClick(event, guest)}
                                 >
-                                    Thêm vào Không gian làm việc
+                                    Xem bằng thông tin ({guestBoards.length})
                                 </Button>
-                            )}
-                            {/* <Button
-                                variant="text"
-                                sx={{
-                                    minWidth: '32px',
-                                    borderRadius: '4px',
-                                    color: '#57606f'
-                                }}
-                                onClick={() => handleOpenConfirmDialog(guest?.user?.id, guest?.user?.full_name)}
-                                disabled={loadingRemove === guest?.user?.id}
-                            >
-                                {loadingRemove === guest?.user?.id ? (
-                                    <LogoLoading size={20} />
+                                {loadingAdd === guest?.user?.id ? (
+                                    <Box sx={{ px: 2, py: 0.5 }}>
+                                        <LogoLoading scale={0.3} />
+                                    </Box>
                                 ) : (
-                                    <CloseIcon fontSize="small" />
+                                    <Button
+                                        variant="contained"
+                                        size="small"
+                                        sx={{
+                                            textTransform: 'none',
+                                            bgcolor: '#EBEEF0',
+                                            color: '#172B4D',
+                                            '&:hover': { bgcolor: '#D8DEE4' }
+                                        }}
+                                        onClick={() => handleAddGuest(guest?.user?.id)}
+                                    >
+                                        Thêm vào Không gian làm việc
+                                    </Button>
                                 )}
-                            </Button> */}
-                        </Box>
+                            </Box>
+                        )}
+                    </Box>
+                );
+            })}
+
+            {/* Popover hiển thị danh sách bảng */}
+            <Popover
+                id={id}
+                open={open}
+                anchorEl={anchorEl}
+                onClose={handleClosePopover}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            >
+                <Box sx={{ p: 2, width: 250 }}>
+                    <Typography fontWeight="bold">Bảng thông tin</Typography>
+                    <Typography variant="body2">
+                        {selectedGuest?.user?.full_name || "Không xác định"} là thành viên của:
+                    </Typography>
+                    {selectedGuest && getGuestBoards(selectedGuest.user.id).length > 0 ? (
+                        getGuestBoards(selectedGuest.user.id).map((board) => (
+                            <Box
+                                key={board.id}
+                                sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}
+                            >
+                                <Avatar src={board.thumbnail} sx={{ width: 30, height: 30 }} />
+                                <Typography variant="body2">{board.name}</Typography>
+                            </Box>
+                        ))
+                    ) : (
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                            Chưa tham gia bảng nào
+                        </Typography>
                     )}
                 </Box>
-            ))}
+            </Popover>
         </Box>
     );
 };

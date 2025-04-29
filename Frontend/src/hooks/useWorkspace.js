@@ -108,6 +108,7 @@ export const useGetWorkspaces = () => {
 export const useGetWorkspaceById = (workspaceId) => {
   const queryClient = useQueryClient();
   const channelRef = useRef(null);
+  const { user } = useMe();
 
   // Hàm chung để invalidate queries
   const invalidateQueries = (queries) => {
@@ -121,7 +122,6 @@ export const useGetWorkspaceById = (workspaceId) => {
 
   // Hàm xử lý khi thông tin thành viên workspace được cập nhật
   const handleMemberUpdated = (event) => {
-    console.log(event);
     if (event?.workspace_id === workspaceId) {
       invalidateQueries([["workspace", workspaceId]]);
     }
@@ -136,7 +136,6 @@ export const useGetWorkspaceById = (workspaceId) => {
 
   // Hàm xử lý khi thành viên được thêm vào workspace
   const handleMemberCreated = (event) => {
-    console.log(event);
     if (event?.workspace_id === workspaceId) {
       invalidateQueries([["workspace", workspaceId]]);
     }
@@ -149,9 +148,8 @@ export const useGetWorkspaceById = (workspaceId) => {
   };
 
   const handleWorkspaceUpdated = (event) => {
-    if (event?.id === workspaceId) {
-      invalidateQueries([["workspace", workspaceId]]);
-      invalidateQueries([["workspaces"]]);
+    if (event?.workspace_id === workspaceId && event?.user_id !== user?.id) {
+      invalidateQueries([["workspace", workspaceId], ["workspaces"]]);
     }
   };
 
@@ -180,7 +178,7 @@ export const useGetWorkspaceById = (workspaceId) => {
         echoInstance.leave(`workspace.${workspaceId}`);
       }
     };
-  }, [workspaceId]); // Dùng `workspaceId` làm dependency
+  }, [workspaceId]);
 
   return useQuery({
     queryKey: ["workspace", workspaceId],

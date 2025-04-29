@@ -1,11 +1,16 @@
 import { Button } from "@mui/material";
 import { useJoinWorkspace } from "../../../../hooks/useWorkspaceInvite";
-// import { useJoinWorkspace } from "../../../../hooks/useJoinWorkspace"; // <-- dùng đúng hook
+import { useState } from "react";
+import LogoLoading from "../../../../components/Common/LogoLoading";
+import { useMe } from "../../../../contexts/MeContext";
+import { useNavigate } from "react-router-dom";
 
 const InviteWithToken = ({ inviteData, invitation }) => {
-  const token = invitation?.inviteToken; // sửa key đúng là inviteToken
+  const navigate = useNavigate()
+  const token = invitation?.inviteToken;
   const inviter = inviteData?.memberInviter;
   const workspace = inviteData?.workspace;
+  const [loading, setLoading] = useState(false);
 
   const { mutate: joinWorkspace, isLoading: isJoining } = useJoinWorkspace();
 
@@ -15,15 +20,18 @@ const InviteWithToken = ({ inviteData, invitation }) => {
       return;
     }
 
+    setLoading(true);
+
     joinWorkspace(
       { workspaceId: workspace.id, token },
       {
         onSuccess: () => {
-          alert("Bạn đã tham gia không gian làm việc thành công!");
           window.location.reload();
+          window.location.href = `/w/${workspace.id}`;
         },
         onError: (error) => {
           alert(`Lỗi: ${error?.message || "Không thể tham gia workspace"}`);
+          setLoading(false);
         },
       }
     );
@@ -57,7 +65,13 @@ const InviteWithToken = ({ inviteData, invitation }) => {
           },
         }}
       >
-        {isJoining ? "Đang tham gia..." : "Tham gia vào không gian làm việc"}
+        {loading ? (
+          <>
+            <LogoLoading scale={0.4} />
+          </>
+        ) : (
+          "Tham gia vào không gian làm việc"
+        )}
       </Button>
     </div>
   );

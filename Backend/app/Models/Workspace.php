@@ -88,9 +88,4 @@ class Workspace extends Model
         return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id')
             ->where('member_type', 'admin'); // Điều kiện để lọc admin
     }
-
-    protected $dispatchesEvents = [
-        'created' => WorkspaceUpdate::class,
-        'updated' => WorkspaceUpdate::class
-    ];
 }

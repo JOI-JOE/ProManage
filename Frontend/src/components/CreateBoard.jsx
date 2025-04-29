@@ -398,7 +398,6 @@ const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
           >
             {(isCreatingBoard || isSubmitting) ? (
               <LogoLoading scale={0.4} />
-
             ) : (
               "Tạo bảng"
             )}

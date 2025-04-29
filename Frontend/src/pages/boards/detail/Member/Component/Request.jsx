@@ -97,13 +97,20 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
                 severity: 'success'
             });
         } catch (error) {
+            let errorMessage = 'Đã xảy ra lỗi khi xử lý yêu cầu.';
+            if (error?.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error?.message) {
+                errorMessage = error.message;
+            }
+
             setAlert({
                 open: true,
-                message: error.response?.data?.message || 'Đã xảy ra lỗi khi xử lý yêu cầu.',
+                message: errorMessage,
                 severity: 'error'
             });
-            console.error("❌ Lỗi khi thêm thành viên:", error);
-        } finally {
+        }
+        finally {
             setLoadingAdd(null);
         }
     };

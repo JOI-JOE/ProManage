@@ -7,7 +7,9 @@ import { getListByBoardId } from "../api/models/listsApi";
 
 const BoardProvider = ({ children }) => {
   const { boardId } = useParams();
-  const { data: board, isLoading: isLoadingBoard } = useLists(boardId);
+  const { data: board, isLoading: isLoadingBoard } = useLists(boardId, {
+    enabled: !!boardId,
+  });
 
   const [lists, setLists] = useState([]);
   const [error, setError] = useState(null);

@@ -178,7 +178,7 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
       {/* Action buttons */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         {/* View boards button */}
-        <Button
+        {/* <Button
           variant="contained"
           onClick={handleClick}
           size="small"
@@ -194,6 +194,20 @@ const MemberItem = ({ member, boards = [], workspace, isAdmin }) => {
           }}
         >
           Xem bảng ({memberBoards.length})
+        </Button> */}
+
+        <Button
+          variant="outlined"
+          size="small"
+          sx={{
+            textTransform: 'none',
+            borderColor: '#EBEEF0',
+            color: '#172B4D',
+            '&:hover': { borderColor: '#D8DEE4' }
+          }}
+          onClick={handleClick}
+        >
+          Xem bằng thông tin  ({memberBoards.length})
         </Button>
 
         <Popover

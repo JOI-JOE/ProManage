@@ -2,49 +2,46 @@
 
 namespace App\Events;
 
-use App\Models\Workspace;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
-class WorkspaceUpdate implements ShouldBroadcast
+class WorkspaceUpdated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $workspace;
 
-    /**
-     */
-    public function __construct(Workspace $workspace)
+    public $userId;
+
+    public function __construct($workspace, $userId)
     {
         $this->workspace = $workspace;
+        $this->userId = $userId;
     }
-
     /**
      * The channels the event should broadcast on.
      */
     public function broadcastOn()
     {
-        return new Channel('workspace.' . $this->workspace->id);
+        return [
+            new Channel("workspace.{$this->workspace->id}")
+        ];
     }
 
     public function broadcastWith(): array
     {
         // Xây dựng dữ liệu payload
         $data = [
-            'id' => $this->workspace->id,
+            'workspace_id' => $this->workspace->id,
+            'user_id' => $this->userId,
         ];
-
         return $data;
     }
 
-    /**
-     * The name of the event being broadcast.
-     *
-     * @return string
-     */
     public function broadcastAs()
     {
         return 'workspace.updated';

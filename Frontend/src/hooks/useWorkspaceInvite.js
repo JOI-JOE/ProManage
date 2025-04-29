@@ -12,6 +12,8 @@ import {
   sendJoinRequest,
   addNewMemberToWorkspace,
 } from "../api/models/inviteWorkspaceApi";
+import { useEffect, useRef } from "react";
+import echoInstance from "./realtime/useRealtime";
 
 // Hook mutation
 export const useAddMemberToWorkspaceDirection = () => {
@@ -88,11 +90,38 @@ export const useCancelInvitationWorkspace = () => {
 };
 
 export const useGetInvitationSecretByReferrer = (workspaceId, inviteToken) => {
+  const queryClient = useQueryClient();
+  const channelRef = useRef(null);
+
+  const handleInvitationCanceled = (event) => {
+    if (event?.workspaceId === workspaceId) {
+      console.warn("📣 Lời mời đã bị huỷ:", event);
+      queryClient.invalidateQueries(["linkInviteWorkspace"]);
+    }
+  };
+
+  useEffect(() => {
+    if (!workspaceId) return;
+
+    const channelName = `workspace.invite.${workspaceId}`;
+    const channel = echoInstance.channel(channelName);
+    channelRef.current = channel;
+
+    channel.listen(".invitation.canceled", handleInvitationCanceled);
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.stopListening(".invitation.canceled");
+        echoInstance.leave(channelName);
+      }
+    };
+  }, [workspaceId]);
+
   return useQuery({
-    queryKey: ["workspaces", workspaceId, "invitationSecret", inviteToken], // Add inviteToken to the queryKey
+    queryKey: ["linkInviteWorkspace"],
     queryFn: () => getInvitationSecretByReferrer(workspaceId, inviteToken),
     onError: (error) => {
-      console.error("Lỗi khi lấy dữ liệu của workspace");
+      console.error("Lỗi khi lấy dữ liệu của workspace:", error);
     },
     enabled: !!workspaceId && !!inviteToken,
     retry: false,
@@ -102,7 +131,7 @@ export const useGetInvitationSecretByReferrer = (workspaceId, inviteToken) => {
 // function tìm người dùng
 export const useSearchMembers = (query, idWorkspace) => {
   return useQuery({
-    queryKey: ["searchMembers", query, idWorkspace], // 🔥 Cache dựa trên params
+    queryKey: ["searchMembers", query, idWorkspace],
     queryFn: () => getSearchMembers({ query, idWorkspace }),
     enabled: !!query && !!idWorkspace, // Chỉ gọi API nếu có đủ tham số
   });
@@ -110,15 +139,11 @@ export const useSearchMembers = (query, idWorkspace) => {
 
 // function sau khi bấm gửi lời mời thêm vào trong trang thành viên
 export const useSendInviteWorkspace = () => {
-  // const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ workspaceId, email, memberId, message }) => {
       return sendInviteWorkspace(workspaceId, { email, memberId, message });
     },
-    onSuccess: (data) => {
-      // queryClient.invalidateQueries(["workspace", workspaceId]);
-    },
+    onSuccess: (data) => {},
     onError: (error) => {
       console.error("❌ Lỗi khi gửi lời mời:", error);
     },
@@ -138,13 +163,10 @@ export const useJoinWorkspace = () => {
       queryClient.invalidateQueries({
         queryKey: ["workspace", data.workspace_id],
       });
-
-      console.log("✅ Tham gia workspace thành công:", data);
     },
 
     onError: (error) => {
       const errorMessage = error?.message || "Đã xảy ra lỗi không xác định";
-      console.error("❌ Lỗi khi tham gia workspace:", errorMessage);
     },
   });
 };
@@ -159,7 +181,6 @@ export const useSendJoinRequest = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["user_main"] });
-      console.log("✅ Tham gia workspace thành công:", data);
     },
 
     onError: (error) => {
@@ -185,7 +206,6 @@ export const useAddNewMemberToWorkspace = () => {
     },
     onError: (error) => {
       const errorMessage = error?.message || "Đã xảy ra lỗi không xác định";
-      console.error("❌ Lỗi khi tham gia workspace:", errorMessage);
     },
   });
 };

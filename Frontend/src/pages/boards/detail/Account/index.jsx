@@ -213,7 +213,7 @@ const Account = () => {
         sx={{
           padding: "24px",
           boxShadow: "none",
-          maxWidth: "1000px",
+          maxWidth: "1100px",
           margin: "30px auto",
           border: "1px solid #dfe1e6",
           borderRadius: "8px",
@@ -381,7 +381,7 @@ const Account = () => {
           </Popover>
         </Box>
 
-        <Button
+        {/* <Button
           variant="outlined"
           color="error"
           onClick={handleDeleteClick}
@@ -401,10 +401,10 @@ const Account = () => {
           }}
         >
           Xóa Không gian làm việc này
-        </Button>
+        </Button> */}
       </Paper>
 
-      <Popover
+      {/* <Popover
         open={Boolean(deleteAnchorEl)}
         anchorEl={deleteAnchorEl}
         onClose={handleCloseDeletePopover}
@@ -545,7 +545,7 @@ const Account = () => {
             </Button>
           </Box>
         </Box>
-      </Popover>
+      </Popover> */}
     </Box>
   );
 };
