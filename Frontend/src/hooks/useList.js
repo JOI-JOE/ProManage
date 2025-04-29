@@ -304,6 +304,17 @@ export const useListsClosed = (boardId) => {
         },
       });
 
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return (
+            queryKey[0] === 'table-view' &&
+            Array.isArray(queryKey[1]) &&
+            queryKey[1].includes(boardId)
+          );
+        },
+      });
+
     },
   });
 
