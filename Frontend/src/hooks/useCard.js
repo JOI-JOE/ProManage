@@ -34,12 +34,23 @@ export const useCreateCard = () => {
       console.error("❌ Lỗi khi tạo thẻ:", error);
     },
     onSuccess: (data, listId) => {
-      // console.log(`🔄 Cập nhật trạng thái lưu trữ cho list ${listId}`);
+      // console.log(data.list_board.board_id);
 
       // Cập nhật danh sách listClosed ngay lập tức mà không cần gọi API lại
 
 
       queryClient.invalidateQueries({ queryKey: ["lists"] });
+
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return (
+            queryKey[0] === 'table-view' &&
+            Array.isArray(queryKey[1]) &&
+            queryKey[1].includes(data.list_board.board_id)
+          );
+        },
+      });
 
     },
   });
