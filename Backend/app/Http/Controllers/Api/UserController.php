@@ -13,12 +13,12 @@ class UserController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'user_name' => 'nullable|string|max:50|unique:users,user_name,' . $user->id,
+            'full_name' => 'nullable|string|max:50|unique:users,full_name,' . $user->id,
             'biography' => 'nullable|string|max:500',
         ]);
 
         // Cập nhật thông tin
-        $user->user_name = $validated['user_name'] ?? $user->user_name;
+        $user->full_name = $validated['full_name'] ?? $user->full_name;
         $user->biography = $validated['biography'] ?? $user->biography;
         $user->save();
 

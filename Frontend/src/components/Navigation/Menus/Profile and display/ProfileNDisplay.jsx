@@ -30,7 +30,7 @@ const ProfileNDisplay = () => {
 
   useEffect(() => {
     if (user) {
-      setUserName(user.user_name || "");
+      setUserName(user.full_name || "");
       setBiography(user.biography || "");
     }
   }, [user]);
@@ -49,7 +49,7 @@ const ProfileNDisplay = () => {
     }
 
     updateProfile(
-      { user_name: userName.trim(), biography: biography.trim() },
+      { full_name: userName.trim(), biography: biography.trim() },
       {
         onSuccess: () => {
           setSnackbar({
