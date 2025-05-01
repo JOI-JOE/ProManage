@@ -147,6 +147,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // list board
     Route::get('lists/{boardId}', [ListController::class, 'index']);
 
+    Route::get('workspaces/{workspaceId}/lists', [ListController::class, 'getListsByWorkspace']);
+
     Route::get('/search', [SearchController::class, 'search']);
 
     //user profile

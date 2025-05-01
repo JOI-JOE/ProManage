@@ -65,21 +65,41 @@ class CardController extends Controller
         // 📌 Validate request
         $validator = Validator::make($request->all(), [
             'columnId' => 'required|uuid|exists:list_boards,id',
-            'position' => 'required|numeric',
             'title' => 'required|string|max:255',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'end_time' => 'nullable|date_format:H:i', // Chỉ giờ (HH:mm)
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        // 📌 Tính toán position mới (lấy position cao nhất + 10000)
+        $maxPosition = Card::where('list_board_id', $request->columnId)->max('position') ?? 0;
+        $newPosition = $maxPosition + 10000;
+
         // 📌 Tạo card mới
-        $card = Cache::remember("card_{$request->columnId}_{$request->title}", 10, function () use ($request) {
-            return Card::create([
+        $card = Cache::remember("card_{$request->columnId}_{$request->title}", 10, function () use ($request, $newPosition) {
+            $data = [
                 'list_board_id' => $request->columnId,
-                'position' => $request->position,
+                'position' => $newPosition,
                 'title' => $request->title,
-            ]);
+            ];
+
+            if ($request->filled('start_date')) {
+                $data['start_date'] = $request->start_date;
+            }
+
+            if ($request->filled('end_date')) {
+                $data['end_date'] = $request->end_date;
+            }
+
+            if ($request->filled('end_time')) {
+                $data['end_time'] = $request->end_time;
+            }
+
+            return Card::create($data);
         });
 
         // 📌 Broadcast event để cập nhật realtime
@@ -87,6 +107,8 @@ class CardController extends Controller
 
         return response()->json($card, 201);
     }
+
+
     // cập nhật tên
     public function updateName($cardId, Request $request)
     {
@@ -785,14 +807,14 @@ class CardController extends Controller
             'workspace',
             'lists' => function ($q) use ($id) {
                 $q->where('closed', false) // <-- Chỉ lấy list chưa đóng
-            ->with([
-                'cards' => function ($q) use ($id) {
-                    $q->where('is_archived', false)
-                      ->whereHas('users', fn($q) => $q->where('user_id', $id)) // <-- Chỉ card user có tham gia
-                      ->with('labels');
-                }
-            ]);
-        }
+                    ->with([
+                        'cards' => function ($q) use ($id) {
+                            $q->where('is_archived', false)
+                                ->whereHas('users', fn($q) => $q->where('user_id', $id)) // <-- Chỉ card user có tham gia
+                                ->with('labels');
+                        }
+                    ]);
+            }
         ])->get();
 
         // Format lại dữ liệu để trả về danh sách thẻ với đầy đủ thông tin

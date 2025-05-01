@@ -537,6 +537,32 @@ class WorkspaceController extends Controller
                     $currentUserId = Auth::id();
                     $isBoardMember = collect($boardMembers)->contains('user_id', $currentUserId);
 
+                        
+                    $lists = DB::table('list_boards')
+                    ->where('board_id', $board->id)
+                    ->where('closed', false)
+                    ->select(
+                        'id',
+                        'board_id',
+                        'name',
+                        'position',
+                        'created_at',
+                        'updated_at'
+                    )
+                    ->orderBy('position', 'asc')
+                    ->get()
+                    ->map(function ($list) {
+                    return [
+                        'id' => $list->id,
+                        'board_id' => $list->board_id,
+                        'name' => $list->name,
+                        'position' => $list->position,
+                        'created_at' => $list->created_at,
+                        'updated_at' => $list->updated_at,
+                    ];
+                })->toArray();
+
+
                     return [
                         'id' => $board->id,
                         'name' => $board->name,
@@ -553,6 +579,7 @@ class WorkspaceController extends Controller
                         'updated_at' => $board->updated_at,
                         'members' => $boardMembers,
                         'is_member' => $isBoardMember,
+                        'lists' => $lists,
                     ];
                 })->toArray();
 
