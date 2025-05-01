@@ -82,17 +82,17 @@ class CalendarController extends Controller
     public function index(Request $request)
     {
         // Lấy danh sách board_id, có thể là 1 hoặc nhiều
-        $boardIds = $request->query('board_id', []);
+        $boardIds = $request->input('board_id', []);
         if (!is_array($boardIds)) {
             $boardIds = [$boardIds];
         }
 
         // Lấy khoảng thời gian lọc (start-end) hoặc fallback từ month
-        $start = $request->query('start');
-        $end = $request->query('end');
+        $start = $request->input('start');
+        $end = $request->input('end');
 
         if (!$start || !$end) {
-            $month = $request->query('month');
+            $month = $request->input('month');
             if ($month) {
                 $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth()->toDateString();
                 $end = Carbon::createFromFormat('Y-m', $month)->endOfMonth()->toDateString();

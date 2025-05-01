@@ -225,15 +225,20 @@ class BoardController extends Controller
     {
         try {
             // Tìm board theo ID
-            $board = Board::with('creator')->findOrFail($boardId);
-
+            // Tìm board và load quan hệ
+            $board = Board::with('workspace.members')->findOrFail($boardId);
+            $user = Auth::user();
+            // $isWorkspaceMember = optional($board->workspace)->members->contains($user->id);
             // Trả về kết quả nếu tìm thấy
-            return response()->json([
+            return response()->json([   
                 'result' => true,
                 'data' => $board,
+                // 'isWorkspaceMember'=> $isWorkspaceMember
+                // 'users' => $user,
+                // 'isWorkspaceMember'=> $isWorkspaceMember,
                 // 'user'=> $board->creator,
             ]);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        // } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'result' => false,
                 'message' => 'Board not found.'

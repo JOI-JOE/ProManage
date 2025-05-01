@@ -11,8 +11,8 @@ import {
 import FilterListIcon from "@mui/icons-material/FilterList";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import BoltIcon from "@mui/icons-material/Bolt";
-import TimelineIcon from '@mui/icons-material/Timeline';
-import { Link as RouterLink } from 'react-router-dom';
+import TimelineIcon from "@mui/icons-material/Timeline";
+import { Link as RouterLink } from "react-router-dom";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import AutomationDialog from "./childComponent/Auto/Auto";
@@ -23,7 +23,12 @@ import BoardMenu from "./BoardMenu";
 
 import { useUpdateBoardName } from "../../../../../hooks/useBoard";
 import BoardContext from "../../../../../contexts/BoardContext";
-import { useCreatorComeBackBoard, useGetBoardMembers, useMemberJoinedListener, useRequestJoinBoard } from "../../../../../hooks/useInviteBoard";
+import {
+  useCreatorComeBackBoard,
+  useGetBoardMembers,
+  useMemberJoinedListener,
+  useRequestJoinBoard,
+} from "../../../../../hooks/useInviteBoard";
 import { useParams } from "react-router-dom";
 import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
 import { useUser } from "../../../../../hooks/useUser";
@@ -31,6 +36,7 @@ import { useUser } from "../../../../../hooks/useUser";
 import LockIcon from "@mui/icons-material/Lock"; // Icon cho Riêng tư
 import GroupIcon from "@mui/icons-material/Group"; // Icon cho Không gian làm việc
 import PublicIcon from "@mui/icons-material/Public";
+import { useQueryClient } from "@tanstack/react-query";
 
 const style = {
   border: "none",
@@ -46,14 +52,14 @@ const style = {
 };
 
 const BoardBar = () => {
-
   const { boardId, boardName } = useParams();
+  const queryClient = useQueryClient();
   const { board, isLoading, error } = useContext(BoardContext);
   const { data: boardMembers = [] } = useGetBoardMembers(boardId);
   // console.log(board);
   const { data: user } = useUser();
 
-  useMemberJoinedListener(user?.id)
+  useMemberJoinedListener(user?.id);
   useMemberJoinedListener(user?.id, boardId);
   useCreatorComeBackBoard(user?.id, boardId); // Lắng nghe sự kiện người tạo quay lại bảng
 
@@ -85,18 +91,20 @@ const BoardBar = () => {
   const [isMember, setIsMember] = useState(true); // Trạng thái thành viên
 
   const admins = Array.isArray(boardMembers?.data)
-    ? boardMembers.data.filter(member => member.pivot.role === "admin")
+    ? boardMembers.data.filter((member) => member.pivot.role === "admin")
     : [];
 
   const isAdmin = Array.isArray(boardMembers?.data)
-    ? boardMembers.data.some(member =>
-      member.id === currentUserId && member.pivot.role === "admin"
-    )
+    ? boardMembers.data.some(
+        (member) => member.id === currentUserId && member.pivot.role === "admin"
+      )
     : false;
 
   const isCreator = board?.created_by === currentUserId;
-  // console.log("Is creator:", isCreator);
+  const isMemberWorkspace = board?.isWorkspaceMember;
+  // console.log(isMemberWorkspace);
 
+  // console.log("Is creator:", isCreator);
 
   // Kiểm tra trạng thái thành viên
   useEffect(() => {
@@ -105,7 +113,6 @@ const BoardBar = () => {
       : false;
     setIsMember(isCurrentUserMember);
   }, [boardMembers?.data, currentUserId]);
-
 
   const handleJoinRequest = () => {
     joinBoardMutation.mutate(
@@ -116,6 +123,7 @@ const BoardBar = () => {
             setIsMember(true);
             toast.success(data.message);
           }
+          queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
         },
         onError: (error) => {
           toast.error("Có lỗi khi tham gia bảng!");
@@ -124,14 +132,12 @@ const BoardBar = () => {
     );
   };
 
-
   // Quản lý trạng thái sao (isStarred)
   const [isStarred, setIsStarred] = useState(false);
 
   const handleStarClick = () => {
     setIsStarred((prev) => !prev); // Đảo ngược trạng thái sao
   };
-
 
   const handleTitleClick = () => setEditTitle(true);
 
@@ -158,7 +164,6 @@ const BoardBar = () => {
       handleTitleBlur();
     }
   };
-
 
   if (isLoading) return <p>Loading board...</p>;
   if (error) return <p>Board not found</p>;
@@ -225,7 +230,11 @@ const BoardBar = () => {
             }}
           />
         ) : (
-          <Chip label={teamName ?? board?.title} sx={style} onClick={isAdmin ? handleTitleClick : undefined} />
+          <Chip
+            label={teamName ?? board?.title}
+            sx={style}
+            onClick={isAdmin ? handleTitleClick : undefined}
+          />
         )}
 
         {/* <StarButton isStarred={isStarred} onStarClick={handleStarClick} /> */}
@@ -237,7 +246,6 @@ const BoardBar = () => {
           sx={style}
           onClick={handleViewPermissionsDialogOpen}
         />
-
 
         <Chip
           icon={<TimelineIcon />}
@@ -320,7 +328,7 @@ const BoardBar = () => {
           >
             Chia sẻ
           </Button>
-        ) : isCreator ? (
+        ) : isCreator || isMemberWorkspace ? (
           <Button
             variant="contained"
             sx={{
@@ -334,6 +342,7 @@ const BoardBar = () => {
             Tham gia bảng
           </Button>
         ) : null}
+
         <BoardMenu board={board} />
       </Box>
 

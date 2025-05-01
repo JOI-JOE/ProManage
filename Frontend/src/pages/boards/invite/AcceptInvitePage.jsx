@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { Box, Container, Typography, Button, Link } from "@mui/material";
 import "./AcceptInvitePage.css"; // Import CSS file
-import { useRequestJoinBoard } from "../../../hooks/useInviteBoard";
+import {
+  useJoinBoard,
+  useRequestJoinBoard,
+} from "../../../hooks/useInviteBoard";
 import { toast } from "react-toastify";
 import LogoLoading from "../../../components/Common/LogoLoading";
 import { useQueryClient } from "@tanstack/react-query";
 
 const AcceptInvitePage = () => {
   const { token } = useParams();
+  // console.log("token", token); // Debug
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [board, setBoard] = useState(null);
   const [isMember, setIsMember] = useState(false);
@@ -17,8 +22,11 @@ const AcceptInvitePage = () => {
   const [hasRejected, setHasRejected] = useState(false);
   const [error, setError] = useState(null);
   const [userId, setUserId] = useState(null);
-   const joinBoardMutation = useRequestJoinBoard(); // Sử dụng custom hook
-   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
+  const joinBoardMutation = useRequestJoinBoard(); // Sử dụng custom hook
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("token")
+  );
+  const joinBoard = useJoinBoard(); // Gọi ở ngoài
 
   useEffect(() => {
     const fetchInvite = async () => {
@@ -28,50 +36,50 @@ const AcceptInvitePage = () => {
           `http://localhost:8000/api/invite-board/${token}`,
           authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : {}
         );
-        // console.log("response", response.data);// có ra data nhé 
-        // console.log("id-user", response.data.token.tokenable.id);// có ra data nhé 
- 
+
+        // ✅ Nếu thành công, set dữ liệu board
         setBoard(response.data.board);
         setIsMember(response.data.is_member);
         setInviterName(response.data.inviter_name);
         setHasRejected(response.data.has_rejected);
       } catch (error) {
-        if (error.response?.status === 403) {
+        const status = error.response?.status;
+        const message = error.response?.data?.message || "Có lỗi xảy ra";
+
+        if (status === 403) {
+          // ❌ Trường hợp đã từ chối lời mời trước đó
           setHasRejected(true);
-          setError(error.response.data.message);
-          setUserId(error.response.data.user_id);// có ra data nhé
-          setBoard(error.response.data.board_id);
+          setError(message);
+          setUserId(error.response?.data?.user_id);
+          setBoard(error.response?.data?.board_id);
+        } else if (status === 409) {
+          // ❌ Trường hợp email không trùng khớp
+          setError(message);
+          // Điều hướng về trang chủ hoặc hiển thị thông báo tùy bạn
+          // toast.error("Email của bạn không đúng với người được mời.");
+          navigate("/home");
+        } else if (status === 404) {
+          // ❌ Link mời không tồn tại hoặc đã hết hạn
+          setError(message);
+          navigate("/404");
         } else {
-          setError(error.response?.data?.message || "Invalid or expired invite link");
+          // ❌ Lỗi không xác định
+          setError("Lỗi không xác định");
           navigate("/404");
         }
       }
     };
 
     fetchInvite();
-  }, [token, navigate,isAuthenticated]);
+  }, [token, navigate, isAuthenticated]);
 
-  const queryClient = useQueryClient();
-
-  const handleJoinBoard = async () => {
-    try {
-      const response = await axios.post(
-        `http://localhost:8000/api/join-board/${token}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-      const data = response.data;
-
-      await queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
-      await queryClient.invalidateQueries({ queryKey: ["user_main"], exact: true });
-
-
-      navigate(`/b/${response.data.board_id}/${response.data.board_name}`);
-    } catch (error) {
-      setError(error.response?.data?.message || "Error joining board");
-    }
+  const handleJoinBoard = () => {
+    joinBoard.mutate(token, {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: ['workspaces'], exact: true });
+        navigate(`/b/${data.board_id}/${data.board_name}`);
+      },
+    });
   };
 
   const handleRejectInviteBoard = async () => {
@@ -83,7 +91,7 @@ const AcceptInvitePage = () => {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
-      navigate(`/home`);
+      navigate(`/u/${response?.data.user_name}/boards`);
     } catch (error) {
       setError(error.response?.data?.message || "Error rejecting invite");
     }
@@ -91,12 +99,12 @@ const AcceptInvitePage = () => {
   // console.log("userId", board);// có ra data nhé
   const handleRequestRejoin = async () => {
     // console.log(111212);
-    
+
     try {
       joinBoardMutation.mutate(
-        { boardId: board , userId:userId}, // Truyền dữ liệu trực tiếp
+        { boardId: board, userId: userId }, // Truyền dữ liệu trực tiếp
         {
-          onSuccess: (data)=> {
+          onSuccess: (data) => {
             if (data.success) {
               toast.success("Yêu cầu tham gia đã được gửi!");
               // setMessage("Yêu cầu tham gia đã được gửi!");
@@ -104,55 +112,50 @@ const AcceptInvitePage = () => {
             } else {
               toast.console.error("Yêu cầu tham gia không thành công!");
             }
-          }
+          },
         }
       );
     } catch (error) {
       console.error("Có lỗi xảy ra:", error);
-      
     }
   };
-
   if (!isAuthenticated) {
-    // console.log("Token in AcceptInvitePage:", token);
-    
     return (
       <Box className="accept-invite-container">
         <Container className="invite-content">
           <Typography variant="h6" className="invite-title">
-            Vui lòng đăng nhập và truy cập lại liên kết để tham gia bảng
+            <Box className="font-bold" component="span">
+              {inviterName}
+            </Box>
+            <Box component="span"> đã chia sẻ </Box>
+            <Box className="font-bold" component="span">
+              {board?.name}
+            </Box>
+            <Box component="span"> với bạn.</Box>
           </Typography>
           <Button
             variant="contained"
             className="join-button"
             onClick={() => {
-              navigate("/login");
+              localStorage.setItem("inviteTokenWhenUnauthenticated", token); // Lưu inviteToken vào localStorage
+              navigate(`/login`);
             }}
           >
             Đăng nhập
-          </Button>
-          <Button
-            variant="contained"
-            className="back-button"
-            onClick={() => navigate("/home")}
-          >
-            Trở về trang chủ
           </Button>
         </Container>
       </Box>
     );
   }
 
-  if (!board && !error && !hasRejected) return <LogoLoading/>;
+  if (!board && !error && !hasRejected) return <LogoLoading />;
 
   return (
     <Box className="accept-invite-container">
       <Container className="invite-content">
         {error ? (
           <Box>
-            <Typography className="error-message">
-              {error}
-            </Typography>
+            <Typography className="error-message">{error}</Typography>
             {hasRejected && (
               <Button
                 variant="contained"
@@ -172,16 +175,20 @@ const AcceptInvitePage = () => {
           </Box>
         ) : (
           <Box>
-         {!isMember && (
+            {!isMember && (
               <Typography variant="h6" className="invite-title">
-                <Box className="font-bold" component="span">{inviterName}</Box>
+                <Box className="font-bold" component="span">
+                  {inviterName}
+                </Box>
                 <Box component="span"> đã chia sẻ </Box>
-                <Box className="font-bold" component="span">{board?.name}</Box>
+                <Box className="font-bold" component="span">
+                  {board?.name}
+                </Box>
                 <Box component="span"> với bạn.</Box>
               </Typography>
             )}
 
-            <Typography variant="body1"  className="invite-message">
+            <Typography variant="body1" className="invite-message">
               {isMember
                 ? "Bạn đã là thành viên của bảng này."
                 : "Nhấn nút bên dưới để tham gia bảng!"}
@@ -191,7 +198,9 @@ const AcceptInvitePage = () => {
                 variant="contained"
                 className="join-button"
                 component={Link}
-                onClick={() => navigate(`/b/${board?.id}/${encodeURIComponent(board?.name)}`)}
+                onClick={() =>
+                  navigate(`/b/${board?.id}/${encodeURIComponent(board?.name)}`)
+                }
               >
                 Đi Tới bảng
               </Button>

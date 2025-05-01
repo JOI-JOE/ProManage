@@ -53,19 +53,8 @@ class ListController extends Controller
         }
 
         $user = Auth::user();
-
-        // $hasAccess = false;
-
-        // if ($board->visibility === 'private' && $board->members->contains($user->id)) {
-        //     $hasAccess = true;
-        // } elseif ($board->visibility === 'workspace' && $board->workspace->users->contains($user->id) || $board->members->contains($user->id)) {
-        //     $hasAccess = true;
-        // } elseif ($board->visibility === 'public') {
-        //     $hasAccess = true;
-        // }
-        // if (!$hasAccess) {
-        //     return response()->json(['error' => 'Access denied'], 403);
-        // }
+        // Kiểm tra xem user hiện tại có trong workspace.members hay không
+        $isWorkspaceMember = $board->workspace->members2->contains('id',$user->id);
 
         $responseData = [
             'id' => $board->id,
@@ -76,6 +65,7 @@ class ListController extends Controller
             'isMarked' => (bool) $board->is_marked,
             'thumbnail' => $board->thumbnail ?? null,
             'created_by' => $board->created_by,
+            'isWorkspaceMember' => $isWorkspaceMember, // Thêm trạng thái user có trong workspace.members hay không
             'columns' => $board->listBoards->map(function ($list) {
                 return [
                     'id' => $list->id,

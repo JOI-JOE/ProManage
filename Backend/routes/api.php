@@ -48,6 +48,7 @@ use Illuminate\Support\Facades\Broadcast;
 
 Route::post('/register', [AuthController::class, 'handleRegister'])->name('login');
 Route::post('/login', [AuthController::class, 'handleLogin']);
+Route::post('/auto-login-invite', [AuthController::class, 'autoLoginInvite']);
 
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
@@ -195,7 +196,7 @@ Route::get('/boards', [BoardController::class, 'index']);
 
 Route::post('/boards/copy', [BoardController::class, 'copyBoard'])->middleware('auth:sanctum');
 Route::get('/boards/{board}/details', [BoardController::class, 'getBoardDetails']);
-Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById']);
+Route::get('/boards/{boardId}', [BoardController::class, 'showBoardById'])->middleware('auth:sanctum');
 Route::get('/board/{id}', [BoardController::class, 'getBoard']);
 Route::get('/boards_marked', [BoardController::class, 'getBoardMarked'])->middleware(['auth:sanctum']);
 Route::post('/boards/{boardId}/update-last-accessed', [BoardController::class, 'updateLastAccessed'])->middleware('auth:sanctum');
@@ -354,7 +355,7 @@ Route::get('/users/{userId}/notifications', [CardController::class, 'getUserNoti
 // });
 Route::get('/settings', [SettingController::class, 'index']);
 Route::get('/activities/{cardId}', [ActivityLogController::class, 'getActivitiesByCard']);
-Route::get('/calendar', [CalendarController::class, 'index']);
+Route::post('/calendar', [CalendarController::class, 'index']);
 Route::put('/calendar/{cardId}', [CalendarController::class, 'update']);
 
 

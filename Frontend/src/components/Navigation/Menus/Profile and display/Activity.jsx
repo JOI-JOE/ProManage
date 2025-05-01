@@ -67,7 +67,7 @@ const Activity = () => {
               workspaces?.map((workspace, index) => (
                 <React.Fragment key={workspace.id || index}>
                   <ListItem
-                    onClick={() => navigate(`/w/${workspace.name}/home`)}
+                    onClick={() => navigate(`/w/${workspace.id}`)}
                     sx={{ paddingY: 0.7, paddingX: 2 }}>
                     <Typography
                       sx={{

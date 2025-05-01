@@ -99,6 +99,17 @@ export const inviteMemberIntoBoardByEmail = async (data) => {
     
 };
 
+export const JoinBoard = async (token) => {
+    try {
+    const response = await authClient.post(`/join-board/${token}`);
+    return response.data;
+    } catch (error) {
+        console.error("Lỗi khi lấy ra thành viên của bảng", error);
+        throw error;
+    }
+    
+};
+
 
 export const requestJoinBoard = async ({ boardId, userId }) => {
     try {

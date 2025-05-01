@@ -43,7 +43,7 @@ const Calendar = () => {
     } = useGetWorkspaceById(workspaceId, {
         enabled: !!workspaceId,
     });
-console.log(workspace);
+// console.log(workspace);
 
 const boardIds = workspace?.boards
   ?.filter(board => !board.closed)
@@ -165,8 +165,9 @@ const boardIds = workspace?.boards
       cardId,
       {
         onSuccess: () => {
-          const months = getMonthsBetween(startDate, endDate); // Lấy tất cả các tháng mà sự kiện kéo dài qua
-          queryClient.invalidateQueries({ queryKey: ["calendar", boardIds, months] });
+          queryClient.invalidateQueries({ 
+            queryKey: ["calendar", boardIds, dateRange.start, dateRange.end] 
+          });
         },
         onError: (error) => {
           toast.error(error.response?.data?.message || "Không thể cập nhật hoàn thành");
