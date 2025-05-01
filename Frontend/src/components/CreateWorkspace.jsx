@@ -58,7 +58,7 @@ const CreateWorkspace = () => {
             },
             {
                 onSuccess: (data) => {
-                    console.log("Tạo thành công:", data);   
+                    console.log("Tạo thành công:", data);
                     setIsSubmitting(false);
                     setOpenWorkspaceModal(false);
                     setWorkspaceName("");
@@ -81,9 +81,8 @@ const CreateWorkspace = () => {
         );
     };
 
-    // Handle keyboard events to prevent focus loss
     const handleKeyDown = (event) => {
-        if (event.shiftKey && (event.key === "C" || event.key === "V")) {
+        if (event.shiftKey && (event.key === "C" || event.key === "V" || event.key === "H")) {
             event.stopPropagation();
         }
     };
