@@ -573,15 +573,7 @@ const AppBar = ({ username, email }) => {
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Help">
-          <HelpOutlineIcon
-            sx={{
-              fontSize: "medium",
-              cursor: "pointer",
-              color: "secondary.contrastText",
-            }}
-          />
-        </Tooltip>
+       
 
         <Profile email={user?.email} user_name={user?.user_name} user={user} />
 

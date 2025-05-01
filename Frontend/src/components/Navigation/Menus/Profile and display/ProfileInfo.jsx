@@ -2,6 +2,7 @@ import React from "react";
 import { Box, Typography, Avatar } from "@mui/material";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useUserById } from "../../../../hooks/useUser";
+import InitialsAvatar from "../../../Common/InitialsAvatar";
 
 const ProfileInfo = () => {
   const navigate = useNavigate();
@@ -61,11 +62,15 @@ const ProfileInfo = () => {
             display: "flex",
             alignItems: "center",
             marginBottom: 4,
+            gap: 2,
           }}
         >
-          <Avatar sx={{ bgcolor: "#00A3BF", width: 50, height: 50, marginRight: 3 }}>
-            {user?.email?.charAt(0)?.toUpperCase() || ""}
-          </Avatar>
+            <InitialsAvatar
+              name={user?.full_name}
+              avatarSrc={user?.image}
+              initial={user?.initials}
+              size={38}
+            />
           <Box>
             <Typography variant="h6" sx={{ fontWeight: "bold", fontSize: "1.3rem" }}>
               {actualUsername}
