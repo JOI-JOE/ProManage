@@ -45,6 +45,8 @@ class TableViewController extends Controller
             ->leftJoin('card_user', 'cards.id', '=', 'card_user.card_id')
             ->leftJoin('users', 'card_user.user_id', '=', 'users.id')
             ->whereIn('boards.id', $authorizedBoardIds)
+            ->where('cards.is_archived', 0)      // ✅ Bỏ thẻ đã lưu trữ
+            ->where('list_boards.closed', 0)
             ->select(
                 'cards.id as card_id',
                 'cards.title as card_title',
@@ -213,9 +215,11 @@ class TableViewController extends Controller
         $boardIds = $request->input('boardIds'); // array
 
         $boards = Board::whereIn('id', $boardIds)
-            ->with(['members' => function ($query) {
-                $query->select('users.id', 'full_name', 'email');
-            }])
+            ->with([
+                'members' => function ($query) {
+                    $query->select('users.id', 'full_name', 'email');
+                }
+            ])
             ->get();
 
         // Chuyển đổi định dạng
@@ -265,47 +269,47 @@ class TableViewController extends Controller
         return response()->json($card);
     }
     public function updateDueDate(Request $request, $cardId)
-{
-    Log::info('Received updateDueDate request', [
-        'card_id' => $cardId,
-        'end_date' => $request->end_date,
-        'end_time' => $request->end_time,
-        'reminder' => $request->reminder,
-    ]);
+    {
+        Log::info('Received updateDueDate request', [
+            'card_id' => $cardId,
+            'end_date' => $request->end_date,
+            'end_time' => $request->end_time,
+            'reminder' => $request->reminder,
+        ]);
 
-    $request->validate([
-        'end_date' => 'nullable|date_format:Y-m-d',
-        'end_time' => 'nullable|date_format:H:i:s',
-        'reminder' => 'nullable|date_format:Y-m-d H:i:s',
-    ]);
+        $request->validate([
+            'end_date' => 'nullable|date_format:Y-m-d',
+            'end_time' => 'nullable|date_format:H:i:s',
+            'reminder' => 'nullable|date_format:Y-m-d H:i:s',
+        ]);
 
-    $card = Card::findOrFail($cardId);
-    $card->end_date = $request->end_date;
-    $card->end_time = $request->end_time;
-    $card->reminder = $request->reminder;
-    $card->save();
+        $card = Card::findOrFail($cardId);
+        $card->end_date = $request->end_date;
+        $card->end_time = $request->end_time;
+        $card->reminder = $request->reminder;
+        $card->save();
 
-    Log::info('Due date and reminder updated', [
-        'card_id' => $cardId,
-        'end_date' => $card->end_date,
-        'end_time' => $card->end_time,
-        'reminder' => $card->reminder,
-    ]);
+        Log::info('Due date and reminder updated', [
+            'card_id' => $cardId,
+            'end_date' => $card->end_date,
+            'end_time' => $card->end_time,
+            'reminder' => $card->reminder,
+        ]);
 
-    $fullDueDate = $card->end_date ? \Carbon\Carbon::parse($card->end_date) : null;
-    if ($fullDueDate && $card->end_time) {
-        $time = \Carbon\Carbon::parse($card->end_time);
-        $fullDueDate->setTime($time->hour, $time->minute, $time->second);
+        $fullDueDate = $card->end_date ? \Carbon\Carbon::parse($card->end_date) : null;
+        if ($fullDueDate && $card->end_time) {
+            $time = \Carbon\Carbon::parse($card->end_time);
+            $fullDueDate->setTime($time->hour, $time->minute, $time->second);
+        }
+
+        return response()->json([
+            'card_id' => $card->id,
+            'end_date' => $card->end_date,
+            'end_time' => $card->end_time,
+            'reminder' => $card->reminder,
+            'full_due_date' => $fullDueDate ? $fullDueDate->toIso8601String() : null,
+            'is_overdue' => $card->end_date && !$card->is_completed && $fullDueDate?->isPast(),
+        ]);
     }
-
-    return response()->json([
-        'card_id' => $card->id,
-        'end_date' => $card->end_date,
-        'end_time' => $card->end_time,
-        'reminder' => $card->reminder,
-        'full_due_date' => $fullDueDate ? $fullDueDate->toIso8601String() : null,
-        'is_overdue' => $card->end_date && !$card->is_completed && $fullDueDate?->isPast(),
-    ]);
-}
 }
 
