@@ -22,13 +22,17 @@ const GoogleAuth = () => {
     const errorMessage = urlParams.get("error");
     const message = urlParams.get("message");
     // Mời của bảng
-
     // mời của worksace - hâu
     const invitationWorkspace = Cookies.get("invitation");
 
+    const inviteTokenWhenUnauthenticated = localStorage.getItem(
+      "inviteTokenWhenUnauthenticated"
+    );
 
     if (errorMessage) {
-      setError(decodeURIComponent(message) || "Đăng nhập thất bại. Vui lòng thử lại.");
+      setError(
+        decodeURIComponent(message) || "Đăng nhập thất bại. Vui lòng thử lại."
+      );
       window.history.replaceState({}, document.title, window.location.pathname);
       return;
     }
@@ -67,7 +71,21 @@ const GoogleAuth = () => {
           localStorage.setItem("idMember", idMember);
         }
         // Xóa query parameters khỏi URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+
+        // ✅ Nếu có inviteToken khi chưa đăng nhập, chuyển sang accept-invite
+        if (inviteTokenWhenUnauthenticated) {
+          localStorage.removeItem("inviteTokenWhenUnauthenticated");
+          setTimeout(() => {
+            navigate(`/accept-invite/${inviteTokenWhenUnauthenticated}`);
+          }, 50); // Delay nhẹ để đảm bảo Router mount kịp
+        } else {
+          navigate("/home");
+        }
       } catch (err) {
         setError("Không thể xử lý đăng nhập. Vui lòng thử lại.");
         console.error("Authentication error:", err);
@@ -77,15 +95,17 @@ const GoogleAuth = () => {
     }
   }, [navigate, setToken]);
 
-
   const handleLogin = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
       // Gọi API để lấy URL chuyển hướng từ backend
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
-      const response = await axios.get(`${apiBaseUrl}/api/auth/redirect/google`);
+      const apiBaseUrl =
+        import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+      const response = await axios.get(
+        `${apiBaseUrl}/api/auth/redirect/google`
+      );
 
       // Chuyển hướng đến URL Google OAuth do backend cung cấp
       if (response.data.url) {
@@ -94,7 +114,10 @@ const GoogleAuth = () => {
         throw new Error("Không thể lấy URL đăng nhập Google.");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Không thể kết nối đến server. Vui lòng thử lại.");
+      setError(
+        err.response?.data?.message ||
+          "Không thể kết nối đến server. Vui lòng thử lại."
+      );
       setIsLoading(false);
     }
   };
@@ -117,9 +140,7 @@ const GoogleAuth = () => {
       )}
 
       {/* Hiển thị lỗi nếu có */}
-      {error && (
-        <p className="text-red-500 text-sm text-center">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
     </div>
   );
 };

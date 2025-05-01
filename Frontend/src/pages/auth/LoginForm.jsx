@@ -10,10 +10,12 @@ import Cookies from "js-cookie";
 const LoginForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const inviteTokenFromStorage = localStorage.getItem('inviteTokenWhenUnauthenticated');
+  const inviteToken = location?.state?.inviteToken ?? inviteTokenFromStorage;
+
   const { setToken, setLinkInvite } = useStateContext();
 
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const inviteToken = location.state?.inviteToken;
   const invitationWorkspace = Cookies.get("invitation");
 
   const [errors, setErrors] = useState({
@@ -66,7 +68,7 @@ const LoginForm = () => {
       setErrors((prev) => ({ ...prev, [fieldName]: "" }));
       setErrorTimers((prev) => {
         const newTimers = { ...prev };
-        delete newTimers[name];
+        delete newTimers[fieldName];
         return newTimers;
       });
     }, errorDuration);
@@ -75,94 +77,84 @@ const LoginForm = () => {
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent default form submission
-
-    try {
-      // Client-side validation
-      if (!formData.email) {
-        setErrorWithTimeout("email", "Vui lòng nhập email.");
-        return;
-      }
-      if (!formData.password) {
-        setErrorWithTimeout("password", "Vui lòng nhập mật khẩu.");
-        return;
-      }
-
-      // Call login mutation
-      login(formData, {
-        onSuccess: (data) => {
-
-          console.log("Đăng nhập thành công:", data);
-          localStorage.setItem("token", data.token);
-          setToken(data.token);
-          if (inviteToken) {
-            setLinkInvite(`/accept-invite/${inviteToken}`);
-            navigate(`/accept-invite/${inviteToken}`);
-          } else if (invitationWorkspace) {
-            const decoded = decodeURIComponent(decodeURIComponent(invitationWorkspace));
-            const [prefix, workspaceId, token] = decoded.split(":");
-            if (prefix === "workspace" && workspaceId && token) {
-              setLinkInvite(`/invite/${workspaceId}/${token}`);
-              navigate(`/invite/${workspaceId}/${token}`);
-            } else {
-              setLinkInvite(null);
-            }
+    e.preventDefault();
+    // Kiểm tra validation phía client
+    if (!formData.email) {
+      setErrorWithTimeout("email", "Vui lòng nhập email.");
+      return;
+    }
+    if (!formData.password) {
+      setErrorWithTimeout("password", "Vui lòng nhập mật khẩu.");
+      return;
+    }
+    console.log(inviteToken);
+    // Gọi mutation login
+    login(formData, {
+      onSuccess: (data) => {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        if (inviteToken) {
+          setLinkInvite(`/accept-invite/${inviteToken}`);
+          localStorage.removeItem('inviteTokenWhenUnauthenticated');
+        } else if (invitationWorkspace) {
+          // Giải mã và xử lý invitationWorkspace
+          const decoded = decodeURIComponent(decodeURIComponent(invitationWorkspace));
+          const [prefix, workspaceId, token] = decoded.split(":");
+          if (prefix === "workspace" && workspaceId && token) {
+            setLinkInvite(`/invite/${workspaceId}/${token}`);
           } else {
             setLinkInvite(null);
           }
-        },
-        onError: (err) => {
-          console.error("Lỗi đăng nhập:", {
-            message: err.message,
-            status: err.response?.status,
-            data: err.response?.data,
-          });
+        }
+      },
+      onError: (err) => {
+        console.error("Lỗi đăng nhập:", {
+          message: err.message,
+          status: err.response?.status,
+          data: err.response?.data,
+        });
 
-          if (err.response) {
-            const { status, data } = err.response;
-            console.log("Phản hồi từ server:", data);
+        if (err.response) {
+          const { status, data } = err.response;
+          console.log("Phản hồi từ server:", data);
 
-            if (status === 401) {
-              if (data?.password) {
-                setErrorWithTimeout("password", data.password);
-              } else if (data?.message && typeof data.message === "string") {
-                setErrorWithTimeout("password", data.message);
-              } else {
-                setErrorWithTimeout("general", "Tài khoản hoặc mật khẩu không chính xác.");
-              }
-            } else if (status === 404) {
-              if (data?.email) {
-                setErrorWithTimeout("email", data.email);
-              } else {
-                setErrorWithTimeout("email", data?.message || "Email không tồn tại trong hệ thống.");
-              }
-            } else if (status === 422) {
-              const validationErrors = data.errors || {};
-              if (validationErrors.email) {
-                setErrorWithTimeout("email", validationErrors.email[0]);
-              }
-              if (validationErrors.password) {
-                setErrorWithTimeout("password", validationErrors.password[0]);
-              }
+          if (status === 401) {
+            if (data?.password) {
+              setErrorWithTimeout("password", data.password);
+            } else if (data?.message && typeof data.message === "string") {
+              setErrorWithTimeout("password", data.message);
             } else {
-              setErrorWithTimeout(
-                "general",
-                data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau."
-              );
+              setErrorWithTimeout("general", "Tài khoản hoặc mật khẩu không chính xác.");
+            }
+          } else if (status === 404) {
+            if (data?.email) {
+              setErrorWithTimeout("email", data.email);
+            } else {
+              setErrorWithTimeout("email", data?.message || "Email không tồn tại trong hệ thống.");
+            }
+          } else if (status === 422) {
+            const validationErrors = data.errors || {};
+            if (validationErrors.email) {
+              setErrorWithTimeout("email", validationErrors.email[0]);
+            }
+            if (validationErrors.password) {
+              setErrorWithTimeout("password", validationErrors.password[0]);
             }
           } else {
-            console.error("Lỗi không có phản hồi:", err);
             setErrorWithTimeout(
               "general",
-              "Không thể kết nối đến server. Vui lòng thử lại."
+              data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau."
             );
           }
-        },
-      });
-    } catch (error) {
-      console.error("Lỗi trong handleSubmit:", error);
-      setErrorWithTimeout("general", "Có lỗi xảy ra. Vui lòng thử lại.");
-    }
+        } else {
+          console.error("Lỗi không có phản hồi:", err);
+          setErrorWithTimeout(
+            "general",
+            "Không thể kết nối đến server. Vui lòng thử lại."
+          );
+        }
+      },
+    });
   };
 
   return (
@@ -212,7 +204,7 @@ const LoginForm = () => {
               </label>
               <button
                 type="button"
-                onClick={() => navigate("/forgot-password")} // Fixed typo: forgort -> forgot
+                onClick={() => navigate("/forgot-password")}
                 className="text-xs text-teal-600 hover:text-teal-800 transition"
                 disabled={isLoading}
               >
@@ -252,7 +244,7 @@ const LoginForm = () => {
                   className="animate-spin -ml-1 mr-2 h-3 w-3 text-white"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
-                  viewBox="0 0 24 24"
+                  viewBox="0 24 24"
                 >
                   <circle
                     className="opacity-25"

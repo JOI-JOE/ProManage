@@ -28,10 +28,14 @@ const Register = () => {
 
   // Cập nhật email từ query string khi component mount
   useEffect(() => {
+    if (inviteToken) {
+      localStorage.setItem("inviteToken", inviteToken);
+    }
     if (inviteEmail) {
       setFormData((prev) => ({ ...prev, email: inviteEmail }));
     }
-  }, [inviteEmail]);
+  }, [inviteToken, inviteEmail]);
+  
 
   const { mutate, isLoading } = useRegister();
 
@@ -113,23 +117,27 @@ const Register = () => {
     setErrors({});
     // Nếu có inviteToken mà email không khớp, bỏ qua inviteToken
     let effectiveInviteToken = inviteToken;
-    if (inviteToken && formData.email !== inviteEmail) {
-      setErrors((prev) => ({
-        ...prev,
-        email: 'Email phải khớp với email trong lời mời.',
-      }));
-      effectiveInviteToken = null; // Bỏ inviteToken nếu email không khớp
-    } else {
-      setErrors({});
-    }
+    // if (inviteToken && formData.email !== inviteEmail) {
+    //   setErrors((prev) => ({
+    //     ...prev,
+    //     email: 'Email phải khớp với email trong lời mời.',
+    //   }));
+    //   effectiveInviteToken = null; // Bỏ inviteToken nếu email không khớp
+    // } else {
+    //   setErrors({});
+    // }
 
     mutate(formData, {
       onSuccess: (data) => {
         if (data.token) {
           localStorage.setItem("token", data.token);
-          setToken(data.token)
+          setToken(data.token);
+          // const storedInviteToken = localStorage.getItem("inviteToken");
           if (effectiveInviteToken) {
-            navigate(`/accept-invite/${effectiveInviteToken}`);
+            // localStorage.removeItem("inviteToken");
+            setTimeout(() => {
+              navigate(`/accept-invite/${effectiveInviteToken}`);
+            }, 50); // Delay nhẹ để đảm bảo Router mount kịp
           } else {
             navigate("/home");
           }

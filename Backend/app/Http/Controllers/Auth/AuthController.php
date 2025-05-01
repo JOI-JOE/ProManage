@@ -326,4 +326,31 @@ class AuthController extends Controller
             );
         }
     }
+
+    public function autoLoginInvite(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            // 'token_invite' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+      
+        // Sinh token
+        $token = $user->createToken('token')->plainTextToken;
+          // Đăng nhập user vào hệ thống
+        Auth::login($user);
+
+        // $user = Auth::user();
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user
+        ]);
+    }
+
 }
