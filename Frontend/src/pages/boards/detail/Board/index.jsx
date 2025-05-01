@@ -32,8 +32,9 @@ import { useParams } from "react-router-dom";
 import { useGetWorkspaceById } from "../../../../hooks/useWorkspace";
 import { useClosedBoards, useForceDestroyBoard, useToggleBoardClosed } from "../../../../hooks/useBoard";
 import WorkspaceHeader from "../Member/Common/WorkspaceHeader";
-import { Archive, Delete, Restore } from "@mui/icons-material";
+import { Archive, Delete } from "@mui/icons-material";
 import LogoLoading from "../../../../components/Common/LogoLoading";
+import PrivatePage from "../Private/PrivatePage";
 import { useMe } from "../../../../contexts/MeContext";
 
 const Board = () => {
@@ -70,45 +71,21 @@ const Board = () => {
 
   const [isFormVisible, setFormVisible] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [isInviteOpen, setInviteOpen] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
-  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
-  const [isLinkActive, setIsLinkActive] = useState(false);
   const [openClosedBoards, setOpenClosedBoards] = useState(false);
+  const [sortBy, setSortBy] = useState("recent");
+  const [filterByVisibility, setFilterByVisibility] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleOpenClosedBoards = () => setOpenClosedBoards(true);
   const handleCloseClosedBoards = () => setOpenClosedBoards(false);
-  const handleOpenInvite = () => {
-    setInviteOpen(true);
-    setLinkCopied(false);
-    setIsLinkActive(false);
-  };
 
   const toggleFormVisibility = () => {
     setFormVisible(!isFormVisible);
   };
 
-  const handleCopyLink = () => {
-    setLinkCopied(true);
-    setIsLinkActive(true);
-    setShowCopiedMessage(true);
-    navigator.clipboard.writeText("https://example.com/invite-link");
-    setTimeout(() => setShowCopiedMessage(false), 3000);
-  };
-
-  const handleDisableLink = () => {
-    setIsLinkActive(false);
-    setLinkCopied(false);
-  };
-  const handleCloseInvite = () => {
-    setInviteOpen(false);
-  };
-
   const [openMainPopover, setOpenMainPopover] = useState(false);
-  const [openCreatePopover, setOpenCreatePopover] = useState(false);
-  const [selectedCollection, setSelectedCollection] = useState("");
-  const [collectionName, setCollectionName] = useState("");
-  const [collections, setCollections] = useState([]);
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [anchorElCreateBoard, setAnchorElCreateBoard] = useState(null);
 
   const handleMainPopoverOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -118,26 +95,6 @@ const Board = () => {
   const handleMainPopoverClose = () => {
     setOpenMainPopover(false);
   };
-
-  const handleCreatePopoverOpen = () => {
-    handleMainPopoverClose();
-    setOpenCreatePopover(true);
-  };
-
-  const handleCreatePopoverClose = () => {
-    setOpenCreatePopover(false);
-    setCollectionName("");
-  };
-
-  const handleSaveCollection = () => {
-    if (collectionName.trim()) {
-      setCollections([...collections, collectionName.trim()]);
-      handleCreatePopoverClose();
-    }
-  };
-
-  const [showCreateBoard, setShowCreateBoard] = useState(false);
-  const [anchorElCreateBoard, setAnchorElCreateBoard] = useState(null);
 
   const handleOpenCreateBoard = (event) => {
     setAnchorElCreateBoard(event.currentTarget);
@@ -169,6 +126,61 @@ const Board = () => {
     });
   };
 
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+  };
+
+  const handleSortChange = (event) => {
+    setSortBy(event.target.value);
+  };
+
+  const sortBoards = (boards) => {
+    if (!boards) return [];
+    const sortedBoards = [...boards];
+    switch (sortBy) {
+      case "recent":
+        return sortedBoards.sort((a, b) => {
+          const dateA = a.last_accessed ? new Date(a.last_accessed) : new Date(0);
+          const dateB = b.last_accessed ? new Date(b.last_accessed) : new Date(0);
+          return dateB - dateA;
+        });
+      case "leastRecent":
+        return sortedBoards.sort((a, b) => {
+          const dateA = a.last_accessed ? new Date(a.last_accessed) : new Date(0);
+          const dateB = b.last_accessed ? new Date(b.last_accessed) : new Date(0);
+          return dateA - dateB;
+        });
+      case "nameAZ":
+        return sortedBoards.sort((a, b) => a.name.localeCompare(b.name));
+      case "nameZA":
+        return sortedBoards.sort((a, b) => b.name.localeCompare(b.name));
+      default:
+        return sortedBoards;
+    }
+  };
+
+  const handleFilterChange = (value) => {
+    setFilterByVisibility(value);
+    handleMainPopoverClose();
+  };
+
+  const filterBoards = (boards) => {
+    if (!boards) return [];
+    let filteredBoards = boards;
+
+    if (filterByVisibility !== "all") {
+      filteredBoards = filteredBoards.filter((board) => board.visibility === filterByVisibility);
+    }
+
+    if (searchQuery.trim()) {
+      filteredBoards = filteredBoards.filter((board) =>
+        board.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filteredBoards;
+  };
+
   if (isLoadingWorkspace) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
@@ -177,102 +189,30 @@ const Board = () => {
     );
   }
 
+  if (!workspace?.joined && workspace?.permission_level === "private") {
+    return <PrivatePage />
+  }
+
+
   return (
     <Box
       sx={{
         width: "100%",
-        // maxWidth: "1200px",
-        // padding: "20px",
-        // margin: "30px auto",
+        maxWidth: "1200px",
+        margin: "0 auto",
       }}
     >
-      {/* Use WorkspaceHeader component */}
       <WorkspaceHeader
         workspace={workspace}
         isAdmin={isAdmin}
         isFormVisible={isFormVisible}
         toggleFormVisibility={toggleFormVisibility}
-        // handleOpenInvite={handleOpenInvite}
         refetchWorkspace={refetchWorkspace}
       />
 
-      {/* Modal Mời Thành Viên */}
-      <Dialog
-        open={isInviteOpen}
-        onClose={handleCloseInvite}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ fontSize: "20px" }}>
-          Mời vào Không gian làm việc
-          <IconButton
-            sx={{ position: "absolute", right: 8, top: 8 }}
-            onClick={handleCloseInvite}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            placeholder="Địa chỉ email hoặc tên"
-            sx={{ marginBottom: "10px" }}
-          />
-          <Stack direction="column" spacing={1} sx={{ mt: 2 }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{
-                p: 1,
-                bgcolor: linkCopied ? "#E6F4EA" : "transparent",
-                borderRadius: 1,
-              }}
-            >
-              {showCopiedMessage ? (
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <CheckCircleIcon color="success" />
-                  <Typography variant="body2" color="success.main">
-                    Liên kết đã sao chép vào khay nhớ tạm
-                  </Typography>
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="textSecondary">
-                  Mời ai đó vào Không gian làm việc này bằng liên kết:
-                </Typography>
-              )}
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleCopyLink}
-              >
-                {linkCopied ? "Đã sao chép" : "Tạo liên kết"}
-              </Button>
-            </Stack>
-            {isLinkActive && (
-              <Typography
-                variant="body2"
-                color="primary"
-                sx={{
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  textAlign: "right",
-                }}
-                onClick={handleDisableLink}
-              >
-                Tắt liên kết
-              </Typography>
-            )}
-          </Stack>
-        </DialogContent>
-      </Dialog>
-
-      {/* Nội dung */}
       <Box
         sx={{
           width: "100%",
-          maxWidth: "1100px",
-          margin: "0 auto",
           marginTop: "20px",
         }}
       >
@@ -304,12 +244,13 @@ const Board = () => {
               <TextField
                 select
                 size="small"
-                defaultValue="activity"
+                value={sortBy}
+                onChange={handleSortChange}
                 sx={{ minWidth: 200, fontSize: "13px" }}
                 SelectProps={{ native: true }}
               >
-                <option value="activity">Hoạt động gần đây nhất</option>
-                <option value="nameAZ">Ít hoạt động gần đây nhất</option>
+                <option value="recent">Hoạt động gần đây nhất</option>
+                <option value="leastRecent">Ít hoạt động gần đây nhất</option>
                 <option value="nameAZ">Theo bảng chữ cái A-Z</option>
                 <option value="nameZA">Theo bảng chữ cái Z-A</option>
               </TextField>
@@ -329,13 +270,21 @@ const Board = () => {
               <TextField
                 size="small"
                 sx={{ minWidth: 220 }}
-                value={selectedCollection || "Chọn bộ sưu tập"}
+                value={
+                  filterByVisibility === "all"
+                    ? "Tất cả"
+                    : filterByVisibility === "workspace"
+                      ? "Không gian làm việc"
+                      : filterByVisibility === "public"
+                        ? "Công khai"
+                        : "Riêng tư"
+                }
                 InputProps={{
                   readOnly: true,
                   sx: {
-                    color: selectedCollection ? "black" : "gray",
+                    color: filterByVisibility !== "all" ? "black" : "gray",
                     "& .MuiInputBase-input": {
-                      color: selectedCollection ? "black" : "gray",
+                      color: filterByVisibility !== "all" ? "black" : "gray",
                     },
                   },
                   endAdornment: (
@@ -351,93 +300,46 @@ const Board = () => {
                 anchorEl={anchorEl}
                 onClose={handleMainPopoverClose}
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                PaperProps={{ sx: { p: 2, width: 320, textAlign: "center" } }}
+                PaperProps={{ sx: { p: 2, width: 220, textAlign: "center" } }}
               >
                 <Typography sx={{ fontWeight: "bold", mb: 1, color: "gray" }}>
-                  Bộ sưu tập
+                  Lọc theo quyền truy cập
                 </Typography>
-                {collections.map((item, index) => (
-                  <MenuItem
-                    key={index}
-                    onClick={() => {
-                      setSelectedCollection(item);
-                      handleMainPopoverClose();
-                    }}
-                  >
-                    • {item}
-                  </MenuItem>
-                ))}
-                {selectedCollection && (
+                <MenuItem
+                  onClick={() => handleFilterChange("all")}
+                  selected={filterByVisibility === "all"}
+                >
+                  Tất cả
+                </MenuItem>
+                <MenuItem
+                  onClick={() => handleFilterChange("workspace")}
+                  selected={filterByVisibility === "workspace"}
+                >
+                  Không gian làm việc
+                </MenuItem>
+                <MenuItem
+                  onClick={() => handleFilterChange("public")}
+                  selected={filterByVisibility === "public"}
+                >
+                  Công khai
+                </MenuItem>
+                <MenuItem
+                  onClick={() => handleFilterChange("private")}
+                  selected={filterByVisibility === "private"}
+                >
+                  Riêng tư
+                </MenuItem>
+                {filterByVisibility !== "all" && (
                   <>
                     <Divider sx={{ my: 1 }} />
                     <MenuItem
-                      onClick={() => {
-                        setSelectedCollection("");
-                        handleMainPopoverClose();
-                      }}
+                      onClick={() => handleFilterChange("all")}
                       sx={{ color: "gray" }}
                     >
-                      Làm sạch bộ lọc...
+                      Xóa bộ lọc
                     </MenuItem>
                   </>
                 )}
-                <Divider sx={{ my: 1 }} />
-                <Button
-                  variant="contained"
-                  fullWidth
-                  sx={{
-                    bgcolor: "#0052CC",
-                    textTransform: "none",
-                    width: "170px",
-                  }}
-                  onClick={handleCreatePopoverOpen}
-                >
-                  Tạo một bộ sưu tập
-                </Button>
-              </Popover>
-              <Popover
-                open={openCreatePopover}
-                anchorEl={anchorEl}
-                onClose={handleCreatePopoverClose}
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                transformOrigin={{ vertical: "top", horizontal: "left" }}
-                PaperProps={{ sx: { p: 2, width: 320 } }}
-              >
-                <Box sx={{ position: "relative" }}>
-                  <Typography
-                    sx={{ textAlign: "center", fontWeight: "bold", mb: 2 }}
-                  >
-                    Tạo bộ sưu tập mới
-                  </Typography>
-                  <IconButton
-                    onClick={handleCreatePopoverClose}
-                    sx={{ position: "absolute", top: 0, right: 0 }}
-                  >
-                    <CloseIcon />
-                  </IconButton>
-                  <Typography sx={{ mb: 1 }}>Tên</Typography>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Nhập tên bộ sưu tập"
-                    value={collectionName}
-                    onChange={(e) => setCollectionName(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    disabled={!collectionName.trim()}
-                    sx={{
-                      bgcolor: !collectionName.trim() ? "#F4F5F7" : "#0052CC",
-                      color: !collectionName.trim() ? "gray" : "#fff",
-                      textTransform: "none",
-                    }}
-                    onClick={handleSaveCollection}
-                  >
-                    Lưu
-                  </Button>
-                </Box>
               </Popover>
             </Box>
           </Box>
@@ -455,6 +357,8 @@ const Board = () => {
             <TextField
               size="small"
               placeholder="Tìm kiếm các bảng"
+              value={searchQuery}
+              onChange={handleSearchChange}
               InputProps={{
                 startAdornment: (
                   <SearchOutlinedIcon sx={{ color: "gray", mr: 1 }} />
@@ -464,57 +368,69 @@ const Board = () => {
             />
           </Box>
         </Box>
-        <List sx={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-          <ListItem sx={{ width: "auto", padding: 0 }}>
-            <Box
-              onClick={handleOpenCreateBoard}
-              sx={{
-                width: "180px",
-                height: "100px",
-                backgroundColor: '#091e420f',
-                borderRadius: "8px",
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: "14px",
-                cursor: 'pointer',
-                '&:hover': {
-                  backgroundColor: '#DCDFE4',
-                  transition: 'background-color 85ms ease-in',
-                },
-              }}
-            >
-              Tạo bảng mới
-            </Box>
-          </ListItem>
-          <CreateBoard
-            workspaceId={workspace?.id}
-            open={showCreateBoard}
-            anchorEl={anchorElCreateBoard}
-            onClose={handleCloseCreateBoard}
-          />
-          {workspace?.boards && workspace.boards.length > 0 ? (
-            workspace?.boards
-              ?.sort((a, b) => {
-                const dateA = a.last_accessed ? new Date(a.last_accessed) : new Date(0);
-                const dateB = b.last_accessed ? new Date(b.last_accessed) : new Date(0);
-                return dateB - dateA;
-              })
-              ?.map((board) => (
-                <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
-                  <MyBoard
-                    key={board.id}
-                    board={board}
-                    id={`recent-board-${board.id}`}
-                  />
-                </ListItem>
-              ))
-          ) : (
-            <Typography variant="body2" color="textSecondary">
-              Không có bảng nào.
-            </Typography>
-          )}
-        </List>
+        <Box
+          sx={{
+            maxHeight: 11 * 30,
+            overflowY: "auto",
+            width: "100%",
+          }}
+        >
+          <List
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "20px",
+              width: "100%",
+            }}
+          >
+            <ListItem sx={{ width: "259.2px", padding: 0 }}>
+              <Box
+                onClick={handleOpenCreateBoard}
+                sx={{
+                  width: "259.2px",
+                  height: "100px",
+                  backgroundColor: '#091e420f',
+                  borderRadius: "8px",
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: "14px",
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: '#DCDFE4',
+                    transition: 'background-color 85ms ease-in',
+                  },
+                }}
+              >
+                Tạo bảng mới
+              </Box>
+            </ListItem>
+
+            <CreateBoard
+              workspaceId={workspace?.id}
+              open={showCreateBoard}
+              anchorEl={anchorElCreateBoard}
+              onClose={handleCloseCreateBoard}
+            />
+
+            {workspace?.boards?.length > 0 &&
+              sortBoards(filterBoards(workspace.boards)).map((board) => {
+                const isPrivate = board.visibility === "private" && !board.is_member;
+
+                return (
+                  <ListItem key={board.id} sx={{ width: "auto", padding: 0 }}>
+                    <MyBoard
+                      board={board}
+                      id={`board-in-workspace-${board.id}`}
+                      showIcon={true}
+                      width={259.2}
+                      isPrivate={isPrivate}
+                    />
+                  </ListItem>
+                );
+              })}
+          </List>
+        </Box>
 
         {/* {closedBoards?.data?.length > 0 && ( */}
         <Button

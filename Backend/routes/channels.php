@@ -20,11 +20,7 @@ use Illuminate\Support\Facades\Log;
 
 
 Broadcast::channel('workspace.{id}', function ($user, $id) {
-    $isMember = \App\Models\WorkspaceMembers::where('workspace_id', $id)
-        ->where('user_id', $user->id)
-        ->exists();
-    Log::info('User ' . $user->id . ' attempting to join workspace ' . $id . '. Member status: ' . ($isMember ? 'Yes' : 'No'));
-    return $isMember;
+    return true;
 });
 
 Broadcast::channel('board.{boardId}', function ($user, $boardId) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -24,18 +24,28 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectAll, setSelectAll] = useState(false);
     const [selectedRequests, setSelectedRequests] = useState([]);
-    const [loadingAdd, setLoadingAdd] = useState(null); // Loading state for adding
-    const [loadingRemove, setLoadingRemove] = useState(null); // Loading state for removing
-    const [pendingRequests, setPendingRequests] = useState(requests || []); // Manage pending requests list
-    const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' }); // Alert state
+    const [loadingAdd, setLoadingAdd] = useState(null);
+    const [loadingRemove, setLoadingRemove] = useState(null);
+    const [pendingRequests, setPendingRequests] = useState(requests || []);
+    const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
     const [confirmDialog, setConfirmDialog] = useState({
         open: false,
         userId: null,
-        userName: ''
-    }); // Confirm dialog state
+        userName: '',
+        isBulk: false
+    });
+    const [bulkProcessing, setBulkProcessing] = useState(false);
 
     const { mutateAsync: addMemberToWorkspace } = useAddNewMemberToWorkspace();
     const { mutate: removeMember, isLoading: isRemovingMember } = useRemoveMember();
+
+    // Sync pendingRequests with requests prop whenever it changes
+    useEffect(() => {
+        setPendingRequests(requests || []);
+        // Reset selection when requests change to avoid stale IDs
+        setSelectedRequests([]);
+        setSelectAll(false);
+    }, [requests]);
 
     const handleSearchChange = (event) => {
         setSearchTerm(event.target.value);
@@ -45,10 +55,22 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
         const checked = event.target.checked;
         setSelectAll(checked);
         if (checked) {
-            setSelectedRequests(pendingRequests.map(req => req.id));
+            // Select all user IDs from pendingRequests
+            const allUserIds = pendingRequests.map(req => req.user.id);
+            setSelectedRequests(allUserIds);
         } else {
             setSelectedRequests([]);
         }
+    };
+
+    const handleSingleSelect = (userId, checked) => {
+        setSelectedRequests((prev) =>
+            checked
+                ? [...prev, userId]
+                : prev.filter((id) => id !== userId)
+        );
+        // Update selectAll state if selection changes
+        setSelectAll(checked && selectedRequests.length + 1 === pendingRequests.length);
     };
 
     const handleAddRequest = async (memberId) => {
@@ -65,75 +87,173 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
             setLoadingAdd(memberId);
             const response = await addMemberToWorkspace({ workspaceId, memberId });
 
-            // Remove the approved request from the list
-            setPendingRequests((prevRequests) =>
-                prevRequests.filter((request) => request.user.id !== memberId)
-            );
+            // Optimistically remove the approved request
+            setPendingRequests((prev) => prev.filter((req) => req.user.id !== memberId));
+            setSelectedRequests((prev) => prev.filter((id) => id !== memberId));
 
             setAlert({
                 open: true,
                 message: response.message || 'Đã chấp thuận yêu cầu tham gia thành công.',
                 severity: 'success'
             });
-
         } catch (error) {
+            let errorMessage = 'Đã xảy ra lỗi khi xử lý yêu cầu.';
+            if (error?.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error?.message) {
+                errorMessage = error.message;
+            }
+
             setAlert({
                 open: true,
-                message: error.response?.data?.message || 'Đã xảy ra lỗi khi xử lý yêu cầu.',
+                message: errorMessage,
                 severity: 'error'
             });
-        } finally {
+        }
+        finally {
             setLoadingAdd(null);
         }
     };
 
-    // Mở dialog xác nhận trước khi xóa
-    const handleOpenConfirmDialog = (userId, userName) => {
+    const handleBulkAddRequests = async () => {
+        if (!isAdmin || selectedRequests.length === 0) return;
+
+        setBulkProcessing(true);
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const userId of selectedRequests) {
+            try {
+                await addMemberToWorkspace({ workspaceId, memberId: userId });
+                successCount++;
+            } catch (error) {
+                console.error(`❌ Lỗi khi thêm thành viên ID ${userId}:`, error);
+                errorCount++;
+            }
+        }
+
+        // Update state
+        setPendingRequests((prev) => prev.filter((req) => !selectedRequests.includes(req.user.id)));
+        setSelectedRequests([]);
+        setSelectAll(false);
+
+        setAlert({
+            open: true,
+            message: `Đã thêm ${successCount} thành viên thành công${errorCount > 0 ? `, ${errorCount} yêu cầu thất bại` : ''}.`,
+            severity: errorCount > 0 ? 'warning' : 'success'
+        });
+
+        setBulkProcessing(false);
+    };
+
+    const handleOpenConfirmDialog = (userId, userName, isBulk = false) => {
         setConfirmDialog({
             open: true,
-            userId: userId,
-            userName: userName
+            userId,
+            userName,
+            isBulk
         });
     };
 
-    // Đóng dialog xác nhận
     const handleCloseConfirmDialog = () => {
         setConfirmDialog({
             open: false,
             userId: null,
-            userName: ''
+            userName: '',
+            isBulk: false
         });
     };
 
-    // Xử lý khi xác nhận xóa
-    const handleRemoveRequest = async () => {
-        const userId = confirmDialog.userId;
+    const handleRemoveRequest = () => {
+        const { userId, isBulk } = confirmDialog;
+
+        if (isBulk) {
+            handleBulkRemoveRequests();
+            return;
+        }
+
         if (!userId) return;
 
-        try {
-            setLoadingRemove(userId);
-            await removeMember({ workspaceId, memberId: userId });
+        setLoadingRemove(userId);
+        removeMember(
+            {
+                workspaceId,
+                userId,
+                moveType: 'request'
+            },
+            {
+                onSuccess: () => {
+                    setPendingRequests((prev) => prev.filter((req) => req.user.id !== userId));
+                    setSelectedRequests((prev) => prev.filter((id) => id !== userId));
+                    setAlert({
+                        open: true,
+                        message: `Đã hủy yêu cầu của ${confirmDialog.userName} khỏi Không gian làm việc.`,
+                        severity: 'success'
+                    });
+                    handleCloseConfirmDialog();
+                },
+                onError: (error) => {
+                    setAlert({
+                        open: true,
+                        message: error.response?.data?.message || 'Đã xảy ra lỗi khi xóa yêu cầu.',
+                        severity: 'error'
+                    });
+                    console.error("❌ Lỗi khi xóa yêu cầu:", error);
+                },
+                onSettled: () => {
+                    setLoadingRemove(null);
+                }
+            }
+        );
+    };
 
-            // Cập nhật danh sách yêu cầu
-            setPendingRequests((prevRequests) =>
-                prevRequests.filter((request) => request.user.id !== userId)
-            );
+    const handleBulkRemoveRequests = async () => {
+        if (!isAdmin || selectedRequests.length === 0) return;
 
-            setAlert({
-                open: true,
-                message: 'Đã loại bỏ yêu cầu thành công.',
-                severity: 'success'
-            });
-        } catch (error) {
-            setAlert({
-                open: true,
-                message: error.response?.data?.message || 'Đã xảy ra lỗi khi xóa yêu cầu.',
-                severity: 'error'
-            });
-        } finally {
-            setLoadingRemove(null);
-            handleCloseConfirmDialog();
-        }
+        setBulkProcessing(true);
+        let successCount = 0;
+        let errorCount = 0;
+
+        // Process all selected requests in parallel
+        await Promise.all(
+            selectedRequests.map(
+                (userId) =>
+                    new Promise((resolve) => {
+                        removeMember(
+                            {
+                                workspaceId,
+                                userId,
+                                moveType: 'request'
+                            },
+                            {
+                                onSuccess: () => {
+                                    successCount++;
+                                    resolve();
+                                },
+                                onError: (error) => {
+                                    console.error(`❌ Lỗi khi xóa yêu cầu ID ${userId}:`, error);
+                                    errorCount++;
+                                    resolve();
+                                }
+                            }
+                        );
+                    })
+            )
+        );
+
+        // Update state
+        setPendingRequests((prev) => prev.filter((req) => !selectedRequests.includes(req.user.id)));
+        setSelectedRequests([]);
+        setSelectAll(false);
+
+        setAlert({
+            open: true,
+            message: `Đã từ chối ${successCount} yêu cầu thành công${errorCount > 0 ? `, ${errorCount} yêu cầu thất bại` : ''}.`,
+            severity: errorCount > 0 ? 'warning' : 'success'
+        });
+
+        handleCloseConfirmDialog();
+        setBulkProcessing(false);
     };
 
     const handleCloseAlert = () => {
@@ -142,14 +262,15 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
 
     const safeSearch = typeof searchTerm === 'string' ? searchTerm.toLowerCase() : '';
     const filteredRequests = Array.isArray(pendingRequests)
-        ? pendingRequests.filter(request =>
+        ? pendingRequests.filter((request) =>
             request?.user?.full_name?.toLowerCase().includes(safeSearch)
         )
         : [];
 
+    const hasSelectedRequests = selectedRequests.length > 0;
+
     return (
         <Box>
-            {/* Alert Snackbar */}
             <Snackbar
                 open={alert.open}
                 autoHideDuration={6000}
@@ -161,7 +282,6 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
                 </Alert>
             </Snackbar>
 
-            {/* Dialog xác nhận xóa */}
             <Dialog
                 open={confirmDialog.open}
                 onClose={handleCloseConfirmDialog}
@@ -169,12 +289,15 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
                 aria-describedby="alert-dialog-description"
             >
                 <DialogTitle id="alert-dialog-title">
-                    {"Xóa khách"}
+                    {confirmDialog.isBulk ? 'Xóa nhiều yêu cầu' : 'Xóa yêu cầu'}
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        Đã gỡ khỏi Không gian làm việc.<br />
-                        Xóa toàn bộ truy cập tới Không gian làm việc. Họ sẽ nhận được thông báo.
+                        {confirmDialog.isBulk
+                            ? `Bạn có chắc chắn muốn từ chối ${selectedRequests.length} yêu cầu tham gia Không gian làm việc?`
+                            : `Từ chối yêu cầu tham gia của ${confirmDialog.userName} vào Không gian làm việc.`}
+                        <br />
+                        Người dùng sẽ nhận được thông báo về việc từ chối yêu cầu.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
@@ -186,12 +309,12 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
                         color="error"
                         variant="contained"
                         autoFocus
-                        disabled={loadingRemove === confirmDialog.userId}
+                        disabled={loadingRemove === confirmDialog.userId || isRemovingMember || bulkProcessing}
                     >
-                        {loadingRemove === confirmDialog.userId ? (
-                            <LogoLoading size={20} />
+                        {loadingRemove === confirmDialog.userId || bulkProcessing ? (
+                            <LogoLoading scale={0.3} />
                         ) : (
-                            'Xóa'
+                            'Từ chối'
                         )}
                     </Button>
                 </DialogActions>
@@ -220,30 +343,45 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
                 }}
             />
 
-            <FormControlLabel
-                control={
-                    <Checkbox
-                        checked={selectAll}
-                        onChange={handleSelectAll}
-                        size="small"
-                    />
-                }
-                label="Chọn tất cả"
-                sx={{ mb: 2 }}
-            />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={selectAll}
+                            onChange={handleSelectAll}
+                            size="small"
+                        />
+                    }
+                    label={`Chọn tất cả ${selectedRequests.length > 0 ? `(${selectedRequests.length})` : ''}`}
+                />
+
+                {isAdmin && hasSelectedRequests && (
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button
+                            variant="contained"
+                            size="small"
+                            sx={{
+                                textTransform: 'none',
+                                bgcolor: '#F1F2F6',
+                                color: '#202124',
+                                boxShadow: 'none',
+                                '&:hover': { bgcolor: '#E8EAED' }
+                            }}
+                            onClick={handleBulkAddRequests}
+                            disabled={bulkProcessing}
+                        >
+                            {bulkProcessing ? <LogoLoading scale={0.3} /> : `Thêm mục đã chọn vào Không gian làm việc`}
+                        </Button>
+                    </Box>
+                )}
+            </Box>
 
             {filteredRequests?.map((request) => (
                 <Box key={request.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: "space-between", mb: 2 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <Checkbox
-                            checked={selectedRequests.includes(request.id)}
-                            onChange={(e) => {
-                                setSelectedRequests((prev) =>
-                                    e.target.checked
-                                        ? [...prev, request.id]
-                                        : prev.filter((id) => id !== request.id)
-                                );
-                            }}
+                            checked={selectedRequests.includes(request.user.id)}
+                            onChange={(e) => handleSingleSelect(request.user.id, e.target.checked)}
                             size="small"
                         />
                         <InitialsAvatar
@@ -270,7 +408,7 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
                             <>
                                 {loadingAdd === request?.user?.id ? (
                                     <Box sx={{ px: 2, py: 0.5 }}>
-                                        <LogoLoading size={24} />
+                                        <LogoLoading scale={0.3} />
                                     </Box>
                                 ) : (
                                     <Button
@@ -284,7 +422,7 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
                                         }}
                                         onClick={() => handleAddRequest(request?.user?.id)}
                                     >
-                                        Chấp thuận yêu cầu
+                                        Chấp thuận
                                     </Button>
                                 )}
                             </>
@@ -300,7 +438,7 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
                             disabled={loadingRemove === request?.user?.id}
                         >
                             {loadingRemove === request?.user?.id ? (
-                                <LogoLoading scale={20} />
+                                <LogoLoading scale={0.3} />
                             ) : (
                                 <CloseIcon fontSize="small" />
                             )}
@@ -308,6 +446,12 @@ const Request = ({ requests, workspaceId, isAdmin }) => {
                     </Box>
                 </Box>
             ))}
+
+            {filteredRequests.length === 0 && (
+                <Typography variant="body2" sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                    Không có yêu cầu tham gia nào{searchTerm ? ' phù hợp với tìm kiếm' : ''}
+                </Typography>
+            )}
         </Box>
     );
 };

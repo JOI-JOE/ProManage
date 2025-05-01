@@ -25,9 +25,10 @@ import WorkspaceAvatar from "../../../components/Common/WorkspaceAvatar";
 import { Link } from "react-router-dom";
 import { StarIcon as StarOutlineIcon } from "@heroicons/react/24/outline"; // Outline
 import { StarIcon } from "@heroicons/react/24/solid"; // Solid
+import LogoLoading from "../../../components/Common/LogoLoading";
 
 
-const HomeBoard = ({ workspaces }) => {
+const HomeBoard = ({ workspaces, workspaceLoading }) => {
   // const { data: workspaces, isLoading, isError } = useGetWorkspaces();
   const { guestWorkspaces } = useWorkspace()
 
@@ -90,8 +91,20 @@ const HomeBoard = ({ workspaces }) => {
     });
   };
 
-  console.log(guestWorkspaces)
-
+  if (workspaceLoading) {
+    return (
+      <Box
+        sx={{
+          width: "60%",
+          padding: "20px",
+          marginLeft: "auto",
+          marginTop: "25px",
+        }}
+      >
+        <LogoLoading />
+      </Box>
+    );
+  }
   return (
     <Box
       sx={{
@@ -194,68 +207,74 @@ const HomeBoard = ({ workspaces }) => {
       </div>
 
       <Box id="guest-workspace">
-        <Typography
-          variant="h6" // Sử dụng h6 để tiêu đề nhỏ hơn và phù hợp hơn
-          sx={{
-            marginTop: "24px", // Giảm marginTop xuống 24px để khoảng cách hợp lý
-            marginBottom: "8px", // Giữ marginBottom nhỏ để cách nội dung bên dưới
-            fontWeight: "bold",
-            textTransform: "uppercase",
-            color: "#172B4D", // Màu chữ giống với giao diện trước đó
-          }}
-        >
-          CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
-        </Typography>
+        <Box id="guest-workspace">
         <div id="myGuestWorkspace">
-          {guestWorkspaces?.length > 0 ? (
-            guestWorkspaces.map((workspace) => (
-              <div key={workspace.id} style={{ marginBottom: "20px" }}>
-                {/* Hiển thị thông tin workspace */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: "10px",
-                    gap: "6px",
+            {guestWorkspaces?.length > 0 && (
+              <>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    marginTop: "24px",
+                    marginBottom: "8px",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    color: "#172B4D",
                   }}
                 >
-                  <WorkspaceAvatar workspace={workspace} />
-                  <Typography
-                    fontWeight="bold"
-                    sx={{ whiteSpace: "nowrap" }}
-                  >
-                    {workspace.display_name.length > 20
-                      ? workspace.display_name.substring(0, 20) + "..."
-                      : workspace.display_name}
-                  </Typography>
-                </div>
-                {/* Hiển thị danh sách boards của workspace với flex */}
-                {workspace.boards?.filter((board) => !board.closed).length > 0 ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "10px",
-                    }}
-                  >
-                    {workspace.boards
-                      .filter((board) => !board.closed)
-                      .map((board) => (
-                        <div
-                          key={board.id}
-                          style={{
-                            maxWidth: "300px", // Giới hạn chiều rộng tối đa
-                          }}
+                  CÁC KHÔNG GIAN LÀM VIỆC KHÁCH
+                </Typography>
+                {guestWorkspaces
+                  .filter((workspace) =>
+                    workspace.boards?.some((board) => !board.closed)
+                  )
+                  .map((workspace) => (
+                    <div key={workspace.id} style={{ marginBottom: "20px" }}>
+                      {/* Hiển thị thông tin workspace */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                          gap: "6px",
+                        }}
+                      >
+                        <WorkspaceAvatar workspace={workspace} />
+                        <Typography
+                          fontWeight="bold"
+                          sx={{ whiteSpace: "nowrap" }}
                         >
-                          <MyBoard board={board} id={`guest-board-${board.id}`} />
-                        </div>
-                      ))}
-                  </div>
-                ) : null}
-              </div>
-            ))
-          ) : null}
-        </div>
+                          {workspace.display_name.length > 20
+                            ? workspace.display_name.substring(0, 20) + "..."
+                            : workspace.display_name}
+                        </Typography>
+                      </div>
+                      {/* Hiển thị danh sách boards của workspace với flex */}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "10px",
+                        }}
+                      >
+                        {workspace.boards
+                          .filter((board) => !board.closed)
+                          .map((board) => (
+                            <div
+                              key={board.id}
+                              style={{
+                                maxWidth: "300px",
+                              }}
+                            >
+                              <MyBoard board={board} id={`guest-board-${board.id}`} />
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+              </>
+            )}
+          </div>
+        </Box>
       </Box>
 
 

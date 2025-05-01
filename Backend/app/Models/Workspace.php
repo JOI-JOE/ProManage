@@ -81,13 +81,16 @@ class Workspace extends Model
     {
         return $this->hasMany(WorkspaceMembers::class, 'workspace_id');
     }
+
+    public function admins()
+    {
+        // Ví dụ: relationship với bảng workspace_members, chỉ lấy những user có vai trò admin
+        return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id')
+            ->where('member_type', 'admin'); // Điều kiện để lọc admin
+    }
     ///quoc 26/4
     public function members2()
     {
-       return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id');
+        return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id');
     }
-    protected $dispatchesEvents = [
-        'created' => WorkspaceUpdate::class,
-        'updated' => WorkspaceUpdate::class
-    ];
 }

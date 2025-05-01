@@ -20,15 +20,10 @@ import {
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import SettingsIcon from "@mui/icons-material/Settings";
-import UpgradeIcon from "@mui/icons-material/Upgrade";
-import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import AddIcon from "@mui/icons-material/Add";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import CloseIcon from "@mui/icons-material/Close";
 import { useToggleBoardClosed } from "../../../../hooks/useBoard";
 import { useWorkspace } from "../../../../contexts/WorkspaceContext";
@@ -37,11 +32,12 @@ import LogoLoading from "../../../../components/Common/LogoLoading";
 import WorkspaceAvatar from "../../../../components/Common/WorkspaceAvatar";
 import { useSendJoinRequest } from "../../../../hooks/useWorkspaceInvite";
 import CreateBoard from "../../../../components/CreateBoard";
+import PrivateSideBar from "../Private/PrivateSideBar";
 
 
 const SideBar = ({ board, isLoadingBoard }) => {
   const { boardId, workspaceId } = useParams();
-  const { boardIds, pendingIds } = useMe();
+  const { boardIds, pendingIds, userLoading } = useMe();
   const { workspaces, guestWorkspaces, isLoading } = useWorkspace();
 
   // Workspace hiện tại
@@ -73,13 +69,6 @@ const SideBar = ({ board, isLoadingBoard }) => {
   // Là thành viên workspace?
   const isMemberWorkspace = currentWorkspace?.joined === 1;
   const isBoardMember = boardIds?.some((b) => b.id === boardId);
-
-
-  const [openSettings, setOpenSettings] = useState(false);
-
-  const toggleSettings = () => {
-    setOpenSettings(!openSettings);
-  };
 
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
@@ -132,6 +121,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
     setAnchorEl(null);
   };
 
+
   return (
     <Drawer
       variant="permanent"
@@ -156,10 +146,12 @@ const SideBar = ({ board, isLoadingBoard }) => {
         },
       }}
     >
-      {isLoading || isLoadingBoard ? (
+      {isLoading || isLoadingBoard || userLoading ? (
         <Box sx={{ p: 2 }}>
           <LogoLoading />
         </Box>
+      ) : !isBoardMember && !isMemberWorkspace ? (
+        <PrivateSideBar />
       ) : (
         <>
           <Box
@@ -293,7 +285,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
 
           <List sx={{ p: 0.5 }}>
             {currentWorkspace?.boards
-              ?.filter((board) => board.closed === false)
+              ?.filter((board) => board.closed === false && board.joined === true)
               .map((board) => {
                 const isCurrent = board.id === boardId;
                 const isBoardAdmin = board.role === "admin";
@@ -467,6 +459,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
 
         </>
       )}
+
     </Drawer>
   );
 };

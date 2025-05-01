@@ -11,33 +11,33 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Support\Facades\Log;
 
-class SendRequestJoinWorkspace implements ShouldBroadcast
+class WorkspaceMemberRemoved implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $workspaceId;
     public $user;
-    public $workspace;
-
     /**
      * Tạo instance sự kiện.
      *
      * @param User $user
      * @param Workspace $workspace
      */
-    public function __construct(User $user, Workspace $workspace)
+    public function __construct($workspaceId, $user)
     {
+        $this->workspaceId = $workspaceId;
         $this->user = $user;
-        $this->workspace = $workspace;
+
+        $this->dontBroadcastToCurrentUser();
     }
 
-    /**
-     * Các kênh mà sự kiện này sẽ broadcast đến.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
-     */
-    public function broadcastOn()
+
+    public function broadcastOn(): array
     {
-        return new Channel("workspace.{$this->workspace->id}");
+        return [
+            new Channel("user.{$this->user->id}"),
+            new Channel("workspace.{$this->workspaceId}")
+        ];
     }
 
     /**
@@ -45,7 +45,7 @@ class SendRequestJoinWorkspace implements ShouldBroadcast
      */
     public function broadcastAs()
     {
-        return 'JoinRequestSent';
+        return 'workspace.member.removed';
     }
 
     /**
@@ -55,16 +55,12 @@ class SendRequestJoinWorkspace implements ShouldBroadcast
      */
     public function broadcastWith()
     {
-        return [
-            'user' => [
-                'id' => $this->user->id,
-                'name' => $this->user->name,
-                'email' => $this->user->email,
-            ],
-            'workspace' => [
-                'id' => $this->workspace->id,
-                'name' => $this->workspace->name,
-            ],
+        $data = [
+            'workspace_id' => $this->workspaceId,
+            'user_id' => $this->user->id,
         ];
+        Log::info('Xóa thành viên vào lạhklasjfkajsklfjlkasjfkl', $data);
+
+        return $data;
     }
 }
