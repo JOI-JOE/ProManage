@@ -50,6 +50,10 @@ class ReminderNotificationCard extends Notification implements ShouldQueue
             'type' => 'reminder',
             'card_id' => $this->card->id,
             'card_title' => $this->card->title,
+            'list_id' => $this->card->list->id ?? null,
+            'list_name' => $this->card->list->name ?? null,
+            'board_id' => $this->card->list->board->id ?? null,
+            'board_name' => $this->card->list->board->name ?? null,
             'message' => "Nhắc nhở: Thẻ '{$this->card->title}' sẽ đến hạn vào " . $this->formatDeadline(),
         ];
     }
@@ -60,6 +64,10 @@ class ReminderNotificationCard extends Notification implements ShouldQueue
             'type' => 'reminder',
             'card_id' => $this->card->id,
             'card_title' => $this->card->title,
+            'list_id' => $this->card->list->id ?? null,
+            'list_name' => $this->card->list->name ?? null,
+            'board_id' => $this->card->list->board->id ?? null,
+            'board_name' => $this->card->list->board->name ?? null,
             'message' => "Nhắc nhở: Thẻ '{$this->card->title}' sẽ đến hạn vào " . $this->formatDeadline(),
         ]);
     }

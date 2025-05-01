@@ -24,6 +24,7 @@ const AddCardModal = ({ open, onClose, workspace, boardIds }) => {
 
   // const { workspaceIds } = useMe();
   const boards = workspace?.boards || [];
+  console.log(workspace);
 
   const [title, setTitle] = useState("");
   const [listId, setListId] = useState("");
