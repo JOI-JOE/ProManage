@@ -28,12 +28,12 @@ export const getCalendar = async (boardIds = [], start, end) => {
   if (boardIds.length === 0 || !start || !end) return [];
 
   try {
-    const responses = await Promise.all(
-      boardIds.map(id =>
-        authClient.get(`/calendar?board_id=${id}&start=${start}&end=${end}`)
-      )
-    );
-    return responses.flatMap(res => res.data || []);
+    const response = await authClient.post('/calendar', {
+      board_id: boardIds,
+      start,
+      end,
+    });
+    return response.data || [];
   } catch (error) {
     console.error("Lỗi khi lấy calendar:", error);
     return [];

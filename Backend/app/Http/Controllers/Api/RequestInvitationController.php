@@ -58,11 +58,15 @@ class RequestInvitationController extends Controller
 
             $isCreator = $board->isCreator($user->id);
 
+            // Thêm check xem user này có trong workspace hay không
+            $isWorkspaceMember = $board->workspace->members2->contains('id',$user->id);
+
             if ($isCreator) {
                 // Nếu là creator, thêm ngay vào bảng với vai trò admin
                 $board->members()->attach($user->id, [
                     'id' => Str::uuid(),
                     'role' => 'admin',
+                    'joined' => 1,
 
                 ]);
                 $memberIds = $board->members()->pluck('users.id')->toArray();
@@ -82,6 +86,35 @@ class RequestInvitationController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Bạn đã tham gia lại bảng với vai trò quản trị viên!',
+                    'is_member' => true,
+                ], 200);
+            }
+
+            if ($isWorkspaceMember && !$isCreator) {
+                // Nếu là thành viên của không gian là việc, thêm ngay vào bảng với vai trò admin
+                $board->members()->attach($user->id, [
+                    'id' => Str::uuid(),
+                    'role' => 'member',
+                    'joined' => 1,
+
+                ]);
+                $memberIds = $board->members()->pluck('users.id')->toArray();
+                // Broadcast event tới các thành viên khác
+                broadcast(new CreatorComeBackBoard(
+                    $boardId,
+                    $user->id,
+                    $user->full_name,
+                    array_diff($memberIds, [$user->id]) // Loại creator khỏi danh sách nhận
+                ))->toOthers();
+                
+                Log::info("Broadcasting CreatorRejoinedBoard", [
+                    'boardId' => $boardId,
+                    'userId' => $user->id,
+                    'memberIds' => $memberIds,
+                ]);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Bạn đã tham gia vào bảng khi là thnafh viên của không gian làm việc ',
                     'is_member' => true,
                 ], 200);
             }

@@ -8,7 +8,7 @@ const ProfileInfo = () => {
   const location = useLocation();
 
   const { data: user } = useUserById();
-  const actualUsername = user?.user_name;
+  const actualUsername = user?.full_name;
 
   // Xác định tab đang active dựa vào pathname
   const path = location.pathname;

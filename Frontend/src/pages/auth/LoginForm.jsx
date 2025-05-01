@@ -12,7 +12,16 @@ const LoginForm = () => {
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const location = useLocation();
-  const inviteToken = location.state?.inviteToken;
+  const inviteTokenFromStorage = localStorage.getItem('inviteTokenWhenUnauthenticated');
+  // const inviteTokenFromInvitationByEmail = localStorage.getItem('tokenFromInvitationByEmail');
+  const inviteToken = location?.state?.inviteToken ?? inviteTokenFromStorage ;
+  // console.log(inviteTokenFromStorage);
+  // console.log(inviteTokenFromInvitationByEmail);
+  // console.log(location?.state?.inviteToken);
+  
+  // console.log("location", location); // Debug
+  console.log("inviteToken", inviteToken); // Debug
+ 
   const invitationWorkspace = Cookies.get("invitation");
 
   // Pending của workspace
@@ -110,6 +119,8 @@ const LoginForm = () => {
         setToken(data.token);
         if (inviteToken) {
           setLinkInvite(`/accept-invite/${inviteToken}`);
+          localStorage.removeItem('inviteTokenWhenUnauthenticated'); // Xóa sau khi sử dụng
+          // localStorage.removeItem('tokenFromInvitationByEmail'); // Xóa sau khi sử dụng
         } else if (invitationWorkspace) {
           // Giải mã và xử lý invitationWorkspace
           const decoded = decodeURIComponent(decodeURIComponent(invitationWorkspace));

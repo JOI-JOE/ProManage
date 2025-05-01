@@ -81,6 +81,11 @@ class Workspace extends Model
     {
         return $this->hasMany(WorkspaceMembers::class, 'workspace_id');
     }
+    ///quoc 26/4
+    public function members2()
+    {
+       return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id');
+    }
     protected $dispatchesEvents = [
         'created' => WorkspaceUpdate::class,
         'updated' => WorkspaceUpdate::class

@@ -103,7 +103,10 @@ class BoardMemberController extends Controller
 
     public function getLinkInviteByBoard($board_id)
     {
-        $invite = BoardInvitation::where('board_id', $board_id)->where('invited_member_id', null)->first();
+        $invite = BoardInvitation::where('board_id', $board_id)
+            ->where('invited_by', auth()->id())
+            ->whereRaw('CHAR_LENGTH(invite_token) = 16')
+            ->first();
 
         if (!$invite) {
             return response()->json(
@@ -137,33 +140,35 @@ class BoardMemberController extends Controller
     }
 
     // 📍 Khi user click vào link mời
-    public function handleInvite(Request $request,$token)
+    public function handleInvite(Request $request, $token)
     {
         try {
             return DB::transaction(function () use ($request, $token) {
                 $invite = BoardInvitation::where('invite_token', $token)
                     ->lockForUpdate()
                     ->first();
-    
+
                 if (!$invite) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Invalid or expired invite link',
                     ], 404);
                 }
-    
+
                 $board = Board::find($invite->board_id);
-               // Lấy thông tin người mời
+                // Lấy thông tin người mời
                 $inviter = User::find($invite->invited_by);
-                $inviterName = $inviter ? $inviter->full_name : null; 
+                $inviterName = $inviter ? $inviter->full_name : null;
                 $userExists = $invite->email ? User::where('email', $invite->email)->exists() : false;
-    
+                Log::info('Invite email:', ['email' => $invite->email]);
+                Log::info('User exists:', ['user_exists' => $userExists]);
+
                 // Lấy user từ header Authorization (nếu có)
                 $user = null;
                 $isMember = false;
                 $hasRejected = false;
                 $authHeader = $request->header('Authorization');
-    
+
                 if ($authHeader && preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
                     $accessToken = $matches[1];
                     $token = PersonalAccessToken::findToken($accessToken);
@@ -171,30 +176,38 @@ class BoardMemberController extends Controller
                         $user = $token->tokenable; // Lấy user từ token
                     }
                 }
-    
+
                 if ($user) {
+
+                    // 🔐 Kiểm tra nếu email user không khớp với email trong lời mời
+                    if ($invite->email && $user->email !== $invite->email) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Bạn không có quyền sử dụng lời mời này.',
+                        ], 409);
+                    }
+                    
                     $rejectedBy = $invite->rejected_by;
                     if (is_string($rejectedBy)) {
                         $rejectedBy = json_decode($rejectedBy, true) ?? [];
                     } elseif (!is_array($rejectedBy)) {
                         $rejectedBy = [];
                     }
-    
+
                     if (in_array($user->id, $rejectedBy)) {
                         return response()->json([
                             'success' => false,
                             'user_id' => $user->id,
-                            'board_id'=> $board->id,
+                            'board_id' => $board->id,
                             'message' => 'Bạn đã từ chối lời mời này trước đó.',
                             'has_rejected' => true,
                         ], 403);
                     }
-    
+
                     // Kiểm tra trong board_members
                     $isMember = $board->members()->where('user_id', $user->id)->exists();
-    
                 }
-    
+
                 return response()->json([
                     'success' => true,
                     'board' => [
@@ -274,16 +287,16 @@ class BoardMemberController extends Controller
                 $invitation = BoardInvitation::where('invite_token', $token)
                     ->lockForUpdate()
                     ->first();
-    
+
                 if (!$invitation) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Lời mời không tồn tại hoặc đã hết hạn.',
                     ], 404);
                 }
-    
+
                 $user = Auth::user();
-    
+
                 // Đảm bảo rejected_by là mảng
                 $rejectedBy = $invitation->rejected_by;
                 if (is_string($rejectedBy)) {
@@ -291,21 +304,22 @@ class BoardMemberController extends Controller
                 } elseif (!is_array($rejectedBy)) {
                     $rejectedBy = [];
                 }
-    
+
                 if (in_array($user->id, $rejectedBy)) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Bạn đã từ chối lời mời này trước đó.',
                     ], 400);
                 }
-    
+
                 // Thêm user_id vào rejected_by
                 $rejectedBy[] = $user->id;
                 $invitation->rejected_by = $rejectedBy;
                 $invitation->save();
-    
+
                 return response()->json([
                     'success' => true,
+                    'user_name' => $user->user_name,
                     'message' => 'Bạn đã từ chối lời mời tham gia bảng.',
                 ], 200);
             });
@@ -454,7 +468,7 @@ class BoardMemberController extends Controller
 
 
             // Chỉ gửi event tới các thành viên còn lại, không gửi tới người bị xóa
-            broadcast(new MemberRemovedFromBoard($board->id, $request->user_id, $removeUser->full_name, $memberIds));
+            broadcast(new MemberRemovedFromBoard($board->id, $request->user_id, $removeUser->user_name, $memberIds));
             Log::info("Broadcasting to memberIds", ['memberIds' => $memberIds]);
             // Kiểm tra xem currentUser còn là thành viên không
             $isMember = $board->members()->where('board_members.user_id', $currentUser->id)->exists();
@@ -590,7 +604,8 @@ class BoardMemberController extends Controller
                     'board_id' => $board->id,
                     'invited_member_id' => $user->id,
                     'status' => 'pending',
-                    'invite_token' => Str::random(16),
+                    'email' => $email,
+                    'invite_token' => Str::random(32),
                     'invitation_message' => $message,
                     'invited_by' => auth()->id(),
                     'accept_unconfirmed' => false,
@@ -605,7 +620,7 @@ class BoardMemberController extends Controller
                     'board_id' => $board->id,
                     'email' => $email,
                     'status' => 'pending',
-                    'invite_token' => Str::random(16),
+                    'invite_token' => Str::random(32),
                     'invitation_message' => $message,
                     'invited_by' => auth()->id(),
                     'accept_unconfirmed' => true,
@@ -622,7 +637,7 @@ class BoardMemberController extends Controller
             'data' => $invitations
         ], 200);
     }
-   
+
     ///// Hàm này để kiểm tra xem user đã ở trong workspace chưa để còn hiển thị chỗ "Yêu cầu tham gia " bên SideBar , viết luôn vào đây cho tiện luôn, đỡ sửa nhiều file (quoc)
     public function checkMemberInWorkspace($workspaceId, $userId)
     {
@@ -631,7 +646,7 @@ class BoardMemberController extends Controller
                 ->where('workspace_id', $workspaceId)
                 ->where('user_id', $userId)
                 ->exists();
-    
+
             return response()->json([
                 'is_member' => $isMember,
             ]);
@@ -641,6 +656,5 @@ class BoardMemberController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
-    
     }
 }

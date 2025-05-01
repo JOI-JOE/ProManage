@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { acceptRequestJoinBoard, generateInviteLink, getBoardMembers, getGuestBoards, getRequestJoinBoard, rejectRequestJoinBoard, removeInviteLink, removeMemberFromBoard, requestJoinBoard, updateRoleMemberInBoards } from "../api/models/inviteBoardApi";
+import { acceptRequestJoinBoard, generateInviteLink, getBoardMembers, getGuestBoards, getRequestJoinBoard, JoinBoard, rejectRequestJoinBoard, removeInviteLink, removeMemberFromBoard, requestJoinBoard, updateRoleMemberInBoards } from "../api/models/inviteBoardApi";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import echoInstance from "./realtime/useRealtime";
@@ -35,12 +35,11 @@ export const useGetBoardMembers = (boardId) => {
     channel.listen(".BoardUpdateRole", (data) => {
       console.log('Realtime archive changed: ', data);
 
-      
+      // queryClient.invalidateQueries( ["boardMembers", boardId]);
       queryClient.invalidateQueries({ queryKey: ["boardMembers", boardId], exact: true });
       queryClient.invalidateQueries({ queryKey: ["user"], exact: true });
       queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
-       queryClient.invalidateQueries({ queryKey: ["user_main"], exact: true });
-
+      queryClient.invalidateQueries({ queryKey: ["user_main"] });
     });
 
     return () => {
@@ -146,6 +145,7 @@ export const useRemoveMemberFromBoard = (currentUserId,boardId) => {
           queryClient.invalidateQueries({ queryKey: ["checklist-item-members", item.id] });
           // console.log("Item:", item.id);
         });
+        queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
       }
     },
     onError: (error) => {
@@ -165,22 +165,35 @@ export const useRemoveMemberFromBoard = (currentUserId,boardId) => {
       // console.log("MemberRemovedFromBoard", data);
   
       // Lấy thông tin bảng từ cache
+      // Fetch lại dữ liệu ngay lập tức
+      queryClient.refetchQueries({ queryKey: ["boards", data.board_id] });
       const boardData = queryClient.getQueryData(["boards", data.board_id]);
       console.log("Board data:", boardData);
+    
+
       const isCreator = boardData?.created_by === currentUserId;
       const isSelfRemoved = data.user_id === currentUserId;
+      const workspaceMembers = boardData?.workspace?.members; // (Array các thành viên trong workspace)
+      // console.log(workspaceMembers);
+      
+      const isWorkspaceMember = workspaceMembers.some(member => member.user_id === currentUserId);
+      // console.log(isWorkspaceMember);
+      
+      // const checkIsMemberInWorkspace = boardData?.isWorkspaceMember;
+      // console.log('checkIsMemberInWorkspace:',checkIsMemberInWorkspace);
+      
 
       if(data.board_id === boardId) {
-       
-        // Chỉ điều hướng nếu là người rời bảng
-        if (isSelfRemoved && !isCreator) {
-          // toast.info(`${data.user_name} đã rời khỏi bảng.`);
-          navigate(`/request-join/${data.board_id}`);
-        } else if (isSelfRemoved && isCreator) {
-          toast.info("Bạn đã rời khỏi bảng, có thể tham gia lại bất cứ lúc nào.");
+
+        if (!isWorkspaceMember) {
+          // Nếu KHÔNG phải thành viên workspace => luôn luôn bị điều hướng
+          navigate(`/u/${data.user_name}/boards`);
         } else {
-          // Thông báo cho các thành viên khác (bao gồm creator) mà không điều hướng
-          toast.info(`${data.user_name} đã rời khỏi bảng.`);
+          // Nếu VẪN là thành viên workspace
+          if (isSelfRemoved) {
+            // Tự rời -> chỉ toast
+            toast.info("Bạn đã rời khỏi bảng, có thể tham gia lại bất cứ lúc nào.");
+          }
         }
 
         console.log("Thông báo đúng bảng ");
@@ -204,7 +217,8 @@ export const useRemoveMemberFromBoard = (currentUserId,boardId) => {
       queryClient.invalidateQueries({ queryKey: ["boardMembers", data.board_id], exact: true });
       queryClient.invalidateQueries({ queryKey: ["membersInCard", data.board_id], exact: true });
       queryClient.invalidateQueries({ queryKey: ["checklist-item-members", data.board_id], exact: true });
-      queryClient.invalidateQueries({ queryKey: ["guestBoards"], exact: true });
+      // queryClient.invalidateQueries({ queryKey: ["guestBoards"], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
     });
   
     // Cleanup khi unmount
@@ -289,6 +303,7 @@ export const useRequestJoinBoard = () => {
       if (data.is_member) {
         queryClient.invalidateQueries({ queryKey: ['boardMembers', variables.boardId], exact: true });
       }
+      queryClient.invalidateQueries({ queryKey: ['workspaces'], exact: true });
     },
     onError: (error) => {
       console.error("Lỗi khi yêu cầu tham gia bảng:", error);
@@ -336,6 +351,28 @@ export const useAcceptRequestJoinBoard = () => {
       } else {
         toast.error("Lỗi khi chấp nhận yêu cầu: " + errorMessage);
       }
+    },
+  });
+
+  
+
+};
+
+
+export const useJoinBoard = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ( token ) => JoinBoard(token),
+    onSuccess: (data) => {
+     
+      // queryClient.invalidateQueries({ queryKey: ['workspaces'], exact: true });
+
+      
+    },
+    onError: (error) => {
+      console.error("Lỗi khi tham gia bảng:", error);
+      
     },
   });
 
@@ -410,6 +447,7 @@ export const useCreatorComeBackBoard = (currentUserId, boardId) => {
 
       // Invalidate cache để gọi lại API lấy danh sách mới
       queryClient.invalidateQueries({ queryKey: ["boardMembers",data.board_id], exact: true });
+      // queryClient.invalidateQueries({ queryKey: ["workspaces"], exact: true });
     });
 
     return () => {
