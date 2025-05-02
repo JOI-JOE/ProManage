@@ -247,10 +247,10 @@ const BoardContent = () => {
                 ? board?.thumbnail
                 : `url(${board?.thumbnail})`
               : "#1693E1",
-            backgroundSize: "100% 100%", // Stretch image to fill container
+            backgroundSize: "cover", // Thay đổi từ "100% 100%" thành "cover"
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
-            imageRendering: "auto",
+            imageRendering: "high-quality", // Thêm thuộc tính để cải thiện độ nét
             height: theme.trello.boardContentHeight,
             padding: "18px 0 7px 0px",
             display: "flex",

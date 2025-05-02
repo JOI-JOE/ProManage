@@ -13,10 +13,18 @@ import {
   Button,
   Divider,
   FormControlLabel,
+  Grid,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
-import { useCardLabels, useCreateLabel, useDeleteLabelByBoard, useLabels, useUpdateCardLabel, useUpdateLabelName } from "../../../../../../hooks/useTableView";
+import {
+  useCardLabels,
+  useCreateLabel,
+  useDeleteLabelByBoard,
+  useLabels,
+  useUpdateCardLabel,
+  useUpdateLabelName,
+} from "../../../../../../hooks/useTableView";
 
 // import {
 //   useCardLabels,
@@ -26,6 +34,28 @@ import { useCardLabels, useCreateLabel, useDeleteLabelByBoard, useLabels, useUpd
 //   useUpdateCardLabel,
 //   useUpdateLabelName,
 // } from "../../../../../../../../../../hooks/useLabel";
+
+// Màu cố định giống Trello
+const LABEL_COLORS = [
+  { hex_code: "#61bd4f", name: "Xanh lá" },
+  { hex_code: "#f2d600", name: "Vàng" },
+  { hex_code: "#ff9f1a", name: "Cam" },
+  { hex_code: "#eb5a46", name: "Đỏ" },
+  { hex_code: "#c377e0", name: "Tím" },
+  { hex_code: "#0079bf", name: "Xanh dương" },
+  { hex_code: "#00c2e0", name: "Xanh da trời" },
+  { hex_code: "#51e898", name: "Xanh mint" },
+  { hex_code: "#ff78cb", name: "Hồng" },
+  { hex_code: "#344563", name: "Xanh đen" },
+  { hex_code: "#b3bac5", name: "Xám" },
+  { hex_code: "#4d4d4d", name: "Đen" },
+  { hex_code: "#cd8de5", name: "Tím nhạt" },
+  { hex_code: "#5ba4cf", name: "Xanh biển" },
+  { hex_code: "#29cce5", name: "Xanh ngọc" },
+  { hex_code: "#ff5252", name: "Đỏ tươi" },
+  { hex_code: "#7986cb", name: "Indigo" },
+  { hex_code: "#8d6e63", name: "Nâu" },
+];
 
 const LabelList = ({ open, onClose, cardId, boardId }) => {
   const [search, setSearch] = useState("");
@@ -72,7 +102,6 @@ const LabelList = ({ open, onClose, cardId, boardId }) => {
           queryClient.invalidateQueries({ queryKey: ["labels", boardId] });
 
           queryClient.invalidateQueries({ queryKey: ["table-view"] });
-
         },
       }
     );
@@ -97,10 +126,9 @@ const LabelList = ({ open, onClose, cardId, boardId }) => {
                 : label
             )
           );
-       
+
           queryClient.invalidateQueries({ queryKey: ["labels", boardId] });
           queryClient.invalidateQueries({ queryKey: ["table-view"] });
-
         },
         onError: (error) => {
           console.error(error);
@@ -121,7 +149,7 @@ const LabelList = ({ open, onClose, cardId, boardId }) => {
         { cardId, labelId, action: updated.has(labelId) ? "add" : "remove" },
         {
           onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["labels", boardId] });
+            queryClient.invalidateQueries({ queryKey: ["labels", boardId] });
             queryClient.invalidateQueries({ queryKey: ["table-view"] });
           },
           onError: (error) => {
@@ -139,7 +167,7 @@ const LabelList = ({ open, onClose, cardId, boardId }) => {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["labels", boardId] });
-          queryClient.invalidateQueries({ queryKey: ["table-view"] });;
+          queryClient.invalidateQueries({ queryKey: ["table-view"] });
         },
       }
     );
@@ -194,7 +222,7 @@ const LabelList = ({ open, onClose, cardId, boardId }) => {
           },
         }}
       >
-        <TextField
+        {/* <TextField
           fullWidth
           variant="outlined"
           size="small"
@@ -207,7 +235,7 @@ const LabelList = ({ open, onClose, cardId, boardId }) => {
             height: "30px",
             "& .MuiInputBase-root": { height: 30 },
           }}
-        />
+        /> */}
         <List
           sx={{
             maxHeight: 250,
@@ -224,76 +252,84 @@ const LabelList = ({ open, onClose, cardId, boardId }) => {
             },
           }}
         >
-          {filteredLabels.map((label) => (
-            <ListItem key={label.id} disablePadding>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={checkedLabels.has(label.id)}
-                    onChange={() => handleCheckboxChange(label.id)}
-                  />
-                }
-                label={
-
-                  <Box
-                    sx={{
-                      width: "300px",
-                      height: 24,
-                      backgroundColor: label?.color?.hex_code,
-                      borderRadius: "4px",
-                      position: "relative",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "0 8px",
-                      color: "#fff",
-                      fontSize: "0.578rem",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {isEditingLabel && editLabelId === label.id ? (
-                      <TextField
-                        value={newUpdatedLabelName}
-                        onChange={(e) => setUpdatedLabelName(e.target.value)}
-                        onBlur={handleUpdateLabelName}
-                        onKeyPress={handleKeyPress}
-                        size="small"
-                        autoFocus
-                        sx={{
-                          width: "80%",
-                          "& .MuiOutlinedInput-root": {
-                            "& fieldset": {
-                              border: "none",
-                            },
-                            "& input": {
-                              color: "#fff",
-                            },
-                          },
-                        }}
-                      />
-                    ) : (
-                      label.title
-                    )}
-                    <IconButton
-                      size="small"
-                      onClick={() => handleEditLabel(label.id, label.title)}
-                      sx={{ width: 24, height: 24 }}
-                    >
-                      <EditIcon sx={{ fontSize: 12, color: "#fff" }} />
-                    </IconButton>
-                  </Box>
-                }
-              />
-              <IconButton
-                size="small"
-                onClick={() => handleDeleteLabel(label.id)}
-                sx={{ width: 24, height: 24, marginLeft: 1 }}
-              >
-                <CloseIcon sx={{ fontSize: 12, color: "#000" }} />
-              </IconButton>
+          {filteredLabels.length === 0 ? (
+            <ListItem>
+              <Box sx={{ width: "100%", textAlign: "center", color: "#999" }}>
+                Chưa có nhãn nào
+              </Box>
             </ListItem>
-          ))}
+          ) : (
+            filteredLabels.map((label) => (
+              <ListItem key={label.id} disablePadding>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={checkedLabels.has(label.id)}
+                      onChange={() => handleCheckboxChange(label.id)}
+                    />
+                  }
+                  label={
+                    <Box
+                      sx={{
+                        width: "300px",
+                        height: 24,
+                        backgroundColor: label?.color?.hex_code,
+                        borderRadius: "4px",
+                        position: "relative",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "0 8px",
+                        color: "#fff",
+                        fontSize: "0.578rem",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {isEditingLabel && editLabelId === label.id ? (
+                        <TextField
+                          value={newUpdatedLabelName}
+                          onChange={(e) => setUpdatedLabelName(e.target.value)}
+                          onBlur={handleUpdateLabelName}
+                          onKeyPress={handleKeyPress}
+                          size="small"
+                          autoFocus
+                          sx={{
+                            width: "80%",
+                            "& .MuiOutlinedInput-root": {
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input": {
+                                color: "#fff",
+                              },
+                            },
+                          }}
+                        />
+                      ) : (
+                        label.title
+                      )}
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditLabel(label.id, label.title)}
+                        sx={{ width: 24, height: 24 }}
+                      >
+                        <EditIcon sx={{ fontSize: 12, color: "#fff" }} />
+                      </IconButton>
+                    </Box>
+                  }
+                />
+                <IconButton
+                  size="small"
+                  onClick={() => handleDeleteLabel(label.id)}
+                  sx={{ width: 24, height: 24, marginLeft: 1 }}
+                >
+                  <CloseIcon sx={{ fontSize: 12, color: "#000" }} />
+                </IconButton>
+              </ListItem>
+            ))
+          )}
         </List>
+
         <Divider sx={{ my: 2 }} />
         {isCreatingLabel ? (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -305,14 +341,51 @@ const LabelList = ({ open, onClose, cardId, boardId }) => {
               value={newLabelName}
               onChange={(e) => setNewLabelName(e.target.value)}
             />
-            <TextField
-              fullWidth
-              variant="outlined"
-              size="small"
-              type="color"
-              value={newLabelColor}
-              onChange={(e) => setNewLabelColor(e.target.value)}
-            />
+            {/* Bảng chọn màu cố định */}
+            <Grid container spacing={1} sx={{ mb: 2 }}>
+              {LABEL_COLORS.map((color) => (
+                <Grid item key={color.hex_code} xs={2}>
+                  <Box
+                    onClick={() => setNewLabelColor(color.hex_code)}
+                    sx={{
+                      width: 50,
+                      height: 24,
+                      backgroundColor: color.hex_code,
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      border:
+                        newLabelColor === color.hex_code
+                          ? "2px solid #000"
+                          : "none",
+                      transition: "transform 0.2s",
+                      "&:hover": {
+                        transform: "scale(1.1)",
+                      },
+                    }}
+                    title={color.name}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* Hiển thị màu đã chọn */}
+            <Box
+              sx={{
+                width: "100%",
+                height: 32,
+                backgroundColor: newLabelColor,
+                borderRadius: "4px",
+                mb: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+                fontWeight: "bold",
+              }}
+            >
+              {newLabelName || "Xem trước nhãn mới"}
+            </Box>
+
             <Button
               variant="contained"
               fullWidth
