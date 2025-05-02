@@ -15,6 +15,8 @@ import {
   Button,
   Divider,
   FormControlLabel,
+  Grid,
+  Typography
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
@@ -27,13 +29,27 @@ import {
   useUpdateLabelName,
 } from "../../../../../../../../../../hooks/useLabel";
 
-// const initialLabels = [
-//   { id: 1, color: "#137b13", name: "Label 1" },
-//   { id: 2, color: "#b05900", name: "Label 2" },
-//   { id: 3, color: "#d32f2f", name: "Label 3" },
-//   { id: 4, color: "#673ab7", name: "Label 4" },
-//   { id: 5, color: "#1976d2", name: "Label 5" },
-// ];
+// Màu cố định giống Trello
+const LABEL_COLORS = [
+  { hex_code: "#61bd4f", name: "Xanh lá" },
+  { hex_code: "#f2d600", name: "Vàng" },
+  { hex_code: "#ff9f1a", name: "Cam" },
+  { hex_code: "#eb5a46", name: "Đỏ" },
+  { hex_code: "#c377e0", name: "Tím" },
+  { hex_code: "#0079bf", name: "Xanh dương" },
+  { hex_code: "#00c2e0", name: "Xanh da trời" },
+  { hex_code: "#51e898", name: "Xanh mint" },
+  { hex_code: "#ff78cb", name: "Hồng" },
+  { hex_code: "#344563", name: "Xanh đen" },
+  { hex_code: "#b3bac5", name: "Xám" },
+  { hex_code: "#4d4d4d", name: "Đen" },
+  { hex_code: "#cd8de5", name: "Tím nhạt" },
+  { hex_code: "#5ba4cf", name: "Xanh biển" },
+  { hex_code: "#29cce5", name: "Xanh ngọc" },
+  { hex_code: "#ff5252", name: "Đỏ tươi" },
+  { hex_code: "#7986cb", name: "Indigo" },
+  { hex_code: "#8d6e63", name: "Nâu" },
+];
 
 const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const [search, setSearch] = useState("");
@@ -49,33 +65,19 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const updateLabelNameMutation = useUpdateLabelName(); //
   const [labels, setLabels] = useState([]);
   const [checkedLabels, setCheckedLabels] = useState(new Set(selectedLabels));
-  // const [editLabelId, setEditLabelId] = useState(null);
-  const [newLabelName, setNewLabelName] = useState("");
   const [editLabelId, setEditLabelId] = useState("");
+  const [newLabelName, setNewLabelName] = useState("");
   const [NewUpdatedLabelName, setUpdatedLabelName] = useState("");
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
   const [isEditingLabel, setIsEditingLabel] = useState(false);
-  const [newLabelColor, setNewLabelColor] = useState("#000000");
+  const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[0].hex_code);
 
-  // useEffect(() => {
-  //   if (fetchedLabels) {
-  //     setLabels(fetchedLabels); // Cập nhật danh sách nhãn từ board
-  //   }
-  //   if (fetchedCardLabels) {
-  //     setCheckedLabels(new Set(fetchedCardLabels.map(label => label.id))); // Đánh dấu các nhãn đã được gán vào thẻ
-  //   }
-  // }, [fetchedLabels, fetchedCardLabels]);
   useEffect(() => {
     if (fetchedLabels) setLabels(fetchedLabels);
     if (fetchedCardLabels) {
       setCheckedLabels(new Set(fetchedCardLabels.map((label) => label.id)));
     }
   }, [fetchedLabels, fetchedCardLabels]);
-
-  // tạo mới
-  // console.log(createLabelMutation);
-  // console.log("updateLabelNameMutation:", updateLabelNameMutation);
-  // console.log("updateLabelNameMutation.mutate:", updateLabelNameMutation?.mutate);
 
   const handleCreateLabel = () => {
     if (!newLabelName.trim()) {
@@ -88,23 +90,21 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
         onSuccess: () => {
           setIsCreatingLabel(false);
           setNewLabelName("");
-          setNewLabelColor("#000000");
+          setNewLabelColor(LABEL_COLORS[0].hex_code);
         },
       }
     );
   };
-  // sửa tên
 
   const handleUpdateLabelName = () => {
     if (!NewUpdatedLabelName.trim()) alert("Tên nhãn không được để trống!");
 
     updateLabelNameMutation.mutate(
-      { labelId: editLabelId,   boardId: boardId, data: { title: NewUpdatedLabelName } },
+      { labelId: editLabelId, boardId: boardId, data: { title: NewUpdatedLabelName } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["labels"] });
           queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] });
-          // queryClient.invalidateQueries({ queryKey: ["lists"] });
           setLabels((prevLabels) =>
             prevLabels.map((label) =>
               label.id === editLabelId
@@ -122,6 +122,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       }
     );
   };
+
   const handleCheckboxChange = (labelId) => {
     setCheckedLabels((prev) => {
       const updated = new Set(prev);
@@ -132,7 +133,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
         updated.add(labelId);
       }
 
-      // Gọi API với giá trị mới thay vì `checkedLabels`
       updateLabelMutation.mutate(
         { cardId, labelId, action: updated.has(labelId) ? "add" : "remove" },
         {
@@ -148,9 +148,10 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       return new Set(updated);
     });
   };
+
   const handleDeleteLabel = (labelId) => {
     deleteLabelMutation.mutate(
-      { labelId, cardId:cardId, boardId: boardId },
+      { labelId, cardId: cardId, boardId: boardId },
       {
         onSuccess: () => {
           // queryClient.invalidateQueries({ queryKey: ["labels"] });
@@ -158,67 +159,26 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
         },
       }
     );
-    // fetchedLabels();
   };
 
-  // Xử lý khi đang tải hoặc lỗi
   const filteredLabels = labels.filter((label) =>
     label.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  // const handleToggle = (id) => {
-  //   const newChecked = checkedLabels.includes(id)
-  //     ? checkedLabels.filter((item) => item !== id)
-  //     : [...checkedLabels, id];
-  //   setCheckedLabels(newChecked);
-  //   onSelectLabel && onSelectLabel(newChecked);
-  // };
-
   const handleEditLabel = (id, title) => {
     setEditLabelId(id);
     setIsEditingLabel(true);
-    setUpdatedLabelName(title); // Set the current title to the input field
+    setUpdatedLabelName(title);
   };
 
-  // const handleSaveLabelName = () => {
-  //   setLabels((prevLabels) =>
-  //     prevLabels.map((label) =>
-  //       label.id === editLabelId ? { ...label, name: newLabelName } : label
-  //     )
-  //   );
-  //   setEditLabelId(null);
-  //   setNewLabelName("");
-  // };
-
-  // const handleKeyPress = (event) => {
-  //   if (event.key === "Enter") {
-  //     handleUpdateLabelName();
-  //   }
-  // };
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
-      e.preventDefault(); // Ngăn chặn reload
-      handleUpdateLabelName(); // Cập nhật tên nhãn
-      setIsEditingLabel(false); // Thoát chế độ chỉnh sửa
+      e.preventDefault();
+      handleUpdateLabelName();
+      setIsEditingLabel(false);
     }
   };
 
-  // const handleCreateLabel = () => {
-  //   const newLabel = {
-  //     id: labels.length + 1,
-  //     color: newLabelColor,
-  //     name: newLabelName,
-  //   };
-  //   setLabels([...labels, newLabel]);
-  //   setIsCreatingLabel(false);
-  //   setNewLabelName("");
-  //   setNewLabelColor("#000000");
-  // };
-
-  // const handleDeleteLabel = (id) => {
-  //   setLabels(labels.filter((label) => label.id !== id));
-  //   setCheckedLabels(checkedLabels.filter((labelId) => labelId !== id));
-  // };
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle
@@ -250,23 +210,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
           },
         }}
       >
-        {/* Ô tìm kiếm nhỏ lại */}
-        <TextField
-          fullWidth
-          variant="outlined"
-          size="small"
-          placeholder="Tìm nhãn..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{
-            mb: 2,
-            width: "80%",
-            height: "30px",
-            "& .MuiInputBase-root": { height: 30 },
-          }}
-        />
-
-        {/* Danh sách nhãn dạng checkbox */}
         <List
           sx={{
             maxHeight: 250,
@@ -295,8 +238,8 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                 label={
                   <Box
                     sx={{
-                      width: "300px", // Thanh màu dài ra
-                      height: 24,
+                      width: "300px",
+                      height: 34,
                       backgroundColor: label?.color?.hex_code,
                       borderRadius: "4px",
                       position: "relative",
@@ -304,7 +247,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "0 8px",
-                      color: "#fff", // Always display the label title
+                      color: "#fff",
                       fontSize: "0.578rem",
                       fontWeight: "bold",
                     }}
@@ -324,13 +267,13 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                               border: "none",
                             },
                             "& input": {
-                              color: "#fff ", // Ensure text color is white
+                              color: "#fff",
                             },
                           },
                         }}
                       />
                     ) : (
-                      label.title // Display the label title
+                      label.title
                     )}
                     <IconButton
                       size="small"
@@ -343,7 +286,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
                     </IconButton>
                   </Box>
                 }
-                // sx={{ width: "100%" }}
               />
               <IconButton
                 size="small"
@@ -369,14 +311,49 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
               value={newLabelName}
               onChange={(e) => setNewLabelName(e.target.value)}
             />
-            <TextField
-              fullWidth
-              variant="outlined"
-              size="small"
-              type="color"
-              value={newLabelColor}
-              onChange={(e) => setNewLabelColor(e.target.value)}
-            />
+            
+            {/* Bảng chọn màu cố định */}
+            <Grid container spacing={1} sx={{ mb: 2 }}>
+              {LABEL_COLORS.map((color) => (
+                <Grid item key={color.hex_code} xs={2}>
+                  <Box
+                    onClick={() => setNewLabelColor(color.hex_code)}
+                    sx={{
+                      width: 50,
+                      height: 24,
+                      backgroundColor: color.hex_code,
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      border: newLabelColor === color.hex_code ? "2px solid #000" : "none",
+                      transition: "transform 0.2s",
+                      "&:hover": {
+                        transform: "scale(1.1)",
+                      },
+                    }}
+                    title={color.name}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            
+            {/* Hiển thị màu đã chọn */}
+            <Box
+              sx={{
+                width: "100%",
+                height: 32,
+                backgroundColor: newLabelColor,
+                borderRadius: "4px",
+                mb: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+                fontWeight: "bold",
+              }}
+            >
+              {newLabelName || "Xem trước nhãn mới"}
+            </Box>
+            
             <Button
               variant="contained"
               fullWidth

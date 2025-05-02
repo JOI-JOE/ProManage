@@ -77,6 +77,7 @@ const AcceptInvitePage = () => {
     joinBoard.mutate(token, {
       onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: ['workspaces'], exact: true });
+        queryClient.invalidateQueries({ queryKey: ["user_main"], exact: true });
         navigate(`/b/${data.board_id}/${data.board_name}`);
       },
     });

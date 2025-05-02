@@ -20,83 +20,124 @@ use Illuminate\Support\Str;
 class RequestInvitationController extends Controller
 {
     public function requestJoinBoard(Request $request, $boardId)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+    ]);
 
-        try {
-            $board = Board::findOrFail($boardId);
-            $user = User::findOrFail($request->user_id);
-            $currentUser = auth()->user();
+    try {
+        $board = Board::findOrFail($boardId);
+        $user = User::findOrFail($request->user_id);
+        $currentUser = auth()->user();
 
-            // Kiểm tra xem người yêu cầu có phải là người dùng hiện tại không
-            if ($currentUser->id !== $user->id) {
-                return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
-            }
+        // Kiểm tra xem người yêu cầu có phải là người dùng hiện tại không
+        if ($currentUser->id !== $user->id) {
+            return response()->json(['success' => false, 'message' => 'Permission denied'], 403);
+        }
 
-            // Kiểm tra xem đã là thành viên chưa
-            if ($board->members()->where('user_id', $user->id)->exists()) {
-                return response()->json(
-                    ['success' => false,
-                     'message' => 'Bạn đã là thành viên',
-                     'board_id' => $board->id,
-                     'board_name' => $board->name,
-                    
-                    ], 400);
-            }
+        // Kiểm tra xem đã là thành viên chưa
+        if ($board->members()->where('user_id', $user->id)->exists()) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Bạn đã là thành viên',
+                    'board_id' => $board->id,
+                    'board_name' => $board->name,
+                ], 
+                400
+            );
+        }
 
-            // Kiểm tra xem đã có yêu cầu đang chờ chưa
-            if (DB::table('request_invitation')
-                ->where('board_id', $boardId)
-                ->where('user_id', $user->id)
-                ->where('status', 'pending')
-                ->exists()
-            ) {
-                return response()->json(['success' => false, 'message' => 'Yêu cầu của bạn đã được gửi trước đó và đang chờ duyệt'], 400);
-            }
+        // Kiểm tra xem đã có yêu cầu đang chờ chưa
+        if (DB::table('request_invitation')
+            ->where('board_id', $boardId)
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->exists()
+        ) {
+            return response()->json(
+                [
+                    'success' => false, 
+                    'message' => 'Yêu cầu của bạn đã được gửi trước đó và đang chờ duyệt'
+                ], 
+                400
+            );
+        }
 
-            $isCreator = $board->isCreator($user->id);
+        $isCreator = $board->isCreator($user->id);
 
-            // Thêm check xem user này có trong workspace hay không
-            $isWorkspaceMember = $board->workspace->members2->contains('id',$user->id);
+        // Thêm check xem user này có trong workspace hay không
+        $isWorkspaceMember = $board->workspace->members2->contains('id', $user->id);
 
-            if ($isCreator) {
-                // Nếu là creator, thêm ngay vào bảng với vai trò admin
-                $board->members()->attach($user->id, [
-                    'id' => Str::uuid(),
-                    'role' => 'admin',
-                    'joined' => 1,
+        if ($isCreator) {
+            // Nếu là creator, thêm ngay vào bảng với vai trò admin
+            $board->members()->attach($user->id, [
+                'id' => Str::uuid(),
+                'role' => 'admin',
+                'joined' => 1,
+            ]);
+            $memberIds = $board->members()->pluck('users.id')->toArray();
+            // Broadcast event tới các thành viên khác
+            broadcast(new CreatorComeBackBoard(
+                $boardId,
+                $user->id,
+                $user->full_name,
+                array_diff($memberIds, [$user->id]) // Loại creator khỏi danh sách nhận
+            ))->toOthers();
+            
+            Log::info("Broadcasting CreatorRejoinedBoard", [
+                'boardId' => $boardId,
+                'userId' => $user->id,
+                'memberIds' => $memberIds,
+            ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn đã tham gia lại bảng với vai trò quản trị viên!',
+                'is_member' => true,
+            ], 200);
+        }
 
+        if ($isWorkspaceMember && !$isCreator) {
+            // Kiểm tra xem bảng có riêng tư không
+            if ($board->visibility === 'private') {
+                // Nếu bảng riêng tư, gửi yêu cầu tham gia thay vì thêm trực tiếp
+                $requestId = Str::uuid();
+                DB::table('request_invitation')->insert([
+                    'id' => $requestId,
+                    'board_id' => $boardId,
+                    'user_id' => $user->id,
+                    'status' => 'pending',
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
-                $memberIds = $board->members()->pluck('users.id')->toArray();
-                // Broadcast event tới các thành viên khác
-                broadcast(new CreatorComeBackBoard(
-                    $boardId,
-                    $user->id,
-                    $user->full_name,
-                    array_diff($memberIds, [$user->id]) // Loại creator khỏi danh sách nhận
-                ))->toOthers();
-                
-                Log::info("Broadcasting CreatorRejoinedBoard", [
-                    'boardId' => $boardId,
-                    'userId' => $user->id,
-                    'memberIds' => $memberIds,
-                ]);
+
+                // Gửi thông báo cho tất cả admin của bảng
+                $admins = $board->members()->wherePivot('role', 'admin')->pluck('users.id')->toArray();
+                foreach ($admins as $adminId) {
+                    $admin = User::find($adminId);
+                    if ($admin) {
+                        $admin->notify(
+                            (new JoinBoardRequestNotification($board->id, $board->name, $user->full_name, $requestId))
+                        );
+                    }
+                }
+
+                // Broadcast event realtime tới các admin
+                broadcast(new RequestJoinBoard($boardId, $user->id, $user->full_name, $requestId, $admins))->toOthers();
+                Log::info("Broadcasting to admins for request join board", ['admins' => $admins]);
                 return response()->json([
                     'success' => true,
-                    'message' => 'Bạn đã tham gia lại bảng với vai trò quản trị viên!',
-                    'is_member' => true,
+                    'message' => 'Yêu cầu tham gia bảng đã được gửi và đang chờ quản trị viên duyệt!',
+                    'is_member' => false,
+                    'board_id' => $board->id,
+                    'board_name' => $board->name
                 ], 200);
-            }
-
-            if ($isWorkspaceMember && !$isCreator) {
-                // Nếu là thành viên của không gian là việc, thêm ngay vào bảng với vai trò admin
+            } else {
+                // Nếu bảng không riêng tư, thêm ngay vào bảng với vai trò member
                 $board->members()->attach($user->id, [
                     'id' => Str::uuid(),
                     'role' => 'member',
                     'joined' => 1,
-
                 ]);
                 $memberIds = $board->members()->pluck('users.id')->toArray();
                 // Broadcast event tới các thành viên khác
@@ -104,7 +145,7 @@ class RequestInvitationController extends Controller
                     $boardId,
                     $user->id,
                     $user->full_name,
-                    array_diff($memberIds, [$user->id]) // Loại creator khỏi danh sách nhận
+                    array_diff($memberIds, [$user->id]) // Loại user khỏi danh sách nhận
                 ))->toOthers();
                 
                 Log::info("Broadcasting CreatorRejoinedBoard", [
@@ -114,52 +155,49 @@ class RequestInvitationController extends Controller
                 ]);
                 return response()->json([
                     'success' => true,
-                    'message' => 'Bạn đã tham gia vào bảng khi là thnafh viên của không gian làm việc ',
+                    'message' => 'Bạn đã tham gia vào bảng khi là thành viên của không gian làm việc!',
                     'is_member' => true,
                 ], 200);
             }
-            // Tạo yêu cầu tham gia với UUID
-            $requestId = Str::uuid();
-            // Nếu không phải creator, gửi yêu cầu và lưu vào board_requests
-            DB::table('request_invitation')->insert([
-                'id' => $requestId,
-                'board_id' => $boardId,
-                'user_id' => $user->id,
-                'status' => 'pending',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // Gửi thông báo cho tất cả admin của bảng
-            // Lấy danh sách admin
-            // Lấy danh sách admin
-            $admins = $board->members()->wherePivot('role', 'admin')->pluck('users.id')->toArray();
-
-            // Gửi thông báo cho tất cả admin của bảng qua notification
-            foreach ($admins as $adminId) {
-                $admin = User::find($adminId);
-                if ($admin) {
-                    $admin->notify(
-                        (new JoinBoardRequestNotification($board->id, $board->name, $user->full_name, $requestId))
-                        // ->delay(now()->addSeconds(5)) // Tùy chọn: delay để xử lý queue
-                    );
-                }
-            }
-
-            // Broadcast event realtime tới các admin
-            broadcast(new RequestJoinBoard($boardId, $user->id, $user->full_name, $requestId, $admins))->toOthers();
-            Log::info("Broadcasting to admins for request join board", ['admins' => $admins]);
-            return response()->json([
-                'success' => true,
-                'message' => 'Yêu cầu tham gia bảng đã được gửi và đang chờ quản trị viên duyệt!',
-                'is_member' => false,
-                'board_id' => $board->id,
-                'board_name' => $board->name
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+
+        // Tạo yêu cầu tham gia với UUID
+        $requestId = Str::uuid();
+        // Nếu không phải creator hoặc không phải thành viên workspace, gửi yêu cầu và lưu vào request_invitation
+        DB::table('request_invitation')->insert([
+            'id' => $requestId,
+            'board_id' => $boardId,
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Gửi thông báo cho tất cả admin của bảng
+        $admins = $board->members()->wherePivot('role', 'admin')->pluck('users.id')->toArray();
+        foreach ($admins as $adminId) {
+            $admin = User::find($adminId);
+            if ($admin) {
+                $admin->notify(
+                    (new JoinBoardRequestNotification($board->id, $board->name, $user->full_name, $requestId))
+                );
+            }
+        }
+
+        // Broadcast event realtime tới các admin
+        broadcast(new RequestJoinBoard($boardId, $user->id, $user->full_name, $requestId, $admins))->toOthers();
+        Log::info("Broadcasting to admins for request join board", ['admins' => $admins]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Yêu cầu tham gia bảng đã được gửi và đang chờ quản trị viên duyệt!',
+            'is_member' => false,
+            'board_id' => $board->id,
+            'board_name' => $board->name
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
+}
 
     public function getRequestsForBoard($boardId)
     {

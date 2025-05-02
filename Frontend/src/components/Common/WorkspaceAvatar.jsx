@@ -46,7 +46,7 @@ const numberGradientMap = {
 };
 
 const WorkspaceAvatar = ({ workspace, size = 40 }) => {
-    console.log('dữ liệu của workspace', workspace);
+    // console.log('dữ liệu của workspace', workspace);
 
     const firstChar = workspace?.display_name?.charAt(0)?.toUpperCase() || 'A';
 

@@ -12,7 +12,7 @@ const GoogleAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const location = useLocation();
-  const inviteToken = location.state?.inviteToken;
+  // const inviteToken = location.state?.inviteToken;
 
 
   useEffect(() => {
@@ -45,9 +45,10 @@ const GoogleAuth = () => {
         setToken(tokenParam);
 
         let invitePath = null;
-        if (inviteToken) {
+        if (inviteTokenWhenUnauthenticated) {
           // Trường hợp 1: Có inviteToken
-          invitePath = `/accept-invite/${inviteToken}`;
+          localStorage.removeItem("inviteTokenWhenUnauthenticated");
+          invitePath = `/accept-invite/${inviteTokenWhenUnauthenticated}`;
         } else if (invitationWorkspace) {
           // Trường hợp 2: Có invitationWorkspace
           try {
@@ -77,15 +78,15 @@ const GoogleAuth = () => {
           window.location.pathname
         );
 
-        // ✅ Nếu có inviteToken khi chưa đăng nhập, chuyển sang accept-invite
-        if (inviteTokenWhenUnauthenticated) {
-          localStorage.removeItem("inviteTokenWhenUnauthenticated");
-          setTimeout(() => {
-            navigate(`/accept-invite/${inviteTokenWhenUnauthenticated}`);
-          }, 50); // Delay nhẹ để đảm bảo Router mount kịp
-        } else {
-          navigate("/home");
-        }
+        // // ✅ Nếu có inviteToken khi chưa đăng nhập, chuyển sang accept-invite
+        // if (inviteTokenWhenUnauthenticated) {
+        //   localStorage.removeItem("inviteTokenWhenUnauthenticated");
+        //   setTimeout(() => {
+        //     navigate(`/accept-invite/${inviteTokenWhenUnauthenticated}`);
+        //   }, 50); // Delay nhẹ để đảm bảo Router mount kịp
+        // } else {
+        //   navigate("/home");
+        // }
       } catch (err) {
         setError("Không thể xử lý đăng nhập. Vui lòng thử lại.");
         console.error("Authentication error:", err);
