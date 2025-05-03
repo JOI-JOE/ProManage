@@ -44,7 +44,7 @@ const AppBar = ({ username, email }) => {
   const userId = user?.id;
   const { notifications } = useNotifications(userId);
 
-  const { data: settings } = useSetting(); // Chỉ gọi API khi type là "card" và có targetId hợp lệ;
+  // const { data: settings } = useSetting(); // Chỉ gọi API khi type là "card" và có targetId hợp lệ;
 
   const [query, setQuery] = useState("");
 
@@ -185,7 +185,7 @@ const AppBar = ({ username, email }) => {
           to={`/u/${user?.user_name}/boards`}
           sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
         >
-          {settings?.logo_url && (
+          {/* {settings?.logo_url && (
             <SvgIcon
               component={trelloLogo}
               inheritViewBox
@@ -193,7 +193,7 @@ const AppBar = ({ username, email }) => {
               fontSize="24px"
               sx={{ color: "secondary.contrastText" }}
             />
-          )}
+          )} */}
           <Typography
             variant="span"
             sx={{
@@ -202,7 +202,7 @@ const AppBar = ({ username, email }) => {
               fontSize: "18px",
             }}
           >
-            {settings?.site_name || "Pro Manage"}
+            ProManage
           </Typography>
         </Box>
 
