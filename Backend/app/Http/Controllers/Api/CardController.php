@@ -196,8 +196,8 @@ class CardController extends Controller
                     'card_title' => $cards->title,
                     'added_user' => $user->id,
                     'added_user_email' => $user->email,
-                    'board_id' => $card->list->board->id, // thêm dòng này
-                    'board_name' => $card->list->board->name,
+                    'board_id' => $cards->list->board->id, // thêm dòng này
+                    'board_name' => $cards->list->board->name,
                 ])
                 ->log("{$userName} đã thêm  {$user->user_name} vào thẻ.");
             // broadcast(new ActivityEvent($activity, $cardId, $userByCard));

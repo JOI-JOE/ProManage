@@ -25,7 +25,7 @@ import { useNavigate } from "react-router-dom";
 
 const CreateBoard = ({ workspaceId, open, anchorEl, onClose, onOpen }) => {
   const navigate = useNavigate()
-  const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard();
+  const { mutate: createBoard, isLoading: isCreatingBoard } = useCreateBoard(workspaceId);
   const saveRecentBoard = useRecentBoardAccess();
   const updateAccessTime = useUpdateBoardLastAccessed();
   const {
