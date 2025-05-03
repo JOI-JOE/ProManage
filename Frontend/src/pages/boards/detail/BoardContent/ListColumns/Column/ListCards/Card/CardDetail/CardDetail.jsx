@@ -846,14 +846,39 @@ const CardModal = ({ }) => {
   };
 
   // Tải ảnh xuống
-  const downloadFile = (file) => {
-    const link = document.createElement("a");
-    link.href = file.url;
-    link.download = file.name || "downloaded_image";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const downloadFile = async (file) => {
+    try {
+      console.log("Đang tải URL:", file.url);
+      const response = await fetch(file.url, { mode: "cors" });
+
+      if (!response.ok) {
+        throw new Error(`Lỗi HTTP: ${response.status} ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get("Content-Type");
+      console.log("Content-Type:", contentType);
+
+      if (!contentType || !contentType.startsWith("image/")) {
+        throw new Error(`Tệp không phải hình ảnh. Content-Type: ${contentType}`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name || "downloaded_image.jpg";
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Tải ảnh thất bại:", error);
+      alert(`Tải ảnh thất bại: ${error.message}`);
+    }
   };
+
 
   const handleMenuOpen2 = (event, file) => {
     setAnchorEl2(event.currentTarget);
@@ -1778,9 +1803,32 @@ const CardModal = ({ }) => {
                         Sửa
                       </MenuItem>
 
-                      <MenuItem onClick={() => downloadFile(selectedFile)}>
-                        Tải xuống
-                      </MenuItem>
+                      <MenuItem onClick={async () => {
+                        try {
+
+                          const now = new Date();
+                          const timestamp = `${now.getFullYear()}${(now.getMonth() + 1)
+                            .toString()
+                            .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}_${now
+                              .getHours()
+                              .toString()
+                              .padStart(2, "0")}${now.getMinutes().toString().padStart(2, "0")}${now
+                                .getSeconds()
+                                .toString()
+                                .padStart(2, "0")}`;
+                          // Tạo URL cho API tải ảnh
+
+                          const file = {
+                            url: `http://localhost:8000/api/download-image/${selectedFile}`,
+                            name: `downloaded_image_${timestamp}.jpg`,
+                          };
+
+                          await downloadFile(file);
+                        } catch (error) {
+                          console.error("Lỗi khi tải tệp:", error);
+                          alert(`Không thể tải tệp: ${error.message}`);
+                        }
+                      }}>Tải xuống</MenuItem>
 
                       {(() => {
                         const file = attachments?.data?.find(
@@ -2089,7 +2137,7 @@ const CardModal = ({ }) => {
                     whiteSpace: "pre-wrap", // Giữ định dạng dòng
                     cursor: "pointer",
                     fontSize: "0.6rem",
-                   
+
                     // "&:hover": { backgroundColor: "#F5F6F8", borderRadius: 4 }
                   }}
                   onClick={handleCommentClick}
@@ -2326,7 +2374,7 @@ const CardModal = ({ }) => {
                                 }}
 
                                 sx={{
-                                
+
                                   "& ol": {
                                     // Đảm bảo định dạng danh sách có số
                                     listStyleType: "decimal",

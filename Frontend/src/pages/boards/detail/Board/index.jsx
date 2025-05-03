@@ -193,6 +193,12 @@ const Board = () => {
     return <PrivatePage />
   }
 
+  const filteredClosedBoards = closedBoards?.data?.filter(
+    (board) =>
+      board?.closed === 1 &&
+      board?.workspace &&
+      board?.workspace_id === workspaceId
+  );
 
   return (
     <Box
@@ -453,61 +459,61 @@ const Board = () => {
           <DialogContent>
             {loadingClosed ? (
               <CircularProgress />
-            ) : closedBoards?.data?.length > 0 ? (
+            ) : filteredClosedBoards?.length > 0 ? (
               <List>
-                {closedBoards?.data?.map((board) => {
-                  const isAdminBoard = checkIsAdmin(board.id);
-                  return (
-                    <ListItem
-                      key={board.id}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "8px 0",
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                        "&:hover": {
-                          backgroundColor: "#f4f4f4",
-                          borderRadius: "8px",
-                        },
-                      }}
-                    >
-                      <ListItemAvatar>
-                        <Avatar src={board.thumbnail || "https://via.placeholder.com/150"} />
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={board.name}
-                        secondary={
+                {filteredClosedBoards.map((board) => {
+                    const isAdminBoard = checkIsAdmin(board.id);
+                    return (
+                      <ListItem
+                        key={board.id}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "8px 0",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            backgroundColor: "#f4f4f4",
+                            borderRadius: "8px",
+                          },
+                        }}
+                      >
+                        <ListItemAvatar>
+                          <Avatar src={board.thumbnail || "https://via.placeholder.com/150"} />
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={board.name}
+                          secondary={
+                            <>
+                              Không gian làm việc: {board.workspace?.display_name || "Không rõ"}
+                              {!isAdminBoard && (
+                                <Typography style={{ fontSize: '12px' }} color="error">
+                                  Bạn không phải là Quản trị viên của bảng này vì thế bạn không thể mở lại bảng này.
+                                </Typography>
+                              )}
+                            </>
+                          }
+                        />
+
+
+
+                        {isAdminBoard && (
                           <>
-                            Không gian làm việc: {board.workspace?.display_name || "Không rõ"}
-                            {!isAdminBoard && (
-                              <Typography style={{ fontSize: '12px' }} color="error">
-                                Bạn không phải là Quản trị viên của bảng này vì thế bạn không thể mở lại bảng này.
-                              </Typography>
-                            )}
+                            <IconButton onClick={() => handleReopenBoard(board.id)} color="primary">
+                              <RestoreIcon />
+                            </IconButton>
+                            <IconButton
+                              onClick={() => handleDeleteBoard(board.id)}
+                              color="error"
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? <CircularProgress size={20} /> : <Delete />}
+                            </IconButton>
                           </>
-                        }
-                      />
-
-
-
-                      {isAdminBoard && (
-                        <>
-                          <IconButton onClick={() => handleReopenBoard(board.id)} color="primary">
-                            <RestoreIcon />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => handleDeleteBoard(board.id)}
-                            color="error"
-                            disabled={isDeleting}
-                          >
-                            {isDeleting ? <CircularProgress size={20} /> : <Delete />}
-                          </IconButton>
-                        </>
-                      )}
-                    </ListItem>
-                  );
-                })}
+                        )}
+                      </ListItem>
+                    );
+                  })}
               </List>
 
             ) : (

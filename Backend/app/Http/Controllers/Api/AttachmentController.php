@@ -111,6 +111,78 @@ class AttachmentController extends Controller
         ]);
     }
 
+    public function show($id)
+    {
+        try {
+            $attachment = Attachment::findOrFail($id);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'path_url' => $attachment->path_url,
+                    'file_name' => $attachment->file_name,
+                    'file_name_defaut' => $attachment->file_name_defaut,
+
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy tệp hoặc lỗi server.',
+            ], 404);
+        }
+    }
+
+    public function downloadImage($id)
+{
+    try {
+        // \Log::info("Gọi API downloadImage với id: " . $id);
+        $attachment = Attachment::findOrFail($id);
+        // \Log::info("Tìm thấy attachment: " . json_encode($attachment));
+
+        $filename = basename($attachment->path_url);
+        // \Log::info("Tên tệp từ path_url: " . $filename);
+
+        $filePath = public_path('storage/attachments/' . $filename);
+        // \Log::info("Đường dẫn tệp: " . $filePath);
+
+        if (!file_exists($filePath)) {
+            // \Log::error("Tệp không tồn tại tại: " . $filePath);
+            return response()->json([
+                'success' => false,
+                'message' => 'Tệp không tồn tại trong public/storage/attachments/.',
+            ], 404);
+        }
+
+        if (!is_readable($filePath)) {
+            // \Log::error("Không có quyền đọc tệp tại: " . $filePath);
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có quyền truy cập tệp.',
+            ], 403);
+        }
+
+        // Thêm tất cả header (bao gồm CORS) vào mảng header
+        return response()->file($filePath, [
+            'Content-Type' => mime_content_type($filePath),
+            'Content-Disposition' => 'attachment; filename="' . $attachment->file_name . '"',
+            'Access-Control-Allow-Origin' => 'http://localhost:5173',
+            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+            'Access-Control-Allow-Headers' => '*',
+        ]);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        // \Log::error("Không tìm thấy attachment với id: " . $id);
+        return response()->json([
+            'success' => false,
+            'message' => 'Không tìm thấy attachment với id: ' . $id,
+        ], 404);
+    } catch (\Exception $e) {
+        // \Log::error("Lỗi trong downloadImage: " . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi server: ' . $e->getMessage(),
+        ], 500);
+    }
+}
 
     // Xóa file đính kèm
     public function deleteAttachment($cardId, $attachmentId)

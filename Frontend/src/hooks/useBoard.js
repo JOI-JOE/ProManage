@@ -28,13 +28,15 @@ import { useGetUserWorkspaces } from "./useWorkspace";
  * @returns {object} - Object chứa mutate để gọi API tạo bảng và các trạng thái liên quan.
  */
 
-export const useCreateBoard = () => {
+export const useCreateBoard = (workspaceId) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: createBoard, // Gọi API tạo board
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: ["workspaces"]});
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+
     },
   });
 };

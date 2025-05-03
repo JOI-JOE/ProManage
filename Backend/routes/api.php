@@ -328,6 +328,10 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
     Route::delete('/{attachmentId}/delete', [AttachmentController::class, 'deleteAttachment']);
     Route::patch('/{attachmentId}/update-cover', [AttachmentController::class, 'setCoverImage']);
 })->middleware('auth:sanctum');
+
+Route::get('/attachments/{id}', [AttachmentController::class, 'show']);
+Route::get('/download-image/{id}', [AttachmentController::class, 'downloadImage']);
+
 // checklists
 Route::middleware('auth:sanctum')->group(function () {
     // Checklist routes
