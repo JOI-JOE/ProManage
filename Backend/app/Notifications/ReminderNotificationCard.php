@@ -29,19 +29,27 @@ class ReminderNotificationCard extends Notification implements ShouldQueue
 
     public function toMail($notifiable)
     {
-        // Định dạng thời gian cho đẹp hơn
         $deadline = $this->formatDeadline();
+        $cardLink = "http://localhost:5173/b/{$this->card->list->board->id}/{$this->card->list->board->name}/c/{$this->card->id}";
 
         Log::info("📩 Gửi email nhắc nhở đến {$notifiable->email} về thẻ: {$this->card->title}");
 
         return (new MailMessage)
             ->subject("📌 Nhắc nhở: {$this->card->title}")
-            ->greeting("Xin chào, {$notifiable->name}!")
-            ->line("Bạn có một công việc cần hoàn thành:")
-            ->line("**📌 Thẻ: {$this->card->title}**")
-            ->line("⏳ Hạn chót: {$deadline}")
-            ->action('Xem chi tiết', "http://localhost:5173/b/{$this->card->list->board->id}/{$this->card->list->board->name}/c/{$this->card->id}") // Thêm nút xem thẻ
-            ->line("Vui lòng kiểm tra ngay để không bỏ lỡ!");
+            ->view('emails.card_reminder', [
+                'name' => $notifiable->name,
+                'cardTitle' => $this->card->title,
+                'boardId' => $this->card->list->board->id,
+                'boardName' => $this->card->list->board->name,
+                'cardId' => $this->card->id,
+                'deadline' => $deadline,
+                'cardLink' => $cardLink,
+                'greeting' => "Xin chào, {$notifiable->name}!",
+                'taskMessage' => 'Bạn có một công việc cần hoàn thành:',
+                'cardMessage' => "📌 Thẻ: {$this->card->title}",
+                'deadlineMessage' => "⏳ Hạn chót: {$deadline}",
+                'checkMessage' => 'Vui lòng kiểm tra ngay để không bỏ lỡ!'
+            ]);
     }
 
     public function toArray($notifiable)

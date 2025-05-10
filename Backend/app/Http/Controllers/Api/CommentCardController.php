@@ -68,14 +68,6 @@ class CommentCardController extends Controller
         // $comment = CommentCard::with('user')->find($newComment->id);
         broadcast(new CardCommentAdded($comment))->toOthers();
 
-        // $users = $card->members; // Lấy danh sách thành viên liên quan trong card
-
-        // foreach ($users as $user) {
-        //     // Không gửi cho người vừa comment
-        //     if ($user->id !== Auth::id()) {
-        //         $user->notify(new CardCommentNotification($comment));
-        //     }
-        // }
 
         if ($request->has('mentioned_usernames')) {
             $mentionedUsernames = $request->mentioned_usernames;

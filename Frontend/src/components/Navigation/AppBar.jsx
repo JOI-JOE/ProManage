@@ -641,7 +641,7 @@ const AppBar = ({ username, email }) => {
           )}
         </Box>
 
-        <Tooltip title="Notification">
+        <Tooltip title="Thông báo">
           <IconButton onClick={handleClick}>
             <Badge badgeContent={newNotificationsCount} color="error">
               <NotificationsNoneIcon sx={{ color: "white" }} />

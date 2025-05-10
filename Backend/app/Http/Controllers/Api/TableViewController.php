@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendReminderNotificationCard;
 use App\Models\Board;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Card;
 use App\Models\ListBoard;
@@ -51,6 +53,7 @@ class TableViewController extends Controller
                 'cards.id as card_id',
                 'cards.title as card_title',
                 'cards.end_date',
+                'cards.start_date',
                 'cards.end_time',
                 'cards.reminder',
                 'cards.is_completed',
@@ -67,6 +70,7 @@ class TableViewController extends Controller
                 'cards.id',
                 'cards.title',
                 'cards.end_date',
+                'cards.start_date',
                 'cards.end_time',
                 'cards.reminder',
                 'cards.is_completed',
@@ -144,6 +148,7 @@ class TableViewController extends Controller
                 'card_id' => $card->card_id,
                 'card_title' => $card->card_title,
                 'end_date' => $card->end_date,
+                'start_date' => $card->start_date,
                 'end_time' => $card->end_time,
                 'reminder' => $card->reminder,
                 'full_due_date' => $fullDueDate,
@@ -296,10 +301,20 @@ class TableViewController extends Controller
             'reminder' => $card->reminder,
         ]);
 
-        $fullDueDate = $card->end_date ? \Carbon\Carbon::parse($card->end_date) : null;
-        if ($fullDueDate && $card->end_time) {
-            $time = \Carbon\Carbon::parse($card->end_time);
-            $fullDueDate->setTime($time->hour, $time->minute, $time->second);
+        // $fullDueDate = $card->end_date ? \Carbon\Carbon::parse($card->end_date) : null;
+        // if ($fullDueDate && $card->end_time) {
+        //     $time = \Carbon\Carbon::parse($card->end_time);
+        //     $fullDueDate->setTime($time->hour, $time->minute, $time->second);
+        // }
+
+        if (
+            !empty($card->reminder) &&
+            strtotime($card->reminder)  &&
+            $card->is_completed == 0 &&
+            $card->is_archived == 0
+        ) {
+            dispatch(new SendReminderNotificationCard($card))
+                ->delay(Carbon::parse($card->reminder));
         }
 
         return response()->json([
@@ -307,8 +322,8 @@ class TableViewController extends Controller
             'end_date' => $card->end_date,
             'end_time' => $card->end_time,
             'reminder' => $card->reminder,
-            'full_due_date' => $fullDueDate ? $fullDueDate->toIso8601String() : null,
-            'is_overdue' => $card->end_date && !$card->is_completed && $fullDueDate?->isPast(),
+            // 'full_due_date' => $fullDueDate ? $fullDueDate->toIso8601String() : null,
+            // 'is_overdue' => $card->end_date && !$card->is_completed && $fullDueDate?->isPast(),
         ]);
     }
 }

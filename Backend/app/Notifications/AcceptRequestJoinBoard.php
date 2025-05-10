@@ -29,12 +29,19 @@ class AcceptRequestJoinBoard extends Notification implements ShouldQueue
 
     public function toMail($notifiable)
     {
+        $boardLink = "http://localhost:5173/b/{$this->board_id}/{$this->board_name}";
+
         return (new MailMessage)
             ->subject('Yêu cầu tham gia bảng đã được duyệt')
-            ->greeting("Xin chào {$notifiable->full_name},")
-            ->line("Yêu cầu tham gia bảng '{$this->board_name}' của bạn đã được duyệt.")
-            ->action('Xem bảng', "http://localhost:5173/b/$this->board_id/$this->board_name")
-            ->line('Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!');
+            ->view('emails.accepted_request', [
+                'fullName' => $notifiable->full_name,
+                'boardName' => $this->board_name,
+                'boardId' => $this->board_id,
+                'boardLink' => $boardLink,
+                'greeting' => "Xin chào {$notifiable->full_name},",
+                'approvalMessage' => "Yêu cầu tham gia bảng '{$this->board_name}' của bạn đã được duyệt.",
+                'thankYouMessage' => 'Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!'
+            ]);
     }
 
     public function toDatabase($notifiable)

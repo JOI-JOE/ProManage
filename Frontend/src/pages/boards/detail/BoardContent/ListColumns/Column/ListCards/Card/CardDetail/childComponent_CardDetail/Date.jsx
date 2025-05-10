@@ -33,14 +33,14 @@ dayjs.locale("vi"); // Set locale
 const generateCalendar = (date) => {
   const firstDayOfMonth = dayjs(date).startOf("month");
   const lastDayOfMonth = dayjs(date).endOf("month");
-  
+
   // Ngày đầu tiên trong grid (có thể là ngày tháng trước)
   const startDate = firstDayOfMonth.day(0); // Lấy ngày chủ nhật đầu tiên
-  
+
   // Tạo mảng 6 tuần x 7 ngày
   const calendar = [];
   let currentDate = startDate;
-  
+
   for (let week = 0; week < 6; week++) {
     const weekDays = [];
     for (let day = 0; day < 7; day++) {
@@ -52,7 +52,7 @@ const generateCalendar = (date) => {
     }
     calendar.push(weekDays);
   }
-  
+
   return calendar;
 };
 
@@ -188,42 +188,63 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
   const handleSave = async (e) => {
     e.preventDefault();
 
-    if (!isEndDateChecked || !endDate) {
-      return;
+    // Không lưu nếu cả ngày bắt đầu và ngày kết thúc đều không được chọn
+    if (!isStartDateChecked && !isEndDateChecked) {
+      return; // Không gửi dữ liệu nếu không có ngày nào
     }
 
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
-    let formattedEndTime = endTime;
-    if (!timeRegex.test(endTime)) {
-      formattedEndTime = "15:02";
-    }
-
-    const formattedEndDateTime = `${endDate.format("YYYY-MM-DD")} ${formattedEndTime}`;
-    const endDateTime = dayjs(formattedEndDateTime, "YYYY-MM-DD HH:mm");
-
-    if (!endDateTime.isValid()) {
-      return;
-    }
-
-    let reminderDateTime = null;
-    const reminderOptions = {
-      "Không có": null,
-      "Vào thời điểm ngày hết hạn": endDateTime,
-      "5 phút trước": endDateTime.subtract(5, "minute"),
-      "10 phút trước": endDateTime.subtract(10, "minute"),
-      "15 phút trước": endDateTime.subtract(15, "minute"),
-      "1 giờ trước": endDateTime.subtract(1, "hour"),
-      "2 giờ trước": endDateTime.subtract(2, "hour"),
-      "1 ngày trước": endDateTime.subtract(1, "day"),
-      "2 ngày trước": endDateTime.subtract(2, "day"),
-    };
-
-    reminderDateTime = reminderOptions[reminder] || null;
-
+    // Chuẩn bị dữ liệu ngày bắt đầu
     const formattedStartDate = isStartDateChecked && startDate ? startDate.format("YYYY-MM-DD") : null;
-    const formattedEndDate = isEndDateChecked && endDate ? endDate.format("YYYY-MM-DD") : null;
+
+    // Chuẩn bị dữ liệu ngày kết thúc và giờ kết thúc
+    let formattedEndDate = null;
+    let formattedEndTime = null;
+    let endDateTime = null;
+    let reminderDateTime = null;
+
+    if (isEndDateChecked && endDate) {
+      // Kiểm tra định dạng thời gian
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+      formattedEndTime = endTime;
+      if (!timeRegex.test(endTime)) {
+        formattedEndTime = previousEndTime || "12:00"; // Sử dụng previousEndTime hoặc mặc định "12:00"
+      }
+
+      // Tạo chuỗi ngày giờ kết thúc
+      const formattedEndDateTime = `${endDate.format("YYYY-MM-DD")} ${formattedEndTime}`;
+      endDateTime = dayjs(formattedEndDateTime, "YYYY-MM-DD HH:mm");
+
+      // Kiểm tra tính hợp lệ của ngày giờ
+      if (!endDateTime.isValid()) {
+        return;
+      }
+
+      formattedEndDate = endDate.format("YYYY-MM-DD");
+
+      // Tính toán thời gian nhắc nhở (chỉ áp dụng khi có ngày kết thúc)
+      const reminderOptions = {
+        "Không có": null,
+        "Vào thời điểm ngày hết hạn": endDateTime,
+        "5 phút trước": endDateTime.subtract(5, "minute"),
+        "10 phút trước": endDateTime.subtract(10, "minute"),
+        "15 phút trước": endDateTime.subtract(15, "minute"),
+        "1 giờ trước": endDateTime.subtract(1, "hour"),
+        "2 giờ trước": endDateTime.subtract(2, "hour"),
+        "1 ngày trước": endDateTime.subtract(1, "day"),
+        "2 ngày trước": endDateTime.subtract(2, "day"),
+      };
+
+      reminderDateTime = reminderOptions[reminder] || null;
+    } else {
+      // Nếu không có ngày kết thúc, đặt endTime và reminder về null
+      formattedEndTime = null;
+      reminderDateTime = null;
+    }
+
+    // Định dạng thời gian nhắc nhở
     const formattedReminder = reminderDateTime ? reminderDateTime.format("YYYY-MM-DD HH:mm") : null;
 
+    // Gửi mutation tùy theo type
     if (type === "card") {
       updateCardDate({
         targetId,
@@ -241,7 +262,7 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
       });
     }
 
-    onClose();
+    onClose(); // Đóng modal sau khi lưu
   };
 
   // Xóa ngày
@@ -256,8 +277,8 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
 
   // Format tên tháng hiển thị
   const formatMonthYear = (date) => {
-    const monthNames = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", 
-                         "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
+    const monthNames = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+      "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
     return `${monthNames[date.month()]} ${date.year()}`;
   };
 
@@ -320,56 +341,56 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
             <KeyboardDoubleArrowRightIcon fontSize="small" />
           </IconButton>
         </Box>
-        
+
         {/* Lịch */}
         <Box>
           {/* Header ngày trong tuần */}
           <Grid container spacing={0} sx={{ textAlign: "center", mb: 1 }}>
-            <Grid item xs={12/7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th2</Grid>
-            <Grid item xs={12/7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th3</Grid>
-            <Grid item xs={12/7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th4</Grid>
-            <Grid item xs={12/7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th5</Grid>
-            <Grid item xs={12/7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th6</Grid>
-            <Grid item xs={12/7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th7</Grid>
-            <Grid item xs={12/7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>CN</Grid>
+            <Grid item xs={12 / 7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th2</Grid>
+            <Grid item xs={12 / 7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th3</Grid>
+            <Grid item xs={12 / 7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th4</Grid>
+            <Grid item xs={12 / 7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th5</Grid>
+            <Grid item xs={12 / 7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th6</Grid>
+            <Grid item xs={12 / 7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>Th7</Grid>
+            <Grid item xs={12 / 7} sx={{ fontSize: "12px", fontWeight: "bold", color: "#5E6C84" }}>CN</Grid>
           </Grid>
-          
+
           {/* Ngày trong tháng */}
           {calendar.map((week, weekIndex) => (
             <Grid container spacing={0} key={`week-${weekIndex}`} sx={{ textAlign: "center", mb: 0.5 }}>
               {week.map((day, dayIndex) => {
-                const isSelectedStart = isStartDateChecked && 
-                  startDate && 
+                const isSelectedStart = isStartDateChecked &&
+                  startDate &&
                   day.date.format("YYYY-MM-DD") === startDate.format("YYYY-MM-DD");
-                
-                const isSelectedEnd = isEndDateChecked && 
-                  endDate && 
+
+                const isSelectedEnd = isEndDateChecked &&
+                  endDate &&
                   day.date.format("YYYY-MM-DD") === endDate.format("YYYY-MM-DD");
-                
+
                 const isToday = day.date.format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
 
                 return (
-                  <Grid 
-                    item 
-                    xs={12/7} 
+                  <Grid
+                    item
+                    xs={12 / 7}
                     key={`day-${dayIndex}`}
                     onClick={() => handleDateClick(day.date)}
                     sx={{
                       fontSize: "14px",
                       padding: "5px 0",
                       cursor: "pointer",
-                      color: !day.isCurrentMonth ? "#C1C7D0" : 
-                             isToday ? "#0079BF" : "#172B4D",
+                      color: !day.isCurrentMonth ? "#C1C7D0" :
+                        isToday ? "#0079BF" : "#172B4D",
                       fontWeight: isToday ? "bold" : "normal",
-                      backgroundColor: isSelectedEnd ? "#0079BF" : 
-                                       isSelectedStart ? "#E4F0F6" : "transparent",
-                      color: isSelectedEnd ? "white" : 
-                             !day.isCurrentMonth ? "#C1C7D0" : 
-                             isToday ? "#0079BF" : "#172B4D",
+                      backgroundColor: isSelectedEnd ? "#0079BF" :
+                        isSelectedStart ? "#E4F0F6" : "transparent",
+                      color: isSelectedEnd ? "white" :
+                        !day.isCurrentMonth ? "#C1C7D0" :
+                          isToday ? "#0079BF" : "#172B4D",
                       borderRadius: "3px",
                       "&:hover": {
-                        backgroundColor: isSelectedEnd ? "#0079BF" : 
-                                        isSelectedStart ? "#E4F0F6" : "#F4F5F7",
+                        backgroundColor: isSelectedEnd ? "#0079BF" :
+                          isSelectedStart ? "#E4F0F6" : "#F4F5F7",
                       }
                     }}
                   >
@@ -476,8 +497,8 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
         {/* Nhắc nhở */}
         <Box sx={{ mt: 2, mb: 2 }}>
           <Typography sx={{ fontSize: "14px", mb: 0.5 }}>Thiết lập Nhắc nhở</Typography>
-          <FormControl 
-            fullWidth 
+          <FormControl
+            fullWidth
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: '3px',
@@ -488,7 +509,7 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
             <Select
               value={reminder}
               onChange={(e) => setReminder(e.target.value)}
-              sx={{ 
+              sx={{
                 fontSize: '14px',
               }}
               size="small"
@@ -510,10 +531,10 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
         </Box>
       </DialogContent>
 
-      <DialogActions 
-        sx={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
+      <DialogActions
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
           padding: "8px 16px 16px 16px",
         }}
       >
@@ -521,8 +542,8 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
           onClick={handleSave}
           variant="contained"
           fullWidth
-          sx={{ 
-            backgroundColor: "#0079BF", 
+          sx={{
+            backgroundColor: "#0079BF",
             textTransform: 'none',
             borderRadius: '3px',
             boxShadow: 'none',
@@ -537,14 +558,14 @@ const DateModal = ({ open, onClose, onSave, initialData, type, targetId }) => {
           Lưu
         </Button>
       </DialogActions>
-      
+
       <Box sx={{ pb: 2, px: 2 }}>
         <Button
-          onClick={onClose}
+          onClick={handleDelete}
           variant="text"
           fullWidth
-          sx={{ 
-            color: "#172B4D", 
+          sx={{
+            color: "#172B4D",
             textTransform: 'none',
             borderRadius: '3px',
             height: '36px',

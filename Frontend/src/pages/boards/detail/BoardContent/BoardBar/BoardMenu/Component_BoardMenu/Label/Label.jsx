@@ -10,25 +10,46 @@ import {
   TextField,
   Button,
   Divider,
-  Typography,
+  Grid,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
-import { useCreateLabel, useDeleteLabelByBoard, useLabels, useUpdateCardLabel, useUpdateLabelName } from "../../../../../../../../hooks/useLabel";
+import { useCreateLabel, useDeleteLabelByBoard, useLabels, useUpdateLabelName } from "../../../../../../../../hooks/useLabel";
 import { useParams } from "react-router-dom";
 
-const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
+// Màu cố định giống Trello
+const LABEL_COLORS = [
+  { hex_code: "#61bd4f", name: "Xanh lá" },
+  { hex_code: "#f2d600", name: "Vàng" },
+  { hex_code: "#ff9f1a", name: "Cam" },
+  { hex_code: "#eb5a46", name: "Đỏ" },
+  { hex_code: "#c377e0", name: "Tím" },
+  { hex_code: "#0079bf", name: "Xanh dương" },
+  { hex_code: "#00c2e0", name: "Xanh da trời" },
+  { hex_code: "#51e898", name: "Xanh mint" },
+  { hex_code: "#ff78cb", name: "Hồng" },
+  { hex_code: "#344563", name: "Xanh đen" },
+  { hex_code: "#b3bac5", name: "Xám" },
+  { hex_code: "#4d4d4d", name: "Đen" },
+  { hex_code: "#cd8de5", name: "Tím nhạt" },
+  { hex_code: "#5ba4cf", name: "Xanh biển" },
+  { hex_code: "#29cce5", name: "Xanh ngọc" },
+  { hex_code: "#ff5252", name: "Đỏ tươi" },
+  { hex_code: "#7986cb", name: "Indigo" },
+  { hex_code: "#8d6e63", name: "Nâu" },
+];
+
+const LabelList = ({ open, onClose }) => {
   const { boardId } = useParams();
   
   const { data: fetchedLabels } = useLabels(boardId);
   const createLabelMutation = useCreateLabel();
-  const updateLabelMutation = useUpdateCardLabel();
-  const deleteLabelMutation = useDeleteLabelByBoard();
   const updateLabelNameMutation = useUpdateLabelName();
+  const deleteLabelMutation = useDeleteLabelByBoard();
   const [labels, setLabels] = useState([]);
   const [newLabelName, setNewLabelName] = useState("");
   const [editLabelId, setEditLabelId] = useState("");
-  const [NewUpdatedLabelName, setUpdatedLabelName] = useState("");
+  const [newUpdatedLabelName, setUpdatedLabelName] = useState("");
   const [search, setSearch] = useState("");
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
   const [isEditingLabel, setIsEditingLabel] = useState(false);
@@ -56,15 +77,18 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   };
 
   const handleUpdateLabelName = () => {
-    if (!NewUpdatedLabelName.trim()) alert("Tên nhãn không được để trống!");
+    if (!newUpdatedLabelName.trim()) {
+      alert("Tên nhãn không được để trống!");
+      return;
+    }
     updateLabelNameMutation.mutate(
-      { labelId: editLabelId, data: { title: NewUpdatedLabelName } },
+      { labelId: editLabelId, data: { title: newUpdatedLabelName } },
       {
         onSuccess: () => {
           setLabels((prevLabels) =>
             prevLabels.map((label) =>
               label.id === editLabelId
-                ? { ...label, title: NewUpdatedLabelName }
+                ? { ...label, title: newUpdatedLabelName }
                 : label
             )
           );
@@ -95,7 +119,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
   const handleEditLabel = (id, title) => {
     setEditLabelId(id);
     setIsEditingLabel(true);
-    setUpdatedLabelName("");
+    setUpdatedLabelName(title);
   };
 
   const handleKeyPress = (e) => {
@@ -110,12 +134,12 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle
         sx={{
-          fontSize: "1rem",
           fontWeight: "bold",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          // Removed the dark background to revert to default
+          textAlign: "center",
+          fontSize: "17px",
         }}
       >
         Nhãn
@@ -125,7 +149,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
       </DialogTitle>
       <DialogContent
         sx={{
-          // Removed the dark background to revert to default
           "&::-webkit-scrollbar": {
             width: "4px",
           },
@@ -138,23 +161,6 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
           },
         }}
       >
-        {/* Full-width search field */}
-        <TextField
-          fullWidth
-          variant="outlined"
-          size="small"
-          placeholder="Tìm nhãn..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{
-            mb: 2,
-            "& .MuiInputBase-root": {
-              height: 30,
-            },
-          }}
-        />
-
-        {/* List of labels with larger, longer color bars and smaller spacing */}
         <List
           sx={{
             maxHeight: 250,
@@ -169,84 +175,78 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
             "&::-webkit-scrollbar-thumb:hover": {
               backgroundColor: "#555",
             },
-            "& .MuiListItem-root": {
-              marginBottom: "4px", // Reduced spacing between labels
-            },
           }}
         >
-          {filteredLabels.map((label) => (
-            <ListItem key={label.id} disablePadding>
-              <Box
-                sx={{
-                  width: "100%", // Full width for the color bar
-                  height: 32, // Taller color bar
-                  backgroundColor: label?.color?.hex_code,
-                  borderRadius: "4px",
-                  position: "relative",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "0 8px",
-                }}
-              >
-                {isEditingLabel && editLabelId === label.id ? (
-                  <TextField
-                    value={NewUpdatedLabelName}
-                    onChange={(e) => setUpdatedLabelName(e.target.value)}
-                    onBlur={handleUpdateLabelName}
-                    onKeyPress={handleKeyPress}
-                    size="small"
-                    autoFocus
-                    fullWidth // Full width for the edit field
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": {
-                          border: "none",
-                        },
-                      },
-                    }}
-                  />
-                ) : (
-                  <>
-                    {/* Label name at the start of the color bar */}
-                    <Typography
-                      sx={{
-                        fontSize: "1rem", // Larger font size for the label name
-                        fontWeight: "bold",
-                        color: "#fff", // White text for contrast on colored background
-                        marginRight: "auto", // Push the text to the left
-                      }}
-                    >
-                      {label.title}
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        handleEditLabel(label.id, label.title);
-                      }}
-                      sx={{ width: 24, height: 24 }}
-                    >
-                      <EditIcon sx={{ fontSize: 12, color: "#fff" }} />
-                    </IconButton>
-                  </>
-                )}
-              </Box>
-              <Box sx={{ display: "flex", gap: 1, marginLeft: 1 }}>
-                <IconButton
-                  size="small"
-                  onClick={() => handleDeleteLabel(label.id)}
-                  sx={{ width: 24, height: 24 }}
-                >
-                  <CloseIcon sx={{ fontSize: 12 }} />
-                </IconButton>
+          {filteredLabels.length === 0 ? (
+            <ListItem>
+              <Box sx={{ width: "100%", textAlign: "center", color: "#999" }}>
+                Chưa có nhãn nào
               </Box>
             </ListItem>
-          ))}
+          ) : (
+            filteredLabels.map((label) => (
+              <ListItem key={label.id} disablePadding>
+                <Box
+                  sx={{
+                    width: "370px",
+                    height: 27,
+                    marginBottom: "10px",
+                    backgroundColor: label?.color?.hex_code,
+                    borderRadius: "4px",
+                    position: "relative",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "0 8px",
+                    color: "#fff",
+                    fontSize: "0.578rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {isEditingLabel && editLabelId === label.id ? (
+                    <TextField
+                      value={newUpdatedLabelName}
+                      onChange={(e) => setUpdatedLabelName(e.target.value)}
+                      onBlur={handleUpdateLabelName}
+                      onKeyPress={handleKeyPress}
+                      size="small"
+                      autoFocus
+                      sx={{
+                        width: "80%",
+                        "& .MuiOutlinedInput-root": {
+                          "& fieldset": {
+                            border: "none",
+                          },
+                          "& input": {
+                            color: "#fff",
+                          },
+                        },
+                      }}
+                    />
+                  ) : (
+                    label.title
+                  )}
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEditLabel(label.id, label.title)}
+                    sx={{ width: 24, height: 24 }}
+                  >
+                    <EditIcon sx={{ fontSize: 12, color: "#fff" }} />
+                  </IconButton>
+                </Box>
+                {/* <IconButton
+                  size="small"
+                  onClick={() => handleDeleteLabel(label.id)}
+                  sx={{ width: 24, height: 24, marginLeft: 1 }}
+                >
+                  <CloseIcon sx={{ fontSize: 16, color: "#000" }} />
+                </IconButton> */}
+              </ListItem>
+            ))
+          )}
         </List>
 
         <Divider sx={{ my: 2 }} />
-
-        {/* Form to create a new label */}
         {isCreatingLabel ? (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
@@ -257,24 +257,55 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
               value={newLabelName}
               onChange={(e) => setNewLabelName(e.target.value)}
             />
-            <TextField
-              fullWidth
-              variant="outlined"
-              size="small"
-              type="color"
-              value={newLabelColor}
-              onChange={(e) => setNewLabelColor(e.target.value)}
-            />
+            {/* Bảng chọn màu cố định */}
+            <Grid container spacing={1} sx={{ mb: 2 }}>
+              {LABEL_COLORS.map((color) => (
+                <Grid item key={color.hex_code} xs={2}>
+                  <Box
+                    onClick={() => setNewLabelColor(color.hex_code)}
+                    sx={{
+                      width: 50,
+                      height: 24,
+                      backgroundColor: color.hex_code,
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      border:
+                        newLabelColor === color.hex_code
+                          ? "2px solid #000"
+                          : "none",
+                      transition: "transform 0.2s",
+                      "&:hover": {
+                        transform: "scale(1.1)",
+                      },
+                    }}
+                    title={color.name}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* Hiển thị màu đã chọn */}
+            <Box
+              sx={{
+                width: "100%",
+                height: 32,
+                backgroundColor: newLabelColor,
+                borderRadius: "4px",
+                mb: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+                fontWeight: "bold",
+              }}
+            >
+              {newLabelName || "Xem trước nhãn mới"}
+            </Box>
+
             <Button
               variant="contained"
               fullWidth
-              sx={{
-                backgroundColor: "#2196f3", // Blue button color to match the screenshot
-                color: "#fff",
-                "&:hover": {
-                  backgroundColor: "#1976d2", // Slightly darker on hover
-                },
-              }}
+              sx={{ backgroundColor: "#1976d2" }}
               onClick={handleCreateLabel}
             >
               Lưu nhãn
@@ -291,13 +322,7 @@ const LabelList = ({ open, onClose, selectedLabels, onSelectLabel }) => {
           <Button
             variant="contained"
             fullWidth
-            sx={{
-              backgroundColor: "#2196f3", // Blue button color to match the screenshot
-              color: "#fff",
-              "&:hover": {
-                backgroundColor: "#1976d2", // Slightly darker on hover
-              },
-            }}
+            sx={{ backgroundColor: "#1976d2" }}
             onClick={() => setIsCreatingLabel(true)}
           >
             Tạo nhãn mới

@@ -3,7 +3,7 @@ import authClient from "../authClient";
 export const getListByBoardId = async (boardId) => {
   try {
     if (!boardId) {
-      console.error("Lỗi: boardId không được cung cấp.");
+      // console.error("Lỗi: boardId không được cung cấp.");
       return { data: [], error: "missing_board_id" };
     }
 

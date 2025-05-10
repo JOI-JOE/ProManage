@@ -197,7 +197,9 @@ const BoardBar = () => {
   return (
     <Box
       sx={{
-        backgroundColor: "primary.main",
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+  // backdropFilter: "blur(4px)",
+  // transition: "background-color 0.3s ease, backdrop-filter 0.3s ease",
         height: (theme) => theme.trello.boardBarHeight,
         display: "flex",
         alignItems: "center",
@@ -343,7 +345,7 @@ const BoardBar = () => {
           </Button>
         ) : null}
 
-        <BoardMenu board={board} />
+        <BoardMenu board={board} admins={admins} />
       </Box>
 
       {/* Hộp thoại chia sẻ */}

@@ -45,7 +45,7 @@ const EventCard = ({ title, labels = [], members = [], isCompleted = false, onTo
         padding: '4px', // Giảm padding tổng thể
         width: '100%',
         height: '100%',
-        position: 'relative', 
+        position: 'relative',
         paddingLeft: shouldShowCheck ? '24px' : '4px', // Điều chỉnh padding trái khi có checkbox
         transition: 'padding 0.2s ease, box-shadow 0.2s ease',
         display: 'flex',
@@ -54,6 +54,10 @@ const EventCard = ({ title, labels = [], members = [], isCompleted = false, onTo
         // boxShadow: '0 1px 0 rgba(9,30,66,.25)',
       }}
     >
+
+
+     
+      {/* Title */}
       {shouldShowCheck && (
         <div
           onClick={(e) => handleToggle(e)}
@@ -77,8 +81,6 @@ const EventCard = ({ title, labels = [], members = [], isCompleted = false, onTo
           {completed && <Check size={8} color="white" />} {/* Giảm kích thước icon check */}
         </div>
       )}
-
-      {/* Title */}
       <div
         style={{
           fontWeight: 400,
@@ -94,13 +96,13 @@ const EventCard = ({ title, labels = [], members = [], isCompleted = false, onTo
         {title}
       </div>
 
-      {/* Labels */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1px', marginBottom: '2px' }}>
         {labels.map((label, idx) => (
           <span key={idx} style={{
             backgroundColor: label.color_code,
             color: 'white',
             height: 'auto',
+            width: "40px",
             padding: '1px 6px', // Giảm padding của label
             fontSize: '9px', // Giảm kích thước font chữ của label
             borderRadius: '3px',
@@ -110,6 +112,8 @@ const EventCard = ({ title, labels = [], members = [], isCompleted = false, onTo
           }}>{label.label_title}</span>
         ))}
       </div>
+      {/* Labels */}
+
 
       {/* Members */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto' }}>
@@ -143,7 +147,7 @@ const EventCard = ({ title, labels = [], members = [], isCompleted = false, onTo
             textAlign: 'center',
             lineHeight: '16px',
             marginLeft: '1px',
-          }}>+{members.length - 2}</span> 
+          }}>+{members.length - 2}</span>
         )}
       </div>
     </div>

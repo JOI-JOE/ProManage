@@ -43,7 +43,8 @@ class Workspace extends Model
     public static function generateUniqueName($display_name): string
     {
         $parts = explode(" ", strtolower(trim($display_name)));
-        if (count($parts) < 2) return strtolower($display_name); // Nếu chỉ có 1 phần, dùng nguyên tên
+        if (count($parts) < 2)
+            return strtolower($display_name); // Nếu chỉ có 1 phần, dùng nguyên tên
 
         $usernameBase = $parts[count($parts) - 2] . $parts[count($parts) - 1]; // Lấy 2 phần cuối
         $username = $usernameBase;
@@ -88,9 +89,10 @@ class Workspace extends Model
         return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id')
             ->where('member_type', 'admin'); // Điều kiện để lọc admin
     }
-    ///quoc 26/4
+    ///quoc 26
     public function members2()
     {
-        return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id');
+        return $this->belongsToMany(User::class, 'workspace_members', 'workspace_id', 'user_id')
+            ->wherePivot('member_type', '!=', 'pending');
     }
 }

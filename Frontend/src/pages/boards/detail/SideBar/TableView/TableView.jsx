@@ -539,6 +539,7 @@ const TableView = () => {
                                         <DateSelector
                                             cardId={row.card_id}
                                             end_date={row.end_date}
+                                            start_date={row.start_date}
                                             end_time={row.end_time}
                                             reminder={row.reminder}
                                             is_completed={row.is_completed} // Thêm prop is_completed
