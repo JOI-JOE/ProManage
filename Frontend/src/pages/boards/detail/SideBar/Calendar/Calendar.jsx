@@ -251,7 +251,7 @@ const boardIds = workspace?.boards
           }
           Object.assign(info.el.style, {
             backgroundColor: "white",
-            border: "1px solid #ccc",
+            // border: "1px solid #ccc",
             borderRadius: "6px",
             padding: "4px 6px",
             overflow: "hidden",
@@ -259,6 +259,8 @@ const boardIds = workspace?.boards
             display: 'flex !important',
             flexDirection: 'column',
             position: 'relative', // Đảm bảo phần tử cha là relative
+            boxShadow: '0 1px 0 rgba(9,30,66,.25)',
+
           });
 
           // Thêm khoảng cách giữa các event trong cùng 1 ngày

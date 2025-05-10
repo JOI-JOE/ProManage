@@ -7,6 +7,7 @@ use App\Events\CardArchiveToggled;
 use App\Events\CardCompletedToggled;
 use App\Events\CardCopied;
 use App\Events\CardCreate;
+use App\Events\CardDatesUpdated;
 use App\Events\CardMoved;
 use App\Models\Attachment;
 use App\Models\CardLabel;
@@ -22,6 +23,7 @@ use App\Models\ListBoard;
 use App\Models\User;
 use App\Notifications\CardCompletedNotification;
 use App\Notifications\CardNotification;
+
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
@@ -77,7 +79,7 @@ class CardController extends Controller
 
         // 📌 Tính toán position mới (lấy position cao nhất + 10000)
         $maxPosition = Card::where('list_board_id', $request->columnId)->max('position') ?? 0;
-        $newPosition = $maxPosition + 10000;
+        $newPosition = $maxPosition + 30000;
 
         // 📌 Tạo card mới
         $card = Cache::remember("card_{$request->columnId}_{$request->title}", 10, function () use ($request, $newPosition) {
@@ -252,6 +254,7 @@ class CardController extends Controller
     public function updateDates(Request $request, $cardId)
     {
         $card = Card::findOrFail($cardId);
+        $card->loadMissing('list.board');
         $user_name = auth()->user()->full_name ?? 'ai đó';
 
         // Validate các trường nhập
@@ -315,6 +318,9 @@ class CardController extends Controller
                 ], $changes))
                 ->log($logMessage);
 
+                event(new CardDatesUpdated($card, $changes, $user_name));
+
+
             // Gửi thông báo đến tất cả người dùng liên quan
             // $users = $card->users()->where('id', '!=', auth()->id())->get();
             // foreach ($users as $user) {
@@ -322,12 +328,17 @@ class CardController extends Controller
             // }
 
             Log::info("📌 Job được lên lịch chạy vào: " . Carbon::parse($card->reminder));
+            // event(new CardDatesUpdated($card, $changes, $user_name));
 
         }
-        if (!empty($card->reminder) && strtotime($card->reminder)) {
-            // dispatch(new SendReminderNotification($card))->delay(now()->addMinutes(1));
-
-            dispatch(new SendReminderNotificationCard($card))->delay(Carbon::parse($card->reminder));
+        if (
+            !empty($card->reminder) &&
+            strtotime($card->reminder)  &&
+            $card->is_completed == 0 
+            // $card->is_archived == 0
+        ) {
+            dispatch(new SendReminderNotificationCard($card))
+                ->delay(Carbon::parse($card->reminder));
         }
 
 
@@ -348,6 +359,17 @@ class CardController extends Controller
         $card->end_time = null;
         $card->reminder = null;
         $card->save();
+
+        $user_name = auth()->user()->full_name ?? 'ai đó';
+
+        // Gửi event realtime
+        event(new CardDatesUpdated($card, [
+            'start_date' => null,
+            'end_date' => null,
+            'end_time' => null,
+            'reminder' => null,
+        ], $user_name));
+    
 
         return response()->json([
             'message' => 'Đã xóa ngày bắt đầu & ngày kết thúc khỏi thẻ!',

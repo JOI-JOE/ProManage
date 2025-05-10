@@ -138,7 +138,7 @@ export const useLists = (boardId) => {
   }, [errorState, navigate]);
 
   useEffect(() => {
-    if (!boardId) return;
+    if (!boardId || !echoInstance) return;
 
     const channel = echoInstance.channel(`board.${boardId}`);
 
@@ -157,51 +157,51 @@ export const useLists = (boardId) => {
       queryClient.invalidateQueries({ queryKey: ["listClosed", boardId] });
 
     });
+    
 
     // 📡 Nhận event khi tạo mới card
     channel.listen(".card.created", (data) => {
       console.log("📡 Nhận event từ Pusher: card.created", data);
 
       queryClient.invalidateQueries({ queryKey: ["lists", boardId] });
-
     });
 
     // 📡 Nhận event khi card được cập nhật
     channel.listen(".card.updated", (data) => {
       console.log("📡 Nhận event từ Pusher: card.updated", data);
 
-      queryClient.setQueryData(["lists", boardId], (oldBoard) => {
-        if (!oldBoard) return oldBoard;
+      // queryClient.setQueryData(["lists", boardId], (oldBoard) => {
+      //   if (!oldBoard) return oldBoard;
 
-        const listsArray = Array.isArray(oldBoard.columns)
-          ? [...oldBoard.columns]
-          : [];
+      //   const listsArray = Array.isArray(oldBoard.columns)
+      //     ? [...oldBoard.columns]
+      //     : [];
 
-        return {
-          ...oldBoard,
-          columns: listsArray.map((list) =>
-            list.id === data.columnId
-              ? {
-                ...list,
-                cards: (list.cards || []).map((card) =>
-                  card.id === data.id ? { ...card, ...data } : card
-                ),
-              }
-              : list
-          ),
-        };
-      });
+      //   return {
+      //     ...oldBoard,
+      //     columns: listsArray.map((list) =>
+      //       list.id === data.columnId
+      //         ? {
+      //           ...list,
+      //           cards: (list.cards || []).map((card) =>
+      //             card.id === data.id ? { ...card, ...data } : card
+      //           ),
+      //         }
+      //         : list
+      //     ),
+      //   };
+      // });
+      queryClient.invalidateQueries({ queryKey: ["lists", boardId] });
     });
-
     return () => {
       channel.stopListening(".list.created");
       channel.stopListening(".list.updated");
       channel.stopListening(".card.created");
-      channel.stopListening(".card.updated");     
+      channel.stopListening(".card.updated");      
     };
   }, [boardId, queryClient]);
-
   return query;
+
 };
 
 export const useUpdatePositionList = () => {
@@ -216,7 +216,6 @@ export const useUpdatePositionList = () => {
 
 export const useCreateList = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: createListAPI, // Hàm gọi POST API
 
@@ -387,3 +386,4 @@ export const useDuplicateList = (boardId) => {
     },
   });
 };
+

@@ -9,8 +9,9 @@ import "react-quill/dist/quill.snow.css"; // Import CSS của React Quill
 import ReactQuill from "react-quill";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
+import { Avatar, Box, Tooltip } from "@mui/material";
 
-const BoardDetailsDrawer = ({ board, open, onClose }) => {
+const BoardDetailsDrawer = ({ board, open, onClose, admins }) => {
   const [description, setDescription] = useState("");
   const [isEditing, setIsEditing] = useState(true);
   const [previousDescription, setPreviousDescription] = useState("");
@@ -68,18 +69,28 @@ const BoardDetailsDrawer = ({ board, open, onClose }) => {
       <Typography variant="body2" color="text.secondary">
         Quản trị viên của bảng
       </Typography>
+      
 
-      <Typography variant="body1" sx={{ fontWeight: "bold", marginTop: "8px" }}>
-        {board?.creator?.full_name}
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          flexWrap: "nowrap",
+        }}
+      >
+        {admins?.map((admin) => (
+          <Tooltip title={admin.full_name} arrow key={admin.id}>
+            <Avatar sx={{ bgcolor: "#1976d2" }}>
+              {admin.full_name?.charAt(0).toUpperCase()}
+            </Avatar>
+          </Tooltip>
+        ))}
+      </Box>
 
-      <Typography variant="body2" color="text.secondary">
-        {board?.creator?.email}
-      </Typography>
-
-      <Button variant="outlined" size="small" sx={{ marginTop: "8px" }}>
+      {/* <Button variant="outlined" size="small" sx={{ marginTop: "8px" }}>
         Sửa thông tin hồ sơ
-      </Button>
+      </Button> */}
 
       <Divider sx={{ marginY: "16px" }} />
 

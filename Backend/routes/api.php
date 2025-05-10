@@ -330,7 +330,7 @@ Route::prefix('/{cardId}/attachments')->middleware('auth:sanctum')->group(functi
 })->middleware('auth:sanctum');
 
 Route::get('/attachments/{id}', [AttachmentController::class, 'show']);
-Route::get('/download-image/{id}', [AttachmentController::class, 'downloadImage']);
+
 
 // checklists
 Route::middleware('auth:sanctum')->group(function () {

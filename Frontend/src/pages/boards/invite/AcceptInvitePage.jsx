@@ -98,28 +98,25 @@ const AcceptInvitePage = () => {
     }
   };
   // console.log("userId", board);// có ra data nhé
-  const handleRequestRejoin = async () => {
-    // console.log(111212);
-
-    try {
-      joinBoardMutation.mutate(
-        { boardId: board, userId: userId }, // Truyền dữ liệu trực tiếp
-        {
-          onSuccess: (data) => {
-            if (data.success) {
-              toast.success("Yêu cầu tham gia đã được gửi!");
-              // setMessage("Yêu cầu tham gia đã được gửi!");
-              // setIsRequestSent(true); // Cập nhật trạng thái gửi yêu cầu thành công
-            } else {
-              toast.console.error("Yêu cầu tham gia không thành công!");
-            }
-          },
+  const handleRequestRejoin = () => {
+    joinBoardMutation.mutate(
+      { boardId: board, userId: userId },
+      {
+        onSuccess: (data) => {
+          if (data.success) {
+            toast.success("Yêu cầu tham gia đã được gửi!");
+          } else {
+            toast.error(data.message || "Yêu cầu tham gia không thành công!");
+          }
+        },
+        onError: (error) => {
+          const errorMessage = error?.response?.data?.message || "Lỗi không xác định";
+          toast.error(errorMessage);
         }
-      );
-    } catch (error) {
-      console.error("Có lỗi xảy ra:", error);
-    }
+      }
+    );
   };
+  
   if (!isAuthenticated) {
     return (
       <Box className="accept-invite-container">
@@ -256,4 +253,4 @@ const AcceptInvitePage = () => {
   );
 };
 
-export default AcceptInvitePage;
+export default AcceptInvitePage;  

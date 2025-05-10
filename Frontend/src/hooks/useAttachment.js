@@ -27,7 +27,7 @@ const useAttachments = (cardId) => {
 
       // queryClient.invalidateQueries(['boardMembers']);
       queryClient.invalidateQueries({ queryKey: ["attachments", cardId], exact: true });
-      queryClient.invalidateQueries({ queryKey: ["activities"], exact: true  });
+      queryClient.invalidateQueries({ queryKey: ["activities", cardId], exact: true });
 
     });
 
