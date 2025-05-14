@@ -18,6 +18,7 @@ import {
   ListSubheader,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
 import PeopleIcon from "@mui/icons-material/People";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AddIcon from "@mui/icons-material/Add";
@@ -234,7 +235,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
                     to={`/w/${currentWorkspace?.id}/table-view`}
                   >
                     <ListItemIcon sx={{ color: "white" }}>
-                      <DashboardIcon />
+                      <TableRowsRoundedIcon />
                     </ListItemIcon>
                     <ListItemText primary="Bảng" />
                   </ListItemButton>
@@ -446,7 +447,7 @@ const SideBar = ({ board, isLoadingBoard }) => {
                           onClick={handleJoinRequest}
                           disabled={loadingJoind} // Vô hiệu hoá nút khi đang gửi yêu cầu
                         >
-                          Yêu cầu tham gia bảng
+                          Yêu cầu tham gia 
                         </Button>
                       )
                     }

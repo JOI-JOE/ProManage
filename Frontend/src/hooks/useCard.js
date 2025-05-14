@@ -476,3 +476,50 @@ export const useUserBoardCards = (userId) => {
     enabled: !!userId, // chỉ gọi khi userId có giá trị
   });
 };
+
+export const useCardDatesUpdatedListener = (cardId) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!cardId) return;
+
+    const channel = echoInstance.channel(`card.${cardId}`);
+
+    channel.listen(".card.dates-updated", (data) => {
+      console.log("📡 CardDatesUpdated: ", data);
+
+      // toast.info(`${data.user_name} đã thay đổi ngày/giờ của thẻ`);
+
+      // Ví dụ: cập nhật thông tin thẻ (nếu bạn có query riêng)
+      queryClient.invalidateQueries({ queryKey: ["cardSchedule", cardId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["activities", cardId] });
+
+      // Hoặc gọi callback bên ngoài nếu cần (tuỳ bạn mở rộng thêm)
+    });
+
+    return () => {
+      channel.stopListening(".card.dates-updated");
+      echoInstance.leave(`card.${cardId}`);
+    };
+  }, [cardId, queryClient]);
+};
+
+export const useChecklistItemDatesListener = (cardId) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!cardId) return;
+
+    const channel = echoInstance.channel(`card.${cardId}`);
+
+    channel.listen(".checklist-item.dates-updated", (data) => {
+      queryClient.invalidateQueries({ queryKey: ["dateItem", data.checklist_item_id], exact: true });
+    });
+
+    return () => {
+      channel.stopListening(".checklist-item.dates-updated");
+      echoInstance.leave(`card.${cardId}`);
+    };
+  }, [cardId]);
+};
+

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Events\ChecklistItemCreated;
+use App\Events\ChecklistItemDatesUpdated;
 use App\Events\ChecklistItemDeleted;
 use App\Events\ChecklistItemToggle;
 use App\Events\ChecklistItemUpdated;
@@ -25,7 +26,7 @@ class ChecklistItemController extends Controller
         $checklist = CheckList::find($checklistId);
 
         return response()->json([
-            'message'=>"lấy dữ liệu thành công",
+            'message' => "lấy dữ liệu thành công",
             'status' => 'success',
             'data' => $checklist->items // Sử dụng quan hệ items từ model Checklist
         ], 200);
@@ -142,7 +143,7 @@ class ChecklistItemController extends Controller
                     'card_title' => $card->title, // thêm dòng này
                     'board_id' => $card->list->board->id, // thêm dòng này
                     'board_name' => $card->list->board->name,
-                    ])
+                ])
                 ->log("{$user_name} đã đánh dấu {$item->name} là {$statusText} ở thẻ này");
 
             // Tính phần trăm hoàn thành của checklist chứa item này
@@ -197,7 +198,9 @@ class ChecklistItemController extends Controller
         // Log::info($request->all());
 
         // Tìm checklist item theo ID
-        $item = ChecklistItem::find($id);
+        // $item = ChecklistItem::find(id: $id);
+        $item = ChecklistItem::with('checklist.card.list.board')->findOrFail($id);
+
 
         // if (!$item) {
         //     return response()->json(['message' => 'Checklist item không tồn tại'], 404);
@@ -213,15 +216,29 @@ class ChecklistItemController extends Controller
         //     'reminder' => $item->reminder,
         // ]);
 
+        $card = $item->checklist->card ?? null;
+        $list = $card?->list;
+        $board = $list?->board;
 
         $item->update($request->all());
-        if (!empty($item->reminder) && strtotime($item->reminder)) {
-            // dispatch(new SendReminderNotification($card))->delay(now()->addMinutes(1));
-            // Log::info("📌 Job được lên lịch chạy vào: " . Carbon::parse($item->reminder));
 
-            dispatch(new SendReminderNotificationChecklistItem($item))->delay(Carbon::parse($item->reminder));
+
+    // Phát sự kiện realtime
+    $user_name = auth()->user()->full_name ?? 'ai đó';
+    event(new ChecklistItemDatesUpdated($item, $user_name));
+        if (
+            !empty($item->reminder) &&
+            strtotime($item->reminder) &&
+            $item->is_completed == 0
+            // $card &&
+            // $card->is_completed == 0 &&
+            // $card->is_archived == 1 &&
+            // $list && $list->closed == 0 &&
+            // $board && $board->closed == 0
+        ) {
+            dispatch(new SendReminderNotificationChecklistItem($item))
+                ->delay(Carbon::parse($item->reminder));
         }
-
 
         return response()->json([
             'message' => 'Cập nhật checklist item thành công',
@@ -237,6 +254,11 @@ class ChecklistItemController extends Controller
         $item->reminder = null;
         $item->save();
 
+
+    $user_name = auth()->user()->full_name ?? 'ai đó';
+
+    event(new ChecklistItemDatesUpdated($item, $user_name));
+
         return response()->json([
             'message' => 'Đã xóa ngày bắt đầu & ngày kết thúc khỏi thẻ!',
             'data' => $item,
@@ -246,10 +268,10 @@ class ChecklistItemController extends Controller
     public function getChecklistItemDate($id)
     {
         $checklistItem = ChecklistItem::select([
-                'end_date',
-                'end_time',
-                'reminder'
-            ])
+            'end_date',
+            'end_time',
+            'reminder'
+        ])
             ->where('id', $id)
             ->first();
 
@@ -258,8 +280,8 @@ class ChecklistItemController extends Controller
         // }
 
         return response()->json([
-            'message'=>"lấy ngày giờ checklist_item thành công",
-            'data'=>$checklistItem,
+            'message' => "lấy ngày giờ checklist_item thành công",
+            'data' => $checklistItem,
 
         ]);
     }

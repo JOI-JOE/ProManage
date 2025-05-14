@@ -116,18 +116,18 @@ export const useCardLabels = (cardId) => {
 
 
         channel.listen(".label.updated", (event) => {
-            console.log("📡 Nhận sự kiện Label Updated:", event);
+            // console.log("📡 Nhận sự kiện Label Updated:", event);
 
-            queryClient.setQueryData(["labels", cardId], (oldLabels) => {
-                if (!oldLabels) return event.labels; // Nếu chưa có data cũ, cập nhật luôn
+            // queryClient.setQueryData(["labels", cardId], (oldLabels) => {
+            //     if (!oldLabels) return event.labels; // Nếu chưa có data cũ, cập nhật luôn
 
-                return [...event.labels]; // Gán danh sách labels mới từ sự kiện
-            });
+            //     return [...event.labels]; // Gán danh sách labels mới từ sự kiện
+            // });
 
 
             queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId], exact: true });
 
-            queryClient.invalidateQueries({ queryKey: ["labels"] });
+            // queryClient.invalidateQueries({ queryKey: ["labels"] });
 
            
 
@@ -138,7 +138,7 @@ export const useCardLabels = (cardId) => {
             echoInstance.leave(`card.${cardId}`);
             // console.log(`🛑 Ngừng lắng nghe kênh: card.${cardId}`);
         };
-    }, [cardId, queryClient]);
+    }, []);
 
     return labelCard;
 };
@@ -150,6 +150,7 @@ export const useUpdateCardLabel = () => {
         mutationFn: ({ cardId, labelId, action }) => updateCardLabel(cardId, labelId, action),
 
         onSuccess: (_, { cardId, labelId, action, boardId }) => {
+            // console.log(cardId);
             // queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId] })
             // queryClient.invalidateQueries({ queryKey: ["lists"] });
             queryClient.invalidateQueries({ queryKey: ["cardLabels", cardId], exact: true });

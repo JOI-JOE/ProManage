@@ -64,7 +64,9 @@ import { v4 as uuidv4 } from "uuid";
 import {
   useCardActions,
   useCardById,
+  useCardDatesUpdatedListener,
   useCardSchedule,
+  useChecklistItemDatesListener,
   useGetMemberInCard,
   useToggleCardCompletion,
   useUpdateCardTitle,
@@ -145,7 +147,8 @@ const CardModal = ({ }) => {
   const [replyingCommentId, setReplyingCommentId] = useState(null);
   const [replyContent, setReplyContent] = useState("");
   const [replyingTo, setReplyingTo] = useState(null); // user_name hoặc full_name
-
+  useCardDatesUpdatedListener(cardId);
+  useChecklistItemDatesListener(cardId);
 
 
   const handleReplyComment = (commentId, username) => {

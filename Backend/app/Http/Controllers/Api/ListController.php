@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ListArchived;
 use App\Events\ListCreated;
+use App\Events\ListDeleted;
 use App\Events\ListNameUpdated;
 // use App\Events\ListUpdated;
 use App\Http\Requests\ListUpdateNameRequest;
@@ -193,6 +195,8 @@ class ListController extends Controller
                 ], 404);
             }
             $list->delete();
+            // broadcast(new ListDeleted($list))->toOthers();
+
             return response()->json([
                 'message' => 'List deleted successfully'
             ], 200);
@@ -219,6 +223,7 @@ class ListController extends Controller
         ]);
         // Phát sự kiện WebSocket
         broadcast(new ListCreated($list))->toOthers();
+
 
         return response()->json([
             'id' => $list->id,

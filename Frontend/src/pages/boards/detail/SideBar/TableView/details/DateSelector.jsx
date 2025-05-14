@@ -24,14 +24,15 @@ const reminderOptions = [
     { label: "2 Ngày trước", value: 2880 },
 ];
 
-const DateSelector = ({ cardId, end_date, end_time, reminder,is_completed, onUpdateDate }) => {
+const DateSelector = ({ cardId, end_date, end_time, reminder, is_completed, onUpdateDate, start_date }) => {
     // console.log(end_date);
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
     const [date, setDate] = useState(null);
     const [time, setTime] = useState(null);
+    const [error, setError] = useState(""); // [SỬA] Thêm state để lưu thông báo lỗi
 
-    
+
     const endDateTime = dayjs(`${end_date} ${end_time}`);
     const reminderTime = reminder ? dayjs(reminder) : null;
     const diffInMinutes = reminderTime ? endDateTime.diff(reminderTime, "minute") : null;
@@ -40,15 +41,16 @@ const DateSelector = ({ cardId, end_date, end_time, reminder,is_completed, onUpd
     const defaultReminder = matchedOption?.label || "15 Phút trước";
 
     const [selectedReminder, setSelectedReminder] = useState(defaultReminder);
-        
+
     useEffect(() => {
         setDate(end_date ?? null);
         setTime(end_time ?? null);
+        setError(""); // [SỬA] Reset lỗi khi ngày thay đổi
     }, [end_date, end_time]);
 
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
-        
+
     };
 
     const handleClose = () => {
@@ -56,6 +58,18 @@ const DateSelector = ({ cardId, end_date, end_time, reminder,is_completed, onUpd
     };
 
     const handleSave = () => {
+        if (start_date && date) {
+            const startDateObj = dayjs(start_date);
+            const endDateObj = dayjs(date);
+            if ( endDateObj.isBefore(startDateObj)) {
+                setError("Ngày kết thúc phải lớn hơn ngày bắt đầu!");
+                return;
+            }
+        }
+
+        // Reset lỗi nếu kiểm tra thành công
+        setError("");
+
         const endDateTime = dayjs(`${date} ${time}`);
         const formattedTime = time && time.length === 5 ? `${time}:00` : time;
         const reminderMinutes =
@@ -65,11 +79,11 @@ const DateSelector = ({ cardId, end_date, end_time, reminder,is_completed, onUpd
             reminderMinutes == null
                 ? null
                 : endDateTime.subtract(reminderMinutes, "minute").format("YYYY-MM-DD HH:mm:ss");
-                console.log(cardId,
-                    date,
-                    time,
-                    reminderDateTime);
-                    
+        console.log(cardId,
+            date,
+            time,
+            reminderDateTime);
+
 
         onUpdateDate({
             card_id: cardId,
@@ -136,7 +150,7 @@ const DateSelector = ({ cardId, end_date, end_time, reminder,is_completed, onUpd
                     >
                         <AccessTime sx={{ fontSize: 18 }} />
                         <span>{formattedDate}</span>
-                       
+
 
                     </Box>
                 </Tooltip>
@@ -154,14 +168,14 @@ const DateSelector = ({ cardId, end_date, end_time, reminder,is_completed, onUpd
                     <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
                         <TextField
                             type="date"
-                            value={date  || ""}
+                            value={date || ""}
                             size="small"
                             onChange={(e) => setDate(e.target.value)}
                             fullWidth
                         />
                         <TextField
                             type="time"
-                            value={time  || ""}
+                            value={time || ""}
                             size="small"
                             onChange={(e) => setTime(e.target.value)}
                             fullWidth
@@ -171,6 +185,7 @@ const DateSelector = ({ cardId, end_date, end_time, reminder,is_completed, onUpd
                     <TextField
                         select
                         label="Nhắc trước"
+
                         value={selectedReminder}
                         onChange={(e) => setSelectedReminder(e.target.value)}
                         fullWidth
@@ -182,13 +197,19 @@ const DateSelector = ({ cardId, end_date, end_time, reminder,is_completed, onUpd
                                 {option.label}
                             </MenuItem>
                         ))}
+
                     </TextField>
+                    {error && (
+                        <Typography color="error" variant="body2" sx={{ mb: 1 }}>
+                            {error}
+                        </Typography>
+                    )}
 
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Button variant="contained" onClick={handleSave}>
                             Lưu
                         </Button>
-                        <Button
+                        {/* <Button
                             variant="text"
                             color="error"
                             onClick={() =>
@@ -201,7 +222,7 @@ const DateSelector = ({ cardId, end_date, end_time, reminder,is_completed, onUpd
                             }
                         >
                             Xoá
-                        </Button>
+                        </Button> */}
                     </Box>
                 </Box>
             </Menu>

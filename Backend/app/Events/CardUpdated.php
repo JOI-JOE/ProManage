@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Card;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -14,16 +15,18 @@ class CardUpdated implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $card;
-    public $eventType;
+    // public $eventType;
 
     /**
      * Tạo một sự kiện mới.
      */
-    public function __construct($card, string $eventType)
+    public function __construct(Card $card)
     {
-        $this->card = is_array($card) ? (object) $card : $card; // Hỗ trợ array & object
-        $this->eventType = $eventType;
+        // $this->card = is_array($card) ? (object) $card : $card; // Hỗ trợ array & object
+        // $this->eventType = $eventType;
+        $this->card = $card;
     }
+
 
     /**
      * Xác định kênh broadcast.
@@ -41,7 +44,7 @@ class CardUpdated implements ShouldBroadcast
      */
     public function broadcastAs(): string
     {
-        return $this->eventType;
+        return 'card.updated';
     }
 
     /**
